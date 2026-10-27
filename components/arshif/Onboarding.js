@@ -7,7 +7,7 @@ import { LANGUAGES } from '@/lib/i18n'
 import { cn } from '@/lib/utils'
 import { Mic, Receipt, Globe2 } from 'lucide-react'
 
-function Illustration({ step }) {
+function Illustration({ step, t }) {
   // Abstract monochrome card illustrations
   if (step === 0) {
     return (
@@ -78,7 +78,7 @@ export default function Onboarding({ onDone }) {
 
       <div className="flex-1 flex flex-col justify-center">
         <motion.div key={step} initial={{ opacity: 0, x: 24 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.25 }}>
-          <Illustration step={step} />
+          <Illustration step={step} t={t} />
           <h1 className="text-3xl font-extrabold tracking-tight mt-6 text-center">{slides[step].title}</h1>
           <p className="text-muted-foreground text-center mt-3 leading-relaxed">{slides[step].desc}</p>
         </motion.div>

@@ -9,6 +9,7 @@ const manrope = Manrope({
 })
 
 export const metadata = {
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'),
   title: 'Arshif — Personal & Business Finance',
   description: 'Multi-currency personal and business finance tracker with AI receipt scanning, voice log, debts, and bills tracking.',
   manifest: '/manifest.json',
