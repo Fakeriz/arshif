@@ -6,8 +6,8 @@
     "dev": "next dev -p 3000 -H 0.0.0.0",
     "dev:no-reload": "next dev -p 3000 -H 0.0.0.0",
     "dev:webpack": "next dev -p 3000 -H 0.0.0.0",
-    "build": "rm -rf .next && NODE_ENV=production next build",
-    "start": "next start -p 3000 -H 0.0.0.0",
+    "build": "rm -rf .next && NODE_ENV=production next build && mkdir -p .next/standalone/public .next/standalone/.next/static && cp -a public/. .next/standalone/public/ && cp -a .next/static/. .next/standalone/.next/static/",
+    "start": "node .next/standalone/server.js",
     "test": "node --loader ./tests/ext-loader.mjs --test tests/*.test.mjs",
     "lint": "echo 'No lint issues'"
   },
