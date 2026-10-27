@@ -1,0 +1,175 @@
+'use client'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { Send, Sparkles, SquarePen } from 'lucide-react'
+import { toast } from 'sonner'
+import { useApp } from './context'
+import { Sheet, DotsLoader } from './ui'
+import CoachMarkdown from './CoachMarkdown'
+import { safeConvert } from '@/lib/rates'
+import { signedAccountBalance } from '@/lib/ledger'
+
+export default function CoachSheet({ open, onClose }) {
+  const { t, home, lang, transactions = [], accounts = [], goals = [], rates, fmt, session, isAiAllowed, open: openSheet } = useApp()
+  const [messages, setMessages] = useState([])
+  const [input, setInput] = useState('')
+  const [busy, setBusy] = useState(false)
+  const scrollRef = useRef(null)
+
+  // Riwayat chat tersimpan per-user di localStorage (maks 40 pesan terakhir)
+  const uid = session?.user?.id || 'guest'
+  const chatKey = `arshif:coach-chat:${uid}`
+  const MAX_SAVED = 40
+
+  const greetingFor = (l) => l === 'id'
+    ? 'Halo! Saya AI Financial Coach kamu. Tanya apa saja soal keuanganmu.'
+    : l === 'ms'
+      ? 'Hai! Saya AI Financial Coach anda. Tanya apa sahaja tentang kewangan anda.'
+      : l === 'tr'
+        ? 'Merhaba! Ben AI Finans Koçunuzum. Finansınız hakkında her şeyi sorun.'
+        : "Hi! I'm your AI Financial Coach. Ask me anything about your money."
+
+  const loadHistory = () => {
+    try {
+      const raw = localStorage.getItem(chatKey)
+      if (!raw) return null
+      const arr = JSON.parse(raw)
+      if (!Array.isArray(arr) || !arr.length) return null
+      const clean = arr.filter((m) => m && (m.role === 'user' || m.role === 'assistant') && typeof m.content === 'string')
+      return clean.length ? clean.slice(-MAX_SAVED) : null
+    } catch { return null }
+  }
+
+  const startNewChat = () => {
+    const g = [{ role: 'assistant', content: greetingFor(lang) }]
+    setMessages(g)
+    try { localStorage.setItem(chatKey, JSON.stringify(g)) } catch {}
+  }
+
+  const context = useMemo(() => {
+    const now = new Date()
+    const inMonth = transactions.filter((tx) => { const d = new Date(tx.date); return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear() })
+    const sum = (type) => inMonth.filter((tx) => tx.type === type).reduce((s, tx) => s + (safeConvert(tx.amount, tx.currency, home, rates) ?? 0), 0)
+    const byCat = {}
+    inMonth.filter((tx) => tx.type === 'expense').forEach((tx) => { byCat[tx.category] = (byCat[tx.category] || 0) + (safeConvert(tx.amount, tx.currency, home, rates) ?? 0) })
+    const totalBalance = accounts.reduce((s, a) => s + (safeConvert(signedAccountBalance(a), a.currency, home, rates) ?? 0), 0)
+    return {
+      homeCurrency: home,
+      totalBalance: Math.round(totalBalance),
+      monthIncome: Math.round(sum('income')),
+      monthSpending: Math.round(sum('expense')),
+      topCategories: Object.entries(byCat).sort((a, b) => b[1] - a[1]).slice(0, 5).map(([c, v]) => ({ category: c, amount: Math.round(v) })),
+      accounts: accounts.map((a) => ({ name: a.name, balance: Math.round(a.balance), currency: a.currency })),
+      goals: goals.map((g) => ({ name: g.name, saved: g.saved_amount, target: g.target_amount })),
+    }
+  }, [transactions, accounts, goals, home, rates])
+
+  const starters = [
+    lang === 'id' ? 'Analisa pengeluaranku bulan ini' : lang === 'ms' ? 'Analisa perbelanjaan saya bulan ini' : lang === 'tr' ? 'Bu ayki harcamalarımı analiz et' : 'Analyze my spending this month',
+    lang === 'id' ? 'Bagaimana cara menabung lebih banyak?' : lang === 'ms' ? 'Bagaimana nak menabung lebih?' : lang === 'tr' ? 'Nasıl daha fazla biriktirebilirim?' : 'How can I save more?',
+  ]
+
+  useEffect(() => {
+    if (open) {
+      if (!isAiAllowed) {
+        onClose?.()
+        openSheet?.('aiPremium')
+        return
+      }
+      setMessages(loadHistory() || [{ role: 'assistant', content: greetingFor(lang) }])
+    }
+  }, [open, lang, isAiAllowed, onClose, openSheet])
+
+  useEffect(() => { scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' }) }, [messages, busy])
+
+  useEffect(() => {
+    if (!open || !messages.length) return
+    try { localStorage.setItem(chatKey, JSON.stringify(messages.slice(-MAX_SAVED))) } catch {}
+  }, [messages, open, chatKey])
+
+  const send = async (text) => {
+    if (!isAiAllowed) {
+      onClose?.()
+      openSheet?.('aiPremium')
+      return
+    }
+    const content = (text ?? input).trim()
+    if (!content || busy) return
+    const next = [...messages, { role: 'user', content }]
+    setMessages(next)
+    setInput('')
+    setBusy(true)
+    try {
+      const headers = { 'Content-Type': 'application/json' }
+      if (session?.access_token) {
+        headers['Authorization'] = `Bearer ${session.access_token}`
+      }
+      const res = await fetch('/api/ai/coach', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ messages: next.filter((m) => m.role !== 'system'), language: lang, context }),
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        if (res.status === 403 || data?.code === 'AI_PREMIUM_REQUIRED') {
+          onClose?.()
+          openSheet?.('aiPremium')
+          return
+        }
+        if (res.status === 429 || data?.code === 'AI_QUOTA_EXCEEDED') {
+          toast.error(data?.error || 'Kuota AI harian Anda telah habis.')
+          setMessages((m) => [...m, { role: 'assistant', content: `⚠️ ${data?.error || 'Kuota AI harian Anda telah habis.'}` }])
+          return
+        }
+        throw new Error(data?.error || t('error'))
+      }
+
+      setMessages((m) => [...m, { role: 'assistant', content: data.reply }])
+    } catch (e) {
+      setMessages((m) => [...m, { role: 'assistant', content: `⚠️ ${e?.message || t('error')}` }])
+    } finally { setBusy(false) }
+  }
+
+  return (
+    <Sheet
+      open={open}
+      onClose={onClose}
+      full
+      noPadding
+      title={<span className="flex items-center justify-center gap-2"><video src="/coach-avatar-anim.mp4" autoPlay muted loop playsInline className="h-7 w-7 rounded-full object-cover" /> {t('ai_coach')}</span>}
+      right={<button type="button" onClick={startNewChat} title={t('coach_new_chat')} aria-label={t('coach_new_chat')} className="flex h-9 w-9 items-center justify-center rounded-full text-muted-foreground transition-colors hover:text-foreground"><SquarePen size={18} /></button>}
+    >
+      <div className="flex flex-col h-full">
+        <div className="px-3 py-2 bg-muted/50 text-[11px] text-muted-foreground text-center">
+          {fmt(context.totalBalance, home)} · {t('spending')}: {fmt(context.monthSpending, home)}
+        </div>
+        <div ref={scrollRef} className="flex-1 overflow-y-auto no-scrollbar px-4 py-4 space-y-3">
+          {messages.map((m, i) => m.role === 'user' ? (
+            <div key={i} className="flex justify-end">
+              <div className="max-w-[82%] rounded-2xl rounded-br-md bg-foreground text-background px-4 py-2.5 text-sm leading-relaxed whitespace-pre-wrap">{m.content}</div>
+            </div>
+          ) : (
+            <div key={i} className="flex items-start gap-2.5">
+              <img src="/coach-avatar.webp" alt="" className="mt-0.5 h-[34px] w-[34px] flex-none rounded-full object-cover ring-1 ring-foreground/10" />
+              <div className="max-w-[80%] rounded-2xl rounded-bl-md border border-border/50 bg-card px-4 py-2.5 text-sm leading-relaxed"><CoachMarkdown text={m.content} /></div>
+            </div>
+          ))}
+          {busy ? (
+            <div className="flex items-start gap-2.5">
+              <img src="/coach-avatar.webp" alt="" className="mt-0.5 h-[34px] w-[34px] flex-none rounded-full object-cover ring-1 ring-foreground/10" />
+              <div className="rounded-2xl rounded-bl-md border border-border/50 bg-card px-4 py-3.5"><DotsLoader size="sm" /></div>
+            </div>
+          ) : null}
+          {messages.length <= 1 ? (
+            <div className="flex flex-wrap gap-2 pt-2">
+              {starters.map((s) => <button key={s} type="button" onClick={() => send(s)} className="rounded-xl border border-border/60 bg-card px-3 py-2 text-xs font-medium flex items-center gap-1.5"><Sparkles size={12} /> {s}</button>)}
+            </div>
+          ) : null}
+        </div>
+        <div className="border-t border-border/40 p-3 safe-bottom flex gap-2">
+          <input value={input} onChange={(e) => setInput(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && send()} placeholder="..." className="flex-1 rounded-xl bg-muted px-4 py-3 text-sm outline-none" data-testid="coach-input" />
+          <button type="button" onClick={() => send()} disabled={busy || !input.trim()} className="h-11 w-11 rounded-xl bg-foreground text-background flex items-center justify-center disabled:opacity-40" data-testid="coach-send"><Send size={18} /></button>
+        </div>
+      </div>
+    </Sheet>
+  )
+}

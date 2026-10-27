@@ -1,0 +1,35 @@
+name: Telegram Deploy Notification
+
+on:
+  push:
+    branches:
+      - main # Ganti dengan nama branch utama Anda jika memakai 'master'
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Send Telegram Notification
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: |
+          COMMIT_MSG=$(git log -1 --pretty=%B | tr '\n' ' ' | sed 's/"/\\"/g')
+          COMMIT_AUTHOR=$(git log -1 --pretty=%an)
+          COMMIT_HASH=$(git log -1 --pretty=%h)
+
+          TEXT="🚀 *Update Fitur Baru Berhasil Ter-Deploy!*
+
+          📦 *Commit:* \`$COMMIT_HASH\`
+          👤 *Pengembang:* $COMMIT_AUTHOR
+          💬 *Pesan Update:*
+          $COMMIT_MSG
+
+          🌐 *Status:* Sedang diproses / live di Vercel"
+
+          curl -s -X POST "https://api.telegram.org/bot$TELEGRAM_BOT_TOKEN/sendMessage" \
+            -H "Content-Type: application/json" \
+            -d "{\"chat_id\": \"$TELEGRAM_CHAT_ID\", \"text\": \"$TEXT\", \"parse_mode\": \"Markdown\"}"

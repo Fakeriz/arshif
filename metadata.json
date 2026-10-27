@@ -1,0 +1,11 @@
+{
+  "name": "Arshif",
+  "description": "Multi-currency personal and business finance tracker with AI receipt scanning, voice log, debts, and bills tracking.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone"
+  ],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
