@@ -5,6 +5,15 @@ export const dynamic = 'force-dynamic'
 
 export async function POST(req) {
   try {
+    const webhookSecret = process.env.TELEGRAM_WEBHOOK_SECRET
+    if (!webhookSecret) {
+      return NextResponse.json({ error: 'Webhook secret is not configured' }, { status: 503 })
+    }
+    const providedSecret = req.headers.get('x-telegram-webhook-secret') || ''
+    if (providedSecret !== webhookSecret) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
     const body = await req.json().catch(() => ({}))
     const record = body?.record || body
 

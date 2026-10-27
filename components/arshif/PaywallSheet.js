@@ -7,7 +7,7 @@ import { Sheet, PrimaryButton, SecondaryButton } from './ui'
 import { getCurrency } from '@/lib/currencies'
 
 export default function PaywallSheet({ open, onClose }) {
-  const { t, home, profile, updateProfile, isGuest, userTier } = useApp()
+  const { t, home, userTier } = useApp()
   const [loading, setLoading] = useState(false)
   const isPremium = userTier === 'premium' || userTier === 'admin'
 
@@ -37,15 +37,7 @@ export default function PaywallSheet({ open, onClose }) {
 
     setLoading(true)
     try {
-      if (updateProfile) {
-        await updateProfile({ plan_tier: 'premium' })
-        toast.success(t('upgrade_success') || 'Selamat! Akun Anda telah di-upgrade ke Arshif Premium.')
-      } else {
-        toast.success(t('upgrade_success') || 'Selamat! Akun Anda telah di-upgrade ke Arshif Premium.')
-      }
-      onClose?.()
-    } catch (e) {
-      toast.error(e?.message || t('error'))
+      toast.info(t('payment_not_configured') || 'Pembayaran Premium belum tersedia. Hubungi admin untuk aktivasi.')
     } finally {
       setLoading(false)
     }

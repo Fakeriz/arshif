@@ -672,6 +672,39 @@ grant select, insert on public.support_tickets to authenticated, anon;
 grant select on public.announcements to authenticated, anon;
 
 -- Kebijakan RLS Profiles: id = auth.uid()
+-- Client boleh mengubah preferensi profil, tetapi tidak hak akses atau kuota AI.
+-- Trigger ini menghindari subquery ke tabel profiles sendiri di dalam policy (recursive RLS).
+create or replace function public.prevent_profile_privilege_escalation()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if coalesce(auth.role(), '') <> 'service_role' then
+    if tg_op = 'INSERT' then
+      new.plan_tier := 'free';
+      new.role := 'user';
+      new.ai_daily_limit := 15;
+      new.ai_used_count := 0;
+      new.ai_last_reset := now();
+    elsif new.plan_tier is distinct from old.plan_tier
+       or new.role is distinct from old.role
+       or new.ai_daily_limit is distinct from old.ai_daily_limit
+       or new.ai_used_count is distinct from old.ai_used_count
+       or new.ai_last_reset is distinct from old.ai_last_reset then
+      raise exception 'Profile privilege fields can only be changed by the server';
+    end if;
+  end if;
+  return new;
+end;
+$$;
+
+drop trigger if exists protect_profile_privileges on public.profiles;
+create trigger protect_profile_privileges
+before insert or update on public.profiles
+for each row execute function public.prevent_profile_privilege_escalation();
+
 drop policy if exists "profiles own" on public.profiles;
 create policy "profiles own" on public.profiles for all to authenticated
   using ((select auth.uid()) = id) with check ((select auth.uid()) = id);
@@ -765,47 +798,51 @@ where not exists (
 -- Buat bucket penyimpanan jika belum ada (receipts, avatars, goals_attachments, support_attachments)
 insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
 values
-  ('receipts', 'receipts', true, 10485760, null),
-  ('avatars', 'avatars', true, 5242880, null),
-  ('goals_attachments', 'goals_attachments', true, 10485760, null),
-  ('support_attachments', 'support_attachments', true, 10485760, null)
+  ('receipts', 'receipts', false, 10485760, null),
+  ('avatars', 'avatars', false, 5242880, null),
+  ('goals_attachments', 'goals_attachments', false, 10485760, null),
+  ('support_attachments', 'support_attachments', false, 10485760, null)
 on conflict (id) do update set
-  public = true;
+  public = false;
 
--- Storage Policies: Public Read & Allowed Uploads
+-- Storage Policies: private, owner-scoped objects. Path harus diawali auth.uid().
 drop policy if exists "Public Read receipts" on storage.objects;
-create policy "Public Read receipts" on storage.objects for select using (bucket_id = 'receipts');
-
 drop policy if exists "Allow upload receipts" on storage.objects;
-create policy "Allow upload receipts" on storage.objects for insert to authenticated, anon with check (bucket_id = 'receipts');
+create policy "Users read own receipts" on storage.objects for select to authenticated
+  using (bucket_id = 'receipts' and (storage.foldername(name))[1] = (select auth.uid())::text);
+create policy "Users upload own receipts" on storage.objects for insert to authenticated
+  with check (bucket_id = 'receipts' and (storage.foldername(name))[1] = (select auth.uid())::text);
 
 drop policy if exists "Public Read avatars" on storage.objects;
-create policy "Public Read avatars" on storage.objects for select using (bucket_id = 'avatars');
-
 drop policy if exists "Allow upload avatars" on storage.objects;
-create policy "Allow upload avatars" on storage.objects for insert to authenticated, anon with check (bucket_id = 'avatars');
+create policy "Users read own avatars" on storage.objects for select to authenticated
+  using (bucket_id = 'avatars' and (storage.foldername(name))[1] = (select auth.uid())::text);
+create policy "Users upload own avatars" on storage.objects for insert to authenticated
+  with check (bucket_id = 'avatars' and (storage.foldername(name))[1] = (select auth.uid())::text);
 
 drop policy if exists "Public Read goals_attachments" on storage.objects;
-create policy "Public Read goals_attachments" on storage.objects for select using (bucket_id = 'goals_attachments');
-
 drop policy if exists "Allow upload goals_attachments" on storage.objects;
-create policy "Allow upload goals_attachments" on storage.objects for insert to authenticated, anon with check (bucket_id = 'goals_attachments');
+create policy "Users read own goals_attachments" on storage.objects for select to authenticated
+  using (bucket_id = 'goals_attachments' and (storage.foldername(name))[1] = (select auth.uid())::text);
+create policy "Users upload own goals_attachments" on storage.objects for insert to authenticated
+  with check (bucket_id = 'goals_attachments' and (storage.foldername(name))[1] = (select auth.uid())::text);
 
 drop policy if exists "Public Read support_attachments" on storage.objects;
-create policy "Public Read support_attachments" on storage.objects for select using (bucket_id = 'support_attachments');
-
 drop policy if exists "Allow upload support_attachments" on storage.objects;
-create policy "Allow upload support_attachments" on storage.objects for insert to authenticated, anon with check (bucket_id = 'support_attachments');
+create policy "Users read own support_attachments" on storage.objects for select to authenticated
+  using (bucket_id = 'support_attachments' and (storage.foldername(name))[1] = (select auth.uid())::text);
+create policy "Users upload own support_attachments" on storage.objects for insert to authenticated
+  with check (bucket_id = 'support_attachments' and (storage.foldername(name))[1] = (select auth.uid())::text);
 
 -- ============================================================================
 -- 9. LOGIKA TERSIMPAN & FUNGSI RPC (AI QUOTA & WEBHOOKS)
 -- ============================================================================
 
--- A. get_ai_quota_status: Cek sisa kuota AI (Mendukung parameter p_user_id & user_id)
-create or replace function public.get_ai_quota_status(
-  p_user_id uuid default null,
-  user_id uuid default null
-)
+-- A. get_ai_quota_status: hanya membaca kuota session aktif
+-- Hapus overload lama yang menerima UUID arbitrer sebelum membuat signature aman.
+drop function if exists public.get_ai_quota_status(uuid, uuid);
+drop function if exists public.check_and_consume_ai_quota(uuid, uuid);
+create or replace function public.get_ai_quota_status()
 returns jsonb
 language plpgsql
 security definer
@@ -818,8 +855,8 @@ declare
   v_used int := 0;
   v_last_reset timestamptz;
 begin
-  -- Resolusi ID pengguna secara defensif
-  v_uid := coalesce(p_user_id, user_id, auth.uid());
+  -- RPC hanya boleh dipakai oleh session terautentikasi miliknya sendiri.
+  v_uid := auth.uid();
   if v_uid is null then
     return jsonb_build_object('remaining', 0, 'total', 15, 'is_unlimited', false);
   end if;
@@ -855,11 +892,8 @@ begin
 end;
 $$;
 
--- B. check_and_consume_ai_quota: Konsumsi 1 kuota AI secara atomik
-create or replace function public.check_and_consume_ai_quota(
-  p_user_id uuid default null,
-  user_id uuid default null
-)
+-- B. check_and_consume_ai_quota: hanya mengonsumsi kuota session aktif
+create or replace function public.check_and_consume_ai_quota()
 returns jsonb
 language plpgsql
 security definer
@@ -872,7 +906,7 @@ declare
   v_used int := 0;
   v_last_reset timestamptz;
 begin
-  v_uid := coalesce(p_user_id, user_id, auth.uid());
+  v_uid := auth.uid();
   if v_uid is null then
     return jsonb_build_object(
       'allowed', false,
@@ -942,6 +976,11 @@ begin
   );
 end;
 $$;
+
+revoke execute on function public.get_ai_quota_status() from public;
+grant execute on function public.get_ai_quota_status() to authenticated;
+revoke execute on function public.check_and_consume_ai_quota() from public;
+grant execute on function public.check_and_consume_ai_quota() to authenticated;
 
 -- C. Trigger Otomatis Profil Baru (handle_new_user)
 create or replace function public.handle_new_user()
@@ -1017,7 +1056,23 @@ security definer
 as $$
 declare
   v_payload jsonb;
+  v_webhook_secret text;
 begin
+  -- Simpan TELEGRAM_WEBHOOK_SECRET di Supabase Vault dengan nama yang sama.
+  -- Jika Vault belum tersedia/dikonfigurasi, trigger hanya melewati notifikasi.
+  begin
+    select decrypted_secret into v_webhook_secret
+    from vault.decrypted_secrets
+    where name = 'TELEGRAM_WEBHOOK_SECRET'
+    limit 1;
+  exception when others then
+    v_webhook_secret := null;
+  end;
+
+  if v_webhook_secret is null or v_webhook_secret = '' then
+    return new;
+  end if;
+
   v_payload := jsonb_build_object(
     'record', jsonb_build_object(
       'id', new.id,
@@ -1031,7 +1086,10 @@ begin
   perform net.http_post(
     url := 'https://arshif.vercel.app/api/telegram-webhook-user',
     body := v_payload,
-    headers := '{"Content-Type": "application/json"}'::jsonb
+    headers := jsonb_build_object(
+      'Content-Type', 'application/json',
+      'x-telegram-webhook-secret', coalesce(v_webhook_secret, '')
+    )
   );
 
   return new;

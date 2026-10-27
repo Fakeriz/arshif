@@ -70,24 +70,23 @@ async function verifyAndConsumeAiAccess(request) {
   }
 
   // Determine user tier & role
-  let planTier = user?.user_metadata?.plan_tier || user?.app_metadata?.plan_tier || 'free'
-  let role = user?.role || user?.app_metadata?.role || 'authenticated'
+  // Entitlement hanya berasal dari profiles yang dibaca server, bukan metadata client.
+  let planTier = 'free'
+  let role = 'authenticated'
 
   try {
     const { data: profile } = await supabaseClient
       .from('profiles')
-      .select('plan_tier')
+      .select('plan_tier, role')
       .eq('id', user.id)
       .maybeSingle()
-    if (profile?.plan_tier) {
-      planTier = profile.plan_tier
-    }
+    if (profile?.plan_tier) planTier = profile.plan_tier
+    if (profile?.role) role = profile.role
   } catch (e) {
     console.warn('Error reading profiles table:', e?.message)
   }
 
-  const isOwner = user?.email === 'hafizhxcv@gmail.com'
-  const isPremiumOrAdmin = isOwner || planTier === 'premium' || planTier === 'admin' || role === 'admin'
+  const isPremiumOrAdmin = planTier === 'premium' || planTier === 'admin' || role === 'admin'
 
   if (!isPremiumOrAdmin) {
     return {
@@ -102,9 +101,7 @@ async function verifyAndConsumeAiAccess(request) {
   // Check & consume quota via RPC
   let quota = { remaining: 999, total: 999, is_unlimited: true }
   try {
-    const { data: rpcRes, error: rpcErr } = await supabaseClient.rpc('check_and_consume_ai_quota', {
-      user_id: user.id,
-    })
+    const { data: rpcRes, error: rpcErr } = await supabaseClient.rpc('check_and_consume_ai_quota')
     if (!rpcErr && rpcRes) {
       if (rpcRes.allowed === false || rpcRes.remaining === 0) {
         return {
@@ -151,20 +148,22 @@ async function handleAiUsage(request) {
     return err('Sesi pengguna tidak valid atau telah berakhir.', 401)
   }
 
-  let planTier = user?.user_metadata?.plan_tier || 'free'
+  // Entitlement hanya berasal dari profiles server-side.
+  let planTier = 'free'
+  let role = 'authenticated'
   try {
     const { data: profile } = await supabaseClient
       .from('profiles')
-      .select('plan_tier')
+      .select('plan_tier, role')
       .eq('id', user.id)
       .maybeSingle()
     if (profile?.plan_tier) planTier = profile.plan_tier
+    if (profile?.role) role = profile.role
   } catch (e) {
     console.warn('Profile read in usage:', e?.message)
   }
 
-  const isOwner = user?.email === 'hafizhxcv@gmail.com'
-  const isPremiumOrAdmin = isOwner || planTier === 'premium' || planTier === 'admin'
+  const isPremiumOrAdmin = planTier === 'premium' || planTier === 'admin' || role === 'admin'
 
   let usage = {
     remaining: isPremiumOrAdmin ? 999 : 0,
@@ -173,9 +172,7 @@ async function handleAiUsage(request) {
   }
 
   try {
-    const { data: rpcRes, error: rpcErr } = await supabaseClient.rpc('get_ai_quota_status', {
-      user_id: user.id,
-    })
+    const { data: rpcRes, error: rpcErr } = await supabaseClient.rpc('get_ai_quota_status')
     if (!rpcErr && rpcRes) {
       usage = {
         remaining: rpcRes.remaining ?? usage.remaining,
@@ -1201,14 +1198,17 @@ export async function POST(request, ctx) {
             if (base64) {
               RECEIPT_CACHE.set(driveData.id, { base64, mimeType, time: Date.now() })
             }
-            try {
-              await fetch(`https://www.googleapis.com/drive/v3/files/${driveData.id}/permissions`, {
-                method: 'POST',
-                headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-                body: JSON.stringify({ role: 'reader', type: 'anyone' }),
-              })
-            } catch (permErr) {
-              console.warn('Drive permission grant notice:', permErr)
+            const permissionRes = await fetch(`https://www.googleapis.com/drive/v3/files/${driveData.id}/permissions`, {
+              method: 'POST',
+              headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+              body: JSON.stringify({ role: 'reader', type: 'anyone' }),
+            })
+            if (!permissionRes.ok) {
+              await fetch(`https://www.googleapis.com/drive/v3/files/${driveData.id}`, {
+                method: 'DELETE',
+                headers: { Authorization: `Bearer ${token}` },
+              }).catch(() => {})
+              return err('Google Drive file permission could not be configured.', 502)
             }
             return json({
               success: true,
@@ -1225,19 +1225,7 @@ export async function POST(request, ctx) {
         }
       }
 
-      const mockFileId = `1gDrive_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`
-      if (base64) {
-        RECEIPT_CACHE.set(mockFileId, { base64, mimeType, time: Date.now() })
-      }
-      return json({
-        success: true,
-        provider: 'google_drive',
-        fileId: mockFileId,
-        url: `https://drive.google.com/file/d/${mockFileId}/view`,
-        thumbnailUrl: `/api/drive/thumbnail?id=${mockFileId}&merchant=${encodeURIComponent(merchant)}`,
-        name: fileName,
-        folder: 'Arshif Receipts',
-      })
+      return err('Google Drive upload failed. Connect Google Drive again and retry.', 502)
     }
 
     if (path.startsWith('ai/')) {

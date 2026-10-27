@@ -124,12 +124,13 @@ export default function AccountSupportSection() {
         userEmail: session?.user?.email || null,
         userId: session?.user?.id || null,
         file: file || null,
+        accessToken: session?.access_token || '',
       })
 
       // 2. Upload opsional ke Supabase Storage untuk riwayat aplikasi
-      if (file) {
+      if (file && session?.user?.id) {
         const sanitized = file.name.replace(/[^a-zA-Z0-9._-]/g, '_')
-        const fileName = `${Date.now()}_${sanitized}`
+        const fileName = `${session.user.id}/${Date.now()}_${sanitized}`
         try {
           const { error: uploadError } = await supabase.storage
             .from('support_attachments')
@@ -138,10 +139,11 @@ export default function AccountSupportSection() {
           if (uploadError) {
             console.warn('Storage upload notice:', uploadError)
           } else {
-            const { data: urlData } = supabase.storage
+            const { data: urlData, error: signedUrlError } = await supabase.storage
               .from('support_attachments')
-              .getPublicUrl(fileName)
-            attachment_url = urlData?.publicUrl || null
+              .createSignedUrl(fileName, 60 * 60)
+            if (signedUrlError) console.warn('Signed URL notice:', signedUrlError)
+            attachment_url = urlData?.signedUrl || null
           }
         } catch (uploadEx) {
           console.warn('Upload exception:', uploadEx)

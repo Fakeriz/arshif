@@ -187,7 +187,7 @@ export default function App() {
 
   const updateProfile = useCallback(async (patch) => {
     const saved = await store.saveProfile(patch)
-    setProfile((p) => ({ ...p, ...patch, ...(saved || {}) }))
+    setProfile((p) => ({ ...p, ...(saved || {}) }))
     return saved
   }, [store])
 
