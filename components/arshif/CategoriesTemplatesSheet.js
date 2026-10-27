@@ -130,8 +130,8 @@ export default function CategoriesTemplatesSheet({ open, onClose }) {
                 <div key={c.id} className="flex items-center gap-3 rounded-xl bg-white dark:bg-[#1c1c1e] border border-zinc-200 dark:border-white/10 px-3.5 py-3" data-testid="cat-row">
                   <div className="h-9 w-9 rounded-xl bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center text-zinc-900 dark:text-white"><Icon size={18} strokeWidth={1.5} /></div>
                   <span className="flex-1 font-bold text-[15px] truncate text-zinc-950 dark:text-white">{c?.name}</span>
-                  <button type="button" onClick={() => editCat(c)} className="h-8 w-8 rounded-lg flex items-center justify-center text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white transition-colors" aria-label="edit"><Pencil size={15} /></button>
-                  <button type="button" onClick={() => delCat(c)} className="h-8 w-8 rounded-lg flex items-center justify-center text-zinc-400 hover:text-rose-500 dark:text-zinc-500 dark:hover:text-rose-400 transition-colors" aria-label="delete"><Trash2 size={15} /></button>
+                  <button type="button" onClick={() => editCat(c)} className="h-11 w-11 rounded-lg flex items-center justify-center text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white transition-colors" aria-label="edit"><Pencil size={15} /></button>
+                  <button type="button" onClick={() => delCat(c)} className="h-11 w-11 rounded-lg flex items-center justify-center text-zinc-400 hover:text-rose-500 dark:text-zinc-500 dark:hover:text-rose-400 transition-colors" aria-label="delete"><Trash2 size={15} /></button>
                 </div>
               )
             })}
@@ -174,7 +174,7 @@ export default function CategoriesTemplatesSheet({ open, onClose }) {
                   <p className="text-xs text-zinc-600 dark:text-zinc-400 mt-0.5">{t(`cat_${tp?.category || 'other'}`)} · {fmt(tp?.amount, tp?.currency || home)}</p>
                 </button>
                 <span className="font-bold tabular-nums text-[15px] text-zinc-950 dark:text-white">{getCurrency(tp?.currency || home).symbol} {fmt(tp?.amount, tp?.currency || home)}</span>
-                <button type="button" onClick={() => delTpl(tp)} className="h-8 w-8 rounded-lg flex items-center justify-center text-zinc-400 hover:text-rose-500 dark:text-zinc-500 dark:hover:text-rose-400 transition-colors" aria-label="delete"><Trash2 size={15} /></button>
+                <button type="button" onClick={() => delTpl(tp)} className="h-11 w-11 rounded-lg flex items-center justify-center text-zinc-400 hover:text-rose-500 dark:text-zinc-500 dark:hover:text-rose-400 transition-colors" aria-label="delete"><Trash2 size={15} /></button>
               </div>
             ))}
             {filteredTpls.length === 0 ? <p className="text-center text-sm text-zinc-500 dark:text-zinc-400 py-6">{t('no_templates')}</p> : null}

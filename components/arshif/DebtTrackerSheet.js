@@ -81,7 +81,7 @@ export default function DebtTrackerSheet({ open, onClose }) {
   return (
     <>
       <Sheet open={open} onClose={onClose} full title={t('debt_tracker')}
-        right={<button type="button" onClick={openAdd} className="h-8 w-8 rounded-full bg-zinc-950 text-white dark:bg-white dark:text-zinc-950 flex items-center justify-center font-bold" data-testid="debt-add"><Plus size={18} /></button>}>
+        right={<button type="button" onClick={openAdd} className="h-11 w-11 rounded-full bg-zinc-950 text-white dark:bg-white dark:text-zinc-950 flex items-center justify-center font-bold" data-testid="debt-add"><Plus size={18} /></button>}>
         {/* Summary */}
         <div className="mt-1 rounded-2xl bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-white/10 p-4">
           <div className="grid grid-cols-2 gap-3">

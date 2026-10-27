@@ -255,13 +255,13 @@ export default function TransactionDetailSheet({ open, isOpen: propIsOpen, onClo
       {viewImg && tx.receipt_url ? (
         <div className="fixed inset-0 z-[80] bg-black/95 flex items-center justify-center p-4 cursor-pointer" onClick={() => setViewImg(false)}>
           <button type="button" className="absolute top-6 right-6 w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center cursor-pointer transition" onClick={() => setViewImg(false)}><X size={20} /></button>
-          <div className="relative max-h-[85vh] max-w-full flex flex-col items-center" onClick={(e) => e.stopPropagation()}>
+          <div className="relative max-h-[85dvh] max-w-full flex flex-col items-center" onClick={(e) => e.stopPropagation()}>
             <img
               src={getDriveThumbnailUrl(tx.receipt_url, 1200, tx.merchant || tx.note)}
               alt="receipt"
               referrerPolicy="no-referrer"
               crossOrigin="anonymous"
-              className="max-h-[75vh] max-w-full object-contain rounded-2xl shadow-2xl select-none"
+              className="max-h-[75dvh] max-w-full object-contain rounded-2xl shadow-2xl select-none"
             />
             {tx.receipt_url?.includes('drive.google.com') && (
               <a

@@ -218,7 +218,7 @@ export default function ReceiptGallerySheet({ open, onClose, onOpenScanner }) {
             onDragEnd={(e, info) => {
               if (info.offset.y > 80 || info.velocity.y > 400) onClose?.()
             }}
-            className="relative w-full max-w-md h-[92vh] rounded-t-[32px] bg-white dark:bg-[#0c0c0e] border-t border-zinc-200/80 dark:border-white/10 shadow-2xl z-10 flex flex-col overflow-hidden select-none transform-gpu will-change-transform"
+            className="relative w-full max-w-md h-[92dvh] rounded-t-[32px] bg-white dark:bg-[#0c0c0e] border-t border-zinc-200/80 dark:border-white/10 shadow-2xl z-10 flex flex-col overflow-hidden select-none transform-gpu will-change-transform"
           >
             {/* Top Touch Handle: touch-none cursor-grab active:cursor-grabbing */}
             <div className="pt-3 pb-1 shrink-0 touch-none cursor-grab active:cursor-grabbing">
@@ -494,7 +494,7 @@ export default function ReceiptGallerySheet({ open, onClose, onOpenScanner }) {
                 alt="Receipt preview"
                 referrerPolicy="no-referrer"
                 crossOrigin="anonymous"
-                className="max-h-[85vh] max-w-full object-contain rounded-xl select-none"
+                className="max-h-[85dvh] max-w-full object-contain rounded-xl select-none"
               />
             </div>
           ) : null}

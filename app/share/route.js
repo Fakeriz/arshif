@@ -29,7 +29,7 @@ export async function POST(req) {
 <meta name="theme-color" content="#09090b">
 <title>Arshif</title>
 </head>
-<body style="margin:0;height:100vh;display:flex;align-items:center;justify-content:center;background:#09090b;color:#fff;font-family:system-ui,sans-serif">
+<body style="margin:0;height:100dvh;display:flex;align-items:center;justify-content:center;background:#09090b;color:#fff;font-family:system-ui,sans-serif">
 <p>Membuka Arshif&hellip;</p>
 <script>
 try {

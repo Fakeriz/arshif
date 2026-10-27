@@ -980,7 +980,7 @@ export default function ImportTransactionsPage({ onClose }) {
               className="w-full rounded-xl border border-border/60 bg-background pl-9 pr-3 py-2.5 text-sm outline-none"
             />
           </div>
-          <div className="grid grid-cols-4 gap-2 max-h-[50vh] overflow-y-auto">
+          <div className="grid grid-cols-4 gap-2 max-h-[50dvh] overflow-y-auto">
             {filteredCats.map((c) => {
               const active = pickCatFor != null && catOf(rows.find((r) => r.idx === pickCatFor) || {}) === c.id
               return (

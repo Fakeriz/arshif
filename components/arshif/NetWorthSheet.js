@@ -107,7 +107,7 @@ export default function NetWorthSheet({ open, onClose }) {
                     <p className="text-xs text-muted-foreground mt-0.5">{t('nw_manual_asset')}</p>
                   </div>
                   <p className="font-bold tabular-nums text-[15px]">{fmt(a?.amount, a?.currency || home)}</p>
-                  <button type="button" onClick={() => removeAsset(a?.id)} className="h-8 w-8 rounded-lg flex items-center justify-center text-muted-foreground" aria-label="delete"><Trash2 size={15} /></button>
+                  <button type="button" onClick={() => removeAsset(a?.id)} className="h-11 w-11 rounded-lg flex items-center justify-center text-muted-foreground" aria-label="delete"><Trash2 size={15} /></button>
                 </div>
               ))}
             </>
@@ -129,7 +129,7 @@ export default function NetWorthSheet({ open, onClose }) {
                     <p className="text-xs text-muted-foreground mt-0.5">Liability</p>
                   </div>
                   <p className="font-bold tabular-nums text-[15px] text-rose-600 dark:text-rose-400">{fmt(l?.amount, l?.currency || home)}</p>
-                  <button type="button" onClick={() => removeLiab(l?.id)} className="h-8 w-8 rounded-lg flex items-center justify-center text-muted-foreground" aria-label="delete"><Trash2 size={15} /></button>
+                  <button type="button" onClick={() => removeLiab(l?.id)} className="h-11 w-11 rounded-lg flex items-center justify-center text-muted-foreground" aria-label="delete"><Trash2 size={15} /></button>
                 </div>
               ))}
               {(liabs || []).length === 0 ? <p className="text-center text-sm text-muted-foreground py-6">{t('nw_no_liabilities')}</p> : null}

@@ -84,7 +84,7 @@ export default function RecurringSheet({ open, onClose }) {
                   <p className="font-bold tabular-nums text-[15px] text-zinc-950 dark:text-white">{fmt(r?.amount, r?.currency || home)}</p>
                   <p className="text-[11px] font-medium text-zinc-500 dark:text-zinc-400">{FREQ_SUFFIX[r?.frequency] || ''}</p>
                 </div>
-                <button type="button" onClick={() => remove(r?.id)} className="h-8 w-8 rounded-lg flex items-center justify-center text-zinc-400 hover:text-rose-500 dark:text-zinc-500 dark:hover:text-rose-400 shrink-0" aria-label="delete"><Trash2 size={15} /></button>
+                <button type="button" onClick={() => remove(r?.id)} className="h-11 w-11 rounded-lg flex items-center justify-center text-zinc-400 hover:text-rose-500 dark:text-zinc-500 dark:hover:text-rose-400 shrink-0" aria-label="delete"><Trash2 size={15} /></button>
               </div>
             )
           })}
