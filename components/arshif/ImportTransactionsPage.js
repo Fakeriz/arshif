@@ -13,11 +13,8 @@ import { LOCALE_MAP } from '@/lib/i18n'
 import { cn, triggerHaptic } from '@/lib/utils'
 import * as SI from '@/lib/statement-import'
 
-// Wizard impor rekening koran — FULL PAGE berbahasa visual Arshif: header kompak,
-// hairline progress, kartu-kartu rounded-3xl, dan satu tombol aksi primer di
-// bottom bar. Seluruh parsing/normalisasi/dedup jalan client-side (privasi);
-// server hanya menerima baris final + catatan batch (jika migrasi
-// import_batches sudah jalan).
+// Statement import wizard. Parsing, normalization, and dedup run client-side;
+// the server only receives final rows plus optional batch notes.
 
 const STEPS = ['upload', 'setup', 'review', 'done']
 

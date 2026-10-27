@@ -2,7 +2,6 @@
 import * as React from "react"
 // Static import: recharts namespaces are used as JSX component types, which
 // next/dynamic can't return. Consumers should next/dynamic this whole file.
-// oxlint-disable-next-line emergent/prefer-dynamic-import
 import * as RechartsPrimitive from "recharts"
 
 import { cn } from "@/lib/utils"

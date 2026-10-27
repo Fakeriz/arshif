@@ -5,25 +5,9 @@ import { motion, useReducedMotion, useMotionValue, useTransform, animate } from 
 import { cn } from '@/lib/utils'
 
 /**
- * AccountDeck — Carousel tumpukan kartu bank ultra-smooth (Framer Motion).
- *
- * Mengapa versi sebelumnya glitch/patah di HP:
- *  1. Kartu peek dipisah di <div> statis dengan CSS transition, sedangkan
- *     kartu aktif di dalam AnimatePresence. Saat index berganti, kartu
- *     di-unmount dari PeekCard dan di-mount ulang di AnimatePresence,
- *     menyebabkan elemen berkedip/hilang sesaat dan melompat dari x=+48px.
- *  2. mode="popLayout" pada AnimatePresence menyebabkan kalkulasi absolut
- *     berbenturan dengan container aspect-ratio pada mobile.
- *
- * Solusi Arsitektur (Unified Continuous Stack):
- *  - Semua kartu di-render dalam satu layer Framer Motion persisten (key tetap).
- *  - Posisi fisik (x, y, scale, opacity, brightness, zIndex) dihitung secara
- *    matematis dari selisih `diff = i - activeIdx`.
- *  - Saat berganti kartu, kartu aktif meluncur mulus ke kiri (x: -108%),
- *    kartu di belakangnya (diff: 1) membesar dari scale 0.94 -> 1.0 dan y: -14px -> 0
- *    tanpa ada unmount/remount sama sekali!
- *  - Transisi spring critically damped (stiffness 300, damping 30) bebas getar,
- *    buttery smooth, dan nyaman dilihat.
+ * Bank card carousel built on Framer Motion.
+ * All cards stay mounted in one persistent layer; positions are derived
+ * from diff = i - activeIdx, so switching cards never remounts.
  */
 
 const SWIPE_OFFSET = 45 // px minimum drag untuk memicu ganti kartu
@@ -143,16 +127,9 @@ function haptic(ms = 10) {
 }
 
 /**
- * DeckCard — satu kartu dalam tumpukan.
- *
- * Dua lapis transform yang saling melengkapi (tidak berkonflik):
- * - LAPIS LUAR: posisi layout dari activeIdx (x/y/scale/opacity/brightness),
- *   dianimasikan spring saat index berganti + menampung gesture drag.
- * - LAPIS DALAM: ekspresi 3D yang didorong dragX/dragP (lift kartu aktif,
- *   fan-out kartu belakang). Selalu kembali ke netral saat tidak di-drag.
- * - ROTASI ada di level tumpukan (AccountDeck), bukan per kartu: seluruh deck
- *   miring sebagai satu blok kaku seperti setumpuk kartu fisik — tidak ada
- *   celah putih yang terbuka di antara kartu saat drag.
+ * One card in the deck.
+ * Outer layer owns layout position and drag; inner layer owns the 3D
+ * expression. Rotation lives at the deck level, not per card.
  */
 function DeckCard({
   slide,
@@ -398,12 +375,8 @@ export default function AccountDeck({
               return null
             }
 
-            // Shadow: kartu terangkat (lifting) dapat bayangan lebih besar,
-            // meniru kartu yang "diangkat" dari tumpukan seperti di referensi.
-            // Semua varian diawali hairline ring 1px (0,0,0 ~18%) — menutup
-            // fringe putih anti-aliasing saat kartu gelap berotasi di atas
-            // background terang, sekaligus memberi definisi tepi kartu terang.
-            // (ditulis literal penuh agar terbaca pemindai Tailwind)
+            // Lifted cards get a larger shadow; every variant starts with a
+            // 1px hairline ring so dark cards keep a clean edge on light backgrounds.
             const shadowCls =
               isActive && lifting
                 ? 'shadow-[0_0_0_1px_rgba(0,0,0,0.18),0_2px_6px_rgba(16,16,20,0.10),0_26px_50px_-12px_rgba(16,16,20,0.38)] dark:shadow-[0_0_0_1px_rgba(0,0,0,0.18),0_2px_6px_rgba(0,0,0,0.5),0_26px_50px_-12px_rgba(0,0,0,0.7)]'

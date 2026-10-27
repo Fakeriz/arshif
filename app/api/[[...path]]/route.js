@@ -24,7 +24,7 @@ const CANDIDATE_MODELS = [
 const json = (data, status = 200) => NextResponse.json(data, { status })
 const err = (message, status = 400) => NextResponse.json({ error: message }, { status })
 
-// ---------------- Supabase Server Auth & Quota Helpers ----------------
+// Supabase auth and quota helpers.
 function getServerSupabase(token) {
   return createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
     auth: { persistSession: false, autoRefreshToken: false },
@@ -190,7 +190,7 @@ async function handleAiUsage(request) {
   return json(usage, 200)
 }
 
-// ---------------- Helper Parsing ----------------
+// Request parsing helpers.
 function parseNumber(val) {
   if (typeof val === 'number') return isNaN(val) ? 0 : val
   if (!val) return 0
@@ -270,7 +270,7 @@ function normalizeContents(contentsInput) {
   })
 }
 
-// ---------------- Core Gemini REST API Client ----------------
+// Gemini REST API client.
 async function callGemini(contentsInput, generationConfig = {}, systemInstruction = null) {
   const apiKey = process.env.GEMINI_API_KEY
   if (!apiKey) throw new Error('Server is missing GEMINI_API_KEY. Pastikan environment variable GEMINI_API_KEY telah diatur.')
@@ -347,7 +347,7 @@ async function callGemini(contentsInput, generationConfig = {}, systemInstructio
   throw new Error(`Semua model Gemini gagal: ${attemptErrors.join(' | ')}`)
 }
 
-// ---------------- 1. Voice to Text (Audio Transcription) ----------------
+// Voice-to-text transcription.
 async function handleTranscribe(request, quota = null) {
   try {
     const ct = request.headers.get('content-type') || ''
@@ -418,7 +418,7 @@ ATURAN MATA UANG PENTING:
   }
 }
 
-// ---------------- 2. Voice & Natural Language Parser (JSON) ----------------
+// Voice and natural-language parser.
 async function handleParse(request, quota = null) {
   try {
     const body = await request.json().catch(() => ({}))
@@ -674,7 +674,7 @@ OUTPUT FORMAT (JSON ONLY):
   }
 }
 
-// ---------------- 3. AI Financial Coach (Chatbot) ----------------
+// AI financial coach.
 async function handleCoach(request, quota = null) {
   try {
     const body = await request.json().catch(() => ({}))
@@ -718,7 +718,7 @@ ${JSON.stringify(ctx).slice(0, 3000)}`
   }
 }
 
-// ---------------- 4. Struk OCR Vision ----------------
+// Receipt OCR.
 const OCR_PROMPT = `You are Arshif's expert receipt OCR vision engine.
 Analyze this receipt or invoice image carefully and extract all transaction details.
 Return ONLY a valid JSON object matching this exact schema:
@@ -960,7 +960,7 @@ async function handleOcr(request, quota = null) {
   }
 }
 
-// ---------------- Exchange Rates ----------------
+// Exchange rates.
 let ratesCache = { at: 0, data: null }
 async function getRates() {
   const ONE_HOUR = 60 * 60 * 1000
@@ -986,7 +986,7 @@ async function getRates() {
   return data
 }
 
-// ---------------- Router Dispatcher (GET & POST) ----------------
+// GET and POST router.
 const RECEIPT_CACHE = new Map()
 
 async function handleDriveThumbnail(request) {

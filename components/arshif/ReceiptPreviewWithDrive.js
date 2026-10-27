@@ -24,7 +24,7 @@ export function getDriveThumbnailUrl(url, size = 800, merchant = '') {
   if (url.includes('drive.google.com')) {
     const fileId = extractDriveFileId(url)
     if (fileId) {
-      // 1. Check local device cache first (instant local preview)
+      // Local device cache gives an instant preview before any network call.
       if (typeof localStorage !== 'undefined') {
         try {
           const cached =
@@ -110,7 +110,7 @@ export default function ReceiptPreviewWithDrive({
 
   const handleImageError = () => {
     if (fallbackIndex < candidateUrls.length - 1) {
-      // Try next candidate
+      // Fall back to the next candidate URL.
       setFallbackIndex((prev) => prev + 1)
       setImgLoading(true)
     } else {

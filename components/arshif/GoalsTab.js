@@ -271,9 +271,7 @@ export default function GoalsTab() {
         </p>
       </div>
 
-      {/* ============================================================ */}
-      {/* 1. SECTION: SUBSCRIPTIONS */}
-      {/* ============================================================ */}
+      {/* Subscriptions */}
       <div className="mt-5">
         <div className="flex items-center justify-between mb-3">
           <span className="text-xs font-semibold tracking-wider text-muted-foreground uppercase">
@@ -445,9 +443,7 @@ export default function GoalsTab() {
         )}
       </div>
 
-      {/* ============================================================ */}
-      {/* 3. SECTION: SAVINGS GOALS */}
-      {/* ============================================================ */}
+      {/* Savings goals */}
       <div className="mt-8">
         <div className="flex items-center justify-between mb-3">
           <span className="text-xs font-semibold tracking-wider text-muted-foreground uppercase">

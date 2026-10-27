@@ -180,16 +180,9 @@ function Header() {
 }
 
 /**
- * TotalBalanceCard — kartu "Total" di deck Home. Diekstrak dari BalanceCarousel
- * agar bisa di-preview/diuji terpisah (dan dipakai ulang).
- *
- * Desain (comfort-first):
- *  - Hierarki tipe: caption kecil "TOTAL BALANCE" -> simbol mata uang kecil
- *    + digit besar tabular (bukan satu string raksasa).
- *  - Depth monokrom: gradient dasar + sheen diagonal + hairline highlight
- *    atas + dua cahaya radial — kartu terasa "fisik" tanpa warna norak.
- *  - Eye toggle jadi target sentuh 32px yang proper (sebelumnya ikon telanjang).
- *  - Pill income/spending: padding & tipe sedikit dibesarkan, border dilembutkan.
+ * Total balance card for the Home deck.
+ * Small caption above a large tabular amount, monochrome depth, and a
+ * 32px eye toggle target.
  */
 export function TotalBalanceCard() {
   const { t, fmt, home, stats, hideBalance, setHideBalance } = useApp()

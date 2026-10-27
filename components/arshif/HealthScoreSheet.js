@@ -109,7 +109,7 @@ export default function HealthScoreSheet({ open, onClose }) {
   const emergencyDesc = `${t('hs_emergency_sub')} · ${(Math.round((d.months || 0) * 10) / 10).toFixed(1)} ${t('hs_months')}`
   const budgetDesc = `${t('hs_budget_sub')} · ${pct(d.expenseRatio)}`
 
-  // Suggestions: surface the weakest areas first.
+  // Tips are ordered weakest-first so the lowest score surfaces at the top.
   const tips = useMemo(() => {
     const arr = [
       { k: 'savingsScore', tip: t('hs_tip_save') },

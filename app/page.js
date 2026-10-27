@@ -77,7 +77,6 @@ export default function App() {
   const fmt = useCallback((amount, code) => formatMoney(amount, code, { locale: LOCALE_MAP[lang] || 'en-US' }), [lang])
   const convertToHome = useCallback((amount, code) => safeConvert(amount, code, home, rates) ?? 0, [home, rates])
 
-  // ---- boot: session + prefs ----
   useEffect(() => {
     try {
       setIsGuest(localStorage.getItem(GUEST_KEY) === '1')
@@ -102,14 +101,12 @@ export default function App() {
     return () => { active = false; clearTimeout(failsafe); listener?.subscription?.unsubscribe?.() }
   }, [])
 
-  // ---- rates ----
   useEffect(() => {
     fetch('/api/rates').then((r) => r.json()).then((d) => { if (d?.rates) setRates(d.rates) }).catch(() => {})
   }, [])
 
   const authed = !!session?.user || isGuest
 
-  // ---- instant cache hydration on session load ----
   useEffect(() => {
     const uid = session?.user?.id
     if (!uid) return
@@ -227,10 +224,7 @@ export default function App() {
     return () => clearTimeout(t)
   }, [authed, open])
 
-  // Deep link dari Web Share Target (?sharedReceipt=1).
-  // Gambar diambil dari Cache Storage (ditulis service worker saat mencegat
-  // POST /share — jadi file tidak lewat server dan tidak kena limit upload),
-  // fallback ke sessionStorage (jalur server /share untuk gambar kecil).
+  // Shared receipt image comes from Cache Storage, with a sessionStorage fallback.
   useEffect(() => {
     if (!authed) return
     let want = false
@@ -340,10 +334,8 @@ export default function App() {
           throw transactionError
         }
       } else {
-        // Persist the transaction first, then update balances. If the balance
-        // write fails, remove the transaction so the ledger cannot diverge.
-        // A transfer with a fee is split: transfer + separate expense, so the
-        // charge is visible in the ledger instead of vanishing between balances.
+        // Persist first, then update balances; a failed balance write removes the transaction.
+        // Transfer fees are split into a separate expense so they stay visible in the ledger.
         const [transferTx, feeTx] = buildTransferWithFeeTransactions(txData)
         saved = await store.createTransaction(transferTx)
         try {
@@ -464,7 +456,6 @@ export default function App() {
     editTx, handleQuickAction,
   }
 
-  // ---- render gates ----
   if (booting) {
     return (
       <div className="min-h-dvh flex items-center justify-center bg-background">

@@ -159,7 +159,7 @@ export default function SetBudgetModal({
     return Math.max(0, diff)
   }, [toDate])
 
-  // Calculation of next period text
+  // Text shown for the next repeat period.
   const nextPeriodText = useMemo(() => {
     if (repeat === 'none') {
       return 'Ends on the selected To date and does not repeat.'
@@ -256,7 +256,7 @@ export default function SetBudgetModal({
   // Overall benchmark comparison target
   const overallTarget = useMemo(() => {
     if (totalAccumulatedLimit <= 0) return 0
-    // If IDR, round to next million or 500k, else round to next 500/1000
+    // IDR rounds to the next 500k; other currencies round to the next 100.
     if (home === 'IDR') {
       return Math.max(totalAccumulatedLimit, Math.ceil(totalAccumulatedLimit / 500000) * 500000 || totalAccumulatedLimit)
     }

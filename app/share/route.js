@@ -1,12 +1,7 @@
-// Web Share Target: menerima gambar struk yang di-share dari aplikasi lain
-// (galeri, kamera, file manager) ke Arshif yang sudah ter-install.
-//
-// Alurnya: OS mengirim POST multipart ke /share -> gambar dibaca di sini,
-// dititipkan ke sessionStorage lewat halaman bridge -> app redirect ke
-// /?sharedReceipt=1 -> page.js membuka ScanReceiptSheet dengan gambar tersebut.
-//
-// Kenapa lewat sessionStorage (bukan server state)? Supaya tidak butuh
-// infrastruktur baru dan tetap jalan di semua instance serverless.
+// Web Share Target: receives a receipt image shared from another app.
+// The OS POSTs multipart to /share, the image is stashed in sessionStorage
+// through a bridge page, then the app redirects to /?sharedReceipt=1.
+// sessionStorage avoids new server infrastructure and works on serverless.
 
 export const dynamic = 'force-dynamic'
 

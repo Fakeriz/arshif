@@ -148,10 +148,7 @@ export default function NotificationsSheet({ open, onClose }) {
     }))
   }, [announcements])
 
-  // Combine lists:
-  // - Urgent notifications first
-  // - Announcements next
-  // - Static welcome if both are empty
+  // Urgent notifications first, then announcements, then the static welcome.
   const combinedNotifications = useMemo(() => {
     const urgentItems = notifications.filter((n) => n.isUrgent)
     const hasAnyContent = urgentItems.length > 0 || announcementItems.length > 0

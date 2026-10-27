@@ -4,19 +4,7 @@ import React, { useMemo } from 'react'
 import { motion, useReducedMotion } from 'framer-motion'
 import { cn } from '@/lib/utils'
 
-/**
- * ============================================================================
- * DOTS LOADER — NEO-FINTECH PRODUCTION GRADE
- * Inspired by beui.dev/components/motion/loader
- * ============================================================================
- *
- * Standar Grand Architect:
- * 1. 100% Pure JavaScript (.jsx), Zero TypeScript type pollution.
- * 2. Absolute Null-Safety & Fallbacks.
- * 3. Hardware-Accelerated (transform-gpu, will-change-transform, 60/120fps).
- * 4. Respects prefers-reduced-motion (vestibular-safe fallback).
- * 5. Strict Monochrome Neo-Fintech aesthetic (Zinc-950 / Pure White).
- */
+/** Animated dots loader with reduced-motion support. */
 
 const DOT_SIZES = {
   xs: 'h-1 w-1',
@@ -77,10 +65,7 @@ export function DotsLoader({
 
   const accessibleText = typeof label === 'string' ? label : (ariaLabel || 'Memuat...')
 
-  // Animasi keyframes beui.dev:
-  // - y: gelombang melayang ke atas -50% sampai -60%
-  // - scale: kompresi & ekspresi elastis (0.85 -> 1.25 -> 0.85)
-  // - opacity: pulsing specular (0.35 -> 1.0 -> 0.35)
+  // Keyframes: vertical wave, elastic scale, and a specular opacity pulse.
   const dotAnimate = reduceMotion
     ? { opacity: [0.35, 1, 0.35] }
     : {
@@ -143,18 +128,13 @@ export function DotsLoader({
 }
 
 /**
- * DotsLoadingScreen — Fullscreen / Overlay Liquid Glass Modal State
+ * Fullscreen or overlay loading state.
+ * Uses the app's modal z-index and a frosted backdrop.
  *
- * Sesuai standar Arshif:
- * - Isolation hierarchy: z-[70] (sejajar sistem modal/sheet Arshif).
- * - Liquid glassmorphism: backdrop-blur(24px) saturate(180%).
- * - Squircle container: rounded-2xl dengan specular highlight border.
- *
- * @param {Object} props
- * @param {boolean} [props.card=true] Tampilkan kartu squircle elevated
- * @param {string} [props.label] Judul proses
- * @param {string} [props.description] Sub-keterangan status
- * @param {string} [props.className] Class tambahan kontainer backdrop
+ * @param {boolean} [card=true] Show the elevated squircle card
+ * @param {string} [label] Process title
+ * @param {string} [description] Status detail
+ * @param {string} [className] Extra backdrop classes
  */
 export function DotsLoadingScreen({
   card = true,

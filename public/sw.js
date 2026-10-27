@@ -1,16 +1,11 @@
-// Arshif service worker — offline support beneran.
-// Strategi:
-// - Install: precache app shell (halaman /, manifest, ikon)
-// - Navigasi: network-first, fallback ke cache '/' saat offline
-// - Aset Next.js (/_next/static): cache-first (hash di nama file = aman)
-// - Aset lain: stale-while-revalidate
-// - API (/api/*): selalu network-only (data jangan di-cache)
+// Arshif service worker — offline support.
+// Install: precache the app shell. Navigation: network-first, cache fallback.
+// Next.js assets: cache-first (filenames are hashed). Other assets:
+// stale-while-revalidate. API: always network-only.
 
 const VERSION = 'arshif-v9';
 
-// Cache khusus untuk Web Share Target: menampung file gambar yang di-share
-// dari aplikasi lain. Terpisah dari cache app shell agar tidak ikut terhapus
-// saat versi SW diperbarui.
+// Separate cache for Web Share Target images so they survive SW version bumps.
 const SHARE_CACHE = 'arshif-share-v1';
 const SHARE_KEY = '/__arshif_shared_receipt__';
 
@@ -97,11 +92,10 @@ self.addEventListener('fetch', (event) => {
   const { request } = event;
   const url = new URL(request.url);
 
-  // Web Share Target: cegat POST /share langsung di service worker.
-  // File gambar dibaca di perangkat dan disimpan ke Cache Storage — tidak
-  // dikirim ke server, jadi tidak kena limit ukuran upload serverless (±4.5MB).
-  // Response-nya halaman perantara yang redirect sendiri via JS ke
-  // /?sharedReceipt=1 (Chrome tidak mengikuti redirect 303 dari SW).
+  // Web Share Target: intercept POST /share in the service worker.
+  // The image is read on-device and stored in Cache Storage, so it never hits
+  // the serverless upload limit. The bridge page self-redirects to
+  // /?sharedReceipt=1 because Chrome ignores a 303 from a service worker.
   if (
     request.method === 'POST' &&
     url.origin === self.location.origin &&
@@ -127,7 +121,7 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // 2. Aset static Next.js -> cache-first
+  // Static Next.js assets use cache-first retrieval.
   if (url.pathname.startsWith('/_next/static/')) {
     event.respondWith(
       caches.match(request).then(
