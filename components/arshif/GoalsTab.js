@@ -619,7 +619,7 @@ export default function GoalsTab() {
               <h3 className="text-base font-bold text-foreground">
                 {t('budget_how_works_title')}
               </h3>
-              <div className="text-xs text-muted-foreground mt-3 space-y-2.5 leading-relaxed text-left" dangerouslySetInnerHTML={{ __html: t('budget_how_works_desc').replace(/\n/g, '<br/>') }} />
+              <div className="text-xs text-muted-foreground mt-3 space-y-2.5 leading-relaxed text-left whitespace-pre-line">{t('budget_how_works_desc')}</div>
             </div>
             <button
               type="button"

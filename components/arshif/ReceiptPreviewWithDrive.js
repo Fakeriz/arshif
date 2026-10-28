@@ -36,9 +36,9 @@ export function getDriveThumbnailUrl(url, size = 800, merchant = '') {
         } catch {}
       }
 
-      // 2. Route through 1st-party API proxy endpoint
-      const mParam = merchant ? `&merchant=${encodeURIComponent(merchant)}` : ''
-      return `/api/drive/thumbnail?id=${fileId}&sz=${size}${mParam}`
+      // Use Google's image CDN directly in the browser. The server proxy is
+      // authenticated and reserved for server-side callers.
+      return `https://lh3.googleusercontent.com/d/${fileId}=w${Math.min(1600, Math.max(80, Number(size) || 800))}`
     }
   }
 
@@ -83,12 +83,9 @@ export default function ReceiptPreviewWithDrive({
     }
 
     if (fileId) {
-      const mParam = merchantName ? `&merchant=${encodeURIComponent(merchantName)}` : ''
-      // 2. 1st-party API Proxy route (no CORS, server cache)
-      list.push(`/api/drive/thumbnail?id=${fileId}&sz=800${mParam}`)
-      // 3. Google Usercontent CDN
+      // 2. Google Usercontent CDN
       list.push(`https://lh3.googleusercontent.com/d/${fileId}=w800`)
-      // 4. Google Drive direct thumbnail
+      // 3. Google Drive direct thumbnail
       list.push(`https://drive.google.com/thumbnail?id=${fileId}&sz=w800`)
     } else {
       list.push(receiptUrl)
