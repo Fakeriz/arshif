@@ -232,10 +232,10 @@ export function CardEdgeSurface({ accent = DECK_EDGE_ACCENT, label = 'Next accou
     >
       <div className="pointer-events-none absolute inset-x-0 top-0 h-12 bg-[#191D25]/70" />
       <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent" />
+      {/* The peek is intentionally a narrow physical edge. Keep it free of clipped
+          copy: the accessible button carries the account label, while this surface
+          communicates depth through its edge accent and tonal layer. */}
       <span className="absolute left-4 top-4 h-1 w-9 rounded-full" style={{ background: accent }} />
-      <span className="absolute left-4 top-8 max-w-[calc(100%-32px)] truncate text-[10px] font-semibold uppercase tracking-[0.16em] text-white/60">
-        {label}
-      </span>
     </div>
   )
 }
