@@ -13,8 +13,18 @@ export function Providers({ children }) {
   // Daftarkan service worker (cuma di production, biar dev nggak ke-cache)
   useEffect(() => {
     if ('serviceWorker' in navigator && process.env.NODE_ENV === 'production') {
-      navigator.serviceWorker.register('/sw.js').catch(() => {
-        // diam saja kalau gagal — app tetap jalan normal
+      navigator.serviceWorker.register('/sw.js').then((registration) => {
+        registration.update().catch(() => {})
+        registration.addEventListener('updatefound', () => {
+          const worker = registration.installing
+          worker?.addEventListener('statechange', () => {
+            if (worker.state === 'installed' && navigator.serviceWorker.controller) {
+              window.dispatchEvent(new CustomEvent('arshif:sw-update'))
+            }
+          })
+        })
+      }).catch((error) => {
+        console.warn('Service worker registration failed:', error)
       });
     }
   }, []);

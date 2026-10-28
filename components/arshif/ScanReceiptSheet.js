@@ -146,7 +146,8 @@ export default function ScanReceiptSheet({ open, onClose, onUse, initialImage, a
       setUploadingBackup(true)
       try {
         const headers = { 'Content-Type': 'application/json' }
-        if (gToken) headers['Authorization'] = `Bearer ${gToken}`
+        if (session?.access_token) headers['Authorization'] = `Bearer ${session.access_token}`
+        if (gToken) headers['x-google-drive-token'] = gToken
 
         const res = await fetch('/api/backup/gdrive', {
           method: 'POST',
@@ -156,7 +157,6 @@ export default function ScanReceiptSheet({ open, onClose, onUse, initialImage, a
             merchant: result.merchant || 'Toko',
             date: result.date || now.toISOString().split('T')[0],
             name: `Struk_${(result.merchant || 'Toko').replace(/\s+/g, '_')}_${result.date || now.toISOString().split('T')[0]}.jpg`,
-            google_token: gToken,
           }),
         })
 

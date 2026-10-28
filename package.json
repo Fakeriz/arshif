@@ -9,7 +9,7 @@
     "build": "rm -rf .next && NODE_ENV=production next build && mkdir -p .next/standalone/public .next/standalone/.next/static && cp -a public/. .next/standalone/public/ && cp -a .next/static/. .next/standalone/.next/static/",
     "start": "node .next/standalone/server.js",
     "test": "node --loader ./tests/ext-loader.mjs --test tests/*.test.mjs",
-    "lint": "echo 'No lint issues'"
+    "lint": "node --check 'app/api/[[...path]]/route.js' && node --check app/share/route.js && node --check lib/supabase.js && node --check next.config.js"
   },
   "dependencies": {
     "@hookform/resolvers": "5.1.1",

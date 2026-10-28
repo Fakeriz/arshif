@@ -668,7 +668,7 @@ grant select, insert, update, delete on public.budgets to authenticated;
 grant select, insert, update, delete on public.transaction_templates to authenticated;
 grant select, insert, update, delete on public.debts to authenticated;
 grant select, insert, update, delete on public.ai_quotas to authenticated;
-grant select, insert on public.support_tickets to authenticated, anon;
+grant select, insert on public.support_tickets to authenticated;
 grant select on public.announcements to authenticated, anon;
 
 -- Kebijakan RLS Profiles: id = auth.uid()
@@ -750,8 +750,8 @@ create policy "support_tickets own read" on public.support_tickets for select to
   using ((select auth.uid()) = user_id);
 
 drop policy if exists "support_tickets insert" on public.support_tickets;
-create policy "support_tickets insert" on public.support_tickets for insert to authenticated, anon
-  with check (true);
+create policy "support_tickets insert" on public.support_tickets for insert to authenticated
+  with check ((select auth.uid()) = user_id);
 
 -- Kebijakan RLS Budgets, Templates, Debts, AI Quotas
 drop policy if exists "budgets own" on public.budgets;

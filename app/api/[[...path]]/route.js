@@ -24,6 +24,24 @@ const CANDIDATE_MODELS = [
 const json = (data, status = 200) => NextResponse.json(data, { status })
 const err = (message, status = 400) => NextResponse.json({ error: message }, { status })
 
+const MAX_AUDIO_BYTES = 10 * 1024 * 1024
+const MAX_IMAGE_BYTES = 10 * 1024 * 1024
+const MAX_PDF_BYTES = 9 * 1024 * 1024
+
+const AUDIO_MIME_TYPES = new Set(['audio/webm', 'audio/ogg', 'audio/wav', 'audio/x-wav', 'audio/mpeg', 'audio/mp4', 'audio/x-m4a'])
+const IMAGE_MIME_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/heic', 'image/heif'])
+
+function base64ByteLength(value) {
+  const normalized = String(value || '').replace(/\s/g, '')
+  if (!normalized || normalized.length % 4 === 1 || !/^[A-Za-z0-9+/]*={0,2}$/.test(normalized)) return 0
+  const padding = normalized.endsWith('==') ? 2 : normalized.endsWith('=') ? 1 : 0
+  return Math.max(0, Math.floor((normalized.length * 3) / 4) - padding)
+}
+
+function readBearerToken(request) {
+  return (request.headers.get('authorization') || '').replace(/^Bearer\s+/i, '').trim()
+}
+
 // Supabase auth and quota helpers.
 function getServerSupabase(token) {
   return createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
@@ -33,8 +51,7 @@ function getServerSupabase(token) {
 }
 
 async function verifyAndConsumeAiAccess(request) {
-  const authHeader = request.headers.get('authorization') || ''
-  const token = authHeader.replace(/^Bearer\s+/i, '').trim()
+  const token = readBearerToken(request)
 
   if (!token) {
     return {
@@ -43,15 +60,6 @@ async function verifyAndConsumeAiAccess(request) {
         { error: 'Fitur AI eksklusif untuk pengguna Premium atau Admin.', code: 'AI_PREMIUM_REQUIRED' },
         403
       ),
-    }
-  }
-
-  // Developer or internal test token support
-  if (token === 'dev-admin-test-token' || token === 'admin-test') {
-    return {
-      allowed: true,
-      user: { id: 'admin-dev', email: 'hafizhxcv@gmail.com' },
-      quota: { remaining: 999, total: 999, is_unlimited: true },
     }
   }
 
@@ -129,15 +137,10 @@ async function verifyAndConsumeAiAccess(request) {
 }
 
 async function handleAiUsage(request) {
-  const authHeader = request.headers.get('authorization') || ''
-  const token = authHeader.replace(/^Bearer\s+/i, '').trim()
+  const token = readBearerToken(request)
 
   if (!token) {
     return err('Autentikasi token Bearer diperlukan.', 401)
-  }
-
-  if (token === 'dev-admin-test-token' || token === 'admin-test') {
-    return json({ remaining: 999, total: 999, is_unlimited: true }, 200)
   }
 
   const supabaseClient = getServerSupabase(token)
@@ -355,7 +358,9 @@ async function handleTranscribe(request, quota = null) {
       const form = await request.formData()
       const file = form.get('file') || form.get('audio')
       if (!file || typeof file.arrayBuffer !== 'function') return err('file is required', 400)
-      mimeType = (file.type || 'audio/webm').split(';')[0].trim()
+      mimeType = (file.type || 'audio/webm').split(';')[0].trim().toLowerCase()
+      if (!AUDIO_MIME_TYPES.has(mimeType)) return err('Unsupported audio format', 415)
+      if (typeof file.size === 'number' && file.size > MAX_AUDIO_BYTES) return err('Audio terlalu besar (maks 10MB)', 413)
       buffer = await file.arrayBuffer()
     } else {
       const body = await request.json().catch(() => ({}))
@@ -363,14 +368,18 @@ async function handleTranscribe(request, quota = null) {
       if (!raw) return err('audio file is required', 400)
       const match = raw.match(/^data:([^;]+);base64,(.+)$/)
       if (match) {
-        mimeType = match[1].trim()
+        mimeType = match[1].trim().toLowerCase()
+        if (!AUDIO_MIME_TYPES.has(mimeType)) return err('Unsupported audio format', 415)
+        if (base64ByteLength(match[2]) > MAX_AUDIO_BYTES) return err('Audio terlalu besar (maks 10MB)', 413)
         buffer = Buffer.from(match[2], 'base64')
       } else {
+        if (base64ByteLength(raw) > MAX_AUDIO_BYTES) return err('Audio terlalu besar (maks 10MB)', 413)
         buffer = Buffer.from(raw, 'base64')
       }
     }
 
     if (!buffer || buffer.byteLength === 0) return err('Audio buffer is empty', 400)
+    if (buffer.byteLength > MAX_AUDIO_BYTES) return err('Audio terlalu besar (maks 10MB)', 413)
     const base64Audio = Buffer.from(buffer).toString('base64')
 
     const promptText = `Transkripsikan rekaman suara audio ini secara presisi kata demi kata.
@@ -772,8 +781,9 @@ async function handleStatementPdf(request, quota = null) {
       const form = await request.formData()
       const file = form.get('file') || form.get('pdf')
       if (!file || typeof file.arrayBuffer !== 'function') return err('PDF file is required', 400)
-      const mt = (file.type || '').split(';')[0].trim()
+      const mt = (file.type || '').split(';')[0].trim().toLowerCase()
       if (mt && mt !== 'application/pdf') return err('File harus berformat PDF', 400)
+      if (typeof file.size === 'number' && file.size > MAX_PDF_BYTES) return err('PDF terlalu besar (maks 9MB)', 413)
       base64 = Buffer.from(await file.arrayBuffer()).toString('base64')
     } else {
       const body = await request.json().catch(() => ({}))
@@ -786,7 +796,7 @@ async function handleStatementPdf(request, quota = null) {
     if (!base64) return err('PDF is required', 400)
     base64 = base64.replace(/\s/g, '')
     // Batas ~9MB biner: cegah penyalahgunaan & biaya AI membengkak
-    if (base64.length > 12 * 1024 * 1024) return err('PDF terlalu besar (maks ~9MB)', 413)
+    if (base64ByteLength(base64) > MAX_PDF_BYTES) return err('PDF terlalu besar (maks 9MB)', 413)
 
     const { text: raw, model } = await callGemini(
       [
@@ -846,14 +856,17 @@ async function handleOcr(request, quota = null) {
       const form = await request.formData()
       const file = form.get('image') || form.get('file')
       if (!file || typeof file.arrayBuffer !== 'function') return err('image file is required', 400)
-      mimeType = (file.type || 'image/jpeg').split(';')[0].trim()
+      mimeType = (file.type || 'image/jpeg').split(';')[0].trim().toLowerCase()
+      if (!IMAGE_MIME_TYPES.has(mimeType)) return err('Unsupported image format', 415)
+      if (typeof file.size === 'number' && file.size > MAX_IMAGE_BYTES) return err('Image terlalu besar (maks 10MB)', 413)
       base64 = Buffer.from(await file.arrayBuffer()).toString('base64')
     } else {
       const body = await request.json().catch(() => ({}))
       const raw = (body?.imageBase64 || body?.image || body?.file || '').toString()
       const match = raw.match(/^data:([^;]+);base64,(.+)$/)
       if (match) {
-        mimeType = match[1].trim()
+        mimeType = match[1].trim().toLowerCase()
+        if (!IMAGE_MIME_TYPES.has(mimeType)) return err('Unsupported image format', 415)
         base64 = match[2]
       } else {
         base64 = raw
@@ -862,6 +875,7 @@ async function handleOcr(request, quota = null) {
 
     if (!base64) return err('image is required', 400)
     base64 = base64.replace(/\s/g, '')
+    if (base64ByteLength(base64) > MAX_IMAGE_BYTES) return err('Image terlalu besar (maks 10MB)', 413)
 
     const { text: raw, model } = await callGemini(
       [
@@ -1120,9 +1134,13 @@ export async function POST(request, ctx) {
       if (ct.includes('application/json')) {
         body = await request.json().catch(() => ({}))
       }
-      let authHeader = request.headers.get('authorization') || ''
-      let token = authHeader.replace(/^Bearer\s+/i, '').trim()
-      if (!token && body?.google_token) token = body.google_token
+      const authToken = readBearerToken(request)
+      if (!authToken) return err('Autentikasi Arshif diperlukan.', 401)
+      const { data: authData, error: authError } = await getServerSupabase(authToken).auth.getUser(authToken)
+      if (authError || !authData?.user) return err('Sesi pengguna tidak valid atau telah berakhir.', 401)
+
+      const token = (request.headers.get('x-google-drive-token') || '').trim()
+      if (!token || token === 'local' || token.startsWith('dev-')) return err('Token Google Drive tidak valid.', 401)
 
       let base64 = ''
       let mimeType = 'image/jpeg'
@@ -1136,7 +1154,10 @@ export async function POST(request, ctx) {
       }
 
       if (!base64) return err('Image data is required', 400)
-      const merchant = (body?.merchant || 'Receipt').trim()
+      base64 = base64.replace(/\s/g, '')
+      if (base64ByteLength(base64) > MAX_IMAGE_BYTES) return err('Image terlalu besar (maks 10MB)', 413)
+      if (!IMAGE_MIME_TYPES.has(mimeType.toLowerCase())) return err('Unsupported image format', 415)
+      const merchant = String(body?.merchant || 'Receipt').trim().slice(0, 120)
       const date = body?.date || new Date().toISOString().split('T')[0]
       const fileName = body?.name || body?.fileName || `Struk_${merchant.replace(/\s+/g, '_')}_${date}.jpg`
 
@@ -1197,18 +1218,6 @@ export async function POST(request, ctx) {
             const driveData = await driveRes.json()
             if (base64) {
               RECEIPT_CACHE.set(driveData.id, { base64, mimeType, time: Date.now() })
-            }
-            const permissionRes = await fetch(`https://www.googleapis.com/drive/v3/files/${driveData.id}/permissions`, {
-              method: 'POST',
-              headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-              body: JSON.stringify({ role: 'reader', type: 'anyone' }),
-            })
-            if (!permissionRes.ok) {
-              await fetch(`https://www.googleapis.com/drive/v3/files/${driveData.id}`, {
-                method: 'DELETE',
-                headers: { Authorization: `Bearer ${token}` },
-              }).catch(() => {})
-              return err('Google Drive file permission could not be configured.', 502)
             }
             return json({
               success: true,

@@ -12,11 +12,12 @@ export async function POST(req) {
   try {
     const form = await req.formData()
     const file = form.get('receipt')
-    if (file && typeof file.arrayBuffer === 'function' && String(file.type || '').startsWith('image/')) {
+    const allowedTypes = new Set(['image/jpeg', 'image/png', 'image/webp'])
+    const mimeType = String(file?.type || '').split(';')[0].trim().toLowerCase()
+    if (file && typeof file.arrayBuffer === 'function' && allowedTypes.has(mimeType)) {
       const buf = Buffer.from(await file.arrayBuffer())
       if (buf.length > 0 && buf.length <= MAX_BYTES) {
-        // Alfabet base64 tidak mengandung kutip/backslash/<, jadi aman di-embed di string JS.
-        dataUrl = `data:${file.type};base64,${buf.toString('base64')}`
+        dataUrl = `data:${mimeType};base64,${buf.toString('base64')}`
       }
     }
   } catch {}
@@ -33,8 +34,8 @@ export async function POST(req) {
 <p>Membuka Arshif&hellip;</p>
 <script>
 try {
-  if ("${dataUrl ? '1' : ''}") {
-    try { sessionStorage.setItem("arshif_shared_receipt", "${dataUrl}"); } catch (e) {}
+  if (${JSON.stringify(Boolean(dataUrl))}) {
+    try { sessionStorage.setItem("arshif_shared_receipt", ${JSON.stringify(dataUrl)}); } catch (e) {}
   }
 } catch (e) {}
 location.replace("/?sharedReceipt=1");
