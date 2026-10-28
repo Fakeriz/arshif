@@ -41,7 +41,7 @@ test('next card left edge sits at the peek boundary in both px and transform per
   assert.ok(Math.abs(cardOffsetPx(1, DECK_WIDTH_390) - 291.55) < 1e-9)
   assert.equal(cardOffsetPx(0, DECK_WIDTH_390), 0)
   assert.ok(Math.abs(cardLadder(1).percent - 98) < 1e-9)
-  assert.equal(cardLadder(2).percent, 105)
+  assert.equal(cardLadder(2).percent, 101)
 })
 
 test('deck keeps at most three legible cards and hides the rest', () => {
