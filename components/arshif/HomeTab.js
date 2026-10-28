@@ -5,9 +5,10 @@ import { Bell, Eye, EyeOff, Receipt, Plus, ChevronRight, Trash2, WifiOff, Refres
 import { DocumentOutline, ReceiptOutline, Profile2userOutline, ChartPieOutline } from './ReiconIcons'
 import { toast } from 'sonner'
 import { useApp } from './context'
-import { Avatar, Card, SectionLabel, EmptyState } from './ui'
+import { Avatar, Card, SectionLabel } from './ui'
 import SwipeTransactionRow from './SwipeTransactionRow'
-import { BankCard, FocalAccountCard } from './BankCard'
+import { FocalAccountCard, digits4 } from './BankCard'
+import { ACCOUNT_TYPES } from '@/lib/categories'
 import AccountDeck from './AccountDeck'
 import { edgeAccent } from '@/lib/accountDeck'
 import { cn } from '@/lib/utils'
@@ -216,10 +217,12 @@ export function TotalBalanceCard() {
           <button
             type="button"
             onClick={() => setHideBalance(!hideBalance)}
-            className="text-[#090A0D]/60 hover:text-[#090A0D] rounded-full transition-colors cursor-pointer select-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#090A0D]/60 p-0 bg-transparent border-0 flex items-center justify-center"
+            className="relative -m-3 h-11 w-11 shrink-0 rounded-full border-0 bg-transparent p-0 text-[#090A0D]/60 hover:text-[#090A0D] transition-colors cursor-pointer select-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#090A0D]/60 flex items-center justify-center"
             aria-label="toggle balance"
+            aria-pressed={hideBalance}
+            data-testid="balance-visibility-toggle"
           >
-            {hideBalance ? <EyeOff size={13} strokeWidth={1.75} /> : <Eye size={13} strokeWidth={1.75} />}
+            {hideBalance ? <EyeOff size={14} strokeWidth={1.9} /> : <Eye size={14} strokeWidth={1.9} />}
           </button>
         </div>
 
@@ -259,7 +262,7 @@ export function TotalBalanceCard() {
   )
 }
 
-function BalanceCarousel() {
+function BalanceCarousel({ onActiveAccountChange }) {
   const { t, fmt, home, stats, accounts = [], hideBalance, setHideBalance, open, convertToHome } = useApp()
   const [idx, setIdx] = useState(0)
   const totalSlides = 1 + accounts.length + 1 // [Total, ...accounts, Add]
@@ -269,7 +272,16 @@ function BalanceCarousel() {
     setIdx((i) => Math.max(0, Math.min(i, totalSlides - 1)))
   }, [totalSlides])
 
-  const goTo = useCallback((i) => setIdx(Math.max(0, Math.min(i, totalSlides - 1))), [totalSlides])
+  const goTo = useCallback((i) => {
+    const next = Math.max(0, Math.min(i, totalSlides - 1))
+    setIdx(next)
+    onActiveAccountChange?.(accounts[next - 1] || null)
+  }, [accounts, onActiveAccountChange, totalSlides])
+
+  useEffect(() => {
+    onActiveAccountChange?.(accounts[idx - 1] || null)
+  }, [accounts, idx, onActiveAccountChange])
+  const handleIndexChange = goTo
 
   // Slide di-memo agar identitas stabil. AccountDeck menyinkronkan berbasis ID,
   // bukan identitas array — re-render parent tidak me-reset posisi kartu.
@@ -297,6 +309,7 @@ function BalanceCarousel() {
             id={a.id}
             fmt={fmt}
             hideBalance={hideBalance}
+            onToggleVisibility={() => setHideBalance(!hideBalance)}
             approxHome={a.currency !== home ? fmt(convertToHome(a.balance, a.currency), home) : null}
             className="h-full w-full"
           />
@@ -330,7 +343,7 @@ function BalanceCarousel() {
       <AccountDeck
         slides={slides}
         index={idx}
-        onIndexChange={setIdx}
+        onIndexChange={handleIndexChange}
         regionLabel={t('accounts')}
       />
 
@@ -358,6 +371,49 @@ function BalanceCarousel() {
           </button>
         ))}
       </div>
+    </div>
+  )
+}
+
+/**
+ * Rincian kartu yang sedang aktif. Hanya menampilkan data akun aktif —
+ * bukan gabungan semua akun — supaya rincian di bawah deck selalu mengikuti
+ * kartu yang dipilih. Sel dibiarkan rapat (density) dan angka tabular.
+ */
+export function ActiveAccountDetails({ account = null, slideCount = 0 }) {
+  const { t, fmt, home, stats, convertToHome, hideBalance } = useApp()
+  const mask = (v) => (hideBalance ? '••••••' : v)
+
+  const cells = useMemo(() => {
+    if (account) {
+      const typeLabel = ACCOUNT_TYPES.find((x) => x.id === account.type)?.label || t('account', 'Account')
+      const approx = account.currency !== home ? `≈ ${fmt(convertToHome(account.balance, account.currency), home)}` : null
+      return [
+        { id: 'balance', label: t('balance'), value: mask(fmt(account.balance ?? 0, account.currency)), sub: approx || account.currency },
+        { id: 'type', label: t('type'), value: typeLabel },
+        { id: 'number', label: t('account_number'), value: hideBalance ? '••••' : `•••• ${digits4(account.id || account.name)}` },
+      ]
+    }
+    return [
+      { id: 'balance', label: t('balance'), value: mask(fmt(stats?.totalBalance || 0, home)), sub: home },
+      { id: 'accounts', label: t('accounts'), value: String(slideCount) },
+      { id: 'net', label: t('this_month'), value: mask(fmt((stats?.income || 0) - (stats?.spending || 0), home)) },
+    ]
+  }, [account, convertToHome, fmt, hideBalance, home, slideCount, stats, t, mask])
+
+  return (
+    <div
+      className="grid grid-cols-3 gap-3 rounded-2xl border border-border/60 bg-white px-3.5 py-3 dark:border-white/[0.08] dark:bg-[#12151B]"
+      data-testid="active-account-details"
+      data-active-account={account?.id || 'total'}
+    >
+      {cells.map((c) => (
+        <div key={c.id} className="min-w-0">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-zinc-500 dark:text-white/45 truncate">{c.label}</p>
+          <p className="text-[13px] font-bold tabular-nums text-zinc-950 dark:text-white truncate mt-1">{c.value}</p>
+          {c.sub ? <p className="text-[10px] font-medium text-zinc-500 dark:text-white/45 truncate mt-0.5 tabular-nums">{c.sub}</p> : null}
+        </div>
+      ))}
     </div>
   )
 }
@@ -450,6 +506,16 @@ export default function HomeTab() {
   const { t, transactions = [], setTab, open, isGuest, store, refresh, accounts = [], rates, deleteTransaction, hideBalance } = useApp()
   const [openRowId, setOpenRowId] = useState(null)
   const [deletingTx, setDeletingTx] = useState(null)
+  // Kartu yang sedang aktif di deck. null = slide Total Balance / slide tambah akun.
+  const [activeAccount, setActiveAccount] = useState(null)
+
+  // Rincian dan transaksi di bawah deck selalu mengikuti kartu aktif.
+  const visible = useMemo(
+    () => (activeAccount ? (transactions || []).filter((tx) => tx?.account_id === activeAccount.id) : transactions || []),
+    [activeAccount, transactions]
+  )
+  const recent = visible.slice(0, 6)
+  const sectionTitle = activeAccount ? `${t('recent_transactions')} · ${activeAccount.name}` : t('recent_transactions')
 
   const handleEdit = (tx) => {
     open?.('addTx', { ...tx, editId: tx?.id })
@@ -477,7 +543,6 @@ export default function HomeTab() {
     }
   }
 
-  const recent = (transactions || []).slice(0, 6)
   return (
     // overflow-x-clip: sudut kartu yang miring saat drag boleh melukis ke area
     // padding, tapi tidak boleh membuat halaman bisa scroll horizontal.
@@ -486,12 +551,18 @@ export default function HomeTab() {
       {isGuest ? (
         <div className="mt-4 rounded-xl bg-zinc-100 border border-zinc-200 dark:bg-zinc-900 dark:border-white/10 px-3 py-2 text-[11px] text-zinc-600 dark:text-zinc-400">{t('demo_banner')}</div>
       ) : null}
-      <BalanceCarousel />
+      <BalanceCarousel onActiveAccountChange={setActiveAccount} />
+
+      {/* Rincian kartu aktif: muncul tepat di bawah deck supaya panel bawah
+          selalu sinkron dengan kartu yang dipilih, bukan gabungan semua kartu. */}
+      <div className="mt-4">
+        <ActiveAccountDetails account={activeAccount} slideCount={accounts.length} />
+      </div>
       <QuickGrid />
 
-      {/* Jarak atas antar section mt-6, jarak bawah ke card mb-2.5 (persis seperti Target Tabungan) */}
-      <div className="flex items-center justify-between mt-6 mb-2.5">
-        <SectionLabel>{t('recent_transactions')}</SectionLabel>
+      {/* Ritme spacing 8/12/16/20/28: quick actions ke heading 28px, heading ke list 12px. */}
+      <div className="flex items-center justify-between mt-7 mb-3">
+        <SectionLabel className="truncate">{sectionTitle}</SectionLabel>
         <button 
           type="button" 
           onClick={() => setTab('transactions')} 
@@ -502,8 +573,31 @@ export default function HomeTab() {
       </div>
 
       {recent.length === 0 ? (
-        <Card className="px-4 py-8">
-          <EmptyState icon={Receipt} title={t('no_transactions')} subtitle={t('no_transactions_sub')} />
+        // Empty state pendek: satu baris alasan + satu CTA, bukan panel besar.
+        <Card className="px-4 py-4">
+          <div className="flex items-center gap-3" data-testid="home-empty-transactions">
+            <div className="h-10 w-10 shrink-0 rounded-xl bg-zinc-100 dark:bg-white/10 text-zinc-700 dark:text-white/70 flex items-center justify-center">
+              <Receipt size={18} strokeWidth={1.75} />
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-[13px] font-bold text-zinc-950 dark:text-white truncate">
+                {activeAccount
+                  ? t('no_transactions_for_account', 'No transactions in {name} yet').replace('{name}', activeAccount.name)
+                  : t('no_transactions')}
+              </p>
+              <p className="text-[11px] text-muted-foreground truncate">
+                {activeAccount ? t('no_transactions_account_sub') : t('no_transactions_sub')}
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => open('addTx', activeAccount ? { account_id: activeAccount.id } : undefined)}
+            className="mt-3 w-full rounded-xl bg-[#0c0c0e] text-white dark:bg-white dark:text-[#0c0c0e] font-bold py-2.5 text-[13px] transition-transform active:scale-[0.99] cursor-pointer"
+            data-testid="home-empty-cta"
+          >
+            {activeAccount ? t('add_transaction') : t('no_transactions_cta')}
+          </button>
         </Card>
       ) : (
         <div className="rounded-2xl border border-border/40 bg-card overflow-hidden divide-y divide-border/30 mb-4 touch-pan-y shadow-xs">

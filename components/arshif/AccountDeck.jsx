@@ -85,10 +85,10 @@ function DeckCard({ slide, diff, slideIndex, total, reduceMotion, dragX, onSelec
             aria-label={`Pilih kartu ${label}`}
             className="block h-full w-full cursor-pointer appearance-none rounded-[19px] border-0 bg-transparent p-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
           >
-            <CardEdgeSurface accent={slide.accent} />
+            <CardEdgeSurface accent={slide.accent} label={label} />
           </button>
         ) : (
-          <CardEdgeSurface accent={slide.accent} />
+          <CardEdgeSurface accent={slide.accent} label={label} />
         )}
       </motion.div>
     </motion.div>

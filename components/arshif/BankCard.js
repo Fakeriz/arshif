@@ -1,6 +1,7 @@
 'use client'
 
 import { useMemo } from 'react'
+import { Eye, EyeOff } from 'lucide-react'
 import { getTheme, ACCOUNT_TYPES } from '@/lib/categories'
 import { getCurrency } from '@/lib/currencies'
 import { LogoBadge } from './ui'
@@ -186,6 +187,33 @@ export function CardMotifTexture({ motif = 'parang', isLight = false }) {
 // The coral gradient is reserved for the active (focal) deck card; non-focal
 // cards use a flat raised surface so a second gradient never competes with it.
 // Amounts and surface hexes come from the single token module.
+/**
+ * Visibility control shared by the focal cards. The visual icon stays small,
+ * but the hit area is a full 44x44px so the target meets the touch minimum.
+ */
+export function CardVisibilityToggle({ hidden = false, onToggle = null, ink = 'dark', label, className = '' }) {
+  if (!onToggle) return null
+  const Icon = hidden ? EyeOff : Eye
+  return (
+    <button
+      type="button"
+      onClick={onToggle}
+      aria-label={label || (hidden ? 'Show balance' : 'Hide balance')}
+      aria-pressed={hidden}
+      data-testid="balance-visibility-toggle"
+      className={cn(
+        'relative z-10 -m-3 h-11 w-11 shrink-0 rounded-full border-0 bg-transparent p-0 flex items-center justify-center transition-colors cursor-pointer select-none focus-visible:outline-none focus-visible:ring-2',
+        ink === 'dark'
+          ? 'text-[#090A0D]/60 hover:text-[#090A0D] focus-visible:ring-[#090A0D]/60'
+          : 'text-white/70 hover:text-white focus-visible:ring-white/60',
+        className
+      )}
+    >
+      <Icon size={15} strokeWidth={1.9} />
+    </button>
+  )
+}
+
 export const FOCAL_GRADIENT_CLASS = 'bg-gradient-to-br from-[#FF5F6D] to-[#FF9966]'
 
 /**
@@ -193,20 +221,21 @@ export const FOCAL_GRADIENT_CLASS = 'bg-gradient-to-br from-[#FF5F6D] to-[#FF996
  * top edge of a back card is visible, and the handoff forbids showing partial
  * unreadable text in the peek.
  */
-export function CardEdgeSurface({ accent = DECK_EDGE_ACCENT, className = '' }) {
+export function CardEdgeSurface({ accent = DECK_EDGE_ACCENT, label = 'Next account', className = '' }) {
   return (
     <div
       className={cn(
-        'relative h-full w-full overflow-hidden rounded-[19px] border border-white/[0.08] bg-[#12151B]',
+        'relative h-full w-full overflow-hidden rounded-[19px] border border-white/[0.08] bg-[#12151B] shadow-[0_14px_30px_rgba(0,0,0,0.28)]',
         className
       )}
       aria-hidden="true"
     >
-      <div className="pointer-events-none absolute inset-x-0 top-0 h-10 bg-[#191D25]/60" />
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-12 bg-[#191D25]/70" />
       <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent" />
-      {/* Edge marks the account's theme, not decoration: it is the only identity
-          hint left once the card is not the focal card. */}
       <span className="absolute left-4 top-4 h-1 w-9 rounded-full" style={{ background: accent }} />
+      <span className="absolute left-4 top-8 max-w-[calc(100%-32px)] truncate text-[10px] font-semibold uppercase tracking-[0.16em] text-white/60">
+        {label}
+      </span>
     </div>
   )
 }
@@ -226,6 +255,7 @@ export function FocalAccountCard({
   id = null,
   fmt = null,
   hideBalance = false,
+  onToggleVisibility = null,
   rightHeader = null,
   approxHome = null,
   className = '',
@@ -246,6 +276,7 @@ export function FocalAccountCard({
         className
       )}
       style={{ color: FOCAL_INK }}
+      data-testid="focal-account-card"
     >
       {/* Sheen: one soft diagonal wash, kept under 8% opacity so it never lifts
           the ink contrast at the corners where the gradient is lightest. */}
@@ -283,7 +314,10 @@ export function FocalAccountCard({
       </div>
 
       <div className="relative z-10 my-auto">
-        <p className="text-[9px] font-bold uppercase tracking-[0.26em] text-[#090A0D]/60">Saldo</p>
+        <div className="flex items-center justify-between gap-2">
+          <p className="text-[9px] font-bold uppercase tracking-[0.26em] text-[#090A0D]/60">Saldo</p>
+          <CardVisibilityToggle hidden={hideBalance} onToggle={onToggleVisibility} />
+        </div>
         <p
           className="text-[30px] sm:text-[34px] leading-none font-extrabold tabular-nums tracking-tight truncate mt-1 text-[#090A0D]"
           title={typeof balance === 'number' ? String(balance) : ''}
