@@ -25,7 +25,7 @@ function rateLimit(request) {
 
 async function resolveUser(request) {
   const header = request.headers.get('authorization') || ''
-  const token = header.replace(/^Bearer\\s+/i, '').trim()
+  const token = header.replace(/^Bearer\s+/i, '').trim()
   if (!token) return null
   try {
     const client = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
