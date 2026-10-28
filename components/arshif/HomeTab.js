@@ -199,7 +199,7 @@ export function TotalBalanceCard() {
 
   return (
     <div
-      className="h-full w-full rounded-2xl p-5 sm:p-6 relative overflow-hidden flex flex-col justify-between select-none text-white border border-white/10 bg-gradient-to-br from-[#151518] via-[#0c0c0e] to-[#08080a]"
+      className="h-full w-full rounded-[19px] p-5 sm:p-6 relative overflow-hidden flex flex-col justify-between select-none text-[#090A0D] border border-black/10 bg-gradient-to-br from-[#FF5F6D] to-[#FF9966]"
       data-testid="balance-card"
     >
       {/* Depth: sheen diagonal + hairline highlight atas — cahaya radial dihapus agar tidak melebihi dose cap glow (R-13) */}
@@ -210,13 +210,13 @@ export function TotalBalanceCard() {
       <div className="relative z-10 flex flex-col gap-1 my-auto text-left">
         {/* Baris Label & Toggle Eye Murni */}
         <div className="flex items-center gap-2">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-white/50 select-none">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#090A0D]/60 select-none">
             {t('balance')}
           </p>
           <button
             type="button"
             onClick={() => setHideBalance(!hideBalance)}
-            className="text-white/50 hover:text-white transition-colors cursor-pointer select-none focus:outline-none p-0 bg-transparent border-0 flex items-center justify-center"
+            className="text-[#090A0D]/60 hover:text-[#090A0D] rounded-full transition-colors cursor-pointer select-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#090A0D]/60 p-0 bg-transparent border-0 flex items-center justify-center"
             aria-label="toggle balance"
           >
             {hideBalance ? <EyeOff size={13} strokeWidth={1.75} /> : <Eye size={13} strokeWidth={1.75} />}
@@ -226,11 +226,11 @@ export function TotalBalanceCard() {
         {/* Baris Angka Nominal (Tetap rapat 4px di bawah SALDO) */}
         <p className="flex items-baseline gap-1.5 tabular-nums leading-none m-0" data-testid="total-balance">
           {balCcy && (
-            <span className="text-base sm:text-lg font-bold text-white/70 shrink-0 select-none">
+            <span className="text-base sm:text-lg font-bold text-[#090A0D]/70 shrink-0 select-none">
               {balCcy}
             </span>
           )}
-          <span className="text-[32px] sm:text-4xl font-extrabold tracking-tight text-white select-text truncate">
+          <span className="text-[32px] sm:text-4xl font-extrabold tracking-tight text-[#090A0D] select-text truncate">
             {mask(balMain)}
           </span>
         </p>
@@ -238,19 +238,19 @@ export function TotalBalanceCard() {
 
       {/* Income & Spending */}
       <div className="grid grid-cols-2 gap-2 relative z-10 mt-2.5">
-        <div className="rounded-xl bg-white/[0.05] border border-white/[0.08] px-2.5 py-2">
-          <div className="text-white/50 text-[9px] font-semibold uppercase tracking-[0.12em]">
+        <div className="rounded-xl bg-black/[0.07] border border-black/10 px-2.5 py-2">
+          <div className="text-[#090A0D]/60 text-[9px] font-semibold uppercase tracking-[0.12em]">
             {t('income')}
           </div>
-          <p className="font-bold text-[11px] tabular-nums text-white/90 mt-0.5 truncate">
+          <p className="font-bold text-[11px] tabular-nums text-[#090A0D]/90 mt-0.5 truncate">
             {mask(fmt(stats?.income || 0, home))}
           </p>
         </div>
-        <div className="rounded-xl bg-white/[0.05] border border-white/[0.08] px-2.5 py-2">
-          <div className="text-white/50 text-[9px] font-semibold uppercase tracking-[0.12em]">
+        <div className="rounded-xl bg-black/[0.07] border border-black/10 px-2.5 py-2">
+          <div className="text-[#090A0D]/60 text-[9px] font-semibold uppercase tracking-[0.12em]">
             {t('spending')}
           </div>
-          <p className="font-bold text-[11px] tabular-nums text-white/90 mt-0.5 truncate">
+          <p className="font-bold text-[11px] tabular-nums text-[#090A0D]/90 mt-0.5 truncate">
             {mask(fmt(stats?.spending || 0, home))}
           </p>
         </div>

@@ -14,6 +14,9 @@ import {
   tiltDegrees,
   liftScale,
   isRenderedCard,
+  CARD_ASPECT,
+  CARD_MIN_HEIGHT,
+  CARD_WIDTH_RATIO,
 } from '@/lib/accountDeck'
 
 const RELAX_SPRING = { type: 'spring', stiffness: 380, damping: 30 }
@@ -48,13 +51,13 @@ function DeckCard({ slide, diff, slideIndex, total, reduceMotion, dragX, onSelec
       }}
       transition={transition}
       style={{
-        width: '85%',
+        width: `${CARD_WIDTH_RATIO * 100}%`,
         zIndex: ladder.zIndex,
         touchAction: 'pan-y',
         pointerEvents: ladder.opacity > 0 ? 'auto' : 'none',
         transformOrigin: 'bottom center',
       }}
-      className={cn('absolute left-0 top-0 select-none transform-gpu', active && 'cursor-grab active:cursor-grabbing')}
+      className={cn('absolute left-0 top-0 h-full select-none transform-gpu', active && 'cursor-grab active:cursor-grabbing')}
       role="group"
       aria-roledescription="slide"
       aria-label={label}
@@ -160,26 +163,40 @@ export default function AccountDeck({ slides = [], index = 0, onIndexChange, reg
         className="relative mx-auto w-full max-w-[420px] outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
       >
         <div className="relative pt-6 pb-6">
-          <div className="relative aspect-[1.58/1] min-h-[185px] w-full overflow-visible">
-            {slides.map((slide, slideIndex) => {
-              const diff = slideIndex - activeIdx
-              if (!isRenderedCard(diff)) return null
-              return (
-                <DeckCard
-                  key={slide.id}
-                  slide={slide}
-                  diff={diff}
-                  slideIndex={slideIndex}
-                  total={total}
-                  reduceMotion={Boolean(reduceMotion)}
-                  dragX={dragX}
-                  onSelect={goTo}
-                  onDragStart={handleDragStart}
-                  onDrag={handleDrag}
-                  onDragEnd={handleDragEnd}
-                />
-              )
-            })}
+          {/* The deck frame defines the peek: the stack is clipped horizontally
+              at the deck edges, so the next card reads as a full-height sliver
+              inside the frame instead of spilling into the page gutter. Vertical
+              overflow stays visible so tilt and fan are not cut off. */}
+          <div className="relative w-full overflow-x-clip" data-testid="account-deck-frame">
+            {/* Height spacer mirrors the focal card box (85% wide, 1.58 ratio,
+                185px floor), so every stack layer is exactly the focal card's
+                height at every width. */}
+            <div
+              aria-hidden="true"
+              className="invisible"
+              style={{ width: `${CARD_WIDTH_RATIO * 100}%`, aspectRatio: `${CARD_ASPECT} / 1`, minHeight: CARD_MIN_HEIGHT }}
+            />
+            <div className="absolute inset-0">
+              {slides.map((slide, slideIndex) => {
+                const diff = slideIndex - activeIdx
+                if (!isRenderedCard(diff)) return null
+                return (
+                  <DeckCard
+                    key={slide.id}
+                    slide={slide}
+                    diff={diff}
+                    slideIndex={slideIndex}
+                    total={total}
+                    reduceMotion={Boolean(reduceMotion)}
+                    dragX={dragX}
+                    onSelect={goTo}
+                    onDragStart={handleDragStart}
+                    onDrag={handleDrag}
+                    onDragEnd={handleDragEnd}
+                  />
+                )
+              })}
+            </div>
           </div>
         </div>
       </div>

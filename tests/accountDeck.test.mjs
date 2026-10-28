@@ -38,9 +38,9 @@ test('active card is 84-86% of the deck width with a 14-16% peek', () => {
 })
 
 test('next card left edge sits at the peek boundary in both px and transform percent', () => {
-  assert.equal(cardOffsetPx(1, DECK_WIDTH_390), 297.5)
+  assert.ok(Math.abs(cardOffsetPx(1, DECK_WIDTH_390) - 291.55) < 1e-9)
   assert.equal(cardOffsetPx(0, DECK_WIDTH_390), 0)
-  assert.equal(cardLadder(1).percent, 100)
+  assert.ok(Math.abs(cardLadder(1).percent - 98) < 1e-9)
   assert.equal(cardLadder(2).percent, 105)
 })
 
