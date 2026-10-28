@@ -3,7 +3,7 @@
 // Next.js assets: cache-first (filenames are hashed). Other assets:
 // stale-while-revalidate. API: always network-only.
 
-const VERSION = 'arshif-v9';
+const VERSION = 'arshif-v10';
 
 // Separate cache for Web Share Target images so they survive SW version bumps.
 const SHARE_CACHE = 'arshif-share-v1';
@@ -16,15 +16,14 @@ const APP_SHELL = [
   '/icon-512.png',
   '/icon-512-maskable.png',
   '/apple-touch-icon.png',
+  '/offline.html',
 ];
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches
-      .open(VERSION)
+    caches.open(VERSION)
       .then((cache) => cache.addAll(APP_SHELL))
       .then(() => self.skipWaiting())
-      .catch(() => self.skipWaiting()) // jangan gagal install kalau satu aset miss
   );
 });
 
@@ -39,10 +38,16 @@ self.addEventListener('activate', (event) => {
   );
 });
 
-function putInCache(request, response) {
-  if (!response || response.status !== 200) return;
+function isCacheableResponse(response, expectedType) {
+  if (!response || response.status !== 200 || response.type === 'opaque') return false;
+  if (expectedType && !response.headers.get('content-type')?.toLowerCase().startsWith(expectedType)) return false;
+  return true;
+}
+
+function putInCache(request, response, expectedType) {
+  if (!isCacheableResponse(response, expectedType)) return;
   const copy = response.clone();
-  caches.open(VERSION).then((cache) => cache.put(request, copy));
+  caches.open(VERSION).then((cache) => cache.put(request, copy)).catch(() => {});
 }
 
 async function handleShareTarget(request) {
@@ -108,15 +113,16 @@ self.addEventListener('fetch', (event) => {
   if (request.method !== 'GET' || url.origin !== self.location.origin) return;
   if (url.pathname.startsWith('/api/')) return; // API: network-only
 
-  // 1. Navigasi halaman -> network-first, fallback offline ke '/'
+  // Navigations are network-first. Preserve route responses and use an explicit
+  // offline document rather than showing the home page for every failed route.
   if (request.mode === 'navigate') {
     event.respondWith(
       fetch(request)
         .then((res) => {
-          putInCache('/', res);
+          if (isCacheableResponse(res, 'text/html')) putInCache(request, res, 'text/html');
           return res;
         })
-        .catch(() => caches.match('/'))
+        .catch(() => caches.match(request).then((cached) => cached || caches.match('/offline.html')))
     );
     return;
   }
