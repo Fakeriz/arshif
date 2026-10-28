@@ -25,7 +25,7 @@ function haptic(ms = 10) {
   } catch {}
 }
 
-function DeckCard({ slide, diff, slideIndex, total, reduceMotion, dragX, onSelect, onDrag, onDragEnd }) {
+function DeckCard({ slide, diff, slideIndex, total, reduceMotion, dragX, onSelect, onDragStart, onDrag, onDragEnd }) {
   const ladder = cardLadder(diff)
   const active = diff === 0
   const peek = diff === 1
@@ -65,8 +65,8 @@ function DeckCard({ slide, diff, slideIndex, total, reduceMotion, dragX, onSelec
       dragConstraints={{ left: 0, right: 0 }}
       dragElastic={0.4}
       dragMomentum={false}
-      onDrag={active ? onDrag : undefined}
       onDragStart={active ? onDragStart : undefined}
+      onDrag={active ? onDrag : undefined}
       onDragEnd={active ? onDragEnd : undefined}
     >
       <motion.div
@@ -131,6 +131,7 @@ export default function AccountDeck({ slides = [], index = 0, onIndexChange, reg
     if (slide) setAnnouncement(deckAnnouncement(activeIdx, total, slide.label))
   }, [activeIdx, slides, total])
 
+  const handleDragStart = useCallback(() => dragX.set(0), [dragX])
   const handleDrag = useCallback((_, info) => dragX.set(info.offset.x), [dragX])
   const handleDragEnd = useCallback((_, info) => {
     animate(dragX, 0, reduceMotion ? { duration: 0 } : RELAX_SPRING)
@@ -173,6 +174,7 @@ export default function AccountDeck({ slides = [], index = 0, onIndexChange, reg
                   reduceMotion={Boolean(reduceMotion)}
                   dragX={dragX}
                   onSelect={goTo}
+                  onDragStart={handleDragStart}
                   onDrag={handleDrag}
                   onDragEnd={handleDragEnd}
                 />
