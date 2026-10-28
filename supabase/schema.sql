@@ -1088,7 +1088,7 @@ begin
 
   -- Panggil webhook endpoint secara asinkron menggunakan ekstensi pg_net
   perform net.http_post(
-    url := 'https://arshif.vercel.app/api/telegram-webhook-user',
+    url := 'https://arshif.biz.id/api/telegram-webhook-user',
     body := v_payload,
     headers := jsonb_build_object(
       'Content-Type', 'application/json',
