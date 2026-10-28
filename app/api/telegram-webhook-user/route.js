@@ -3,6 +3,10 @@ import { NextResponse } from 'next/server'
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
+const escapeTelegramHtml = (value, max = 200) => String(value || '')
+  .replace(/[&<>"']/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[char])
+  .slice(0, max)
+
 export async function POST(req) {
   try {
     const webhookSecret = process.env.TELEGRAM_WEBHOOK_SECRET
@@ -37,11 +41,7 @@ export async function POST(req) {
       )
     }
 
-    const text = `🎉 *User Baru Mendaftar Arshif!*
-
-👤 *Nama:* ${name}
-📧 *Email:* ${email}
-⏰ *Waktu:* ${createdAt}`
+    const text = `<b>User Baru Mendaftar Arshif!</b>\n\n<b>Nama:</b> ${escapeTelegramHtml(name)}\n<b>Email:</b> ${escapeTelegramHtml(email)}\n<b>Waktu:</b> ${escapeTelegramHtml(createdAt)}`
 
     const teleRes = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
       method: 'POST',
@@ -49,23 +49,26 @@ export async function POST(req) {
       body: JSON.stringify({
         chat_id: chatId,
         text,
-        parse_mode: 'Markdown',
+        parse_mode: 'HTML',
       }),
     })
 
     const teleData = await teleRes.json().catch(() => ({}))
 
     if (!teleRes.ok) {
-      console.error('Telegram API Error Response:', teleData)
+      console.error('Telegram API error:', {
+        status: teleRes.status,
+        description: typeof teleData?.description === 'string' ? teleData.description.slice(0, 200) : undefined,
+      })
       return NextResponse.json(
-        { error: 'Telegram API returned error', details: teleData },
-        { status: 500 }
+        { error: 'Telegram notification failed' },
+        { status: 502 }
       )
     }
 
-    return NextResponse.json({ ok: true, data: teleData })
+    return NextResponse.json({ ok: true })
   } catch (err) {
     console.error('Internal handler error:', err)
-    return NextResponse.json({ error: err?.message || 'Unknown error' }, { status: 500 })
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }

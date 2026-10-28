@@ -106,34 +106,47 @@ async function verifyAndConsumeAiAccess(request) {
     }
   }
 
-  // Check & consume quota via RPC
-  let quota = { remaining: 999, total: 999, is_unlimited: true }
+  // Check & consume quota via RPC. Fail closed if the quota service is unavailable.
   try {
     const { data: rpcRes, error: rpcErr } = await supabaseClient.rpc('check_and_consume_ai_quota')
-    if (!rpcErr && rpcRes) {
-      if (rpcRes.allowed === false || rpcRes.remaining === 0) {
-        return {
-          allowed: false,
-          response: json(
-            {
-              error: 'Kuota AI harian Anda telah habis. Reset setiap pukul 00:00 UTC atau upgrade ke Premium.',
-              code: 'AI_QUOTA_EXCEEDED',
-            },
-            429
-          ),
-        }
-      }
-      quota = {
-        remaining: rpcRes.remaining ?? 999,
-        total: rpcRes.total ?? 999,
-        is_unlimited: rpcRes.is_unlimited ?? true,
+    if (rpcErr || !rpcRes || typeof rpcRes !== 'object') {
+      console.error('AI quota check failed:', rpcErr?.message || 'invalid RPC response')
+      return {
+        allowed: false,
+        response: json(
+          { error: 'Kuota AI sedang tidak tersedia. Coba lagi nanti.', code: 'AI_QUOTA_UNAVAILABLE' },
+          503
+        ),
       }
     }
+    if (rpcRes.allowed === false || rpcRes.remaining === 0) {
+      return {
+        allowed: false,
+        response: json(
+          {
+            error: 'Kuota AI harian Anda telah habis. Reset setiap pukul 00:00 UTC atau upgrade ke Premium.',
+            code: 'AI_QUOTA_EXCEEDED',
+          },
+          429
+        ),
+      }
+    }
+    const quota = {
+      remaining: rpcRes.remaining ?? 999,
+      total: rpcRes.total ?? 999,
+      is_unlimited: rpcRes.is_unlimited ?? true,
+    }
+    return { allowed: true, user, quota }
   } catch (e) {
-    console.warn('RPC check_and_consume_ai_quota fallback:', e?.message)
+    console.error('AI quota check failed:', e?.message)
+    return {
+      allowed: false,
+      response: json(
+        { error: 'Kuota AI sedang tidak tersedia. Coba lagi nanti.', code: 'AI_QUOTA_UNAVAILABLE' },
+        503
+      ),
+    }
   }
-
-  return { allowed: true, user, quota }
 }
 
 async function handleAiUsage(request) {
@@ -998,30 +1011,57 @@ async function getRates() {
 }
 
 // GET and POST router.
+const MAX_THUMBNAIL_BYTES = 5 * 1024 * 1024
+const RECEIPT_CACHE_TTL = 15 * 60 * 1000
+const MAX_RECEIPT_CACHE_ENTRIES = 20
 const RECEIPT_CACHE = new Map()
 
+async function readBoundedResponse(res, maxBytes) {
+  const declaredLength = Number(res.headers.get('content-length') || 0)
+  if (declaredLength > maxBytes || !res.body) return null
+  const chunks = []
+  let total = 0
+  for await (const chunk of res.body) {
+    total += chunk.length
+    if (total > maxBytes) return null
+    chunks.push(Buffer.from(chunk))
+  }
+  return Buffer.concat(chunks, total)
+}
+
 async function handleDriveThumbnail(request) {
+  const authToken = readBearerToken(request)
+  if (!authToken) return new NextResponse('Unauthorized', { status: 401 })
+  const { data: authData, error: authError } = await getServerSupabase(authToken).auth.getUser(authToken)
+  if (authError || !authData?.user) return new NextResponse('Unauthorized', { status: 401 })
+
   const urlObj = new URL(request.url)
   const id = urlObj.searchParams.get('id') || urlObj.searchParams.get('fileId') || ''
-  const size = urlObj.searchParams.get('sz') || '800'
+  const size = Math.min(1600, Math.max(80, Number.parseInt(urlObj.searchParams.get('sz') || '800', 10) || 800))
   const merchant = urlObj.searchParams.get('merchant') || 'Google Drive Struk'
 
-  if (!id) return new NextResponse('Missing id', { status: 400 })
+  if (!/^[a-zA-Z0-9_-]{1,256}$/.test(id)) return new NextResponse('Invalid id', { status: 400 })
 
   if (RECEIPT_CACHE.has(id)) {
     const cached = RECEIPT_CACHE.get(id)
-    if (cached?.base64) {
+    if (cached?.time && Date.now() - cached.time > RECEIPT_CACHE_TTL) {
+      RECEIPT_CACHE.delete(id)
+    } else if (cached?.base64) {
       try {
         const buf = Buffer.from(cached.base64, 'base64')
-        return new NextResponse(buf, {
-          status: 200,
-          headers: {
-            'Content-Type': cached.mimeType || 'image/jpeg',
-            'Cache-Control': 'public, max-age=86400, immutable',
-          },
-        })
+        if (buf.length <= MAX_THUMBNAIL_BYTES) {
+          return new NextResponse(buf, {
+            status: 200,
+            headers: {
+              'Content-Type': cached.mimeType || 'image/jpeg',
+              'Cache-Control': 'private, max-age=300',
+            },
+          })
+        }
+        RECEIPT_CACHE.delete(id)
       } catch (err) {
         console.warn('Error reading from receipt cache:', err)
+        RECEIPT_CACHE.delete(id)
       }
     }
   }
@@ -1037,18 +1077,19 @@ async function handleDriveThumbnail(request) {
       try {
         const res = await fetch(targetUrl, {
           headers: {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+            'User-Agent': 'Arshif receipt thumbnail proxy',
           },
-          redirect: 'follow',
+          redirect: 'error',
         })
         const ct = res.headers.get('content-type') || ''
         if (res.ok && (ct.startsWith('image/') || ct === 'application/octet-stream')) {
-          const buf = Buffer.from(await res.arrayBuffer())
+          const buf = await readBoundedResponse(res, MAX_THUMBNAIL_BYTES)
+          if (!buf) continue
           return new NextResponse(buf, {
             status: 200,
             headers: {
               'Content-Type': ct.startsWith('image/') ? ct : 'image/jpeg',
-              'Cache-Control': 'public, max-age=86400',
+              'Cache-Control': 'private, max-age=300',
             },
           })
         }
@@ -1217,6 +1258,10 @@ export async function POST(request, ctx) {
           if (driveRes.ok) {
             const driveData = await driveRes.json()
             if (base64) {
+              if (RECEIPT_CACHE.size >= MAX_RECEIPT_CACHE_ENTRIES) {
+                const oldestId = RECEIPT_CACHE.keys().next().value
+                if (oldestId) RECEIPT_CACHE.delete(oldestId)
+              }
               RECEIPT_CACHE.set(driveData.id, { base64, mimeType, time: Date.now() })
             }
             return json({
@@ -1224,7 +1269,7 @@ export async function POST(request, ctx) {
               provider: 'google_drive',
               fileId: driveData.id,
               url: driveData.webViewLink || `https://drive.google.com/file/d/${driveData.id}/view`,
-              thumbnailUrl: `/api/drive/thumbnail?id=${driveData.id}&merchant=${encodeURIComponent(merchant)}`,
+              thumbnailUrl: `https://lh3.googleusercontent.com/d/${driveData.id}=w800`,
               name: fileName,
               folderId: folderId || null,
             })

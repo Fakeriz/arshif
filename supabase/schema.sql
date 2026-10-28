@@ -846,6 +846,7 @@ create or replace function public.get_ai_quota_status()
 returns jsonb
 language plpgsql
 security definer
+set search_path = public
 as $$
 declare
   v_uid uuid;
@@ -897,6 +898,7 @@ create or replace function public.check_and_consume_ai_quota()
 returns jsonb
 language plpgsql
 security definer
+set search_path = public
 as $$
 declare
   v_uid uuid;
@@ -987,6 +989,7 @@ create or replace function public.handle_new_user()
 returns trigger
 language plpgsql
 security definer
+set search_path = public
 as $$
 declare
   v_full_name text;
@@ -1053,6 +1056,7 @@ create or replace function public.notify_new_user_to_telegram()
 returns trigger
 language plpgsql
 security definer
+set search_path = public
 as $$
 declare
   v_payload jsonb;
