@@ -5,6 +5,7 @@ import { getTheme, ACCOUNT_TYPES } from '@/lib/categories'
 import { getCurrency } from '@/lib/currencies'
 import { LogoBadge } from './ui'
 import { cn } from '@/lib/utils'
+import { DECK_EDGE_ACCENT, FOCAL_INK } from '@/lib/accountDeck'
 
 // Deterministic last-4 digits
 export function digits4(s) {
@@ -178,6 +179,133 @@ export function CardMotifTexture({ motif = 'parang', isLight = false }) {
         </defs>
         <rect width="100%" height="100%" fill="url(#batik-parang)" />
       </svg>
+    </div>
+  )
+}
+
+// The coral gradient is reserved for the active (focal) deck card; non-focal
+// cards use a flat raised surface so a second gradient never competes with it.
+// Amounts and surface hexes come from the single token module.
+export const FOCAL_GRADIENT_CLASS = 'bg-gradient-to-br from-[#FF5F6D] to-[#FF9966]'
+
+/**
+ * Stacked card behind the focal card. Deliberately carries no content: only the
+ * top edge of a back card is visible, and the handoff forbids showing partial
+ * unreadable text in the peek.
+ */
+export function CardEdgeSurface({ accent = DECK_EDGE_ACCENT, className = '' }) {
+  return (
+    <div
+      className={cn(
+        'relative h-full w-full overflow-hidden rounded-[19px] border border-white/[0.08] bg-[#12151B]',
+        className
+      )}
+      aria-hidden="true"
+    >
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-10 bg-[#191D25]/60" />
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent" />
+      {/* Edge marks the account's theme, not decoration: it is the only identity
+          hint left once the card is not the focal card. */}
+      <span className="absolute left-4 top-4 h-1 w-9 rounded-full" style={{ background: accent }} />
+    </div>
+  )
+}
+
+/**
+ * Focal deck card: the only surface allowed to carry the coral gradient.
+ * Composition follows the handoff order, label and balance first, identity and
+ * status below. Ink is near-black because white on #FF5F6D is 2.95:1.
+ */
+export function FocalAccountCard({
+  name,
+  balance,
+  currency = 'USD',
+  theme = 'parang',
+  logo = null,
+  type = 'bank',
+  id = null,
+  fmt = null,
+  hideBalance = false,
+  rightHeader = null,
+  approxHome = null,
+  className = '',
+}) {
+  const th = getTheme(theme)
+  const cur = getCurrency(currency)
+  const typeLabel = ACCOUNT_TYPES.find((x) => x.id === type)?.label || 'Account'
+  const masked = hideBalance ? '••••••' : fmt ? fmt(balance ?? 0, currency) : `${cur.symbol} ${Number(balance || 0).toLocaleString()}`
+  const approx = approxHome && !hideBalance ? (String(approxHome).startsWith('≈') ? approxHome : `≈ ${approxHome}`) : null
+
+  return (
+    <div
+      className={cn(
+        'w-full aspect-[1.58/1] min-h-[185px] rounded-[19px] p-5 relative overflow-hidden flex flex-col justify-between shrink-0 select-none',
+        FOCAL_GRADIENT_CLASS,
+        // Hairline ring only: the handoff forbids a heavy glow on the focal card.
+        'ring-1 ring-inset ring-black/10 shadow-[0_18px_40px_-18px_rgba(255,95,109,0.45)]',
+        className
+      )}
+      style={{ color: FOCAL_INK }}
+    >
+      {/* Sheen: one soft diagonal wash, kept under 8% opacity so it never lifts
+          the ink contrast at the corners where the gradient is lightest. */}
+      <div className="pointer-events-none absolute inset-0 bg-gradient-to-tr from-transparent via-white/[0.07] to-white/[0.14]" />
+
+      <div className="relative z-10 flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <p className="text-[11px] font-bold uppercase tracking-[0.2em] truncate leading-tight text-[#090A0D]/85">
+            {name || '—'}
+          </p>
+          <span className="text-[9px] font-bold uppercase tracking-[0.26em] text-[#090A0D]/60">
+            {typeLabel}
+          </span>
+        </div>
+        <div className="flex items-center gap-2 shrink-0">
+          {rightHeader}
+          {logo ? (
+            <LogoBadge logoId={logo} />
+          ) : (
+            <div
+              className="h-9 w-9 rounded-2xl flex items-center justify-center border border-black/10 bg-black/[0.08] text-[#090A0D] font-extrabold text-[12px] tracking-tight"
+              title={name || 'Account'}
+            >
+              {String(name || '••')
+                .trim()
+                .split(/\s+/)
+                .filter(Boolean)
+                .slice(0, 2)
+                .map((w) => w[0])
+                .join('')
+                .toUpperCase()}
+            </div>
+          )}
+        </div>
+      </div>
+
+      <div className="relative z-10 my-auto">
+        <p className="text-[9px] font-bold uppercase tracking-[0.26em] text-[#090A0D]/60">Saldo</p>
+        <p
+          className="text-[30px] sm:text-[34px] leading-none font-extrabold tabular-nums tracking-tight truncate mt-1 text-[#090A0D]"
+          title={typeof balance === 'number' ? String(balance) : ''}
+        >
+          {masked}
+        </p>
+        {approx ? (
+          <p className="text-[11px] font-medium mt-1 truncate text-[#090A0D]/70">{approx}</p>
+        ) : null}
+      </div>
+
+      <div className="relative z-10 flex items-end justify-between gap-3">
+        <div className="min-w-0">
+          <p className="text-[10px] font-bold tracking-[0.18em] tabular-nums text-[#090A0D]/75">
+            {hideBalance ? '•••• •••• •••• ••••' : `•••• •••• •••• ${digits4(id || name || 'arshif')}`}
+          </p>
+          <p className="text-[9px] font-semibold uppercase tracking-[0.22em] mt-1 text-[#090A0D]/55">
+            {typeLabel} · {th.name}
+          </p>
+        </div>
+        <NetworkBadge network={th.network || 'visa'} isLight />
+      </div>
     </div>
   )
 }

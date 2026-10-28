@@ -7,8 +7,9 @@ import { toast } from 'sonner'
 import { useApp } from './context'
 import { Avatar, Card, SectionLabel, EmptyState } from './ui'
 import SwipeTransactionRow from './SwipeTransactionRow'
-import { BankCard } from './BankCard'
+import { BankCard, FocalAccountCard } from './BankCard'
 import AccountDeck from './AccountDeck'
+import { edgeAccent } from '@/lib/accountDeck'
 import { cn } from '@/lib/utils'
 import { applyTxToBalances } from '@/lib/ledger'
 import { deriveNotifications } from '@/lib/notifications'
@@ -277,28 +278,27 @@ function BalanceCarousel() {
       {
         id: 'total',
         label: t('total_balance'),
+        accent: '#8B929E',
         node: <TotalBalanceCard />,
       },
       // Kartu akun: motif fisik BankCard
       ...(accounts || []).map((a) => ({
         id: `account-${a.id}`,
         label: a.name,
+        accent: edgeAccent(a.theme),
         node: (
-          <BankCard
+          <FocalAccountCard
             name={a.name}
             balance={a.balance}
             currency={a.currency}
             theme={a.theme}
             logo={a.logo}
-            icon={a.icon}
             type={a.type}
             id={a.id}
             fmt={fmt}
             hideBalance={hideBalance}
-            flat={true}
-            showOcclusionShadow={false}
             approxHome={a.currency !== home ? fmt(convertToHome(a.balance, a.currency), home) : null}
-            className="h-full w-full shadow-none"
+            className="h-full w-full"
           />
         ),
       })),
@@ -306,11 +306,12 @@ function BalanceCarousel() {
       {
         id: 'add',
         label: t('new_account'),
+        accent: '#8B929E',
         node: (
           <button
             type="button"
             onClick={() => open('newAccount')}
-            className="w-full h-full rounded-2xl border-2 border-dashed border-border/80 bg-white dark:bg-[#121214] flex flex-col items-center justify-center text-muted-foreground gap-3 hover:border-zinc-950 dark:hover:border-white hover:text-foreground transition-all active:scale-[0.99] group"
+            className="w-full h-full rounded-[19px] border-2 border-dashed border-border/80 bg-card flex flex-col items-center justify-center text-muted-foreground gap-3 hover:border-zinc-950 dark:hover:border-white hover:text-foreground transition-all active:scale-[0.99] group"
             data-testid="add-account-card"
           >
             <div className="h-12 w-12 rounded-full bg-zinc-100 text-zinc-900 dark:bg-white/10 dark:text-white flex items-center justify-center group-hover:scale-105 group-hover:bg-[#0c0c0e] group-hover:text-white dark:group-hover:bg-white dark:group-hover:text-[#0c0c0e] transition-all">
@@ -333,9 +334,10 @@ function BalanceCarousel() {
         regionLabel={t('accounts')}
       />
 
-      {/* Indikator halaman: dots saja. Navigasi utama via swipe;
-          keyboard tetap bisa via fokus ke deck (panah/Home/End). */}
-      <div className="flex justify-center items-center gap-1.5 mt-2">
+      {/* Indikator halaman: deck yang menggeser kartu, jadi tiap dot hanya perlu
+          satu kontrol. Hit area 44x44px dengan visual tetap kecil, dan
+          aria-current menandai posisi aktif. */}
+      <div className="flex flex-wrap justify-center items-center mt-1">
         {slides.map((s, i) => (
           <button
             key={s.id}
@@ -343,13 +345,17 @@ function BalanceCarousel() {
             onClick={() => goTo(i)}
             aria-label={`${s.label} (${i + 1} dari ${slides.length})`}
             aria-current={i === idx ? 'true' : undefined}
-            className={cn(
-              'transition-all duration-300 cursor-pointer',
-              i === idx
-                ? 'w-5 h-1.5 rounded-full bg-foreground'
-                : 'w-1.5 h-1.5 rounded-full bg-muted-foreground/30 hover:bg-muted-foreground/50'
-            )}
-          />
+            className="group h-11 w-11 shrink-0 rounded-full border-0 bg-transparent p-0 flex items-center justify-center cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 focus-visible:ring-offset-background"
+          >
+            <span
+              className={cn(
+                'block rounded-full transition-all duration-300',
+                i === idx
+                  ? 'h-1.5 w-6 bg-[#E23D4C] dark:bg-gradient-to-r dark:from-[#FF5F6D] dark:to-[#FF9966]'
+                  : 'h-1.5 w-1.5 bg-muted-foreground/40 group-hover:bg-muted-foreground/70'
+              )}
+            />
+          </button>
         ))}
       </div>
     </div>
