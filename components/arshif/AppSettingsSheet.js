@@ -28,7 +28,6 @@ export default function AppSettingsSheet({ open, onClose }) {
   const { theme, setTheme } = useTheme()
 
   const nav = (fn) => { onClose?.(); setTimeout(() => fn(), 140) }
-  const soon = () => toast(t('coming_soon'))
   const langName = LANGUAGES.find((l) => l.code === lang)?.name || 'English'
   const box = 'rounded-2xl divide-y divide-zinc-200 dark:divide-white/10 border border-zinc-200 dark:border-white/10 bg-white dark:bg-[#121214] overflow-hidden'
 
@@ -57,15 +56,15 @@ export default function AppSettingsSheet({ open, onClose }) {
         </div>
 
         <div className={box}>
-          <Row icon={CalendarDays} label={t('month_start_date')} sub={t('month_start_desc') || t('month_start_sub')} onClick={soon} testId="set-monthstart" />
+          <Row icon={CalendarDays} label={t('month_start_date')} sub={t('month_start_desc') || t('month_start_sub')} onClick={() => nav(() => openSheet('monthStart'))} testId="set-monthstart" />
           <Row icon={Cloud} label={t('cloud_receipt_backup', 'Cloud Receipt Backup')} sub={providerSubtitle} onClick={() => nav(() => openSheet('cloudBackup'))} testId="set-cloud-backup" />
-          <Row icon={ShieldCheck} label={t('account_backup')} sub={t('account_backup_sub')} onClick={soon} testId="set-backup" />
+          <Row icon={ShieldCheck} label={t('account_backup')} sub={t('account_backup_sub')} onClick={() => nav(() => openSheet('backup'))} testId="set-backup" />
           <Row icon={Bell} label={t('notifications')} sub={t('notifications_sub')} onClick={() => nav(() => openSheet('notifSettings'))} testId="set-notifications" />
         </div>
 
         <div className={box}>
-          <Row icon={PlayCircle} label={t('tutorial')} sub={t('tutorial_sub')} onClick={soon} testId="set-tutorial" />
-          <Row icon={ShieldAlert} label={t('help_legal')} sub={t('help_legal_sub')} onClick={soon} testId="set-help" />
+          <Row icon={PlayCircle} label={t('tutorial')} sub={t('tutorial_sub')} onClick={() => nav(() => openSheet('tutorial'))} testId="set-tutorial" />
+          <Row icon={ShieldAlert} label={t('help_legal')} sub={t('help_legal_sub')} onClick={() => nav(() => openSheet('help'))} testId="set-help" />
         </div>
         <div className="h-2" />
       </div>

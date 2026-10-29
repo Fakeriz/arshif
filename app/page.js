@@ -45,6 +45,10 @@ import AiPremiumSheet from '@/components/arshif/AiPremiumSheet'
 import PaywallSheet from '@/components/arshif/PaywallSheet'
 import CloudReceiptBackupSheet from '@/components/arshif/CloudReceiptBackupSheet'
 import ReceiptGallerySheet from '@/components/arshif/ReceiptGallerySheet'
+import MonthStartSheet from '@/components/arshif/MonthStartSheet'
+import AccountBackupSheet from '@/components/arshif/AccountBackupSheet'
+import TutorialSheet from '@/components/arshif/TutorialSheet'
+import HelpLegalSheet from '@/components/arshif/HelpLegalSheet'
 
 const GUEST_KEY = 'arshif_guest_mode'
 const ONBOARD_KEY = 'arshif_onboarded'
@@ -551,6 +555,10 @@ export default function App() {
         <PaywallSheet open={!!sheets.paywall} onClose={() => close('paywall')} />
         <CloudReceiptBackupSheet open={!!sheets.cloudBackup} onClose={() => close('cloudBackup')} />
         <NotificationSettingsSheet open={Boolean(sheets?.notifSettings || sheets?.notificationSettings)} onClose={() => { close('notifSettings'); close('notificationSettings') }} />
+        <MonthStartSheet open={!!sheets.monthStart} onClose={() => close('monthStart')} />
+        <AccountBackupSheet open={!!sheets.backup} onClose={() => close('backup')} />
+        <TutorialSheet open={!!sheets.tutorial} onClose={() => close('tutorial')} />
+        <HelpLegalSheet open={!!sheets.help} onClose={() => close('help')} />
       </main>
     </AppContext.Provider>
   )
