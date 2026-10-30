@@ -64,9 +64,26 @@ test('kata kerja received pada rule 10 dibaca sebagai income', () => {
   assert.equal(r.direction, 'incoming')
 })
 
-// Rule 12 asli (cashback) tidak pernah bisa match: regex-nya menuntut "your\b"
-// langsung diikuti kata kunci tanpa spasi. Artefak decompile, dibiarkan apa
-// adanya. Direction cashback masih bisa tercapai lewat rule 13 (percent off).
+// Rule 12 pola asli dari riset adalah artefak decompile: 'your\b' langsung
+// diikuti kata kunci tanpa spasi, mustahil match (diverifikasi). Pola baru:
+// nominal + kata kunci cashback/discount/reward, MY + IDR, case-insensitive.
+test('cashback flat amount terdeteksi rule 12 (pola hasil fix)', () => {
+  const r = matchAlert('RM5.00 cashback credited to your account')
+  assert.equal(r.ruleId, 12)
+  assert.equal(r.amount, 5)
+  assert.equal(r.currency, 'MYR')
+  assert.equal(r.direction, 'cashback')
+  assert.equal(r.type, 'income')
+})
+
+test('cashback rupiah terdeteksi dengan ribuan gaya Indonesia', () => {
+  const r = matchAlert('Rp 25.000 cashback dari transaksi Anda')
+  assert.equal(r.ruleId, 12)
+  assert.equal(r.amount, 25000)
+  assert.equal(r.currency, 'IDR')
+})
+
+// Rule 13 (percent off) tetap jalan untuk cashback berbasis persen.
 test('percent off menghasilkan direction cashback', () => {
   const r = matchAlert('Enjoy 10% off with your card this weekend')
   assert.equal(r.ruleId, 13)
