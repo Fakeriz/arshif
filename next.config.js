@@ -1,5 +1,10 @@
+// 'standalone' hanya untuk Docker build (Dockerfile menyalin .next/standalone).
+// Vercel mem-build dengan output default-nya sendiri; flag env ini tidak ada
+// di sana, jadi config aman dipakai di kedua tempat tanpa perubahan.
+const isDockerBuild = process.env.DOCKER_BUILD === '1'
+
 const nextConfig = {
-  output: 'standalone',
+  ...(isDockerBuild ? { output: 'standalone' } : {}),
   devIndicators: false,
   env: {
     NEXT_PUBLIC_VERCEL_GIT_COMMIT_SHA: process.env.VERCEL_GIT_COMMIT_SHA || '',
