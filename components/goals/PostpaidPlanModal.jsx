@@ -125,14 +125,14 @@ export default function PostpaidPlanModal({
         notes: note.trim() || null,
       }
 
-      // 1. Simpan langsung via store createGoal atau createDebt
+      // Simpan langsung via store createGoal atau createDebt
       if (store?.createGoal) {
         await store.createGoal(payload)
       } else if (store?.createDebt) {
         await store.createDebt(payload)
       }
 
-      // 2. Hubungkan ke checklist Bills jika pengingat aktif
+      // Tautkan ke checklist Bills jika pengingat aktif
       if (store?.createBill && (enableReminder || Number(currentBillAmount) > 0)) {
         try {
           await store.createBill({
@@ -163,11 +163,10 @@ export default function PostpaidPlanModal({
     triggerHaptic('warning')
     setIsSubmitting(true)
     try {
-      // 1. Hapus dari tabel goals Supabase (sumber utama)
+      // Hapus dari goals Supabase (sumber utama), lalu fallback ke tabel debt
       if (store?.deleteGoal) {
         await store.deleteGoal(plan.id)
       }
-      // 2. Fallback jika ada di tabel debt terpisah
       if (store?.deleteDebt) {
         await store.deleteDebt(plan.id).catch(() => {})
       }

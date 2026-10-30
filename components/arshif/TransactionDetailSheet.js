@@ -144,6 +144,7 @@ export default function TransactionDetailSheet({ open, isOpen: propIsOpen, onClo
         receiptUrl={tx.receipt_url}
         storageProvider={tx.storage_provider}
         merchantName={tx.merchant || tx.note || tx.description}
+        receiptCache={tx.receipt_cache || tx.receipt_preview}
         onOpenFullImage={() => setViewImg(true)}
       />
 

@@ -114,8 +114,8 @@ export default function AnalyticsSheet({ open, onClose }) {
     setCursorDate(next)
   }
 
-  // All-time cash position
   const allTimeCash = useMemo(() => {
+    // Cash on hand (non-liability) dari semua/transaksi akun terpilih
     if ((accounts || []).length > 0) {
       if (selectedAcc === 'all') {
         return (accounts || []).reduce((acc, a) => acc + toHome(signedAccountBalance(a), a?.currency), 0)
@@ -139,7 +139,6 @@ export default function AnalyticsSheet({ open, onClose }) {
     })
   }, [transactions, selectedAcc, range])
 
-  // Financial calculations
   const periodIncome = useMemo(() => {
     return filteredTxs
       .filter((tx) => tx?.type === 'income')

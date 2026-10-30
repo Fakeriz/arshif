@@ -205,9 +205,8 @@ export function TotalBalanceCard() {
       <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/[0.03] to-white/[0.07] pointer-events-none" />
       <div className="absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent via-white/25 to-transparent pointer-events-none" />
 
-      {/* Group Saldo: Ditarik ke TENGAH-KIRI kartu secara vertikal (my-auto) */}
+      {/* Group Saldo: ditarik ke tengah-kiri kartu secara vertikal */}
       <div className="relative z-10 flex flex-col gap-1 my-auto text-left">
-        {/* Baris Label & Toggle Eye Murni */}
         <div className="flex items-center gap-2">
           <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-white/50 select-none">
             {t('balance')}
@@ -222,7 +221,6 @@ export function TotalBalanceCard() {
           </button>
         </div>
 
-        {/* Baris Angka Nominal (Tetap rapat 4px di bawah SALDO) */}
         <p className="flex items-baseline gap-1.5 tabular-nums leading-none m-0" data-testid="total-balance">
           {balCcy && (
             <span className="text-base sm:text-lg font-bold text-white/70 shrink-0 select-none">

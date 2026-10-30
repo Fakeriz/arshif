@@ -301,7 +301,7 @@ export default function App() {
     const prevTxList = transactions
     const prevAccList = accounts
 
-    // 1. Instant optimistic state update
+    // Optimistic update dulu, revert bila persist gagal
     let nextAccounts = accounts
     if (editId) {
       const old = transactions.find((x) => x.id === editId)
@@ -364,7 +364,6 @@ export default function App() {
         }
       }
 
-      // Silent background sync
       refresh()
       return saved
     } catch (err) {
@@ -381,7 +380,7 @@ export default function App() {
     const prevTxList = transactions
     const prevAccList = accounts
 
-    // 1. Instant optimistic state update (0ms latency for user)
+    // Optimistic update dulu, revert bila persist gagal
     setTransactions((prev) => prev.filter((item) => item.id !== txId))
     const deltaAccounts = computeBalanceDelta(accounts, tx, -1, rates)
     if (deltaAccounts) {
@@ -399,7 +398,6 @@ export default function App() {
         try { await applyTxToBalances(store, prevAccList.map((account) => ({ ...account })), tx, 1, rates) } catch {}
         throw deleteError
       }
-      // Silent background sync
       refresh()
       return true
     } catch (err) {
@@ -410,7 +408,7 @@ export default function App() {
     }
   }, [transactions, accounts, rates, store, refresh])
 
-  // stats
+  // Stats bulan berjalan untuk Home
   const stats = useMemo(() => {
     const totalBalance = accounts.reduce((s, a) => s + (safeConvert(signedAccountBalance(a), a.currency, home, rates) ?? 0), 0)
     const now = new Date()

@@ -116,7 +116,7 @@ export default function AccountSupportSection() {
     let attachment_url = null
 
     try {
-      // 1. Kirim langsung ke Telegram Admin via FormData (Native multipart/form-data)
+      // Kirim langsung ke Telegram Admin via FormData (multipart native)
       await sendTelegramSupportNotification({
         type: rptType,
         subject: subject.trim(),
@@ -127,7 +127,7 @@ export default function AccountSupportSection() {
         accessToken: session?.access_token || '',
       })
 
-      // 2. Upload opsional ke Supabase Storage untuk riwayat aplikasi
+      // Upload opsional ke Supabase Storage untuk riwayat aplikasi
       if (file && session?.user?.id) {
         const sanitized = file.name.replace(/[^a-zA-Z0-9._-]/g, '_')
         const fileName = `${session.user.id}/${Date.now()}_${sanitized}`
@@ -150,7 +150,7 @@ export default function AccountSupportSection() {
         }
       }
 
-      // 3. Simpan ke database Supabase jika tersedia
+      // Simpan ke database Supabase jika tersedia
       const ticketPayload = {
         user_id: session?.user?.id || null,
         user_email: session?.user?.email || null,
@@ -171,7 +171,7 @@ export default function AccountSupportSection() {
         console.warn('DB insert exception:', dbEx)
       }
 
-      // 4. Simpan ke riwayat lokal
+      // Simpan ke riwayat lokal
       const localEntry = {
         id: uid(),
         type: rptType,
@@ -185,7 +185,7 @@ export default function AccountSupportSection() {
       setReports(next)
       lsSet(REPORTS_KEY, next)
 
-      // 5. Berikan feedback sukses dan reset formulir
+      // Feedback sukses + reset form
       toast.success(t('report_success_toast', 'Laporan berhasil dikirim! Tim Arshif akan segera memeriksanya.'))
       setSubject('')
       setDescription('')

@@ -7,12 +7,10 @@ import { ArrowLeftRight } from 'lucide-react'
 
 // Pembersih otomatis kata awalan seperti "Beli", "Bayar", "Jajan", dll.
 function formatCleanTitle(tx, fallback) {
-  // 1. Jika ada nama merchant asli yang bukan kata kerja, pakai nama merchant
   if (tx?.merchant && !/^(beli|jajan|bayar|pesan|order|topup|tarik)\b/i.test(tx.merchant.trim())) {
     return tx.merchant.trim()
   }
 
-  // 2. Ambil dari nama items (jika multi-item) atau note/description
   let raw =
     (Array.isArray(tx?.items) && tx.items.length > 0 ? tx.items.map((i) => i.name).join(' & ') : '') ||
     tx?.note ||
@@ -20,7 +18,7 @@ function formatCleanTitle(tx, fallback) {
     fallback ||
     'Transaksi'
 
-  // 3. Pangkas kata awalan "beli", "jajan", "bayar", "pesan"
+  // Pangkas kata awalan "beli", "jajan", "bayar", "pesan"
   const cleaned = raw.replace(/^(beli|jajan|bayar|pesan|order|belanja)\s+/i, '').trim()
 
   return cleaned ? cleaned.charAt(0).toUpperCase() + cleaned.slice(1) : fallback || 'Transaksi'

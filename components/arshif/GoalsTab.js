@@ -46,26 +46,21 @@ export function isLoanOrDebt(item) {
 export default function GoalsTab() {
   const { t, goals = [], transactions = [], accounts = [], fmt, home, rates, store, refresh, open: openSheet } = useApp()
 
-  // 1. Subscriptions State
   const [subscriptions, setSubscriptions] = useState([])
   const [subSheetOpen, setSubSheetOpen] = useState(false)
   const [selectedSub, setSelectedSub] = useState(null)
 
-  // 2. Budgets State
   const [budgets, setBudgets] = useState([])
   const [budgetModalOpen, setBudgetModalOpen] = useState(false)
   const [editingBudget, setEditingBudget] = useState(null)
   const [showBudgetHelp, setShowBudgetHelp] = useState(false)
 
-  // 3. Savings Goals State
   const [creatingGoal, setCreatingGoal] = useState(false)
   const [funding, setFunding] = useState(null)
   const [fund, setFund] = useState('')
 
-  // 4. Loans & BNPL State
   const [loans, setLoans] = useState([])
 
-  // Load all data
   const loadData = async () => {
     try {
       if (store?.listSubscriptions) {
@@ -86,7 +81,7 @@ export default function GoalsTab() {
     }
 
     try {
-      // 1. Ambil data goals yang berstatus pinjaman/cicilan/tenure/interest
+      // Hanya goals berstatus pinjaman/cicilan/tenure/interest yang dianggap hutang
       const loanGoalsFromApp = (goals || []).filter((g) => isLoanOrDebt(g))
 
       let debtsFromStore = []
@@ -118,7 +113,7 @@ export default function GoalsTab() {
     loadData()
   }, [goals]) // <-- Masukkan 'goals' agar otomatis me-refresh saat ada data baru tersimpan
 
-  // 1. Subscriptions Accumulation
+  // Total langganan per bulan (semua siklus dinormalisasi ke 1 bulan)
   const monthlySubTotal = useMemo(() => {
     if (!subscriptions || subscriptions.length === 0) return 0
     return subscriptions.reduce((sum, s) => {
@@ -133,7 +128,7 @@ export default function GoalsTab() {
     }, 0)
   }, [subscriptions, home, rates])
 
-  // 2. Budgets Calculation with current month transactions
+  // Budget bulan berjalan dengan transaksi bulan ini
   const now = new Date()
   const currentMonthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
   const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate()
@@ -171,7 +166,7 @@ export default function GoalsTab() {
     return (budgets || []).reduce((sum, b) => sum + (Number(b?.limit_amount) || 0), 0)
   }, [budgets])
 
-  // 3. Savings Goals: Strictly isolate pure savings items (never render loans, debts, or installments)
+  // Isolasi savings murni — pinjaman/hutang/cicilan tidak pernah ikut dihitung
   const savingsGoals = useMemo(() => {
     return (goals || []).filter((g) => {
       if (!g) return false
@@ -181,7 +176,6 @@ export default function GoalsTab() {
     })
   }, [goals])
 
-  // 2. Baru kemudian hitung totalSaved menggunakan savingsGoals di bawahnya
   const totalSaved = useMemo(() => {
     return savingsGoals.reduce((sum, g) => {
       const amt = Number(g?.saved_amount) || 0
@@ -189,7 +183,6 @@ export default function GoalsTab() {
     }, 0)
   }, [savingsGoals, home, rates])
 
-  // 4. Loans Total Installments
   const totalLoanInstallment = useMemo(() => {
     return (loans || []).reduce((sum, l) => {
       const amt = Number(l?.installment_amount || l?.monthly_payment || l?.amount) || 0
@@ -197,7 +190,6 @@ export default function GoalsTab() {
     }, 0)
   }, [loans, home, rates])
 
-  // Currency-adaptive BNPL Subtitle
   const bnplSubtitle = useMemo(() => {
     if (home === 'IDR') return 'SPayLater, Kredivo, GoPay Later, Cicilan'
     if (home === 'MYR') return 'Atome, Grab PayLater, SPayLater'
@@ -205,7 +197,6 @@ export default function GoalsTab() {
     return 'PayLater, Installments, Loans'
   }, [home])
 
-  // Handlers for Subscriptions
   const openNewSub = () => {
     setSelectedSub(null)
     setSubSheetOpen(true)
@@ -216,7 +207,6 @@ export default function GoalsTab() {
     setSubSheetOpen(true)
   }
 
-  // Handlers for Budgets
   const openNewBudget = () => {
     setEditingBudget(null)
     setBudgetModalOpen(true)

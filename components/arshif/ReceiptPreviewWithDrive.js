@@ -24,18 +24,6 @@ export function getDriveThumbnailUrl(url, size = 800, merchant = '') {
   if (url.includes('drive.google.com')) {
     const fileId = extractDriveFileId(url)
     if (fileId) {
-      // Local device cache gives an instant preview before any network call.
-      if (typeof localStorage !== 'undefined') {
-        try {
-          const cached =
-            localStorage.getItem(`arshif_receipt_cache_${fileId}`) ||
-            localStorage.getItem(`arshif_receipt_cache_${url}`)
-          if (cached && (cached.startsWith('data:image') || cached.startsWith('http'))) {
-            return cached
-          }
-        } catch {}
-      }
-
       // Use Google's image CDN directly in the browser. The server proxy is
       // authenticated and reserved for server-side callers.
       return `https://lh3.googleusercontent.com/d/${fileId}=w${Math.min(1600, Math.max(80, Number(size) || 800))}`
@@ -49,6 +37,7 @@ export default function ReceiptPreviewWithDrive({
   receiptUrl,
   storageProvider,
   merchantName,
+  receiptCache,
   onOpenFullImage,
 }) {
   const [imgError, setImgError] = useState(false)
@@ -70,16 +59,9 @@ export default function ReceiptPreviewWithDrive({
 
     const list = []
 
-    // 1. Local cached image data
-    if (typeof localStorage !== 'undefined' && fileId) {
-      try {
-        const cached =
-          localStorage.getItem(`arshif_receipt_cache_${fileId}`) ||
-          localStorage.getItem(`arshif_receipt_cache_${receiptUrl}`)
-        if (cached && (cached.startsWith('data:image') || cached.startsWith('http'))) {
-          list.push(cached)
-        }
-      } catch {}
+    // 1. Cached image data dari kolom receipt_cache (ikut sinkron antar-perangkat)
+    if (receiptCache && typeof receiptCache === 'string' && (receiptCache.startsWith('data:image') || receiptCache.startsWith('http'))) {
+      list.push(receiptCache)
     }
 
     if (fileId) {
@@ -92,7 +74,7 @@ export default function ReceiptPreviewWithDrive({
     }
 
     return Array.from(new Set(list))
-  }, [receiptUrl, fileId, merchantName])
+  }, [receiptUrl, fileId, merchantName, receiptCache])
 
   const currentImageSrc = candidateUrls[fallbackIndex] || receiptUrl
 

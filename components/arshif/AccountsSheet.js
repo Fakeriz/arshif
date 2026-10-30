@@ -42,7 +42,6 @@ export default function AccountsSheet({ open, onClose }) {
   const [deletingAccount, setDeletingAccount] = useState(null)
   const [savingEdit, setSavingEdit] = useState(false)
 
-  // Edit form state
   const [editName, setEditName] = useState('')
   const [editTheme, setEditTheme] = useState('parang')
   const [editType, setEditType] = useState('bank')
@@ -199,9 +198,6 @@ export default function AccountsSheet({ open, onClose }) {
         transition={{ type: 'spring', stiffness: 350, damping: 30, mass: 0.8 }}
         className="h-[100dvh] w-full fixed inset-0 z-50 bg-background flex flex-col overflow-hidden select-none transform-gpu will-change-transform"
       >
-        {/* ======================================================================
-            1. NAVIGASI ATAS (TERKUNCI DI TENGAH: max-w-[420px] mx-auto)
-           ====================================================================== */}
         <div className="pt-safe safe-top shrink-0 bg-background/95 backdrop-blur-md z-30 border-b border-border/40 w-full">
           <div className="w-full max-w-[420px] mx-auto">
             <div className="flex items-center justify-between px-5 h-14">
@@ -253,9 +249,7 @@ export default function AccountsSheet({ open, onClose }) {
           </div>
         </div>
 
-        {/* ======================================================================
-            2. DAFTAR KARTU APPLE WALLET (TERKUNCI DI TENGAH: max-w-[420px] mx-auto)
-           ====================================================================== */}
+        {/* Daftar kartu ala Apple Wallet (max-w-[420px] di tengah) */}
         {orderedAccounts.length === 0 ? (
           <div className="flex-1 flex flex-col items-center justify-center p-6 text-center w-full max-w-[420px] mx-auto">
             <EmptyState
@@ -427,9 +421,7 @@ export default function AccountsSheet({ open, onClose }) {
           </div>
         )}
 
-        {/* ======================================================================
-            MODAL EDIT AKUN / KARTU
-           ====================================================================== */}
+        {/* Modal edit akun / kartu */}
         {editingAccount && (
           <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
             <div className="w-full max-w-sm rounded-3xl bg-white dark:bg-[#121214] border border-zinc-200 dark:border-white/10 p-6 shadow-2xl space-y-4">
@@ -535,9 +527,7 @@ export default function AccountsSheet({ open, onClose }) {
           </div>
         )}
 
-        {/* ======================================================================
-            MODAL KONFIRMASI HAPUS AKUN
-           ====================================================================== */}
+        {/* Modal konfirmasi hapus akun */}
         {deletingAccount && (
           <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
             <div className="w-full max-w-sm rounded-3xl bg-white dark:bg-[#121214] border border-zinc-200 dark:border-white/10 p-6 shadow-2xl text-center space-y-4">

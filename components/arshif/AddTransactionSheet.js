@@ -165,27 +165,18 @@ export default function AddTransactionSheet({ open, isOpen: propIsOpen, onClose,
         transaction_date: new Date(date).toISOString(),
       }
 
-      // Persist local cache of receipt thumbnail image
-      if (typeof localStorage !== 'undefined' && receipt?.dataUrl && receipt.dataUrl.startsWith('data:')) {
-        try {
-          if (tx.receipt_url) {
-            localStorage.setItem(`arshif_receipt_cache_${tx.receipt_url}`, receipt.dataUrl)
-            const matchFId = tx.receipt_url.match(/\/file\/d\/([a-zA-Z0-9_-]+)/) || tx.receipt_url.match(/[?&]id=([a-zA-Z0-9_-]+)/)
-            if (matchFId?.[1]) {
-              localStorage.setItem(`arshif_receipt_cache_${matchFId[1]}`, receipt.dataUrl)
-            }
-          }
-        } catch (cErr) {
-          console.warn('Cache save warning:', cErr)
-        }
-      }
-
       // Trigger haptic feedback for successful transaction
       haptic?.successfulTransaction?.()
 
       // Close immediately & notify for instantaneous UI feedback
       onClose?.()
       toast.success(t('saved_msg'))
+
+      // Data URL struk masuk tx.receipt_cache (kolom DB) lewat create/update —
+      // ikut sinkron antar-perangkat, bukan localStorage.
+      if (receipt?.dataUrl && receipt.dataUrl.startsWith('data:') && !tx.receipt_cache) {
+        tx.receipt_cache = receipt.dataUrl
+      }
 
       if (saveTransaction) {
         await saveTransaction(tx, editId)

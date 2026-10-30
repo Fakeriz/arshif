@@ -1,7 +1,6 @@
-// app/api/_handlers/ai.js
 // Handler fitur AI (semua di balik verifyAndConsumeAiAccess):
-// transcribe, parse, coach, ocr, parse-statement.
-// Gemini client dari ./gemini, helper HTTP dari ./http, kuota/auth dari ./quota.
+// transcribe, parse, coach, ocr, parse-statement. Gemini dari ./gemini,
+// helper HTTP dari ./http, kuota/auth dari ./quota.
 import { parseMoneyOrZero } from '@/lib/money-parse'
 import { callGemini, extractJson } from './gemini'
 import { json, err, MAX_AUDIO_BYTES, MAX_IMAGE_BYTES, MAX_PDF_BYTES, AUDIO_MIME_TYPES, IMAGE_MIME_TYPES, base64ByteLength } from './http'
@@ -251,7 +250,7 @@ OUTPUT FORMAT (JSON ONLY):
       const rawAmount = Math.abs(parseMoneyOrZero(tx?.amount))
       const amount = rawAmount > 0 ? rawAmount : (itemsSum > 0 ? itemsSum : 0)
 
-      // 1. Akun & Mata Uang Akun
+      // Akun: cocokkan nama → pakai mata uang akun
       let accountId = tx?.account_id || null
       let accountName = tx?.account_name || null
       let matchedAccountCurrency = null
@@ -276,7 +275,7 @@ OUTPUT FORMAT (JSON ONLY):
         merchantName = null
       }
 
-      // 2. Deteksi mata uang yang diucapkan
+      // Mata uang yang diucapkan menimpa mata uang akun
       let spokenCurrency = null
       for (const cur of GLOBAL_CURRENCIES) {
         if (cur.regex.test(text)) {
@@ -290,13 +289,12 @@ OUTPUT FORMAT (JSON ONLY):
         matchedAccountCurrency ||
         (tx?.currency ? String(tx.currency).toUpperCase().slice(0, 3) : homeCurrency)
 
-      // 3. Tentukan tipe transaksi secara akurat
       let txType = ['expense', 'income', 'transfer'].includes(tx?.type) ? tx.type : 'expense'
       if (/gaji|salary|bonus|dapat\s*uang|terima\s*(uang|transfer)|income|pendapatan/i.test(text)) {
         txType = 'income'
       }
 
-      // 4. Kategori otomatis presisi
+      // Kategori dari kata kunci teks
       let detectedCategory = tx?.category || ''
       if (txType === 'income') {
         detectedCategory = /bonus/i.test(text) ? 'bonus' : /bisnis|jualan|omset/i.test(text) ? 'business' : 'salary'

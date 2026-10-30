@@ -52,7 +52,7 @@ export default function NotificationsSheet({ open, onClose }) {
   const [announcements, setAnnouncements] = useState([])
   const [dismissedIds, setDismissedIds] = useState([])
 
-  // 1. Fetch public announcements from Supabase
+  // Fetch public announcements from Supabase
   const fetchAnnouncements = async () => {
     try {
       const { data, error } = await supabase
@@ -68,7 +68,7 @@ export default function NotificationsSheet({ open, onClose }) {
     }
   }
 
-  // 2. Refresh bills, budgets & announcements on sheet open
+  // Refresh bills, budgets & announcements on sheet open
   useEffect(() => {
     if (!open) return
     let active = true
@@ -98,7 +98,7 @@ export default function NotificationsSheet({ open, onClose }) {
     }
   }, [open, store])
 
-  // 3. Mark announcements as read in localStorage when opened
+  // Mark announcements as read in localStorage when opened
   useEffect(() => {
     if (open && announcements.length > 0) {
       try {

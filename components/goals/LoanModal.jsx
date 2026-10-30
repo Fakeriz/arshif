@@ -64,7 +64,6 @@ export default function LoanModal({
   // Mode: 'instalment' (Cicilan Tetap) | 'running' (Saldo Berjalan) | 'compare' (Bandingkan Bunga)
   const [activeTab, setActiveTab] = useState('instalment')
 
-  // Core fields
   const [principalAmount, setPrincipalAmount] = useState('')
   const [selectedProvider, setSelectedProvider] = useState('spaylater')
   const [planName, setPlanName] = useState('')
@@ -74,7 +73,6 @@ export default function LoanModal({
   const [trackInBills, setTrackInBills] = useState(true)
   const [dueDay, setDueDay] = useState('25')
 
-  // Running balance fields
   const [runningType, setRunningType] = useState('cc')
   const [paidFrom, setPaidFrom] = useState('bca')
   const [balanceMode, setBalanceMode] = useState('full') // 'partial' | 'full'
@@ -85,11 +83,10 @@ export default function LoanModal({
   const [isSubmitting, setIsSubmitting] = useState(false)
   const fileInputRef = useRef(null)
 
-  // Reset or fill data when modal opens
+  // Reset atau isi form dari data loan saat modal dibuka
   useEffect(() => {
     if (!open) return
     if (loan) {
-      // Editing mode
       const isRunning = loan.debt_mode === 'running'
       setActiveTab(isRunning ? 'running' : 'instalment')
       setPrincipalAmount(String(loan.total_amount || loan.amount || ''))
@@ -110,7 +107,6 @@ export default function LoanModal({
         setCoverPhoto(loan.cover_url || '')
       }
     } else {
-      // Create mode
       setActiveTab('instalment')
       setPrincipalAmount('')
       setSelectedProvider('spaylater')
@@ -130,25 +126,21 @@ export default function LoanModal({
     }
   }, [open, loan])
 
-  // Currency symbol
   const currencySymbol = useMemo(() => {
     return getCurrency(home)?.symbol || home || 'Rp'
   }, [home])
 
-  // Numeric sanitization
   const handleAmountChange = (e, setter) => {
     const raw = e.target.value.replace(/,/g, '.').replace(/[^0-9.]/g, '')
     if ((raw.match(/\./g) || []).length > 1) return
     setter(raw)
   }
 
-  // Format currency display
   const formatMoney = (val) => {
     const num = Number(val) || 0
     return `${currencySymbol} ${num.toLocaleString('id-ID')}`
   }
 
-  // Provider selection handler
   const handleSelectProvider = (prov) => {
     setSelectedProvider(prov.id)
     if (!loan) {
@@ -163,13 +155,12 @@ export default function LoanModal({
     }
   }
 
-  // Calculate monthly installment and total payment
+  // Hitung angsuran: bunga flat ala standar cicilan konsumen Indonesia
   const calculations = useMemo(() => {
     const principal = Number(principalAmount) || 0
     const months = Math.max(1, Number(tenorMonths) || 1)
     const monthlyRate = isZeroPercent ? 0 : Number(interestRate) || 0
 
-    // Flat interest calculation (Indonesian consumer loan standard)
     const monthlyInterest = (principal * (monthlyRate / 100))
     const monthlyPrincipal = principal / months
     const monthlyInstallment = Math.round(monthlyPrincipal + monthlyInterest)
@@ -186,7 +177,6 @@ export default function LoanModal({
     }
   }, [principalAmount, tenorMonths, interestRate, isZeroPercent])
 
-  // Running balance remaining calculation
   const runningCalculations = useMemo(() => {
     const total = Number(principalAmount) || 0
     const paid = balanceMode === 'partial' ? Number(partialPaidAmount) || 0 : 0
@@ -194,7 +184,6 @@ export default function LoanModal({
     return { total, paid, remaining }
   }, [principalAmount, balanceMode, partialPaidAmount])
 
-  // Cover photo processor
   const processImageFile = (file) => {
     if (!file) return
     if (!file.type.startsWith('image/')) {
@@ -210,7 +199,6 @@ export default function LoanModal({
     reader.readAsDataURL(file)
   }
 
-  // Validation
   const isValid = useMemo(() => {
     const num = Number(principalAmount) || 0
     if (num <= 0) return false
@@ -218,7 +206,6 @@ export default function LoanModal({
     return true
   }, [principalAmount, activeTab, planName])
 
-  // Save handler
   const handleSave = async () => {
     if (!isValid) {
       toast.error('Lengkapi nominal dan nama cicilan')
@@ -298,17 +285,15 @@ export default function LoanModal({
     }
   }
 
-  // Delete handler
   const handleDelete = async () => {
     if (!loan?.id) return
     triggerHaptic('warning')
     setIsSubmitting(true)
     try {
-      // 1. Hapus dari tabel goals Supabase
+      // Hapus dari goals Supabase, lalu fallback ke store debts
       if (store?.deleteGoal) {
         await store.deleteGoal(loan.id)
       }
-      // 2. Fallback store debts
       if (store?.deleteDebt) {
         await store.deleteDebt(loan.id).catch(() => {})
       }
@@ -328,7 +313,7 @@ export default function LoanModal({
     }
   }
 
-  // Combined accounts list (from user accounts + default banks)
+  // Akun user + default bank yang belum ada (untuk pilihan paid from)
   const combinedAccounts = useMemo(() => {
     const userAccs = (accounts || []).map((a) => ({ id: a.id, name: a.name }))
     const existingNames = new Set(userAccs.map((a) => a.name.toLowerCase()))
@@ -336,7 +321,7 @@ export default function LoanModal({
     return [...userAccs, ...extras]
   }, [accounts])
 
-  // Rates comparison matrix based on current principal and tenor
+  // Simulasi bunga tiap provider berdasarkan pokok & tenor saat ini
   const comparisonList = useMemo(() => {
     const principal = Number(principalAmount) || 10000000
     const months = Number(tenorMonths) || 12
@@ -393,7 +378,6 @@ export default function LoanModal({
     })
   }, [principalAmount, tenorMonths])
 
-  // Apply compared provider to Tab 1
   const applyComparedProvider = (item) => {
     setSelectedProvider(item.id)
     setPlanName(`${item.name} Cicilan`)
@@ -496,9 +480,7 @@ export default function LoanModal({
               </button>
             </div>
 
-            {/* ============================================================ */}
-            {/* TAB 1: CICILAN TETAP (INSTALMENT PLAN) */}
-            {/* ============================================================ */}
+            {/* TAB 1: CICILAN TETAP */}
             {activeTab === 'instalment' && (
               <div className="space-y-4">
                 {/* Provider Indonesia (Pill Horizontal) */}
@@ -713,9 +695,7 @@ export default function LoanModal({
               </div>
             )}
 
-            {/* ============================================================ */}
-            {/* TAB 2: SALDO BERJALAN (RUNNING BALANCE) */}
-            {/* ============================================================ */}
+            {/* TAB 2: SALDO BERJALAN */}
             {activeTab === 'running' && (
               <div className="space-y-4">
                 {/* Tipe Utang */}
@@ -892,9 +872,7 @@ export default function LoanModal({
               </div>
             )}
 
-            {/* ============================================================ */}
-            {/* TAB 3: BANDINGKAN SUKU BUNGA (COMPARE RATES) */}
-            {/* ============================================================ */}
+            {/* TAB 3: BANDINGKAN SUKU BUNGA */}
             {activeTab === 'compare' && (
               <div className="space-y-3">
                 <div className="p-3 rounded-2xl bg-muted/30 border border-border/30 text-xs text-muted-foreground flex items-start gap-2.5">

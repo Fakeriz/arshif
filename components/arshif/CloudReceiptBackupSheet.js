@@ -46,7 +46,7 @@ export default function CloudReceiptBackupSheet({ open, onClose }) {
       setBusy(true)
       setConnectingProvider('google_drive')
 
-      // 1. Simpan preferensi pengguna ke profile Supabase & localStorage
+      // Simpan preferensi pengguna ke profile Supabase & localStorage
       if (updateProfile) {
         await updateProfile({ cloud_backup_provider: 'google_drive' })
       }
@@ -54,7 +54,7 @@ export default function CloudReceiptBackupSheet({ open, onClose }) {
         localStorage.setItem('arshif_cloud_backup_provider', 'google_drive')
       } catch {}
 
-      // 2. Periksa apakah user sudah login Google dan token drive sudah ada
+      // Periksa apakah user sudah login Google dan token drive sudah ada
       const { data: { session } } = await supabase.auth.getSession()
 
       // Jika session sudah memiliki token Google, langsung aktifkan tanpa pop-up izin ulang
@@ -63,7 +63,7 @@ export default function CloudReceiptBackupSheet({ open, onClose }) {
         return
       }
 
-      // 3. Jika token belum ada (koneksi pertama kali), baru panggil OAuth TANPA prompt 'consent'
+      // Token belum ada (koneksi pertama kali): OAuth TANPA prompt 'consent'
       const base = typeof window !== 'undefined' ? window.location.origin : (process.env.NEXT_PUBLIC_BASE_URL || '')
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',

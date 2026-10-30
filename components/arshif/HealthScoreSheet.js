@@ -28,19 +28,17 @@ function useHealthData() {
       .reduce((s, t) => s + toHome(t?.amount, t?.currency), 0)
     const cash = (accounts || []).reduce((s, a) => s + toHome(signedAccountBalance(a), a?.currency), 0)
 
-    // 1) Savings rate: leftover income (>20% = full score)
+    // Skor per komponen: savings rate (>20% penuh), rasio hutang (<30% aman),
+    // dana darurat (6 bulan = penuh), disiplin budget (<=70% ideal)
     const savingsRate = income > 0 ? (income - expense) / income : 0
     const savingsScore = income > 0 ? clamp((savingsRate / 0.2) * 100) : 0
 
-    // 2) Debt / obligations ratio vs income (<30% = safe)
     const debtRatio = income > 0 ? obligations / income : (obligations > 0 ? 1 : 0)
     const debtScore = income > 0 ? clamp(100 - Math.max(0, (debtRatio - 0.3)) / 0.3 * 100) : (obligations > 0 ? 0 : 60)
 
-    // 3) Emergency fund: cash covering months of expenses (6 months = full)
     const months = expense > 0 ? cash / expense : (cash > 0 ? 6 : 0)
     const emergencyScore = clamp((months / 6) * 100)
 
-    // 4) Budget discipline: spending kept under income (<=70% ideal)
     const expenseRatio = income > 0 ? expense / income : (expense > 0 ? 1.5 : 0)
     const budgetScore = income > 0 ? clamp(100 - Math.max(0, (expenseRatio - 0.7)) / 0.5 * 100) : (expense > 0 ? 0 : 60)
 

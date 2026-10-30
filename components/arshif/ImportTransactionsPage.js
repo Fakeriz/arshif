@@ -82,7 +82,6 @@ export default function ImportTransactionsPage({ onClose }) {
 
   const close = () => { reset(); onClose?.() }
 
-  // Langkah 1: upload file
   const isPdfFile = (file) => {
     if (!file) return false
     if ((file.type || '').toLowerCase().includes('pdf')) return true
@@ -132,7 +131,6 @@ export default function ImportTransactionsPage({ onClose }) {
     finally { setBusy(false) }
   }
 
-  // Langkah 2: review mapping
   const mappingValid = () => {
     if (mapping.date < 0 || mapping.desc < 0) return false
     if (dirMode === 'split') return mapping.debit >= 0 && mapping.credit >= 0
