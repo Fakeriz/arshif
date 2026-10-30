@@ -3,7 +3,7 @@
 // Next.js assets: cache-first (filenames are hashed). Other assets:
 // stale-while-revalidate. API: always network-only.
 
-const VERSION = 'arshif-v10';
+const VERSION = 'arshif-v11';
 
 // Separate cache for Web Share Target images so they survive SW version bumps.
 const SHARE_CACHE = 'arshif-share-v1';
