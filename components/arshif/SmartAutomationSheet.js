@@ -2,8 +2,10 @@
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Apple, Share2, ScanLine, Mic, Smartphone, ChevronDown, FlaskConical, Link2, Download, Wifi } from 'lucide-react'
+import { toast } from 'sonner'
 import { useApp } from './context'
 import { matchAlert } from '@/lib/smart-alerts'
+import { consumeFeatureUsage } from '@/lib/feature-usage'
 import { Sheet, Pill, Segmented, Field } from './ui'
 import { cn } from '@/lib/utils'
 
@@ -76,7 +78,7 @@ function buildShortcutText(t) {
 }
 
 export default function SmartAutomationSheet({ open, onClose }) {
-  const { t, accounts = [] } = useApp()
+  const { t, accounts = [], open: openSheet } = useApp()
   const [expanded, setExpanded] = useState('applepay')
   const [defaultAcc, setDefaultAcc] = useState('unassigned')
   const [iosVer, setIosVer] = useState('new')
@@ -89,9 +91,19 @@ export default function SmartAutomationSheet({ open, onClose }) {
 
   const toggle = (id) => setExpanded((e) => (e === id ? null : id))
 
-  const runTest = () => {
-    setTestResult(matchAlert(testText))
+  const runTest = async () => {
+    const parsed = matchAlert(testText)
+    setTestResult(parsed)
     setRan(true)
+    // Sinyal yang dikenali = satu eksekusi otomatis (free 30 / premium 500
+    // per bulan). Uji sinyal yang gagal match tidak dihitung.
+    if (parsed) {
+      const usage = await consumeFeatureUsage('smart_automation_per_month')
+      if (usage.allowed === false) {
+        toast.error(usage.error || t('plan_limit_automation_reached'))
+        openSheet?.('paywall')
+      }
+    }
   }
 
   const editTestText = (v) => {

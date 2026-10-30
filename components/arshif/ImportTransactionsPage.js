@@ -12,6 +12,7 @@ import { getCurrency, roundMoney } from '@/lib/currencies'
 import { LOCALE_MAP } from '@/lib/i18n'
 import { cn, triggerHaptic } from '@/lib/utils'
 import * as SI from '@/lib/statement-import'
+import { consumeFeatureUsage } from '@/lib/feature-usage'
 
 // Statement import wizard. Parsing, normalization, and dedup run client-side;
 // the server only receives final rows plus optional batch notes.
@@ -306,6 +307,15 @@ export default function ImportTransactionsPage({ onClose }) {
   // Jalankan impor
   const runImport = async () => {
     if (busy || !readyRows.length || !walletId) return
+    // Satu batch impor = satu pemakaian jatah bulanan, dicek sebelum baris
+    // pertama ditulis supaya tidak setengah jalan baru ketahuan habis.
+    const usage = await consumeFeatureUsage('statement_import_per_month')
+    if (usage.allowed === false) {
+      toast.error(usage.error || t('plan_limit_import_reached'))
+      close()
+      openSheet?.('paywall')
+      return
+    }
     setBusy(true)
     const bId = (typeof crypto !== 'undefined' && crypto.randomUUID) ? crypto.randomUUID() : `batch-${Date.now()}`
     setBatchId(bId)

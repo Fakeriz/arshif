@@ -8,6 +8,7 @@ import CurrencySheet from './CurrencySheet'
 import { getCurrency } from '@/lib/currencies'
 import { cn } from '@/lib/utils'
 import { sanitizeAmount } from '@/lib/amount'
+import { consumeFeatureUsage } from '@/lib/feature-usage'
 
 const uid = () => (typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `iv_${Date.now()}_${Math.random().toString(36).slice(2)}`)
 const lsGet = (k, d) => { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d } catch { return d } }
@@ -23,7 +24,7 @@ const safeDate = (s) => {
 }
 
 export default function BusinessInvoiceSheet({ open, onClose }) {
-  const { t, home, fmt, convertToHome, session, accounts = [], store, refresh } = useApp()
+  const { t, home, fmt, convertToHome, session, accounts = [], store, refresh, open: openSheet } = useApp()
   const scope = session?.user?.id || 'guest'
   const INV_KEY = `arshif_invoices_${scope}`
 
@@ -88,8 +89,16 @@ export default function BusinessInvoiceSheet({ open, onClose }) {
   const formTotal = (items || []).reduce((s, it) => s + (Number(it?.qty) || 0) * (Number(it?.price) || 0), 0)
   const canSave = client.trim() && formTotal > 0
 
-  const saveInvoice = () => {
+  const saveInvoice = async () => {
     if (!canSave) return
+    // Invoice baru mengkonsumsi jatah bulanan (free 5 / premium 30) — cek
+    // sebelum invoice tersimpan supaya user tidak mengira sudah tersimpan.
+    const usage = await consumeFeatureUsage('invoices_per_month')
+    if (usage.allowed === false) {
+      toast.error(usage.error || t('plan_limit_invoice_reached'))
+      openSheet?.('paywall')
+      return
+    }
     const inv = {
       id: uid(), number: nextNumber, client: client.trim(), due_date: due || null, currency,
       items: (items || []).map((it) => ({ desc: (it.desc || '').trim(), qty: Number(it.qty) || 0, price: Number(it.price) || 0 })),

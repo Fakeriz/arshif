@@ -6,6 +6,7 @@ import { useApp } from './context'
 import { Sheet, PrimaryButton, SecondaryButton, Card } from './ui'
 import { QuotaBadge } from './QuotaBadge'
 import { fileToDataUrl } from '@/lib/ledger'
+import { consumeFeatureUsage } from '@/lib/feature-usage'
 
 export default function ScanReceiptSheet({ open, onClose, onUse, initialImage, autoPick }) {
   const { t, home, fmt, session, isAiAllowed, open: openSheet, profile } = useApp()
@@ -75,12 +76,23 @@ export default function ScanReceiptSheet({ open, onClose, onUse, initialImage, a
         })
       }
 
+      // Konsumsi kuota OCR bulanan hanya setelah scan sukses — gagal OCR
+      // tidak boleh memotong jatah. Blokir dari server (RPC P0001) tetap
+      // jalan sendiri; di sini hanya feedback plus ke paywall.
+      const usage = await consumeFeatureUsage('receipt_ocr_per_month')
+      if (usage.allowed === false) {
+        setResult(null)
+        onClose?.()
+        openSheet?.('paywall')
+        return
+      }
+
       const receiptData = data?.receipt || data || null
       setResult(receiptData)
     } catch (err) {
       toast.error(err?.message || t('error'))
     } finally { setBusy(false) }
-  }, [session?.access_token, t])
+  }, [session?.access_token, t, openSheet])
 
   const initialRef = useRef(null)
   useEffect(() => {
