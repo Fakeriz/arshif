@@ -1,5 +1,5 @@
 -- ============================================================================
--- ARSHIF — SUPABASE POSTGRESQL COMPLETE CONSOLIDATED PRODUCTION SCHEMA
+-- ARSHIF, SUPABASE POSTGRESQL COMPLETE CONSOLIDATED PRODUCTION SCHEMA
 -- Versi: Mutakhir & Sinkron 100% dengan Arshif PWA Frontend
 -- Sifat Skrip: Idempoten, Non-Destruktif, Aman Dijalankan Berulang Kali
 -- Cara Pakai: Salin seluruh isi berkas ini dan jalankan di Supabase SQL Editor.
@@ -381,7 +381,7 @@ create index if not exists transactions_account_idx on public.transactions(accou
 create index if not exists transactions_dest_account_idx on public.transactions(destination_account_id);
 create index if not exists transactions_bill_idx on public.transactions(bill_id);
 
--- Kolom pelacakan impor rekening koran (idempoten — wizard tetap jalan tanpanya,
+-- Kolom pelacakan impor rekening koran (idempoten, wizard tetap jalan tanpanya,
 -- hanya fitur batch/undo/dedup-lintas-batch yang nonaktif sampai migrasi dijalankan)
 alter table public.transactions add column if not exists import_batch_id uuid;
 alter table public.transactions add column if not exists fingerprint text;
@@ -992,7 +992,6 @@ revoke execute on function public.check_and_consume_ai_quota() from public;
 grant execute on function public.check_and_consume_ai_quota() to authenticated;
 
 -- D. apply_transaction_balance_delta: update saldo multi-akun ATOMIK & idempoten
--- ---------------------------------------------------------------------------
 -- Menggantikan pola client-side "baca saldo -> tulis saldo" berulang per akun
 -- (store.updateAccount) yang rentan race condition antar device: dua device
 -- bisa membaca saldo 1000 lalu sama-sama menulis 950, sehingga salah satu
@@ -1000,11 +999,9 @@ grant execute on function public.check_and_consume_ai_quota() to authenticated;
 --
 -- Fungsi ini menerima SELURUH delta akun untuk satu transaksi dan menuliskannya
 -- dalam SATU statement UPDATE, dikunci dalam satu transaksi Postgres.
---
 -- Idempotensi: p_tx_id dicatat di balance_applications. Pemanggilan ulang
 -- dengan tx_id + sign yang sama menjadi no-op (aman untuk retry jaringan).
 -- Revert memakai sign = -1 sehingga tetap bisa berlaku setelah apply.
---
 -- Keamanan: SECURITY DEFINER + filter user_id = auth.uid(), jadi pengguna
 -- hanya bisa mengubah saldo akun miliknya sendiri.
 create table if not exists public.balance_applications (

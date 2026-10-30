@@ -7,9 +7,9 @@ export const dynamic = 'force-dynamic'
 
 const MAX_BYTES = 8 * 1024 * 1024
 
-// Whitelist MIME — file.type dari client TIDAK dipercaya. Hanya tipe gambar known
+// Whitelist MIME, file.type dari client TIDAK dipercaya. Hanya tipe gambar known
 // yang boleh masuk ke data URL, sehingga mustahil breakout dari string JS inline
-// (pola Belanje: validasi input ketat di server, bukan sanitasi percobaan).
+// (validasi input ketat di server, bukan sanitasi percobaan).
 const ALLOWED_IMAGE_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/gif'])
 
 export async function POST(req) {
@@ -21,7 +21,7 @@ export async function POST(req) {
     if (file && typeof file.arrayBuffer === 'function' && ALLOWED_IMAGE_TYPES.has(mime)) {
       const buf = Buffer.from(await file.arrayBuffer())
       if (buf.length > 0 && buf.length <= MAX_BYTES) {
-        // mime dari whitelist (tidak bisa mengandung kutip/backslash/<) — aman di-embed di string JS.
+        // mime dari whitelist (tidak bisa mengandung kutip/backslash/<), aman di-embed di string JS.
         dataUrl = `data:${mime};base64,${buf.toString('base64')}`
       }
     }

@@ -4,7 +4,7 @@ services:
       context: .
       args:
         # Di-inline saat build. Interpolasi ${VAR} dibaca oleh `docker compose
-        # --env-file .env.production ...` — jalankan compose SELALU dengan flag itu.
+        # --env-file .env.production ...`, jalankan compose SELALU dengan flag itu.
         NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL:-}
         NEXT_PUBLIC_SUPABASE_URL: ${NEXT_PUBLIC_SUPABASE_URL:-}
         NEXT_PUBLIC_SUPABASE_ANON_KEY: ${NEXT_PUBLIC_SUPABASE_ANON_KEY:-}

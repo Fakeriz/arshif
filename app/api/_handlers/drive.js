@@ -1,5 +1,5 @@
 // app/api/_handlers/drive.js
-// POST /api/backup/gdrive — verifikasi user Arshif, unggah struk multipart
+// POST /api/backup/gdrive, verifikasi user Arshif, unggah struk multipart
 // ke folder "Arshif Receipts" di Google Drive user, lalu isi cache thumbnail.
 import { readBearerToken, getServerSupabase } from '@/lib/api-auth'
 import { json, err, MAX_IMAGE_BYTES, IMAGE_MIME_TYPES, base64ByteLength } from './http'

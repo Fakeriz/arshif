@@ -3,7 +3,7 @@ import test from 'node:test'
 
 // Test pagination fetchAllRows dari lib/store.js: batch 200 berulang sampai
 // habis, menggantikan .limit(150) yang memotong riwayat transaksi.
-// store.js mengimpor supabase.js yang butuh env — diset sebelum import dinamis.
+// store.js mengimpor supabase.js yang butuh env, diset sebelum import dinamis.
 process.env.NEXT_PUBLIC_SUPABASE_URL ||= 'http://localhost:9999'
 process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||= 'test-anon-key'
 

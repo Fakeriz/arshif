@@ -1,5 +1,5 @@
 // app/api/_handlers/rates.js
-// GET /api/rates — kurs dengan cache 1 jam; fallback ke FALLBACK_RATES bila provider gagal.
+// GET /api/rates, kurs dengan cache 1 jam; fallback ke FALLBACK_RATES bila provider gagal.
 import { FALLBACK_RATES } from '@/lib/rates'
 import { json } from './http'
 

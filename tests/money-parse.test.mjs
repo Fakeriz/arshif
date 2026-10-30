@@ -1,5 +1,5 @@
 // tests/money-parse.test.mjs
-// Test untuk lib/money-parse.js — SATU implementasi parsing uang.
+// Test untuk lib/money-parse.js, SATU implementasi parsing uang.
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { parseMoney, parseMoneyOrZero } from '../lib/money-parse.js'
@@ -39,7 +39,7 @@ test('parseMoney returns null for non-numeric input', () => {
 test('parseMoney rounds to 2 decimals', () => {
   assert.equal(parseMoney('3.14159'), 3.14)
   assert.equal(parseMoney('2.67'), 2.67)
-  // Catatan: '2.675' di-parse sebagai 2675 (ID ribuan — grup tepat 3 digit).
+  // Catatan: '2.675' di-parse sebagai 2675 (ID ribuan, grup tepat 3 digit).
   // Ini ambiguitas format ID vs EN; kontrak app: locale ID menang.
 })
 

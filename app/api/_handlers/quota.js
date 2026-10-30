@@ -19,8 +19,8 @@ async function verifyAndConsumeAiAccess(request) {
   }
 
 
-  // Developer/internal test token — hanya dari env server, TIDAK pernah hardcode di source.
-  // Pola Belanje: tidak ada bypass auth yang ter-commit; yang mengikat = server.
+  // Developer/internal test token, hanya dari env server, TIDAK pernah hardcode di source.
+  // tidak ada bypass auth yang ter-commit; yang mengikat = server.
   const devAdminToken = process.env.ARSHIF_DEV_ADMIN_TOKEN
   if (devAdminToken && token === devAdminToken) {
     return {
@@ -121,7 +121,7 @@ async function verifyAndConsumeAiAccess(request) {
   }
 }
 
-// GET /api/ai/usage — status kuota tanpa mengkonsumsi.
+// GET /api/ai/usage, status kuota tanpa mengkonsumsi.
 async function handleAiUsage(request) {
   const token = readBearerToken(request)
 

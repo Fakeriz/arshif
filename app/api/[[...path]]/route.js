@@ -1,12 +1,12 @@
 // app/api/[[...path]]/route.js
 // Catch-all dispatcher tipis. Semua logika ada di app/api/_handlers/:
-//   ./http        — helper response & batas payload
-//   ./gemini      — client REST Gemini
-//   ./quota       — auth + kuota AI, GET ai/usage
-//   ./ai          — transcribe, parse, coach, ocr, parse-statement
-//   ./rates       — GET rates
-//   ./drive       — POST backup/gdrive
-//   ./thumbnail   — GET drive/thumbnail & backup/gdrive/thumbnail
+//   ./http       , helper response & batas payload
+//   ./gemini     , client REST Gemini
+//   ./quota      , auth + kuota AI, GET ai/usage
+//   ./ai         , transcribe, parse, coach, ocr, parse-statement
+//   ./rates      , GET rates
+//   ./drive      , POST backup/gdrive
+//   ./thumbnail  , GET drive/thumbnail & backup/gdrive/thumbnail
 // Kontrak URL tidak berubah.
 import { json, err, resolveApiPath } from '../_handlers/http'
 import { handleAiUsage, verifyAndConsumeAiAccess } from '../_handlers/quota'
