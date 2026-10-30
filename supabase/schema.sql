@@ -351,6 +351,13 @@ alter table public.transactions add column if not exists date timestamptz defaul
 alter table public.transactions add column if not exists transaction_date timestamptz default now();
 alter table public.transactions add column if not exists created_at timestamptz default now();
 
+-- Metadata transaksi yang sebelumnya hanya hidup di localStorage per-perangkat
+-- (arshif_tx_split_*, arshif_tx_storage_*, arshif_receipt_cache_*). Dipindahkan
+-- ke kolom agar ikut sinkron lintas device. Default null, aman untuk baris lama.
+alter table public.transactions add column if not exists split jsonb default null;
+alter table public.transactions add column if not exists storage_provider text default null;
+alter table public.transactions add column if not exists receipt_cache jsonb default null;
+
 -- Sinkronisasi alias transactions
 update public.transactions
 set
@@ -983,6 +990,126 @@ revoke execute on function public.get_ai_quota_status() from public;
 grant execute on function public.get_ai_quota_status() to authenticated;
 revoke execute on function public.check_and_consume_ai_quota() from public;
 grant execute on function public.check_and_consume_ai_quota() to authenticated;
+
+-- D. apply_transaction_balance_delta: update saldo multi-akun ATOMIK & idempoten
+-- ---------------------------------------------------------------------------
+-- Menggantikan pola client-side "baca saldo -> tulis saldo" berulang per akun
+-- (store.updateAccount) yang rentan race condition antar device: dua device
+-- bisa membaca saldo 1000 lalu sama-sama menulis 950, sehingga salah satu
+-- transaksi hilang dari saldo.
+--
+-- Fungsi ini menerima SELURUH delta akun untuk satu transaksi dan menuliskannya
+-- dalam SATU statement UPDATE, dikunci dalam satu transaksi Postgres.
+--
+-- Idempotensi: p_tx_id dicatat di balance_applications. Pemanggilan ulang
+-- dengan tx_id + sign yang sama menjadi no-op (aman untuk retry jaringan).
+-- Revert memakai sign = -1 sehingga tetap bisa berlaku setelah apply.
+--
+-- Keamanan: SECURITY DEFINER + filter user_id = auth.uid(), jadi pengguna
+-- hanya bisa mengubah saldo akun miliknya sendiri.
+create table if not exists public.balance_applications (
+  tx_id uuid primary key,
+  user_id uuid not null references auth.users(id) on delete cascade,
+  sign int not null default 1,          -- +1 apply, -1 revert
+  applied_at timestamptz default now()
+);
+
+create index if not exists balance_applications_user_idx on public.balance_applications(user_id);
+
+-- RLS aktif tanpa policy client: tabel hanya disentuh fungsi SECURITY DEFINER.
+alter table public.balance_applications enable row level security;
+
+create or replace function public.apply_transaction_balance_delta(
+  p_tx_id uuid,
+  p_account_deltas jsonb,
+  p_sign int default 1
+)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_uid uuid := auth.uid();
+  v_sign int := coalesce(p_sign, 1);
+  v_recorded boolean := false;
+  v_previous_sign int;
+  v_updated int := 0;
+begin
+  if v_uid is null then
+    return jsonb_build_object('ok', false, 'error', 'unauthenticated');
+  end if;
+
+  if p_tx_id is null
+     or p_account_deltas is null
+     or jsonb_typeof(p_account_deltas) <> 'array'
+     or v_sign = 0 then
+    return jsonb_build_object('ok', false, 'error', 'invalid_arguments');
+  end if;
+
+  -- Gate idempotensi atomik: hanya salah satu pemanggil bersamaan yang
+  -- berhasil memasukkan penanda; yang lain membaca penanda itu dan jadi no-op.
+  -- Kalau auth.uid() tidak ada di auth.users (user dihapus di tengah sesi),
+  -- kembalikan ok:false alih-alih melempar error 500 dari constraint FK.
+  begin
+    with ins as (
+      insert into public.balance_applications (tx_id, user_id, sign)
+      values (p_tx_id, v_uid, v_sign)
+      on conflict (tx_id) do nothing
+      returning tx_id
+    )
+    select exists (select 1 from ins) into v_recorded;
+  exception
+    when foreign_key_violation then
+      return jsonb_build_object('ok', false, 'error', 'unknown_user');
+  end;
+
+  if not v_recorded then
+    select sign into v_previous_sign
+    from public.balance_applications
+    where tx_id = p_tx_id;
+
+    if v_previous_sign = v_sign then
+      -- Sudah diterapkan dengan tanda yang sama: jangan tambah saldo dua kali.
+      return jsonb_build_object('ok', true, 'applied', false, 'idempotent', true);
+    end if;
+
+    -- Tanda berlawanan (apply -> revert -> apply ulang): segarkan penanda.
+    update public.balance_applications
+    set sign = v_sign, applied_at = now()
+    where tx_id = p_tx_id;
+  end if;
+
+  -- Satu statement untuk semua akun: atomik, tidak ada keadaan setengah jalan.
+  with deltas as (
+    select
+      (elem ->> 'account_id')::uuid as account_id,
+      (elem ->> 'delta')::numeric as delta
+    from jsonb_array_elements(p_account_deltas) as elem
+    where elem ->> 'account_id' is not null
+      and elem ->> 'delta' is not null
+  ),
+  applied as (
+    update public.accounts a
+    set balance = a.balance + (d.delta * v_sign),
+        updated_at = now()
+    from deltas d
+    where a.id = d.account_id
+      and a.user_id = v_uid
+    returning a.id, a.balance
+  )
+  select count(*) into v_updated from applied;
+
+  return jsonb_build_object(
+    'ok', true,
+    'applied', true,
+    'updated', v_updated
+  );
+end;
+$$;
+
+revoke execute on function public.apply_transaction_balance_delta(uuid, jsonb, int) from public;
+grant execute on function public.apply_transaction_balance_delta(uuid, jsonb, int) to authenticated;
 
 -- C. Trigger Otomatis Profil Baru (handle_new_user)
 create or replace function public.handle_new_user()

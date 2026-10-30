@@ -1,0 +1,35 @@
+services:
+  arshif:
+    build:
+      context: .
+      args:
+        # Di-inline saat build. Interpolasi ${VAR} dibaca oleh `docker compose
+        # --env-file .env.production ...` — jalankan compose SELALU dengan flag itu.
+        NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL:-}
+        NEXT_PUBLIC_SUPABASE_URL: ${NEXT_PUBLIC_SUPABASE_URL:-}
+        NEXT_PUBLIC_SUPABASE_ANON_KEY: ${NEXT_PUBLIC_SUPABASE_ANON_KEY:-}
+    image: arshif:latest
+    container_name: arshif
+    restart: unless-stopped
+    env_file:
+      # Hanya untuk runtime; NEXT_PUBLIC_* tetap butuh --env-file saat build (lihat DEPLOY.md)
+      - path: .env.production
+        required: false
+    ports:
+      # Tetap privat; HTTPS ditangani reverse proxy (Caddy/Nginx) di host
+      - "127.0.0.1:3000:3000"
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "fetch('http://127.0.0.1:3000/manifest.json').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
+      interval: 30s
+      timeout: 5s
+      start_period: 25s
+      retries: 3
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
