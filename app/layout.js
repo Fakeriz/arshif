@@ -20,7 +20,7 @@ export const metadata = {
     description: 'Multi-currency personal and business finance tracker with AI receipt scanning, voice log, debts, and bills tracking.',
     images: [
       {
-        url: '/og-image.png',
+        url: '/og-image.jpg',
         width: 1200,
         height: 630,
         alt: 'Arshif — Personal & Business Finance',
@@ -31,7 +31,7 @@ export const metadata = {
     card: 'summary_large_image',
     title: 'Arshif — Personal & Business Finance',
     description: 'Multi-currency personal and business finance tracker with AI receipt scanning, voice log, debts, and bills tracking.',
-    images: ['/og-image.png'],
+    images: ['/og-image.jpg'],
   },
 }
 

@@ -637,7 +637,7 @@ export default function GoalsTab() {
           }}
         />
       </div>
-      
+
       {/* 1. Subscription Detail / Edit Bottom Sheet */}
       <SubscriptionSheet
         open={subSheetOpen}
