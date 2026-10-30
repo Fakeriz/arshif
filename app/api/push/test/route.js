@@ -1,9 +1,8 @@
 // app/api/push/test/route.js
 // Kirim notifikasi test ke device user yang sedang login.
 import { NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
+import { readBearerToken, getServerSupabase } from '@/lib/api-auth'
 import webpush from 'web-push'
-import { SUPABASE_URL, SUPABASE_ANON_KEY } from '@/lib/supabase'
 import {
   initWebPush,
   isExpiredOrInvalidSubscription,
@@ -15,16 +14,8 @@ export const dynamic = 'force-dynamic'
 
 const json = (data, status = 200) => NextResponse.json(data, { status })
 
-function getServerSupabase(token) {
-  return createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-    auth: { persistSession: false, autoRefreshToken: false },
-    global: token ? { headers: { Authorization: `Bearer ${token}` } } : {},
-  })
-}
-
 export async function POST(request) {
-  const authHeader = request.headers.get('authorization') || ''
-  const token = authHeader.replace(/^Bearer\s+/i, '').trim()
+  const token = readBearerToken(request)
   if (!token) return json({ error: 'Unauthorized' }, 401)
 
   const sb = getServerSupabase(token)

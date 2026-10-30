@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
-import { SUPABASE_URL, SUPABASE_ANON_KEY } from '@/lib/supabase'
+import { getUser } from '@/lib/api-auth'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -23,22 +22,6 @@ function rateLimit(request) {
   return true
 }
 
-async function resolveUser(request) {
-  const header = request.headers.get('authorization') || ''
-  const token = header.replace(/^Bearer\s+/i, '').trim()
-  if (!token) return null
-  try {
-    const client = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-      auth: { persistSession: false, autoRefreshToken: false },
-      global: { headers: { Authorization: `Bearer ${token}` } },
-    })
-    const { data } = await client.auth.getUser(token)
-    return data?.user || null
-  } catch {
-    return null
-  }
-}
-
 function configError() {
   return NextResponse.json({ error: 'Telegram support is not configured on the server' }, { status: 503 })
 }
@@ -50,7 +33,8 @@ export async function POST(request) {
   if (!rateLimit(request)) return NextResponse.json({ error: 'Too many support requests. Try again later.' }, { status: 429 })
 
   try {
-    const user = await resolveUser(request)
+    const auth = await getUser(request)
+  const user = auth?.user || null
     const form = await request.formData()
     const type = clean(form.get('type'), 40) || 'bug'
     const subject = clean(form.get('subject'), 300)

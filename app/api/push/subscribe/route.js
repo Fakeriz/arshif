@@ -1,30 +1,12 @@
 // app/api/push/subscribe/route.js
 // Menyimpan / menghapus web push subscription per user.
 import { NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
-import { SUPABASE_URL, SUPABASE_ANON_KEY } from '@/lib/supabase'
+import { getUser } from '@/lib/api-auth'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
 const json = (data, status = 200) => NextResponse.json(data, { status })
-
-function getServerSupabase(token) {
-  return createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-    auth: { persistSession: false, autoRefreshToken: false },
-    global: token ? { headers: { Authorization: `Bearer ${token}` } } : {},
-  })
-}
-
-async function getUser(request) {
-  const authHeader = request.headers.get('authorization') || ''
-  const token = authHeader.replace(/^Bearer\s+/i, '').trim()
-  if (!token) return null
-  const sb = getServerSupabase(token)
-  const { data, error } = await sb.auth.getUser(token)
-  if (error || !data?.user) return null
-  return { user: data.user, sb }
-}
 
 // POST: simpan subscription
 export async function POST(request) {

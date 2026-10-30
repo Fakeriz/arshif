@@ -1,8 +1,7 @@
 // app/api/[[...path]]/route.js
 import { NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
 import { FALLBACK_RATES } from '@/lib/rates'
-import { SUPABASE_URL, SUPABASE_ANON_KEY } from '@/lib/supabase'
+import { readBearerToken, getServerSupabase } from '@/lib/api-auth'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -36,18 +35,6 @@ function base64ByteLength(value) {
   if (!normalized || normalized.length % 4 === 1 || !/^[A-Za-z0-9+/]*={0,2}$/.test(normalized)) return 0
   const padding = normalized.endsWith('==') ? 2 : normalized.endsWith('=') ? 1 : 0
   return Math.max(0, Math.floor((normalized.length * 3) / 4) - padding)
-}
-
-function readBearerToken(request) {
-  return (request.headers.get('authorization') || '').replace(/^Bearer\s+/i, '').trim()
-}
-
-// Supabase auth and quota helpers.
-function getServerSupabase(token) {
-  return createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-    auth: { persistSession: false, autoRefreshToken: false },
-    global: token ? { headers: { Authorization: `Bearer ${token}` } } : {},
-  })
 }
 
 async function verifyAndConsumeAiAccess(request) {
