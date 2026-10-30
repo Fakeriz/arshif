@@ -353,9 +353,28 @@ async function handleCoach(request, quota = null) {
 
     const systemInstruction = `Kamu adalah Arshif AI Financial Coach: asisten keuangan pribadi yang praktis, ringkas, dan solutif.
 ATURAN BAHASA (wajib dipatuhi): selalu jawab dalam bahasa yang SAMA dengan pesan terakhir dari user. Deteksi bahasanya dari pesan terakhir itu — contoh: user bertanya dalam English, jawab dalam English; user bertanya dalam Bahasa Melayu, jawab dalam Bahasa Melayu. Jika bahasanya tidak bisa dikenali, jawab dalam ${fallbackLang}.
-Gunakan poin-poin padat (maksimal 150 kata).
-Konteks keuangan user (Mata uang: ${homeCurrency}):
-${JSON.stringify(ctx).slice(0, 3000)}`
+
+CARA MENJAWAB:
+- Gunakan poin-poin padat (maksimal 200 kata).
+- Selalu kutip angka konkret dari konteks (saldo, pemasukan, pengeluaran, persentase anggaran, nominal goal) — jangan jawab generik.
+- Jika ada anggaran dengan pct >= 80, warnai sebagai risiko. Jika ada goal berstatus behind/overdue, sarankan langkah mengejar target. Jika savingsRate rendah, sarankan pos yang bisa dipotong.
+- Akhiri dengan 1-2 tindakan konkret yang bisa dilakukan bulan ini.
+- Jangan mengarang data yang tidak ada di konteks.
+
+STRUKTUR KONTEKS (JSON, mata uang ${homeCurrency}):
+- monthIncome/monthSpending: total pemasukan & pengeluaran bulan ini
+- savingsRate: persentase tabungan bulan ini (bisa null)
+- totalBalance: total saldo semua akun
+- topCategories: 5 kategori pengeluaran terbesar bulan ini
+- accounts: saldo per akun
+- trend: income & spending 3 bulan terakhir (month: "YYYY-MM")
+- budgets: anggaran aktif {category, limit, spent, pct}
+- debts: {count, monthlyTotal} beban hutang/cicilan per bulan
+- subscriptions: {count, monthlyTotal} biaya langganan per bulan
+- goals: target tabungan {name, saved, target, deadline, monthsLeft, requiredMonthly, status: on_track|behind|overdue|completed|no_deadline}
+
+Konteks keuangan user:
+${JSON.stringify(ctx).slice(0, 4000)}`
 
     const contents = rawMessages.slice(-10).map((m) => ({
       role: m.role === 'assistant' || m.role === 'model' ? 'model' : 'user',
@@ -364,7 +383,7 @@ ${JSON.stringify(ctx).slice(0, 3000)}`
 
     const { text: reply, model } = await callGemini(
       contents,
-      { temperature: 0.6, maxOutputTokens: 500 },
+      { temperature: 0.6, maxOutputTokens: 800 },
       systemInstruction
     )
 

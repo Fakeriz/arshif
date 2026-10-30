@@ -43,8 +43,42 @@ export function isLoanOrDebt(item) {
   return false
 }
 
+// Proyeksi progres goal: sisa bulan, kebutuhan nabung per bulan, status on_track/behind.
+// Dipakai kartu goal di tab ini dan konteks AI Coach.
+export function projectGoal(g, now = new Date()) {
+  const targetVal = Number(g?.target_amount) || 0
+  const savedVal = Number(g?.saved_amount) || 0
+  const remaining = Math.max(0, targetVal - savedVal)
+  const completed = targetVal > 0 && savedVal >= targetVal
+  let monthsLeft = null
+  let requiredMonthly = null
+  let status = 'no_deadline'
+  if (g?.deadline) {
+    const dl = new Date(g.deadline)
+    monthsLeft = Math.max(0, (dl.getFullYear() - now.getFullYear()) * 12 + (dl.getMonth() - now.getMonth()))
+    if (monthsLeft > 0 && remaining > 0) requiredMonthly = remaining / monthsLeft
+    const monthlyTarget = Number(g?.monthly_target) || 0
+    if (completed) status = 'completed'
+    else if (monthsLeft <= 0) status = 'overdue'
+    else if (monthlyTarget > 0 && monthlyTarget >= requiredMonthly) status = 'on_track'
+    else status = 'behind'
+  } else if (completed) {
+    status = 'completed'
+  }
+  return {
+    targetVal,
+    savedVal,
+    remaining,
+    completed,
+    monthsLeft,
+    requiredMonthly,
+    monthlyTarget: Number(g?.monthly_target) || 0,
+    status,
+  }
+}
+
 export default function GoalsTab() {
-  const { t, goals = [], transactions = [], accounts = [], fmt, home, rates, store, refresh, open: openSheet } = useApp()
+  const { t, goals = [], transactions = [], accounts = [], fmt, home, rates, store, refresh, open: openSheet, addTransaction } = useApp()
 
   const [subscriptions, setSubscriptions] = useState([])
   const [subSheetOpen, setSubSheetOpen] = useState(false)
@@ -58,6 +92,8 @@ export default function GoalsTab() {
   const [creatingGoal, setCreatingGoal] = useState(false)
   const [funding, setFunding] = useState(null)
   const [fund, setFund] = useState('')
+  const [fundAccount, setFundAccount] = useState('')
+  const [recordFundTx, setRecordFundTx] = useState(true)
 
   const [loans, setLoans] = useState([])
 
@@ -154,17 +190,20 @@ export default function GoalsTab() {
         })
         .reduce((sum, tx) => sum + (safeConvert(tx?.amount || 0, tx?.currency || home, home, rates) ?? 0), 0)
 
-      const limit = Number(b?.limit_amount) || 0
+      const limit = safeConvert(Number(b?.limit_amount) || 0, b?.currency || home, home, rates) ?? (Number(b?.limit_amount) || 0)
       const remaining = Math.max(0, limit - spent)
       const pct = limit > 0 ? Math.min(100, Math.round((spent / limit) * 100)) : 0
       const dailyRemaining = remaining / daysLeft
-      return { ...b, spent, limit, remaining, pct, dailyRemaining }
+      // Proyeksi akhir bulan: laju belanja saat ini dikalikan sisa hari
+      const elapsedDays = Math.max(1, now.getDate())
+      const projectedSpend = (spent / elapsedDays) * daysInMonth
+      return { ...b, spent, limit, remaining, pct, dailyRemaining, projectedSpend, projectedOver: limit > 0 && projectedSpend > limit }
     })
-  }, [budgets, transactions, currentMonthKey, home, rates, daysLeft])
+  }, [budgets, transactions, currentMonthKey, home, rates, daysLeft, daysInMonth, now])
 
   const totalBudgetsLimit = useMemo(() => {
-    return (budgets || []).reduce((sum, b) => sum + (Number(b?.limit_amount) || 0), 0)
-  }, [budgets])
+    return (budgets || []).reduce((sum, b) => sum + (safeConvert(Number(b?.limit_amount) || 0, b?.currency || home, home, rates) ?? (Number(b?.limit_amount) || 0)), 0)
+  }, [budgets, home, rates])
 
   // Isolasi savings murni — pinjaman/hutang/cicilan tidak pernah ikut dihitung
   const savingsGoals = useMemo(() => {

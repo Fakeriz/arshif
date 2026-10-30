@@ -1,6 +1,6 @@
 'use client'
 import { useState } from 'react'
-import { Crown, ChevronRight, CreditCard, Bot, Calculator, Tags, Users, HandCoins, Workflow, Repeat, TrendingUp, HeartPulse, Briefcase, Check, ReceiptText, Settings, Cloud } from 'lucide-react'
+import { Crown, ChevronRight, CreditCard, Bot, Calculator, Tags, Users, HandCoins, Workflow, Repeat, TrendingUp, HeartPulse, Briefcase, Check, ReceiptText, Settings, Cloud, Landmark } from 'lucide-react'
 import { toast } from 'sonner'
 import { useApp } from './context'
 import { Card, SectionLabel, Sheet, PrimaryButton, SecondaryButton } from './ui'
@@ -13,6 +13,7 @@ import HealthScoreSheet from './HealthScoreSheet'
 import BusinessInvoiceSheet from './BusinessInvoiceSheet'
 import AccountSupportSection from './AccountSupportSection'
 import AppSettingsSheet from './AppSettingsSheet'
+import TaxReportSheet from './TaxReportSheet'
 
 function Row({ icon: Icon, label, onClick, right, testId }) {
   return (
@@ -98,6 +99,7 @@ export default function MoreTab() {
         <Row icon={TrendingUp} label={t('net_worth')} onClick={() => setNetWorthOpen(true)} testId="more-networth" />
         <Row icon={HeartPulse} label={t('health_score')} onClick={() => setHealthOpen(true)} testId="more-health" />
         <Row icon={Briefcase} label={t('business_invoicing')} onClick={() => setBusinessOpen(true)} testId="more-business" />
+        <Row icon={Landmark} label={t('tax_report')} onClick={() => open('taxReport')} testId="more-tax-report" />
       </Card>
 
       <AccountSupportSection />

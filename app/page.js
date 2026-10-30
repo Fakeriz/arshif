@@ -49,6 +49,7 @@ import MonthStartSheet from '@/components/arshif/MonthStartSheet'
 import AccountBackupSheet from '@/components/arshif/AccountBackupSheet'
 import TutorialSheet from '@/components/arshif/TutorialSheet'
 import HelpLegalSheet from '@/components/arshif/HelpLegalSheet'
+import TaxReportSheet from '@/components/arshif/TaxReportSheet'
 
 const GUEST_KEY = 'arshif_guest_mode'
 const ONBOARD_KEY = 'arshif_onboarded'
@@ -557,6 +558,7 @@ export default function App() {
         <AccountBackupSheet open={!!sheets.backup} onClose={() => close('backup')} />
         <TutorialSheet open={!!sheets.tutorial} onClose={() => close('tutorial')} />
         <HelpLegalSheet open={!!sheets.help} onClose={() => close('help')} />
+        <TaxReportSheet open={!!sheets.taxReport} onClose={() => close('taxReport')} />
       </main>
     </AppContext.Provider>
   )

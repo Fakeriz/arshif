@@ -629,6 +629,43 @@ alter table public.debts add column if not exists settled boolean default false;
 alter table public.debts add column if not exists created_at timestamptz default now();
 create index if not exists debts_user_idx on public.debts(user_id);
 
+-- H-bis. Subscriptions (Langganan berulang: Netflix, Spotify, iCloud, dll.)
+create table if not exists public.subscriptions (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  name text not null default '',
+  title text,
+  amount numeric default 0,
+  currency text default 'IDR',
+  cycle text default 'monthly',        -- weekly | monthly | 3_months | 6_months | yearly
+  due_day integer default 1,           -- Tanggal jatuh tempo bulanan (1-31)
+  next_billing_date date,
+  category text default 'cat_bills',
+  account_id uuid references public.accounts(id) on delete set null,
+  payment_method text default 'card',
+  auto_log_expense boolean default false,
+  show_as_bill boolean default true,   -- Mirror ke checklist tagihan
+  cover_url text,
+  created_at timestamptz default now(),
+  updated_at timestamptz default now()
+);
+alter table public.subscriptions add column if not exists name text default '';
+alter table public.subscriptions add column if not exists title text;
+alter table public.subscriptions add column if not exists amount numeric default 0;
+alter table public.subscriptions add column if not exists currency text default 'IDR';
+alter table public.subscriptions add column if not exists cycle text default 'monthly';
+alter table public.subscriptions add column if not exists due_day integer default 1;
+alter table public.subscriptions add column if not exists next_billing_date date;
+alter table public.subscriptions add column if not exists category text default 'cat_bills';
+alter table public.subscriptions add column if not exists account_id uuid references public.accounts(id) on delete set null;
+alter table public.subscriptions add column if not exists payment_method text default 'card';
+alter table public.subscriptions add column if not exists auto_log_expense boolean default false;
+alter table public.subscriptions add column if not exists show_as_bill boolean default true;
+alter table public.subscriptions add column if not exists cover_url text;
+alter table public.subscriptions add column if not exists created_at timestamptz default now();
+alter table public.subscriptions add column if not exists updated_at timestamptz default now();
+create index if not exists subscriptions_user_idx on public.subscriptions(user_id);
+
 -- I. AI Quotas (Kompatibilitas Tabel Tambahan)
 create table if not exists public.ai_quotas (
   user_id uuid primary key references auth.users(id) on delete cascade,
@@ -657,6 +694,7 @@ alter table public.announcements enable row level security;
 alter table public.support_tickets enable row level security;
 alter table public.budgets enable row level security;
 alter table public.transaction_templates enable row level security;
+alter table public.subscriptions enable row level security;
 alter table public.debts enable row level security;
 alter table public.ai_quotas enable row level security;
 alter table public.import_batches enable row level security;
@@ -674,6 +712,7 @@ grant select, insert, update, delete on public.recurring_transactions to authent
 grant select, insert, update, delete on public.budgets to authenticated;
 grant select, insert, update, delete on public.transaction_templates to authenticated;
 grant select, insert, update, delete on public.debts to authenticated;
+grant select, insert, update, delete on public.subscriptions to authenticated;
 grant select, insert, update, delete on public.ai_quotas to authenticated;
 grant select, insert on public.support_tickets to authenticated;
 grant select on public.announcements to authenticated, anon;
@@ -771,6 +810,11 @@ create policy "transaction_templates own" on public.transaction_templates for al
 
 drop policy if exists "debts own" on public.debts;
 create policy "debts own" on public.debts for all to authenticated
+  using ((select auth.uid()) = user_id) with check ((select auth.uid()) = user_id);
+
+-- Kebijakan RLS Subscriptions: user_id = auth.uid()
+drop policy if exists "subscriptions own" on public.subscriptions;
+create policy "subscriptions own" on public.subscriptions for all to authenticated
   using ((select auth.uid()) = user_id) with check ((select auth.uid()) = user_id);
 
 drop policy if exists "ai_quotas own" on public.ai_quotas;
