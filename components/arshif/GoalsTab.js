@@ -263,14 +263,47 @@ export default function GoalsTab() {
 
   const addFunds = async () => {
     if (!funding || !Number(fund)) return
+    const amount = Number(fund)
+    const goalCurrency = funding?.currency || home
     try {
       await store.updateGoal(funding.id, {
-        saved_amount: (Number(funding.saved_amount) || 0) + Number(fund),
+        saved_amount: (Number(funding.saved_amount) || 0) + amount,
       })
+
+      // Opsional: catat sebagai transaksi pengeluaran agar saldo akun berkurang
+      // dan dana goal tidak "muncul dari udara".
+      let txWarning = null
+      if (fundAccount && recordFundTx && typeof addTransaction === 'function') {
+        try {
+          const homeAmount = safeConvert(amount, goalCurrency, home, rates) ?? amount
+          await addTransaction({
+            type: 'expense',
+            amount,
+            currency: goalCurrency,
+            home_currency: home,
+            home_currency_amount: homeAmount,
+            rate: amount > 0 ? homeAmount / amount : 1,
+            category: 'other',
+            payment_method: 'bank',
+            account_id: fundAccount,
+            note: `Goal: ${funding.name}`,
+            date: new Date().toISOString(),
+            transaction_date: new Date().toISOString(),
+          })
+        } catch (txErr) {
+          txWarning = txErr?.message
+        }
+      }
+
       setFunding(null)
       setFund('')
+      setFundAccount('')
       await refresh()
-      toast.success(t('saved_msg') || 'Dana ditambahkan')
+      if (txWarning) {
+        toast.warning(`${t('saved_msg') || 'Dana ditambahkan'} — transaksi gagal dicatat: ${txWarning}`)
+      } else {
+        toast.success(t('saved_msg') || 'Dana ditambahkan')
+      }
     } catch (e) {
       toast.error(e?.message || t('error'))
     }
