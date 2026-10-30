@@ -1,1 +1,11 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><rect width="512" height="512" rx="120" fill="#0A0A0B"/><g fill="#FFFFFF"><path d="M256 103 L281 148 L231 148 Z"/><path d="M258 118 L282 118 L424 384 L392 384 Z"/><path d="M254 118 L230 118 L88 384 L120 384 Z"/><path d="M163 266 L349 266 L349 305 L163 305 Z"/></g></svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+<rect width="512" height="512" rx="120" fill="#0A0A0B"/>
+<!-- back card -->
+<rect x="161" y="112" width="278" height="204" rx="30" fill="#52525B"/>
+<!-- front card -->
+<rect x="73" y="196" width="278" height="204" rx="30" fill="#FFFFFF"/>
+<!-- lines -->
+<rect x="114" y="252" width="134" height="9" rx="4.5" fill="#A1A1AA"/>
+<rect x="114" y="296" width="167" height="9" rx="4.5" fill="#A1A1AA"/>
+<rect x="114" y="340" width="94" height="9" rx="4.5" fill="#A1A1AA"/>
+</svg>
