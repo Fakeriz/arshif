@@ -589,7 +589,7 @@ export default function ImportTransactionsPage({ onClose }) {
           <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-5 pt-5 pb-8">
           <input ref={fileRef} type="file" accept=".csv,.xlsx,.xls,.pdf" className="hidden" onChange={(e) => handleFile(e.target.files?.[0])} data-testid="import-file" />
 
-          {/* ============ STEP 0: pilih sumber data ============ */}
+          {/* STEP 0: pilih sumber data */}
           {step === 0 && (
             <div className="space-y-5">
               <PageHead title={t('import_src_title')} desc={t('import_src_sub')} />
@@ -642,7 +642,7 @@ export default function ImportTransactionsPage({ onClose }) {
             </div>
           )}
 
-          {/* ============ STEP 1: setup ============ */}
+          {/* STEP 1: setup */}
           {step === 1 && !aiMode && (
             <div className="space-y-5">
               <PageHead title={t('import_setup_title')} desc={t('import_setup_sub')} />
@@ -687,7 +687,7 @@ export default function ImportTransactionsPage({ onClose }) {
             </div>
           )}
 
-          {/* ============ STEP 1: persetujuan PDF+AI ============ */}
+          {/* STEP 1: persetujuan PDF+AI */}
           {step === 1 && aiMode && (
             <div className="space-y-5">
               <PageHead title={t('import_ai_consent_title')} desc={t('import_ai_consent_sub')} />
@@ -736,7 +736,7 @@ export default function ImportTransactionsPage({ onClose }) {
             </div>
           )}
 
-          {/* ============ STEP 2: review ============ */}
+          {/* STEP 2: review */}
           {step === 2 && (
             <div className="space-y-5">
               <PageHead title={t('import_review_title')} desc={t('import_review_sub').replace('{n}', String(rows.length))} />
@@ -884,7 +884,7 @@ export default function ImportTransactionsPage({ onClose }) {
             </div>
           )}
 
-          {/* ============ STEP 3: selesai ============ */}
+          {/* STEP 3: selesai */}
           {step === 3 && result && (
             <div className="pt-6">
               <div className={cn(tile, 'h-20 w-20 rounded-[28px] mx-auto')}>

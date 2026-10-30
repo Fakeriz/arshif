@@ -251,7 +251,7 @@ export default function GoalsTab() {
 
   return (
     <div className="px-5 pb-28">
-      {/* Sticky Top Header */}
+      {/* Sticky header */}
       <div className="sticky top-0 z-30 pt-6 pb-2 bg-background/95 backdrop-blur-md">
         <h1 className="text-2xl font-bold tracking-tight text-foreground">
           {t('goals') || 'Goals'}
@@ -338,9 +338,7 @@ export default function GoalsTab() {
         )}
       </div>
 
-      {/* ============================================================ */}
-      {/* 2. SECTION: MONTHLY BUDGETS */}
-      {/* ============================================================ */}
+      {/* Monthly budgets */}
       <div className="mt-8">
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-1.5">
@@ -528,9 +526,7 @@ export default function GoalsTab() {
         )}
       </div>
 
-      {/* ============================================================ */}
-      {/* 4. SECTION: LOANS & BNPL */}
-      {/* ============================================================ */}
+      {/* Loans & BNPL */}
       <div className="mt-8">
         <LoansSection
           loans={loans}
@@ -546,10 +542,7 @@ export default function GoalsTab() {
           }}
         />
       </div>
-      {/* ============================================================ */}
-      {/* MODALS & SHEETS */}
-      {/* ============================================================ */}
-
+      
       {/* 1. Subscription Detail / Edit Bottom Sheet */}
       <SubscriptionSheet
         open={subSheetOpen}

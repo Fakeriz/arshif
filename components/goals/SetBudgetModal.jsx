@@ -368,9 +368,7 @@ export default function SetBudgetModal({
         }
       >
         <div className="space-y-4 pt-1 pb-10">
-          {/* ============================================================ */}
-          {/* 1. INPUT LIMIT ANGKA & QUICK OPTIONS */}
-          {/* ============================================================ */}
+          {/* Input limit & opsi cepat */}
           <div className="space-y-2">
             <label className="text-xs font-semibold tracking-wider text-muted-foreground uppercase">
               BUDGET LIMIT
@@ -399,7 +397,7 @@ export default function SetBudgetModal({
               </p>
             </div>
 
-            {/* Quick Options Pills */}
+            {/* Opsi cepat */}
             <div className="pt-1">
               <div className="text-[10px] font-semibold tracking-wider text-muted-foreground uppercase mb-1.5 px-0.5">
                 QUICK OPTIONS
@@ -427,9 +425,7 @@ export default function SetBudgetModal({
             </div>
           </div>
 
-          {/* ============================================================ */}
-          {/* 2. PENENTUAN PERIODE & KALKULASI DURASI (PERIOD) */}
-          {/* ============================================================ */}
+          {/* Periode & durasi */}
           <div>
             <label className="text-[11px] font-semibold tracking-wider text-muted-foreground uppercase block mb-1.5">
               PERIOD
@@ -448,7 +444,7 @@ export default function SetBudgetModal({
                 />
               </div>
 
-              {/* Baris Durasi Bawah */}
+              {/* Baris durasi bawah */}
               <div className="flex items-center justify-between text-xs text-muted-foreground pt-1 border-t border-border/20">
                 <span>{totalDays} days total</span>
                 <span>{daysLeft} days left</span>
@@ -456,9 +452,7 @@ export default function SetBudgetModal({
             </div>
           </div>
 
-          {/* ============================================================ */}
-          {/* 3. PENGATURAN PERULANGAN (REPEAT) */}
-          {/* ============================================================ */}
+          {/* Perulangan */}
           <div>
             <label className="text-[11px] font-semibold tracking-wider text-muted-foreground uppercase block mb-1.5">
               REPEAT
@@ -493,11 +487,9 @@ export default function SetBudgetModal({
             </p>
           </div>
 
-          {/* ============================================================ */}
-          {/* 4. RINGKASAN PLAFON & KARTU KATEGORI TERPILIH */}
-          {/* ============================================================ */}
+          {/* Ringkasan plafon & kategori */}
           <div>
-            {/* Box Ringkasan Akumulasi (All Budgets) */}
+            {/* Ringkasan akumulasi semua budget */}
             <div className="bg-muted/20 border border-border/30 rounded-2xl p-3.5 flex justify-between items-center text-xs">
                 <span>{t('budget_all_budgets')}</span>
               <span className="font-bold text-foreground tabular-nums">
@@ -506,7 +498,7 @@ export default function SetBudgetModal({
               </span>
             </div>
 
-            {/* Kartu Kategori Terpilih */}
+            {/* Kartu kategori terpilih */}
             <div className="bg-muted/30 border border-border/40 rounded-2xl p-4 flex items-center gap-3.5 mt-3">
               <div className="w-12 h-12 rounded-2xl bg-foreground text-background flex items-center justify-center shrink-0">
                 <CategoryIcon id={category} size={22} />
@@ -523,11 +515,9 @@ export default function SetBudgetModal({
             </div>
           </div>
 
-          {/* ============================================================ */}
-          {/* 5. PEMILIH KATEGORI & SUBKATEGORI (CHOOSE CATEGORY & SUBCATEGORY) */}
-          {/* ============================================================ */}
+          {/* Pilih kategori & subkategori */}
           <div>
-            {/* Choose Category Header with Pencil icon */}
+            
             <div className="flex items-center justify-between mt-5 mb-2 px-0.5">
               <span className="text-[11px] font-semibold tracking-wider text-muted-foreground uppercase">
                 CHOOSE CATEGORY
@@ -543,7 +533,7 @@ export default function SetBudgetModal({
               </button>
             </div>
 
-            {/* Category horizontal squircle scroll */}
+            
             <div className="flex items-center gap-2.5 overflow-x-auto no-scrollbar py-1">
               {EXPENSE_CATEGORIES.map((cat) => {
                 const active = category === cat.id
@@ -583,7 +573,7 @@ export default function SetBudgetModal({
               })}
             </div>
 
-            {/* Choose Subcategory (Conditional) */}
+            
             {availableSubcategories.length > 0 && (
               <div className="mt-4">
                 <div className="text-[11px] font-semibold tracking-wider text-muted-foreground uppercase mb-2 px-0.5">
@@ -613,7 +603,7 @@ export default function SetBudgetModal({
             )}
           </div>
 
-          {/* Delete Button (If editing existing budget) */}
+          
           {budget?.id && (
             <div className="pt-2">
               <button
@@ -629,9 +619,7 @@ export default function SetBudgetModal({
         </div>
       </Sheet>
 
-      {/* ============================================================ */}
-      {/* DIALOG PENJELASAN: "How Budgets Work" */}
-      {/* ============================================================ */}
+      {/* Dialog "How Budgets Work" */}
       {showHelp && (
         <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-150">
           <div className="w-full max-w-sm rounded-3xl bg-card border border-border/40 p-6 shadow-2xl space-y-3">

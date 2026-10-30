@@ -197,9 +197,7 @@ export default function LoansSection({
         </div>
       )}
 
-      {/* ============================================================ */}
-      {/* 1. DIALOG AKSI PEMILIH JENIS UTANG (TYPE ACTION SHEET) */}
-      {/* ============================================================ */}
+      {/* Pilihan jenis utang */}
       <Sheet
         open={typeActionSheetOpen}
         onClose={() => setTypeActionSheetOpen(false)}
@@ -213,8 +211,7 @@ export default function LoansSection({
 
           {/* Action Buttons */}
           <div className="space-y-2.5">
-            {/* Tombol Pilihan 1: Pinjaman atau Cicilan BNPL */}
-            <button
+                        <button
               type="button"
               onClick={() => {
                 triggerHaptic('light')
@@ -270,9 +267,7 @@ export default function LoansSection({
         </div>
       </Sheet>
 
-      {/* ============================================================ */}
-      {/* 2. MODAL CICILAN & PINJAMAN (LOAN MODAL) */}
-      {/* ============================================================ */}
+      {/* Modal cicilan & pinjaman */}
       <LoanModal
         open={loanModalOpen}
         onClose={() => {
@@ -296,9 +291,7 @@ export default function LoansSection({
         t={t}
       />
 
-      {/* ============================================================ */}
-      {/* 3. MODAL TAGIHAN BULANAN PAYLATER (POSTPAID PLAN MODAL) */}
-      {/* ============================================================ */}
+      {/* Modal tagihan paylater */}
       <PostpaidPlanModal
         open={postpaidModalOpen}
         onClose={() => {

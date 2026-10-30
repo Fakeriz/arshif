@@ -271,9 +271,7 @@ export default function NewSavingsGoalModal({
       }
     >
       <div className="space-y-4">
-        {/* ============================================================ */}
-        {/* 2. COVER PHOTO (OPTIONAL) */}
-        {/* ============================================================ */}
+        {/* Cover photo (opsional) */}
               <div>
                 <label className="text-[11px] font-semibold tracking-wider text-muted-foreground uppercase mb-2 block">
                   COVER PHOTO (OPTIONAL)
@@ -339,9 +337,7 @@ export default function NewSavingsGoalModal({
                 </div>
               </div>
 
-              {/* ============================================================ */}
-              {/* 3. ICON SELECTOR (2 ROWS X 6 COLS) */}
-              {/* ============================================================ */}
+              {/* Icon selector */}
               <div>
                 <label className="text-[11px] font-semibold tracking-wider text-muted-foreground uppercase mb-2 block">
                   ICON
@@ -370,11 +366,8 @@ export default function NewSavingsGoalModal({
                 </div>
               </div>
 
-              {/* ============================================================ */}
-              {/* 4. FORM INPUTS & DESCRIPTIONS */}
-              {/* ============================================================ */}
-              {/* Field 1: Goal name */}
-              <div>
+              {/* Form inputs */}
+                            <div>
                 <label className="text-xs text-muted-foreground font-medium mb-1 block">
                   Goal name
                 </label>
@@ -387,8 +380,7 @@ export default function NewSavingsGoalModal({
                 />
               </div>
 
-              {/* Field 2: Target amount */}
-              <div>
+                            <div>
                 <label className="text-xs text-muted-foreground font-medium mb-1 block">
                   Target amount
                 </label>
@@ -410,8 +402,7 @@ export default function NewSavingsGoalModal({
                 </div>
               </div>
 
-              {/* Field 3: Starting saved balance */}
-              <div>
+                            <div>
                 <label className="text-xs text-muted-foreground font-medium mb-1 block">
                   Starting saved balance
                 </label>
@@ -436,8 +427,7 @@ export default function NewSavingsGoalModal({
                 </p>
               </div>
 
-              {/* Field 4: Deadline (optional) */}
-              <DatePickerInput
+                            <DatePickerInput
                 label="Deadline (optional)"
                 value={deadline}
                 onChange={(val) => {
@@ -451,8 +441,7 @@ export default function NewSavingsGoalModal({
                 }}
               />
 
-              {/* Field 5: Monthly savings target (optional) */}
-              <div>
+                            <div>
                 <label className="text-xs text-muted-foreground font-medium mb-1 block">
                   Monthly savings target (optional)
                 </label>
@@ -474,9 +463,7 @@ export default function NewSavingsGoalModal({
                 </p>
               </div>
 
-              {/* ============================================================ */}
-              {/* 5. BOTTOM ACTION: CREATE GOAL BUTTON */}
-              {/* ============================================================ */}
+              {/* Tombol buat goal */}
               <button
                 type="button"
                 onClick={handleCreateGoal}

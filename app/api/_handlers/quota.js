@@ -1,4 +1,3 @@
-// app/api/_handlers/quota.js
 // Auth + kuota AI (verify & consume), dan endpoint GET ai/usage.
 // Helper auth diimpor dari lib/api-auth.js (sumber tunggal, tidak diduplikasi).
 import { readBearerToken, getServerSupabase } from '@/lib/api-auth'
@@ -44,7 +43,6 @@ async function verifyAndConsumeAiAccess(request) {
     }
   }
 
-  // Determine user tier & role
   // Entitlement hanya berasal dari profiles yang dibaca server, bukan metadata client.
   let planTier = 'free'
   let role = 'authenticated'

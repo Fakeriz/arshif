@@ -40,7 +40,7 @@ export default function BillsTrackerSheet({ open, onClose }) {
   const [deleting, setDeleting] = useState(null)
   const [syncedAlert, setSyncedAlert] = useState(null)
 
-  // Add bill form state
+  // Form tambah tagihan
   const [title, setTitle] = useState('')
   const [amount, setAmount] = useState('')
   const [dueDay, setDueDay] = useState('1')
@@ -51,7 +51,7 @@ export default function BillsTrackerSheet({ open, onClose }) {
   const [autoLogExpense, setAutoLogExpense] = useState(true)
   const [saving, setSaving] = useState(false)
 
-  // Edit bill form state
+  // Form edit tagihan
   const [editTitle, setEditTitle] = useState('')
   const [editAmount, setEditAmount] = useState('')
   const [editDueDay, setEditDueDay] = useState('1')
@@ -147,7 +147,6 @@ export default function BillsTrackerSheet({ open, onClose }) {
       await store.updateBill(b.id, { paid_months: pm })
 
       if (isNowPaid) {
-        // Otomatis buat record pengeluaran baru di tabel transactions dan kurangi saldo akun terkait
         const billAmount = Math.abs(Number(b.amount) || 0)
 
         if (billAmount > 0) {
