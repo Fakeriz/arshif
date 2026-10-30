@@ -2,6 +2,7 @@
 import { NextResponse } from 'next/server'
 import { FALLBACK_RATES } from '@/lib/rates'
 import { readBearerToken, getServerSupabase } from '@/lib/api-auth'
+import { parseMoneyOrZero } from '@/lib/money-parse'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -210,39 +211,6 @@ async function handleAiUsage(request) {
   }
 
   return json(usage, 200)
-}
-
-// Request parsing helpers.
-function parseNumber(val) {
-  if (typeof val === 'number') return isNaN(val) ? 0 : val
-  if (!val) return 0
-  let str = String(val).trim().replace(/[^0-9.,-]/g, '')
-  if (!str) return 0
-  if (str.includes(',') && str.includes('.')) {
-    if (str.lastIndexOf('.') > str.lastIndexOf(',')) {
-      str = str.replace(/,/g, '')
-    } else {
-      str = str.replace(/\./g, '').replace(',', '.')
-    }
-  } else if (str.includes(',')) {
-    const parts = str.split(',')
-    if (parts.length === 2 && parts[1].length === 3) {
-      str = str.replace(',', '')
-    } else if (parts.length > 2) {
-      str = str.replace(/,/g, '')
-    } else {
-      str = str.replace(',', '.')
-    }
-  } else if (str.includes('.')) {
-    const parts = str.split('.')
-    if (parts.length === 2 && parts[1].length === 3) {
-      str = str.replace('.', '')
-    } else if (parts.length > 2) {
-      str = str.replace(/\./g, '')
-    }
-  }
-  const n = parseFloat(str)
-  return isNaN(n) ? 0 : Math.round(n * 100) / 100
 }
 
 function extractJson(text) {
@@ -606,12 +574,12 @@ OUTPUT FORMAT (JSON ONLY):
             name: String(it?.name || 'Item').trim(),
             qty: Math.max(0.1, Number(it?.qty) || 1),
             unit: it?.unit ? String(it.unit).trim().toLowerCase() : null,
-            price: Math.abs(parseNumber(it?.price) || 0),
+            price: Math.abs(parseMoneyOrZero(it?.price)),
           }))
         : []
 
       const itemsSum = items.reduce((sum, it) => sum + it.price * it.qty, 0)
-      const rawAmount = Math.abs(parseNumber(tx?.amount) || 0)
+      const rawAmount = Math.abs(parseMoneyOrZero(tx?.amount))
       const amount = rawAmount > 0 ? rawAmount : (itemsSum > 0 ? itemsSum : 0)
 
       // 1. Akun & Mata Uang Akun
@@ -924,12 +892,12 @@ async function handleOcr(request, quota = null) {
       ? receipt.items.map((it) => ({
           name: String(it?.name || 'Item').trim(),
           qty: Math.max(1, Number(it?.qty) || 1),
-          price: parseNumber(it?.price),
+          price: parseMoneyOrZero(it?.price),
         }))
       : []
 
     const calculatedTotal = items.reduce((sum, item) => sum + item.price * item.qty, 0)
-    const rawTotal = receipt?.total !== undefined && receipt?.total !== null ? parseNumber(receipt.total) : calculatedTotal
+    const rawTotal = receipt?.total !== undefined && receipt?.total !== null ? parseMoneyOrZero(receipt.total) : calculatedTotal
     const total = rawTotal > 0 ? rawTotal : calculatedTotal
 
     let validTime = null
@@ -969,8 +937,8 @@ async function handleOcr(request, quota = null) {
       time: validTime,
       transaction_date: transactionDate,
       currency: receipt?.currency ? String(receipt.currency).toUpperCase().slice(0, 3) : null,
-      subtotal: receipt?.subtotal !== null && receipt?.subtotal !== undefined ? parseNumber(receipt.subtotal) : null,
-      tax: receipt?.tax !== null && receipt?.tax !== undefined ? parseNumber(receipt.tax) : null,
+      subtotal: receipt?.subtotal !== null && receipt?.subtotal !== undefined ? parseMoneyOrZero(receipt.subtotal) : null,
+      tax: receipt?.tax !== null && receipt?.tax !== undefined ? parseMoneyOrZero(receipt.tax) : null,
       total: total || 0,
       payment_method: ['cash', 'qr', 'card', 'bank'].includes(receipt?.payment_method) ? receipt.payment_method : null,
       items,
