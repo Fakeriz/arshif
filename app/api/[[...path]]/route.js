@@ -63,6 +63,18 @@ async function verifyAndConsumeAiAccess(request) {
     }
   }
 
+
+  // Developer/internal test token — hanya dari env server, TIDAK pernah hardcode di source.
+  // Pola Belanje: tidak ada bypass auth yang ter-commit; yang mengikat = server.
+  const devAdminToken = process.env.ARSHIF_DEV_ADMIN_TOKEN
+  if (devAdminToken && token === devAdminToken) {
+    return {
+      allowed: true,
+      user: { id: 'admin-dev', email: process.env.ARSHIF_DEV_ADMIN_EMAIL || 'dev-admin@localhost' },
+      quota: { remaining: 999, total: 999, is_unlimited: true },
+    }
+  }
+
   const supabaseClient = getServerSupabase(token)
   const { data: authData, error: authError } = await supabaseClient.auth.getUser(token)
   const user = authData?.user
@@ -131,10 +143,15 @@ async function verifyAndConsumeAiAccess(request) {
         ),
       }
     }
+    const isUnlimited = rpcRes.is_unlimited === true
     const quota = {
-      remaining: rpcRes.remaining ?? 999,
-      total: rpcRes.total ?? 999,
-      is_unlimited: rpcRes.is_unlimited ?? true,
+      remaining: rpcRes.remaining ?? 0,
+      total: rpcRes.total ?? 0,
+      is_unlimited: isUnlimited,
+    }
+    if (isUnlimited) {
+      quota.remaining = quota.remaining || 999
+      quota.total = quota.total || 999
     }
     return { allowed: true, user, quota }
   } catch (e) {
@@ -154,6 +171,11 @@ async function handleAiUsage(request) {
 
   if (!token) {
     return err('Autentikasi token Bearer diperlukan.', 401)
+  }
+
+  const devAdminToken = process.env.ARSHIF_DEV_ADMIN_TOKEN
+  if (devAdminToken && token === devAdminToken) {
+    return json({ remaining: 999, total: 999, is_unlimited: true }, 200)
   }
 
   const supabaseClient = getServerSupabase(token)
