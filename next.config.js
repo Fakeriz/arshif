@@ -34,12 +34,17 @@ const nextConfig = {
     pagesBufferLength: 2,
   },
   async headers() {
+    // 'unsafe-eval' hanya dibutuhkan Next.js di dev (HMR/webpack). Di production
+    // script-src tanpa eval menutup celah eksekusi kode hasil injeksi.
+    const scriptSrc = process.env.NODE_ENV === 'development'
+      ? "script-src 'self' 'unsafe-inline' 'unsafe-eval'"
+      : "script-src 'self' 'unsafe-inline'"
     return [
       {
         source: "/(.*)",
         headers: [
           { key: "X-Frame-Options", value: "DENY" },
-          { key: "Content-Security-Policy", value: "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; img-src 'self' data: blob: https://*.supabase.co https://*.googleusercontent.com https://drive.google.com https://avatars.githubusercontent.com; connect-src 'self' https://*.supabase.co https://generativelanguage.googleapis.com https://open.er-api.com https://www.googleapis.com; font-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; upgrade-insecure-requests" },
+          { key: "Content-Security-Policy", value: `default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; img-src 'self' data: blob: https://*.supabase.co https://*.googleusercontent.com https://drive.google.com https://avatars.githubusercontent.com; connect-src 'self' https://*.supabase.co https://generativelanguage.googleapis.com https://open.er-api.com https://www.googleapis.com; font-src 'self' data:; style-src 'self' 'unsafe-inline'; ${scriptSrc}; upgrade-insecure-requests` },
           { key: "X-Content-Type-Options", value: "nosniff" },
           { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
           { key: "Permissions-Policy", value: "camera=(self), microphone=(self), geolocation=()" },

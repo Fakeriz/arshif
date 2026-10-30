@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 import { buildBackupPayload, validateBackupPayload, restoreBackupData } from '../lib/backup.js'
-import { clampMonthStartDay, readMonthStartDay, MONTH_START_DEFAULT } from '../lib/month-cycle.js'
+import { clampMonthStartDay, readMonthStartDay, monthRangeLabel, MONTH_START_DEFAULT } from '../lib/month-cycle.js'
 
 test('backup payload includes accounts, transactions and goals with metadata', () => {
   const payload = buildBackupPayload({
@@ -79,4 +79,11 @@ test('month start day defaults to 1 and clamps to 1-31', () => {
   assert.equal(readMonthStartDay(() => null, {}), MONTH_START_DEFAULT)
   assert.equal(readMonthStartDay(() => null, { month_start_day: 25 }), 25)
   assert.equal(readMonthStartDay(() => '99', { month_start_day: 7 }), 7)
+})
+
+test('monthRangeLabel clamps start day to days in month (no February rollover)', () => {
+  assert.equal(monthRangeLabel(31, 2026, 1), 'Feb 28 – Mar 27, 2026')
+  assert.equal(monthRangeLabel(30, 2026, 1), 'Feb 28 – Mar 27, 2026')
+  assert.equal(monthRangeLabel(1, 2026, 9), 'Oct 1 – Oct 31, 2026')
+  assert.equal(monthRangeLabel(15, 2026, 9), 'Oct 15 – Nov 14, 2026')
 })

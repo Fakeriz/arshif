@@ -53,3 +53,11 @@ test('parseMoney strips currency symbols and spaces', () => {
   assert.equal(parseMoney('Rp 12.500'), 12500)
   assert.equal(parseMoney('$ 49.99'), 49.99)
 })
+
+test('parseMoney handles scientific notation instead of stripping the exponent', () => {
+  assert.equal(parseMoney('1e5'), 100000)
+  assert.equal(parseMoney('1.5e3'), 1500)
+  assert.equal(parseMoney('2E3'), 2000)
+  assert.equal(parseMoney('-2e2'), -200)
+  assert.equal(parseMoneyOrZero('1e5'), 100000)
+})

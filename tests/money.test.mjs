@@ -91,3 +91,13 @@ test('transfer fee is persisted as a separate expense so it is not lost', () => 
 test('calculator division by zero returns a safe result', () => {
   assert.equal(evaluateExpression('5/0'), 0)
 })
+
+test('calculator applies unary minus with correct precedence', () => {
+  assert.equal(evaluateExpression('2*-3'), -6)
+  assert.equal(evaluateExpression('100*-1'), -100)
+  assert.equal(evaluateExpression('10/-2'), -5)
+  assert.equal(evaluateExpression('-2*3'), -6)
+  assert.equal(evaluateExpression('5*-2+1'), -9)
+  assert.equal(evaluateExpression('2--3'), 5)
+  assert.equal(evaluateExpression('2---3'), -1)
+})

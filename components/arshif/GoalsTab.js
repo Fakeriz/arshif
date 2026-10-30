@@ -477,6 +477,11 @@ export default function GoalsTab() {
                         <p className="text-xs text-muted-foreground truncate mt-0.5">
                           {fmt(b.remaining, home)} left of {fmt(b.limit, home)} · ≈ {fmt(b.dailyRemaining, home)}/day
                         </p>
+                        {b.projectedOver ? (
+                          <p className="text-[11px] font-medium text-rose-500 mt-0.5">
+                            {t('budget_projected', 'Projected')} {fmt(Math.round(b.projectedSpend), home)} {t('budget_projected_over', 'by month end — over limit')}
+                          </p>
+                        ) : null}
                       </div>
                     </div>
                     <div className="text-right shrink-0">
@@ -536,10 +541,20 @@ export default function GoalsTab() {
         ) : (
           <div className="space-y-3">
             {savingsGoals.map((g) => {
-              const targetVal = Number(g?.target_amount) || 1
-              const savedVal = Number(g?.saved_amount) || 0
-              const pct = Math.min(100, Math.round((savedVal / targetVal) * 100))
+              const projection = projectGoal(g, now)
+              const pct = Math.min(100, Math.round((projection.savedVal / Math.max(1, projection.targetVal)) * 100))
               const GIcon = goalIcon(g?.icon)
+              const goalCur = g?.currency || home
+              const statusTone = projection.status === 'completed' || projection.status === 'on_track'
+                ? 'text-emerald-600 dark:text-emerald-400'
+                : projection.status === 'behind'
+                  ? 'text-amber-600 dark:text-amber-400'
+                  : projection.status === 'overdue'
+                    ? 'text-rose-600 dark:text-rose-400'
+                    : 'text-muted-foreground'
+              const statusLabel = projection.status === 'no_deadline'
+                ? null
+                : t(`goal_status_${projection.status}`, projection.status === 'on_track' ? 'On track' : projection.status === 'behind' ? 'Behind' : projection.status === 'overdue' ? 'Overdue' : 'Completed')
               return (
                 <div key={g.id} className="rounded-2xl border border-border/40 bg-card p-4 shadow-xs space-y-3">
                   <div className="flex items-center justify-between gap-3">
@@ -556,8 +571,16 @@ export default function GoalsTab() {
                       <div className="min-w-0">
                         <p className="text-sm font-bold truncate text-foreground">{g?.name}</p>
                         <p className="text-xs text-muted-foreground mt-0.5">
-                          {fmt(savedVal, g?.currency || home)} of {fmt(targetVal, g?.currency || home)}
+                          {fmt(projection.savedVal, goalCur)} of {fmt(projection.targetVal, goalCur)}
                         </p>
+                        {statusLabel ? (
+                          <p className="text-[11px] mt-0.5 truncate">
+                            <span className={`font-semibold ${statusTone}`}>{statusLabel}</span>
+                            {!projection.completed && projection.requiredMonthly > 0 ? (
+                              <span className="text-muted-foreground">{` · ≈ ${fmt(Math.round(projection.requiredMonthly), goalCur)}/mo · ${projection.monthsLeft} mo left`}</span>
+                            ) : null}
+                          </p>
+                        ) : null}
                       </div>
                     </div>
                     <div className="text-right shrink-0">
@@ -568,7 +591,7 @@ export default function GoalsTab() {
                   {/* Horizontal Progress Bar */}
                   <div className="h-1.5 rounded-full bg-muted overflow-hidden">
                     <div
-                      className="h-full bg-foreground rounded-full transition-all duration-300"
+                      className={cn('h-full rounded-full transition-all duration-300', projection.completed ? 'bg-emerald-500' : 'bg-foreground')}
                       style={{ width: `${pct}%` }}
                     />
                   </div>
@@ -701,7 +724,7 @@ export default function GoalsTab() {
       />
 
       {/* Add Funds to Goal Modal */}
-      <Sheet open={!!funding} onClose={() => setFunding(null)} title={t('add_funds') || 'Add Funds'}>
+      <Sheet open={!!funding} onClose={() => { setFunding(null); setFundAccount(''); setRecordFundTx(true) }} title={t('add_funds') || 'Add Funds'}>
         <div className="space-y-5 pt-2 pb-6">
           <div className="flex justify-center">
             <div className="h-16 w-16 rounded-2xl bg-muted text-foreground flex items-center justify-center">
@@ -719,6 +742,50 @@ export default function GoalsTab() {
               autoFocus
             />
           </Field>
+
+          {/* Sumber dana opsional: pilih akun agar saldo berkurang & transaksi tercatat */}
+          {accounts.length > 0 ? (
+            <div>
+              <p className="text-xs text-muted-foreground font-medium mb-1.5">{t('fund_source', 'Fund from account (optional)')}</p>
+              <div className="flex gap-2 overflow-x-auto no-scrollbar -mx-1 px-1 pb-1">
+                <button
+                  type="button"
+                  onClick={() => setFundAccount('')}
+                  className={cn(
+                    'shrink-0 rounded-xl border px-3 py-2 text-xs font-semibold transition cursor-pointer',
+                    !fundAccount ? 'bg-foreground text-background border-transparent' : 'bg-muted/40 border-border/40 text-muted-foreground'
+                  )}
+                >
+                  {t('fund_no_account', 'No account')}
+                </button>
+                {accounts.map((a) => (
+                  <button
+                    key={a.id}
+                    type="button"
+                    onClick={() => setFundAccount(a.id)}
+                    className={cn(
+                      'shrink-0 rounded-xl border px-3 py-2 text-xs font-semibold transition cursor-pointer',
+                      fundAccount === a.id ? 'bg-foreground text-background border-transparent' : 'bg-muted/40 border-border/40 text-muted-foreground'
+                    )}
+                  >
+                    {a.name}
+                  </button>
+                ))}
+              </div>
+              {fundAccount ? (
+                <label className="mt-2.5 flex items-center gap-2 text-xs text-muted-foreground cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={recordFundTx}
+                    onChange={(e) => setRecordFundTx(e.target.checked)}
+                    className="h-4 w-4 rounded accent-foreground"
+                  />
+                  {t('fund_record_tx', 'Record as expense transaction (deducts account balance)')}
+                </label>
+              ) : null}
+            </div>
+          ) : null}
+
           <PrimaryButton onClick={addFunds} disabled={!Number(fund)}>
             {t('save')}
           </PrimaryButton>
