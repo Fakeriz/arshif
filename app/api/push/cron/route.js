@@ -5,6 +5,7 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import webpush from 'web-push'
 import { SUPABASE_URL } from '@/lib/supabase'
+import { safeSecretEqual } from '@/lib/secret-compare'
 import { deriveNotifications } from '@/lib/notifications'
 import {
   initWebPush,
@@ -45,7 +46,7 @@ export async function POST(request) {
   const authHeader = request.headers.get('authorization') || ''
   const token = authHeader.replace(/^Bearer\s+/i, '').trim()
   const cronSecret = process.env.CRON_SECRET
-  if (!cronSecret || token !== cronSecret) {
+  if (!safeSecretEqual(token, cronSecret)) {
     return json({ error: 'Unauthorized' }, 401)
   }
 

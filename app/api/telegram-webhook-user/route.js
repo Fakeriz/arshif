@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { safeSecretEqual } from '@/lib/secret-compare'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -14,7 +15,7 @@ export async function POST(req) {
       return NextResponse.json({ error: 'Webhook secret is not configured' }, { status: 503 })
     }
     const providedSecret = req.headers.get('x-telegram-webhook-secret') || ''
-    if (providedSecret !== webhookSecret) {
+    if (!safeSecretEqual(providedSecret, webhookSecret)) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
