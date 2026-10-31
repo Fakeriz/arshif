@@ -1,6 +1,6 @@
 'use client'
 import { useEffect, useRef, useState } from 'react'
-import { Camera, Building2, ImagePlus } from 'lucide-react'
+import { Camera, Building2, ImagePlus, LogOut } from 'lucide-react'
 import { toast } from 'sonner'
 import { useApp } from './context'
 import { Sheet, SheetTextButton, Field, TextInput, Segmented, PrimaryButton } from './ui'
@@ -16,7 +16,7 @@ const lsSet = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)) } cat
 const EMPTY_BIZ = { logo: '', companyName: '', address: '', phone: '', email: '', bankName: '', accHolder: '', accNumber: '', legalName: '', npwp: '', nib: '', taxStatus: 'nonpkp', openingBalance: '' }
 
 export default function ProfileSheet({ open, onClose }) {
-  const { t, profile, updateProfile, session, isGuest, home } = useApp()
+  const { t, profile, updateProfile, session, isGuest, home, signOut } = useApp()
   const scope = session?.user?.id || 'guest'
   const BIZ_KEY = `arshif_bizprofile_${scope}`
   const CTX_KEY = 'arshif_bizctx'
@@ -149,6 +149,12 @@ export default function ProfileSheet({ open, onClose }) {
         ) : null}
 
         <PrimaryButton onClick={save} disabled={saving} data-testid="profile-save-btn">{t('save_changes')}</PrimaryButton>
+        {!isGuest ? (
+          <button type="button" onClick={() => signOut?.()} className="w-full flex items-center justify-center gap-2 py-3 text-sm font-medium text-zinc-500 dark:text-zinc-400 hover:text-rose-500 dark:hover:text-rose-400 active:text-rose-600 transition">
+            <LogOut size={15} strokeWidth={2} />
+            {t('sign_out')}
+          </button>
+        ) : null}
         <div className="h-2" />
       </div>
     </Sheet>
