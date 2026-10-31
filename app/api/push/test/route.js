@@ -35,12 +35,12 @@ export async function POST(request) {
     .eq('user_id', user.id)
 
   if (!subs?.length) {
-    return json({ error: 'Belum ada device terdaftar. Aktifkan push dulu.' }, 400)
+    return json({ error: 'NO_DEVICE' }, 400)
   }
 
   const payload = JSON.stringify({
     title: 'Arshif',
-    body: 'Notifikasi test berhasil! Push notification sudah aktif di perangkat ini.',
+    body: 'Test notification — push is active on this device.',
     icon: '/icon-192.png',
     badge: '/icon-192.png',
     data: { action: 'notifications', type: 'test' },

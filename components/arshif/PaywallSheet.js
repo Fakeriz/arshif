@@ -16,15 +16,15 @@ import {
 // Label pendek per resource untuk tabel paywall (fallback t() karena key i18n
 // belum ditambahkan ke lib/i18n.js, lihat catatan agent).
 const RESOURCE_LABELS = {
-  accounts_wallets: 'Dompet & Rekening',
-  savings_goals: 'Target Tabungan',
-  loans_bills: 'Tagihan & Utang',
-  subscriptions: 'Langganan',
-  smart_automation_per_month: 'Smart Automation / bulan',
-  receipt_ocr_per_month: 'Scan Struk (OCR) / bulan',
-  statement_import_per_month: 'Impor Rekening Koran / bulan',
-  invoices_per_month: 'Faktur / bulan',
-  money_tax_tools: 'Fitur Uang & Pajak',
+  accounts_wallets: 'res_accounts_wallets',
+  savings_goals: 'res_savings_goals',
+  loans_bills: 'res_loans_bills',
+  subscriptions: 'res_subscriptions',
+  smart_automation_per_month: 'res_smart_automation',
+  receipt_ocr_per_month: 'res_receipt_ocr',
+  statement_import_per_month: 'res_statement_import',
+  invoices_per_month: 'res_invoices',
+  money_tax_tools: 'res_money_tax_tools',
 }
 
 const ADMIN_EMAIL = 'support@arshif.biz.id'
@@ -116,7 +116,7 @@ export default function PaywallSheet({ open, onClose }) {
               key={resource}
               className="grid grid-cols-[1fr_auto_auto] gap-2 px-4 py-2.5 border-t border-zinc-100 dark:border-white/5 text-sm"
             >
-              <span className="text-zinc-800 dark:text-zinc-200">{RESOURCE_LABELS[resource]}</span>
+              <span className="text-zinc-800 dark:text-zinc-200">{t(RESOURCE_LABELS[resource])}</span>
               <span className="text-right w-14 text-zinc-600 dark:text-zinc-400">{cell(resource, 'free')}</span>
               <span className="text-right w-16 font-bold text-zinc-950 dark:text-white">{cell(resource, 'premium')}</span>
             </div>
