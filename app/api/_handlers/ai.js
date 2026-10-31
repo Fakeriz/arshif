@@ -190,7 +190,8 @@ TRANSACTION TYPE & CATEGORY INFERENCE RULES:
    - Transportasi: "bensin", "grab", "gojek", "taksi", "tol", "parkir", "mrt" -> category: "transport"
    - Tagihan: "listrik", "pln", "air", "pdam", "wifi", "internet", "pulsa", "sewa" -> category: "bills"
    - Belanja Barang: "beli baju", "sepatu", "iphone", "laptop", "tokopedia", "shopee" -> category: "shopping"
-   - Kesehatan: "obat", "apotek", "dokter", "rs", "klinik" -> category: "health"
+   - Kosmetik/Toiletries: "sampo", "pasta gigi", "sabun", "kosmetik", "skincare", "watsons", "rossmann", "guardian" -> category: "shopping" (produk retail, BUKAN "personal" - itu cuma untuk layanan seperti salon/spa)
+   - Kesehatan: "obat", "apotek", "dokter", "rs", "klinik" -> category: "health" (produk di apotek tetap "shopping", "health" untuk layanan medis)
 
 3. TRANSFER DETECTION (PINDAH DANA):
    - Jika ada perpindahan antar akun (misal "transfer dari BCA ke Maybank"):
@@ -429,7 +430,21 @@ CRITICAL RULES:
 4. "discount" on an item is the TOTAL deduction for that line (not per unit); use 0 when the line has no deduction. Line total = price × qty − discount.
 5. "discounts" lists receipt-level deductions that are not tied to a single line (store-wide promo, coupon, campaign). Use [] when there are none. Amounts are positive numbers.
 6. The final "total" must be the amount actually PAID: subtotal − all discounts + tax (when tax is added on top). Never report the pre-discount subtotal as "total".
-7. If the receipt only shows final per-line prices after discount, set discount to 0 and price to the final unit price.`
+7. If the receipt only shows final per-line prices after discount, set discount to 0 and price to the final unit price.
+CATEGORY DEFINITIONS (pick exactly one, use these rules so results stay consistent between scans):
+- food: restaurants, cafes, street food, fast food, delivery meals (e.g. McDonald's, Starbucks, GoFood).
+- groceries: supermarkets, wet markets, daily household staples (e.g. Carrefour, LotteMart, rice, cooking oil, eggs).
+- transport: fuel, parking, tolls, ride-hailing, public transit tickets (e.g. Shell, Grab, MRT).
+- shopping: retail purchases of physical goods, INCLUDING cosmetics/toiletries/pharmacy products: shampoo, toothpaste, soap, skincare, makeup bought at Watsons, Rossmann, dm, Guardian, Sephora, or any drugstore/apotek is ALWAYS "shopping", NEVER "personal". Also clothes, electronics, home goods, marketplace orders (Shopee, Tokopedia).
+- bills: utilities, phone/internet, subscriptions, rent, insurance premiums (e.g. PLN, PDAM, Telkomsel, Netflix).
+- entertainment: movies, streaming, games, concerts, hobbies (e.g. Cinema XXI, Spotify, Steam).
+- health: medical services and prescription care, not product retail: doctor visits, clinics, hospitals, lab tests, physiotherapy (buying vitamins/medicine at a drugstore is "shopping").
+- education: tuition, courses, books, school fees (e.g. course invoice, campus fee).
+- travel: flights, hotels, trains, visa fees, tour packages (e.g. Garuda, Agoda, KAI).
+- housing: home repairs, renovation, furniture, property services, building fees (e.g. handyman invoice, HOA fee).
+- personal: SERVICES for self-care and daily living only, NOT product purchases: spa, salon, barbershop, massage, laundry service, gym membership, car wash. If the receipt is retail goods (even self-care products like shampoo or cosmetics), use "shopping" instead.
+- business: B2B purchases, office supplies, bulk resale stock, business services (e.g. bulk office stationery, supplier invoice).
+- other: anything that clearly fits none of the above.`
 
 const STATEMENT_PROMPT = `You are a bank statement parser. Read this bank statement PDF carefully (it may be in English, Indonesian, or Malay, and may be a scan/photo) and extract EVERY transaction row.
 

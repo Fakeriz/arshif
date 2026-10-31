@@ -41,3 +41,14 @@ Status: done
 Baca: supabase/*.sql (semua), DB produksi via Management API
 Temuan: migrasi 005 pakai "on error null" — bukan sintaks PL/pgSQL, current_setting(name,true) sudah return null. service_role butuh GRANT + policy khusus. Akun haf***@gmail.com = premium.
 Commit: e85767c
+
+## [2026-10-31 10:20] ENI — diskusi kategori OCR Watsons
+Status: wip
+Baca: app/api/_handlers/ai.js (OCR_PROMPT baris 404-431: category enum ada tapi TANPA definisi; text parser barus 180-196 punya rules keyword tapi OCR prompt tidak)
+Temuan: Gemini pilih 'personal' untuk struk toiletries (sampo/pasta gigi) — semantik benar (personal care) tapi tidak terdefinisi di prompt → bisa tidak konsisten antar scan. Fix: tambah definisi tiap kategori di OCR_PROMPT.
+
+## [2026-10-31 10:38] subagent — definisi kategori OCR_PROMPT + sinkron parser keyword
+Status: done
+Baca: app/api/_handlers/ai.js (OCR_PROMPT baris 404-432 + text parser baris 180-196), tests/split-bill.test.mjs, lib/split-bill.js (verifikasi stash teman satu tim)
+Temuan: CATEGORY DEFINITIONS (13 baris, 1 per kategori) ditambahkan di OCR_PROMPT setelah rules: toiletries/kosmetik/produk apotek di Watsons/Rossmann/dm/Guardian → 'shopping' (bukan 'personal'); 'personal' hanya layanan (spa/salon/barbershop/laundry/cuci mobil). 'health' diklarifikasi layanan medis, produk di apotek tetap 'shopping'. Text parser ditambah baris keyword "Kosmetik/Toiletries" (sampo/pasta gigi/sabun/kosmetik/skincare/watsons/rossmann/guardian) dan baris 'health' diklarifikasi. Tanpa test baru; npm test + next build lolos.
+Commit: (lihat git log)
