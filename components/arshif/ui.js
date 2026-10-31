@@ -218,7 +218,7 @@ export function DatePickerInput({
           min={min}
           max={max}
           data-testid={dataTestId}
-          className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10 disabled:cursor-not-allowed [color-scheme:light] dark:[color-scheme:dark]"
+          className="text-base absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10 disabled:cursor-not-allowed [color-scheme:light] dark:[color-scheme:dark]"
         />
         {/* Tampilan Visual Rata Kiri Konsisten */}
         <div
@@ -282,7 +282,7 @@ export function TextInput({ className, type, ...props }) {
               if (typeof e.target.showPicker === 'function') e.target.showPicker()
             } catch (_) {}
           }}
-          className="opacity-0 absolute inset-0 w-full h-full cursor-pointer z-10 disabled:cursor-not-allowed [color-scheme:light] dark:[color-scheme:dark]"
+          className="text-base opacity-0 absolute inset-0 w-full h-full cursor-pointer z-10 disabled:cursor-not-allowed [color-scheme:light] dark:[color-scheme:dark]"
           {...props}
         />
       </div>
@@ -291,7 +291,7 @@ export function TextInput({ className, type, ...props }) {
   return (
     <input
       type={type}
-      className={cn('w-full rounded-2xl bg-[#F6F6F6] dark:bg-[#121214] border border-border/70 text-foreground placeholder:text-muted-foreground/60 px-4 py-3 text-[15px] outline-none focus:ring-2 focus:ring-foreground/15 focus:border-foreground transition-all', className)}
+      className={cn('w-full rounded-2xl bg-[#F6F6F6] dark:bg-[#121214] border border-border/70 text-foreground placeholder:text-muted-foreground/60 px-4 py-3 text-base outline-none focus:ring-2 focus:ring-foreground/15 focus:border-foreground transition-all', className)}
       {...props}
     />
   )
@@ -348,7 +348,7 @@ export function DateSelector({
           } catch (_) {}
         }}
         disabled={disabled}
-        className="opacity-0 absolute inset-0 cursor-pointer w-full h-full z-10 [color-scheme:light] dark:[color-scheme:dark]"
+        className="text-base opacity-0 absolute inset-0 cursor-pointer w-full h-full z-10 [color-scheme:light] dark:[color-scheme:dark]"
         {...props}
       />
     </div>

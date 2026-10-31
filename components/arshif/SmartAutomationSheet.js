@@ -161,7 +161,7 @@ export default function SmartAutomationSheet({ open, onClose }) {
             placeholder={t('test_signal_ph', 'Paste a bank notification here, e.g. RM50.00 DuitNow QR Pay to MCD 123 on 23/10/26')}
             rows={3}
             data-testid="signal-input"
-            className="mt-2 w-full rounded-xl bg-background border border-border/60 px-3 py-2.5 text-sm placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-foreground/20 resize-none"
+            className="mt-2 w-full rounded-xl bg-background border border-border/60 px-3 py-2.5 text-base placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-foreground/20 resize-none"
           />
           <button
             type="button"

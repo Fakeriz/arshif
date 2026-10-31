@@ -985,7 +985,7 @@ export default function ImportTransactionsPage({ onClose }) {
               value={catSearch}
               onChange={(e) => setCatSearch(e.target.value)}
               placeholder={t('search')}
-              className="w-full rounded-xl border border-border/60 bg-background pl-9 pr-3 py-2.5 text-sm outline-none"
+              className="w-full rounded-xl border border-border/60 bg-background pl-9 pr-3 py-2.5 text-base outline-none"
             />
           </div>
           <div className="grid grid-cols-4 gap-2 max-h-[50dvh] overflow-y-auto">

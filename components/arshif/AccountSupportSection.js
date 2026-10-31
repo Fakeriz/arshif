@@ -397,7 +397,7 @@ export default function AccountSupportSection() {
                 value={subject}
                 onChange={(e) => setSubject(e.target.value)}
                 placeholder={t('support_subject_ph', 'e.g. Saldo tidak sinkron, error kamera saat scan struk...')}
-                className="w-full rounded-2xl bg-muted/40 border border-border/40 px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground outline-none focus:border-border transition-colors"
+                className="w-full rounded-2xl bg-muted/40 border border-border/40 px-4 py-3 text-base text-foreground placeholder:text-muted-foreground outline-none focus:border-border transition-colors"
                 data-testid="support-subject"
               />
             </div>
@@ -411,7 +411,7 @@ export default function AccountSupportSection() {
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 placeholder={t('support_desc_ph', 'Jelaskan langkah terjadinya kendala secara mendetail...')}
-                className="w-full min-h-[110px] rounded-2xl bg-muted/40 p-4 text-sm text-foreground border border-border/40 outline-none focus:border-border transition-colors resize-none placeholder:text-muted-foreground"
+                className="w-full min-h-[110px] rounded-2xl bg-muted/40 p-4 text-base text-foreground border border-border/40 outline-none focus:border-border transition-colors resize-none placeholder:text-muted-foreground"
                 data-testid="support-description"
               />
             </div>

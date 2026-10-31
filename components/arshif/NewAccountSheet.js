@@ -254,7 +254,7 @@ export default function NewAccountSheet({ open, onClose }) {
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder={t('account_name_ph')}
-              className={cn(INPUT_CLS, 'px-4 py-3 rounded-xl text-[15px] font-semibold')}
+              className={cn(INPUT_CLS, 'px-4 py-3 rounded-xl text-base font-semibold')}
               data-testid="account-name"
             />
           </section>
@@ -329,7 +329,7 @@ export default function NewAccountSheet({ open, onClose }) {
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
                   placeholder={t('search_bank_ph')}
-                  className="w-full pl-10 pr-4 py-2.5 rounded-2xl text-sm bg-muted/40 border border-border/40 text-foreground placeholder-muted-foreground outline-none focus:border-border transition-colors"
+                  className="w-full pl-10 pr-4 py-2.5 rounded-2xl text-base bg-muted/40 border border-border/40 text-foreground placeholder-muted-foreground outline-none focus:border-border transition-colors"
                   data-testid="logo-search"
                 />
               </div>

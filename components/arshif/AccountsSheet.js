@@ -447,7 +447,7 @@ export default function AccountsSheet({ open, onClose }) {
                   type="text"
                   value={editName}
                   onChange={(e) => setEditName(e.target.value)}
-                  className="w-full h-11 px-3.5 rounded-xl bg-zinc-100 dark:bg-[#1c1c1e] border border-zinc-200 dark:border-white/10 text-sm font-semibold text-foreground outline-none focus:border-zinc-400 dark:focus:border-white/20"
+                  className="w-full h-11 px-3.5 rounded-xl bg-zinc-100 dark:bg-[#1c1c1e] border border-zinc-200 dark:border-white/10 text-base font-semibold text-foreground outline-none focus:border-zinc-400 dark:focus:border-white/20"
                 />
               </div>
 

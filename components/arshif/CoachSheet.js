@@ -300,7 +300,7 @@ export default function CoachSheet({ open, onClose }) {
           ) : null}
         </div>
         <div className="border-t border-border/40 p-3 safe-bottom flex gap-2">
-          <input value={input} onChange={(e) => setInput(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && send()} placeholder="..." className="flex-1 rounded-xl bg-muted px-4 py-3 text-sm outline-none" data-testid="coach-input" />
+          <input value={input} onChange={(e) => setInput(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && send()} placeholder="..." className="flex-1 rounded-xl bg-muted px-4 py-3 text-base outline-none" data-testid="coach-input" />
           <button type="button" onClick={() => send()} disabled={busy || !input.trim()} className="h-11 w-11 rounded-xl bg-foreground text-background flex items-center justify-center disabled:opacity-40" data-testid="coach-send"><Send size={18} /></button>
         </div>
       </div>

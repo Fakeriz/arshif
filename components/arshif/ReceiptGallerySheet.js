@@ -288,7 +288,7 @@ export default function ReceiptGallerySheet({ open, onClose, onOpenScanner }) {
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     placeholder="Cari merchant, catatan, atau kategori..."
-                    className="w-full h-10 pl-9 pr-8 rounded-xl bg-zinc-100 dark:bg-[#18181b] border border-zinc-200/80 dark:border-white/10 text-xs text-zinc-950 dark:text-white placeholder:text-zinc-400 outline-none focus:border-zinc-400 dark:focus:border-white/20 transition-all"
+                    className="w-full h-10 pl-9 pr-8 rounded-xl bg-zinc-100 dark:bg-[#18181b] border border-zinc-200/80 dark:border-white/10 text-base text-zinc-950 dark:text-white placeholder:text-zinc-400 outline-none focus:border-zinc-400 dark:focus:border-white/20 transition-all"
                     autoFocus
                   />
                   {searchQuery ? (

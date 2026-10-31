@@ -237,7 +237,7 @@ export default function SubscriptionSheet({
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="Nama langganan"
-                    className="w-full bg-muted/40 rounded-2xl p-4 text-sm font-medium text-foreground outline-none border border-border/20 focus:border-foreground/30 transition-colors"
+                    className="w-full bg-muted/40 rounded-2xl p-4 text-base font-medium text-foreground outline-none border border-border/20 focus:border-foreground/30 transition-colors"
                   />
                 </div>
 
@@ -266,7 +266,7 @@ export default function SubscriptionSheet({
                       value={amount}
                       onChange={(e) => setAmount(e.target.value.replace(/[^0-9.]/g, ''))}
                       placeholder="0"
-                      className="bg-transparent text-sm font-semibold text-foreground outline-none w-full placeholder:text-muted-foreground/40"
+                      className="bg-transparent text-base font-semibold text-foreground outline-none w-full placeholder:text-muted-foreground/40"
                     />
                   </div>
                 </div>

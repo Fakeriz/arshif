@@ -32,7 +32,7 @@ export default function CurrencySheet({ open, onClose, value, onSelect, zIndex =
             value={q}
             onChange={(e) => setQ(e.target.value)}
             placeholder={t('search_currency')}
-            className="w-full pl-10 pr-4 rounded-2xl bg-[#F6F6F6] dark:bg-[#121214] border border-border/70 text-foreground placeholder:text-muted-foreground/60 text-[15px] outline-none focus:ring-2 focus:ring-foreground/15 focus:border-foreground transition-all"
+            className="w-full pl-10 pr-4 rounded-2xl bg-[#F6F6F6] dark:bg-[#121214] border border-border/70 text-foreground placeholder:text-muted-foreground/60 text-base outline-none focus:ring-2 focus:ring-foreground/15 focus:border-foreground transition-all"
             data-testid="currency-search"
           />
         </div>

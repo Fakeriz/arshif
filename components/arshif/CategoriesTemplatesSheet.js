@@ -115,7 +115,7 @@ export default function CategoriesTemplatesSheet({ open, onClose }) {
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder={t('search')}
-            className="w-full pl-10 pr-4 py-2.5 rounded-2xl text-sm bg-muted/40 border border-border/40 text-foreground placeholder-muted-foreground outline-none focus:border-border transition-colors"
+            className="w-full pl-10 pr-4 py-2.5 rounded-2xl text-base bg-muted/40 border border-border/40 text-foreground placeholder-muted-foreground outline-none focus:border-border transition-colors"
           />
         </div>
       </div>

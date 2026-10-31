@@ -169,8 +169,8 @@ export default function TransactionDetailSheet({ open, isOpen: propIsOpen, onClo
                 <div key={i} className="flex items-center gap-2 px-4 py-2.5 text-sm border-b border-zinc-200/40 dark:border-white/5 last:border-0 text-zinc-950 dark:text-white">
                   {editingItems ? (
                     <>
-                      <input value={it.name} onChange={(e) => setItem(i, { name: e.target.value })} placeholder={t('item_name')} className="flex-1 bg-transparent focus-visible:ring-2 focus-visible:ring-foreground/20 rounded min-w-0 text-zinc-950 dark:text-white outline-none" />
-                      <input type="text" inputMode="decimal" value={it.price} onChange={(e) => setItem(i, { price: Number(sanitizeAmount(e.target.value)) || 0 })} className="w-20 bg-zinc-100 dark:bg-zinc-800 text-zinc-950 dark:text-white rounded-lg px-2 py-1 text-right focus-visible:ring-2 focus-visible:ring-foreground/20 tabular-nums font-semibold outline-none" />
+                      <input value={it.name} onChange={(e) => setItem(i, { name: e.target.value })} placeholder={t('item_name')} className="flex-1 bg-transparent text-base focus-visible:ring-2 focus-visible:ring-foreground/20 rounded min-w-0 text-zinc-950 dark:text-white outline-none" />
+                      <input type="text" inputMode="decimal" value={it.price} onChange={(e) => setItem(i, { price: Number(sanitizeAmount(e.target.value)) || 0 })} className="w-20 bg-zinc-100 dark:bg-zinc-800 text-base text-zinc-950 dark:text-white rounded-lg px-2 py-1 text-right focus-visible:ring-2 focus-visible:ring-foreground/20 tabular-nums font-semibold outline-none" />
                       <button type="button" onClick={() => delItem(i)} className="p-1 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200"><X size={15} /></button>
                     </>
                   ) : (
@@ -202,7 +202,7 @@ export default function TransactionDetailSheet({ open, isOpen: propIsOpen, onClo
                 ))}
               </div>
               <div className="flex gap-2 mt-2">
-                <input value={newPerson} onChange={(e) => setNewPerson(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && addPerson()} placeholder={t('add_participant')} className="flex-1 rounded-xl bg-white dark:bg-[#1c1c1e] border border-zinc-200 dark:border-white/10 px-3 py-2 text-sm text-zinc-950 dark:text-white placeholder:text-zinc-400 outline-none" data-testid="split-add-person" />
+                <input value={newPerson} onChange={(e) => setNewPerson(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && addPerson()} placeholder={t('add_participant')} className="flex-1 rounded-xl bg-white dark:bg-[#1c1c1e] border border-zinc-200 dark:border-white/10 px-3 py-2 text-base text-zinc-950 dark:text-white placeholder:text-zinc-400 outline-none" data-testid="split-add-person" />
                 <button type="button" onClick={addPerson} className="h-9 w-9 rounded-xl bg-zinc-950 text-white dark:bg-white dark:text-zinc-950 flex items-center justify-center font-bold"><UserPlus size={16} /></button>
               </div>
             </div>

@@ -122,7 +122,7 @@ export default function ProfileSheet({ open, onClose }) {
               <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground mb-2 px-1">{t('invoice_bank_account')}</p>
               <div className={cn(card, 'space-y-4')}>
                 <Field label={t('bank_name')}>
-                  <input list="id-banks" value={biz.bankName} onChange={(e) => setB({ bankName: e.target.value })} placeholder="BCA, Mandiri, BRI..." className="w-full rounded-xl bg-background border border-border/60 dark:border-white/10 px-4 py-3 text-[15px] outline-none focus:ring-2 focus:ring-ring/60 placeholder:text-muted-foreground" />
+                  <input list="id-banks" value={biz.bankName} onChange={(e) => setB({ bankName: e.target.value })} placeholder="BCA, Mandiri, BRI..." className="w-full rounded-xl bg-background border border-border/60 dark:border-white/10 px-4 py-3 text-base outline-none focus:ring-2 focus:ring-ring/60 placeholder:text-muted-foreground" />
                   <datalist id="id-banks">{ID_BANKS.map((b) => <option key={b} value={b} />)}</datalist>
                 </Field>
                 <Field label={t('account_holder')}><TextInput value={biz.accHolder} onChange={(e) => setB({ accHolder: e.target.value })} placeholder="Nama pemegang akun" /></Field>
