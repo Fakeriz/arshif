@@ -71,8 +71,9 @@ export default function Onboarding({ onDone }) {
         <p className="text-xl font-extrabold tracking-tight">Arshif</p>
         <div className="flex gap-1">
           {LANGUAGES.map((l) => (
-            <button key={l.code} onClick={() => setLang(l.code)} className={cn('h-11 w-11 rounded-lg text-base flex items-center justify-center', lang === l.code ? 'bg-foreground' : 'bg-muted')} aria-label={l.name}>
-              {l.flag}
+            <button key={l.code} onClick={() => setLang(l.code)} className={cn('rounded-lg flex flex-col items-center justify-center py-1.5 min-w-11', lang === l.code ? 'bg-foreground' : 'bg-muted')} aria-label={l.name}>
+              <span className="text-base leading-none">{l.flag}</span>
+              <span className={cn('text-[10px] font-semibold uppercase leading-none mt-1', lang === l.code ? 'text-background' : 'text-muted-foreground')}>{l.code}</span>
             </button>
           ))}
         </div>
