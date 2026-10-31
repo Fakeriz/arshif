@@ -2,6 +2,7 @@
 // transcribe, parse, coach, ocr, parse-statement. Gemini dari ./gemini,
 // helper HTTP dari ./http, kuota/auth dari ./quota.
 import { parseMoneyOrZero } from '@/lib/money-parse'
+import { validateReceiptTotals } from '@/lib/split-bill'
 import { callGemini, extractJson } from './gemini'
 import { json, err, MAX_AUDIO_BYTES, MAX_IMAGE_BYTES, MAX_PDF_BYTES, AUDIO_MIME_TYPES, IMAGE_MIME_TYPES, base64ByteLength } from './http'
 
@@ -413,16 +414,22 @@ Return ONLY a valid JSON object matching this exact schema:
   "currency": "ISO 4217 code (e.g. IDR, MYR, USD, EUR, GBP, SGD, THB, PHP, TRY, JPY, AUD) or null",
   "subtotal": number or null,
   "tax": number or null,
+  "discounts": [ { "name": string, "amount": number } ],
   "total": number,
   "payment_method": "cash" | "qr" | "card" | "bank" or null,
   "items": [
-    { "name": string, "qty": number, "price": number }
+    { "name": string, "qty": number, "price": number, "discount": number }
   ],
   "confidence": number
 }
 CRITICAL RULES:
 1. Extract the transaction time in 24-hour format if printed on the physical receipt (e.g. "15:01" from "03:01:39 PM" or "15:01"). If no time is printed on the receipt, return null.
-2. All monetary amounts must be numbers without currency symbols or thousand separators.`
+2. All monetary amounts must be numbers without currency symbols or thousand separators.
+3. "price" on each item is the UNIT price BEFORE any discount, exactly as printed.
+4. "discount" on an item is the TOTAL deduction for that line (not per unit); use 0 when the line has no deduction. Line total = price × qty − discount.
+5. "discounts" lists receipt-level deductions that are not tied to a single line (store-wide promo, coupon, campaign). Use [] when there are none. Amounts are positive numbers.
+6. The final "total" must be the amount actually PAID: subtotal − all discounts + tax (when tax is added on top). Never report the pre-discount subtotal as "total".
+7. If the receipt only shows final per-line prices after discount, set discount to 0 and price to the final unit price.`
 
 const STATEMENT_PROMPT = `You are a bank statement parser. Read this bank statement PDF carefully (it may be in English, Indonesian, or Malay, and may be a scan/photo) and extract EVERY transaction row.
 
@@ -579,12 +586,39 @@ async function handleOcr(request, quota = null) {
           name: String(it?.name || 'Item').trim(),
           qty: Math.max(1, Number(it?.qty) || 1),
           price: parseMoneyOrZero(it?.price),
+          ...(Number(it?.discount) > 0 ? { discount: Math.abs(Number(it.discount)) } : {}),
         }))
       : []
 
-    const calculatedTotal = items.reduce((sum, item) => sum + item.price * item.qty, 0)
+    // Potongan level struk (promo toko, kupon) yang tidak nempel di baris
+    // manapun: disimpan sebagai baris item berharga negatif agar ikut terhitung
+    // di sum(items) = amount dan terbawa di kolom items yang sudah ada.
+    const receiptDiscounts = Array.isArray(receipt?.discounts)
+      ? receipt.discounts
+          .map((d) => ({ name: String(d?.name || 'Diskon').trim().slice(0, 80), amount: Math.abs(parseMoneyOrZero(d?.amount)) }))
+          .filter((d) => d.amount > 0)
+      : []
+    const discountRows = receiptDiscounts.map((d) => ({
+      name: d.name,
+      qty: 1,
+      price: -d.amount,
+      is_discount: true,
+    }))
+    const allItems = [...items, ...discountRows]
+
+    const calculatedTotal = allItems.reduce((sum, item) => sum + item.price * item.qty - (Number(item.discount) || 0), 0)
     const rawTotal = receipt?.total !== undefined && receipt?.total !== null ? parseMoneyOrZero(receipt.total) : calculatedTotal
     const total = rawTotal > 0 ? rawTotal : calculatedTotal
+
+    // Validasi: jumlah item (setelah potongan) harus mendekati total struk.
+    // Mismatch berarti OCR kelewat potongan/harga — kirim flag ke client
+    // supaya user bisa periksa, jangan diam-diam salah hitung.
+    const validation = validateReceiptTotals({
+      items: allItems,
+      discounts: [], // diskon struk-level sudah jadi baris negatif di allItems
+      tax: receipt?.tax != null ? parseMoneyOrZero(receipt.tax) : 0,
+      total,
+    })
 
     let validTime = null
     if (receipt?.time && typeof receipt.time === 'string') {
@@ -625,9 +659,14 @@ async function handleOcr(request, quota = null) {
       currency: receipt?.currency ? String(receipt.currency).toUpperCase().slice(0, 3) : null,
       subtotal: receipt?.subtotal !== null && receipt?.subtotal !== undefined ? parseMoneyOrZero(receipt.subtotal) : null,
       tax: receipt?.tax !== null && receipt?.tax !== undefined ? parseMoneyOrZero(receipt.tax) : null,
+      discounts: receiptDiscounts,
       total: total || 0,
       payment_method: ['cash', 'qr', 'card', 'bank'].includes(receipt?.payment_method) ? receipt.payment_method : null,
-      items,
+      items: allItems,
+      // Flag rekonsiliasi: false berarti jumlah item ≠ total struk (OCR
+      // kemungkinan kelewat potongan/harga). Client WAJIB menampilkan peringatan.
+      totals_match: validation.ok,
+      items_total: Math.round(validation.expected * 100) / 100,
       confidence: typeof receipt?.confidence === 'number' ? Math.min(1, Math.max(0, receipt.confidence)) : 0.95,
     }
 
