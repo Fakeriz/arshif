@@ -6,7 +6,7 @@ import { useApp } from './context'
 import { Sheet, PrimaryButton, SecondaryButton, Card } from './ui'
 import { QuotaBadge } from './QuotaBadge'
 import { fileToDataUrl } from '@/lib/ledger'
-import { lineTotal } from '@/lib/split-bill'
+import { lineTotal, reconcileItems } from '@/lib/split-bill'
 import { consumeFeatureUsage } from '@/lib/feature-usage'
 import { cn } from '@/lib/utils'
 
@@ -16,6 +16,8 @@ export default function ScanReceiptSheet({ open, onClose, onUse, initialImage, a
   const [busy, setBusy] = useState(false)
   const [uploadingBackup, setUploadingBackup] = useState(false)
   const [result, setResult] = useState(null)
+  // Status auto-reconcile: 'ok' kalau diskon struk sudah ditambahkan otomatis.
+  const [reconciled, setReconciled] = useState(false)
   const [quota, setQuota] = useState(null)
   const [quotaLoading, setQuotaLoading] = useState(false)
   const fileRef = useRef(null)
@@ -45,6 +47,7 @@ export default function ScanReceiptSheet({ open, onClose, onUse, initialImage, a
     if (!dataUrl) return
     setBusy(true)
     setResult(null)
+    setReconciled(false)
     try {
       setPreview(dataUrl)
       const headers = { 'Content-Type': 'application/json' }
@@ -96,6 +99,27 @@ export default function ScanReceiptSheet({ open, onClose, onUse, initialImage, a
     } finally { setBusy(false) }
   }, [session?.access_token, t, openSheet])
 
+  // Auto-reconcile: samakan jumlah item dengan total struk (diskon struk
+  // otomatis) atau laporkan item kurang. Logika murni ada di lib/split-bill.
+  const applyReconcile = () => {
+    if (!result) return
+    const r = reconcileItems(result.items, result.total)
+    if (r.missing) {
+      toast.warning(t('reconcile_negative_items'))
+      return
+    }
+    setResult((prev) => ({ ...prev, items: r.items }))
+    setReconciled(true)
+  }
+
+  // Arahkan ke edit item yang sudah ada di TransactionDetailSheet (sheet
+  // txDetail menerima objek transaksi; di sini belum tersimpan, cukup
+  // tutup scan - user buka dari daftar transaksi setelah simpan).
+  const editItemsManually = () => {
+    onClose?.()
+    openSheet?.('txDetail')
+  }
+
   const initialRef = useRef(null)
   useEffect(() => {
     if (open) {
@@ -106,6 +130,7 @@ export default function ScanReceiptSheet({ open, onClose, onUse, initialImage, a
       }
       setPreview(null)
       setResult(null)
+      setReconciled(false)
       setBusy(false)
       fetchQuota()
       // Gambar dari Web Share Target: langsung diproses OCR, sekali per buka.
@@ -289,10 +314,16 @@ export default function ScanReceiptSheet({ open, onClose, onUse, initialImage, a
                 <span className="text-[10px] font-bold uppercase rounded-md bg-zinc-950 text-white dark:bg-white dark:text-zinc-950 px-2 py-1">{t(`cat_${result.category || 'other'}`)}</span>
               </div>
               <p className="text-4xl font-extrabold mt-4 tabular-nums text-zinc-950 dark:text-white">{fmt(result.total, cur)}</p>
-              {result.totals_match === false ? (
-                <p className="mt-2 text-xs text-amber-600 dark:text-amber-400 font-medium rounded-xl border border-amber-300 dark:border-amber-500/40 bg-amber-50 dark:bg-amber-500/10 px-3 py-2">
-                  {t('items_sum_mismatch')} · {t('items')}: {fmt(result.items_total, cur)} · {t('total')}: {fmt(result.total, cur)}
-                </p>
+              {result.totals_match === false && !reconciled ? (
+                <div className="mt-2 text-xs text-amber-600 dark:text-amber-400 font-medium rounded-xl border border-amber-300 dark:border-amber-500/40 bg-amber-50 dark:bg-amber-500/10 px-3 py-2">
+                  <p>{t('items_sum_mismatch')} · {t('items')}: {fmt(result.items_total, cur)} · {t('total')}: {fmt(result.total, cur)}</p>
+                  <div className="flex gap-2 mt-2">
+                    <button type="button" onClick={applyReconcile} className="flex-1 rounded-lg bg-amber-600 text-white font-bold px-2 py-1.5 text-xs hover:bg-amber-700 transition-colors">{t('reconcile_apply')}</button>
+                    <button type="button" onClick={editItemsManually} className="flex-1 rounded-lg border border-amber-500/60 text-amber-700 dark:text-amber-400 font-bold px-2 py-1.5 text-xs hover:bg-amber-100 dark:hover:bg-amber-500/10 transition-colors">{t('reconcile_manual')}</button>
+                  </div>
+                </div>
+              ) : reconciled ? (
+                <p className="mt-2 text-xs text-emerald-600 dark:text-emerald-400 font-medium rounded-xl border border-emerald-300 dark:border-emerald-500/40 bg-emerald-50 dark:bg-emerald-500/10 px-3 py-2">{t('reconcile_edited')}</p>
               ) : null}
               <Card className="mt-4 overflow-hidden">
                 <div className="grid grid-cols-[1fr_auto] px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.12em] text-zinc-600 dark:text-zinc-400 border-b border-zinc-200/60 dark:border-white/5"><span>{t('item')}</span><span>{t('price')}</span></div>
@@ -318,6 +349,16 @@ export default function ScanReceiptSheet({ open, onClose, onUse, initialImage, a
                 })}
                 {!(result.items || []).length ? <p className="px-4 py-3 text-sm text-zinc-400 dark:text-zinc-500">-</p> : null}
               </Card>
+              {Array.isArray(result.discounts) && result.discounts.length ? (
+                <div className="mt-2 px-1">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-zinc-600 dark:text-zinc-400">{t('receipt_discounts')}</p>
+                  {result.discounts.map((d, i) => (
+                    <p key={i} className="text-sm text-emerald-600 dark:text-emerald-400 font-semibold tabular-nums mt-1">
+                      {d?.label || d?.name || '-'}: −{fmt(Math.abs(Number(d?.amount)) || 0, cur)}
+                    </p>
+                  ))}
+                </div>
+              ) : null}
               <div className="mt-5 space-y-2">
                 <PrimaryButton onClick={useIt} disabled={uploadingBackup} data-testid="scan-use">
                   {uploadingBackup ? (

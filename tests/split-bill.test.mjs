@@ -6,6 +6,7 @@ import {
   itemsSum,
   computeSplitTotals,
   validateReceiptTotals,
+  reconcileItems,
 } from '../lib/split-bill.js'
 
 const people = [
@@ -142,4 +143,42 @@ test('validateReceiptTotals: toleransi pembulatan 1 satuan', () => {
   const items = [{ name: 'a', qty: 1, price: 100.4 }]
   const r = validateReceiptTotals({ items, discounts: [], tax: 0, total: 100 })
   assert.equal(r.ok, true)
+})
+
+test('reconcileItems: selisih negatif ditambah baris diskon dan total match', () => {
+  // Kasus struk Watsons: 5 item 954.55 tapi total dibayar 636.20.
+  const items = [
+    { name: 'Head&Shoulders', qty: 1, price: 259.9 },
+    { name: 'Marvis', qty: 1, price: 358.9 },
+    { name: 'Watsons Kremsi', qty: 1, price: 159.9 },
+    { name: 'Watsons Tekrar', qty: 1, price: 15.95 },
+    { name: 'Colgate', qty: 1, price: 159.9 },
+  ]
+  const r = reconcileItems(items, 636.2)
+  assert.equal(r.matched, true)
+  assert.equal(r.missing, false)
+  assert.equal(r.items.length, 6)
+  const discRow = r.items[5]
+  assert.equal(discRow.is_discount, true)
+  // 954.55 - 636.20 = 318.35, baris diskon harus berharga NEGATIF.
+  assert.equal(Math.round(discRow.price * 100) / 100, -318.35)
+  assert.ok(Math.abs(itemsSum(r.items) - 636.2) < 0.001)
+  // Item asli tidak boleh termutasi.
+  assert.equal(r.items[0].price, 259.9)
+})
+
+test('reconcileItems: sudah match tidak menambah baris apa pun', () => {
+  const items = [{ name: 'a', qty: 1, price: 100 }]
+  const r = reconcileItems(items, 100)
+  assert.equal(r.matched, true)
+  assert.equal(r.missing, false)
+  assert.equal(r.items.length, 1)
+})
+
+test('reconcileItems: selisih positif dilaporkan sebagai item kurang, tanpa baris otomatis', () => {
+  const items = [{ name: 'a', qty: 1, price: 50 }]
+  const r = reconcileItems(items, 120)
+  assert.equal(r.matched, false)
+  assert.equal(r.missing, true)
+  assert.equal(r.items.length, 1)
 })
