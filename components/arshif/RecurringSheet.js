@@ -14,19 +14,9 @@ const lsGet = () => { try { const v = localStorage.getItem(LS_KEY); return v ? J
 const lsSet = (v) => { try { localStorage.setItem(LS_KEY, JSON.stringify(v)) } catch {} }
 const uid = () => (typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `r_${Date.now()}_${Math.random().toString(36).slice(2)}`)
 
-const FREQ_SUFFIX = { weekly: '/ week', monthly: '/ month', yearly: '/ year' }
-
 const daysUntil = (s) => {
   if (!s) return null
   try { const d = new Date(s); if (isNaN(d.getTime())) return null; const ms = new Date(d).setHours(0, 0, 0, 0) - new Date().setHours(0, 0, 0, 0); return Math.round(ms / 86400000) } catch { return null }
-}
-const countdown = (s) => {
-  const d = daysUntil(s)
-  if (d == null) return ''
-  if (d < 0) return `overdue ${Math.abs(d)}d`
-  if (d === 0) return 'today'
-  if (d === 1) return 'tomorrow'
-  return `in ${d} days`
 }
 
 export default function RecurringSheet({ open, onClose }) {
@@ -56,35 +46,46 @@ export default function RecurringSheet({ open, onClose }) {
   }
   const remove = (id) => { const next = (items || []).filter((x) => x?.id !== id); setItems(next); lsSet(next) }
 
+  const countdown = (s) => {
+    const d = daysUntil(s)
+    if (d == null) return ''
+    if (d < 0) return t('rec_overdue', { days: Math.abs(d) })
+    if (d === 0) return t('rec_today')
+    if (d === 1) return t('rec_tomorrow')
+    return t('rec_in_days', { days: d })
+  }
+  const freqSuffix = { weekly: t('freq_weekly'), monthly: t('freq_monthly'), yearly: t('freq_yearly') }
+
   return (
     <>
-      <Sheet open={open} onClose={onClose} full title={t('recurring_sheet_title') || 'Recurring Schedules'}
-        right={<button type="button" onClick={openAdd} className="text-[15px] font-bold py-1 px-1 flex items-center gap-1 text-zinc-950 dark:text-white" data-testid="recurring-add"><Plus size={16} /> {t('recurring_add_btn') || 'Add'}</button>}>
+      <Sheet open={open} onClose={onClose} full title={t('recurring_sheet_title')}
+        right={<button type="button" onClick={openAdd} className="text-[15px] font-bold py-1 px-1 flex items-center gap-1 text-zinc-950 dark:text-white" data-testid="recurring-add"><Plus size={16} /> {t('recurring_add_btn')}</button>}>
 
         <div className="mt-2 space-y-2.5">
           {(items || []).length === 0 && !adding ? (
             <div className="flex flex-col items-center justify-center py-14 text-center">
               <div className="h-14 w-14 rounded-2xl bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center mb-3 text-zinc-400 dark:text-zinc-500"><Repeat size={24} strokeWidth={1.5} /></div>
-                {t('recurring_empty')}
-                {t('recurring_empty_sub')}
-                {t('recurring_add')}
+              <p className="font-bold text-[15px] text-zinc-950 dark:text-white">{t('recurring_empty')}</p>
+              <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">{t('recurring_empty_sub')}</p>
+              <button type="button" onClick={openAdd} className="mt-4 rounded-xl bg-zinc-950 text-white dark:bg-white dark:text-zinc-950 px-4 py-2.5 font-bold text-sm" data-testid="recurring-empty-add">{t('recurring_add')}</button>
             </div>
           ) : null}
 
           {(items || []).map((r) => {
             const acc = (accounts || []).find((a) => a?.id === r?.account_id)
+            const overdue = (daysUntil(r?.next_due) ?? 1) < 0
             return (
               <div key={r?.id} className="flex items-center gap-3 rounded-2xl bg-white dark:bg-[#1c1c1e] border border-zinc-200 dark:border-white/10 px-4 py-3.5" data-testid="recurring-row">
                 <div className="h-10 w-10 rounded-xl bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center text-zinc-900 dark:text-white shrink-0"><Repeat size={18} strokeWidth={1.5} /></div>
                 <div className="flex-1 min-w-0">
                   <p className="font-bold text-[15px] truncate text-zinc-950 dark:text-white">{r?.title}</p>
-                  <p className="text-xs text-zinc-600 dark:text-zinc-400 mt-0.5">{countdown(r?.next_due)}{acc?.name ? ` · ${acc.name}` : ''}</p>
+                  <p className={cn('text-xs mt-0.5', overdue ? 'text-rose-500 dark:text-rose-400 font-semibold' : 'text-zinc-600 dark:text-zinc-400')}>{countdown(r?.next_due)}{acc?.name ? ` · ${acc.name}` : ''}</p>
                 </div>
                 <div className="text-right shrink-0">
                   <p className="font-bold tabular-nums text-[15px] text-zinc-950 dark:text-white">{fmt(r?.amount, r?.currency || home)}</p>
-                  <p className="text-[11px] font-medium text-zinc-500 dark:text-zinc-400">{FREQ_SUFFIX[r?.frequency] || ''}</p>
+                  <p className="text-[11px] font-medium text-zinc-500 dark:text-zinc-400">{freqSuffix[r?.frequency] || ''}</p>
                 </div>
-                <button type="button" onClick={() => remove(r?.id)} className="h-11 w-11 rounded-lg flex items-center justify-center text-zinc-400 hover:text-rose-500 dark:text-zinc-500 dark:hover:text-rose-400 shrink-0" aria-label="delete"><Trash2 size={15} /></button>
+                <button type="button" onClick={() => remove(r?.id)} className="h-11 w-11 rounded-lg flex items-center justify-center text-zinc-400 hover:text-rose-500 dark:text-zinc-500 dark:hover:text-rose-400 shrink-0" aria-label={t('delete')}><Trash2 size={15} /></button>
               </div>
             )
           })}
@@ -93,7 +94,7 @@ export default function RecurringSheet({ open, onClose }) {
         {adding ? (
           <div className="mt-4 rounded-2xl bg-white dark:bg-[#1c1c1e] border border-zinc-200 dark:border-white/10 p-4 space-y-4">
             <Field label={t('recurring_title_label')}><TextInput value={title} onChange={(e) => setTitle(e.target.value)} placeholder={t('recurring_name_ph')} data-testid="recurring-title" /></Field>
-            <Field label={t('amount') || 'Amount'}>
+            <Field label={t('amount')}>
               <div className="flex gap-2">
                 <button type="button" onClick={() => setPickCur(true)} className="shrink-0 rounded-xl bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-white/10 px-3 py-3 flex items-center gap-1.5 text-zinc-950 dark:text-white" data-testid="recurring-currency">
                   <span className="font-bold text-sm">{getCurrency(currency).symbol}</span>
@@ -102,8 +103,8 @@ export default function RecurringSheet({ open, onClose }) {
                 <TextInput type="text" inputMode="decimal" value={amount} onChange={(e) => setAmount(sanitizeAmount(e.target.value))} placeholder="0" className="flex-1 text-lg font-bold" data-testid="recurring-amount" />
               </div>
             </Field>
-            <Field label={t('frequency') || 'Frequency'}>
-              <Segmented value={freq} onChange={setFreq} options={[{ id: 'weekly', label: t('weekly') || 'Mingguan' }, { id: 'monthly', label: t('monthly') || 'Bulanan' }, { id: 'yearly', label: t('yearly') || 'Tahunan' }]} />
+            <Field label={t('frequency')}>
+              <Segmented value={freq} onChange={setFreq} options={[{ id: 'weekly', label: t('weekly') }, { id: 'monthly', label: t('monthly') }, { id: 'yearly', label: t('yearly') }]} />
             </Field>
             <DatePickerInput label={t('recurring_next_due')} value={due} onChange={setDue} data-testid="recurring-due" />
             <Field label={t('source_account')}>
