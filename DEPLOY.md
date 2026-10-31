@@ -43,6 +43,10 @@ TELEGRAM_WEBHOOK_SECRET=...
 
 All values above are server-side secrets except the `NEXT_PUBLIC_*` values. Never put `SUPABASE_SERVICE_ROLE_KEY`, `GEMINI_API_KEY`, `VAPID_PRIVATE_KEY`, or bot tokens in client-side variables.
 
+| Env var | Wajib? | Catatan |
+| --- | --- | --- |
+| `NEXT_PUBLIC_VAPID_PUBLIC_KEY` | Opsional | Ada fallback hardcoded di `lib/push.js` & `lib/push-server.js`. Kalau rotasi VAPID key lagi, WAJIB update hardcoded key di kedua file itu + set env ini samakan — kalau beda, push gagal. |
+
 If the Supabase SQL schema enables the new-user Telegram trigger, enable Supabase Vault and store a secret named `TELEGRAM_WEBHOOK_SECRET` there. The trigger reads that Vault secret when it calls `/api/telegram-webhook-user`; otherwise the trigger remains fail-safe and skips the notification.
 
 ## 3. Build and run
