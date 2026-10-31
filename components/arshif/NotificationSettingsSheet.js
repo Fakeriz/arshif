@@ -133,14 +133,14 @@ export default function NotificationSettingsSheet({ open, onClose }) {
         setPermission('granted')
         const data = await getPushSettings().catch(() => null)
         if (data) setDevices(data.devices || 0)
-        toast.success(t('push_enabled_toast') || 'Push notification aktif!')
+        toast.success(t('push_enabled_toast'))
       } else {
         await disablePush()
         setSettings((s) => ({ ...s, push_enabled: false }))
-        toast.success(t('push_disabled_toast') || 'Push notification dimatikan')
+        toast.success(t('push_disabled_toast'))
       }
     } catch (e) {
-      toast.error(e?.message || 'Gagal mengubah pengaturan')
+      toast.error(e?.message || t('push_settings_error'))
       refreshPermission()
     } finally {
       setSaving(false)
@@ -155,7 +155,7 @@ export default function NotificationSettingsSheet({ open, onClose }) {
       await updatePushSettings({ [key]: next })
     } catch (e) {
       setSettings((s) => ({ ...s, [key]: prev }))
-      toast.error(e?.message || 'Gagal menyimpan')
+      toast.error(e?.message || t('push_save_error'))
     }
   }
 
@@ -165,12 +165,12 @@ export default function NotificationSettingsSheet({ open, onClose }) {
     try {
       const res = await sendTestPush()
       if (res?.sent > 0) {
-        toast.success('Notifikasi test dikirim! Cek panel notifikasi HP.')
+        toast.success(t('push_test_sent'))
       } else {
-        toast.error('Gagal kirim: ' + (res?.lastError || 'tidak ada device yang menerima'))
+        toast.error(t('push_test_failed', { error: res?.lastError || t('push_test_no_device') }))
       }
     } catch (e) {
-      toast.error(e?.message || 'Gagal kirim test')
+      toast.error(e?.message || t('push_test_error'))
     } finally {
       setTesting(false)
     }
@@ -180,13 +180,13 @@ export default function NotificationSettingsSheet({ open, onClose }) {
   const box = 'rounded-2xl divide-y divide-zinc-200 dark:divide-white/10 border border-zinc-200 dark:border-white/10 bg-white dark:bg-[#121214] overflow-hidden'
 
   return (
-    <Sheet open={open} onClose={onClose} full zIndex={80} title={t('notifications') || 'Notifikasi'}>
+    <Sheet open={open} onClose={onClose} full zIndex={80} title={t('notifications')}>
       <div className="pt-1 space-y-5 pb-6">
         {!supported ? (
           <div className="rounded-2xl border border-amber-200 dark:border-amber-900 bg-amber-50 dark:bg-amber-950/30 p-4 flex gap-3">
             <BellOff size={18} className="shrink-0 text-amber-600 dark:text-amber-400 mt-0.5" />
             <p className="text-sm text-amber-800 dark:text-amber-200">
-              Perangkat/browser ini tidak mendukung push notification.
+              {t('push_not_supported')}
             </p>
           </div>
         ) : null}
@@ -196,7 +196,7 @@ export default function NotificationSettingsSheet({ open, onClose }) {
             <div className="flex gap-3">
               <BellOff size={18} className="shrink-0 text-red-600 dark:text-red-400 mt-0.5" />
               <p className="text-sm text-red-800 dark:text-red-200 leading-snug">
-                Izin notifikasi diblokir di browser/HP. Aktifkan lewat <b>Settings HP → Aplikasi → Arshif (atau Chrome) → Notifikasi → Izinkan</b>.
+                {t('push_permission_denied')} <b>{t('push_permission_denied_path')}</b>.
               </p>
             </div>
             <button
@@ -204,17 +204,17 @@ export default function NotificationSettingsSheet({ open, onClose }) {
               onClick={() => {
                 const p = refreshPermission()
                 if (p === 'granted') {
-                  toast.success('Izin notifikasi sudah aktif!')
+                  toast.success(t('push_permission_granted'))
                 } else if (p === 'denied') {
-                  toast.error('Masih diblokir. Pastikan toggle di Settings HP sudah aktif.')
+                  toast.error(t('push_permission_still_blocked'))
                 } else {
-                  toast.info('Status izin: ' + p)
+                  toast.info(t('push_permission_status', { status: p }))
                 }
               }}
               className="w-full flex items-center justify-center gap-1.5 py-2 px-3 text-xs font-semibold rounded-xl bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300 active:scale-[0.98] transition"
             >
               <RefreshCw size={13} />
-              Cek Ulang Status Izin
+              {t('push_recheck_permission')}
             </button>
           </div>
         ) : null}
@@ -222,24 +222,24 @@ export default function NotificationSettingsSheet({ open, onClose }) {
         {/* Master Push Toggle (Langsung tampil instan tanpa loading) */}
         <div>
           <div className="flex items-center justify-between mb-1.5 px-1">
-            <SectionLabel className="!mb-0">{t('push_notification') || 'Push Notification'}</SectionLabel>
+            <SectionLabel className="!mb-0">{t('push_notification')}</SectionLabel>
             {isSyncing ? (
               <span className="text-[11px] text-zinc-400 flex items-center gap-1">
                 <Loader2 size={11} className="animate-spin" />
-                Sinkronisasi...
+                {t('push_syncing')}
               </span>
             ) : null}
           </div>
           <div className={box}>
             <SettingRow
               icon={pushOn ? Bell : BellOff}
-              title="Notifikasi Perangkat"
+              title={t('push_device_notifications')}
               desc={
                 permission === 'denied'
-                  ? 'Izin diblokir di sistem'
+                  ? t('push_permission_blocked_system')
                   : pushOn
-                  ? `Aktif di ${devices} perangkat`
-                  : 'Terima notifikasi walau aplikasi tertutup'
+                  ? t('push_active_devices', { count: devices })
+                  : t('push_enable_hint')
               }
               checked={pushOn}
               onChange={handleMasterToggle}
@@ -254,35 +254,35 @@ export default function NotificationSettingsSheet({ open, onClose }) {
               className="mt-3 w-full flex items-center justify-center gap-2 rounded-2xl border border-zinc-200 dark:border-white/10 bg-white dark:bg-[#121214] px-4 py-3 text-sm font-semibold text-zinc-900 dark:text-white active:scale-[0.98] transition disabled:opacity-50"
             >
               {testing ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}
-              {testing ? 'Mengirim...' : 'Kirim Notifikasi Test'}
+              {testing ? t('push_sending') : t('push_send_test')}
             </button>
           ) : null}
         </div>
 
         {/* Jenis Notifikasi */}
         <div className={cn(!pushOn && 'opacity-40 pointer-events-none')}>
-          <SectionLabel>{t('notification_types') || 'Jenis Notifikasi'}</SectionLabel>
+          <SectionLabel>{t('notification_types')}</SectionLabel>
           <div className={box}>
             <SettingRow
               icon={CalendarClock}
-              title="Tagihan"
-              desc="Pengingat tagihan jatuh tempo & yang terlewat"
+              title={t('push_bill_title')}
+              desc={t('push_bill_desc')}
               checked={settings.bill_enabled}
               onChange={(v) => handleTypeToggle('bill_enabled', v)}
               disabled={!pushOn}
             />
             <SettingRow
               icon={Wallet}
-              title="Budget"
-              desc="Peringatan saat budget 85% terpakai & terlampaui"
+              title={t('push_budget_title')}
+              desc={t('push_budget_desc')}
               checked={settings.budget_enabled}
               onChange={(v) => handleTypeToggle('budget_enabled', v)}
               disabled={!pushOn}
             />
             <SettingRow
               icon={Megaphone}
-              title="Pengumuman"
-              desc="Info & pengumuman terbaru dari Arshif"
+              title={t('push_announcement_title')}
+              desc={t('push_announcement_desc')}
               checked={settings.announcement_enabled}
               onChange={(v) => handleTypeToggle('announcement_enabled', v)}
               disabled={!pushOn}
@@ -291,13 +291,13 @@ export default function NotificationSettingsSheet({ open, onClose }) {
           {!pushOn ? (
             <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-2 px-1 flex items-center gap-1.5">
               <Smartphone size={13} />
-              Aktifkan "Notifikasi Perangkat" dulu untuk mengatur jenis notifikasi.
+              {t('push_enable_first_hint')}
             </p>
           ) : null}
         </div>
 
         <p className="text-xs text-zinc-400 dark:text-zinc-500 px-1 leading-relaxed">
-          Notifikasi dikirim maksimal 1x per pengingat. Kamu bisa menonaktifkan jenis tertentu tanpa mematikan semuanya.
+          {t('push_footer_note')}
         </p>
       </div>
     </Sheet>
