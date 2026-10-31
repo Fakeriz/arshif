@@ -52,3 +52,9 @@ Status: done
 Baca: app/api/_handlers/ai.js (OCR_PROMPT baris 404-432 + text parser baris 180-196), tests/split-bill.test.mjs, lib/split-bill.js (verifikasi stash teman satu tim)
 Temuan: CATEGORY DEFINITIONS (13 baris, 1 per kategori) ditambahkan di OCR_PROMPT setelah rules: toiletries/kosmetik/produk apotek di Watsons/Rossmann/dm/Guardian → 'shopping' (bukan 'personal'); 'personal' hanya layanan (spa/salon/barbershop/laundry/cuci mobil). 'health' diklarifikasi layanan medis, produk di apotek tetap 'shopping'. Text parser ditambah baris keyword "Kosmetik/Toiletries" (sampo/pasta gigi/sabun/kosmetik/skincare/watsons/rossmann/guardian) dan baris 'health' diklarifikasi. Tanpa test baru; npm test + next build lolos.
 Commit: (lihat git log)
+
+## [2026-10-31 11:02] subagent-deleg_reconcile — fitur auto-reconcile struk
+Status: done
+Baca: lib/split-bill.js (tambah reconcileItems(items,total) pure: diff=sum-total, diff>0→baris diskon price NEGATIF, diff<0→missing), components/arshif/ScanReceiptSheet.js (banner mismatch + tombol reconcile/edit, state reconciled, section Diskon struk dari result.discounts)
+Temuan: sign konvensi WAJIB diff=sum-total (bukan total-sum); baris diskon harus price NEGATIF kalau tidak sum makin besar dan tak pernah match. Kasus Watsons: 954.55-636.20=318.35→price:-318.35. openSheet name untuk detail transaksi = 'txDetail' (bukan 'transactionDetail'), payload objek transaksi.
+Commit: af955cb
