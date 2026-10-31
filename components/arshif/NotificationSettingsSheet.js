@@ -32,6 +32,22 @@ function SettingRow({ icon: Icon, title, desc, checked, onChange, disabled }) {
   )
 }
 
+const PUSH_ERROR_MAP = {
+  NOT_LOGGED_IN: 'push_not_logged_in',
+  PUSH_NOT_SUPPORTED: 'push_not_supported',
+  PUSH_CONFIG_ERROR: 'push_config_error',
+  NOTIFICATION_BLOCKED: 'push_blocked',
+  NOTIFICATION_DENIED: 'push_denied',
+  NO_DEVICE: 'push_test_no_device',
+  SEND_FAILED: 'push_test_error',
+}
+
+const pushErrorMsg = (e, t, fallbackKey) => {
+  const code = e?.message
+  const key = PUSH_ERROR_MAP[code]
+  return key ? t(key) : (code && !Object.keys(PUSH_ERROR_MAP).includes(code) ? code : t(fallbackKey))
+}
+
 export default function NotificationSettingsSheet({ open, onClose }) {
   const { t } = useApp()
   const [saving, setSaving] = useState(false)
@@ -112,7 +128,7 @@ export default function NotificationSettingsSheet({ open, onClose }) {
         toast.success(t('push_disabled_toast'))
       }
     } catch (e) {
-      toast.error(e?.message || t('push_settings_error'))
+      toast.error(pushErrorMsg(e, t, 'push_settings_error'))
       refreshPermission()
     } finally {
       setSaving(false)
@@ -142,7 +158,7 @@ export default function NotificationSettingsSheet({ open, onClose }) {
         toast.error(t('push_test_failed', { error: res?.lastError || t('push_test_no_device') }))
       }
     } catch (e) {
-      toast.error(e?.message || t('push_test_error'))
+      toast.error(pushErrorMsg(e, t, 'push_test_error'))
     } finally {
       setTesting(false)
     }
