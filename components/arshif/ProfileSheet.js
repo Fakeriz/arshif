@@ -27,6 +27,7 @@ export default function ProfileSheet({ open, onClose }) {
   const [ctx, setCtx] = useState('personal')
   const [biz, setBiz] = useState(EMPTY_BIZ)
   const [saving, setSaving] = useState(false)
+  const [signOutOpen, setSignOutOpen] = useState(false)
   const fileRef = useRef(null)
   const logoRef = useRef(null)
 
@@ -150,13 +151,28 @@ export default function ProfileSheet({ open, onClose }) {
 
         <PrimaryButton onClick={save} disabled={saving} data-testid="profile-save-btn">{t('save_changes')}</PrimaryButton>
         {!isGuest ? (
-          <button type="button" onClick={() => signOut?.()} className="w-full flex items-center justify-center gap-2 py-3 text-sm font-medium text-zinc-500 dark:text-zinc-400 hover:text-rose-500 dark:hover:text-rose-400 active:text-rose-600 transition cursor-pointer">
+          <button type="button" onClick={() => setSignOutOpen(true)} className="w-full flex items-center justify-center gap-2 py-3 text-sm font-medium text-zinc-500 dark:text-zinc-400 hover:text-rose-500 dark:hover:text-rose-400 active:text-rose-600 transition cursor-pointer">
             <LogOut size={15} strokeWidth={2} />
             {t('sign_out')}
           </button>
         ) : null}
         <div className="h-2" />
       </div>
+
+      {/* Sign Out confirmation — pattern sama AccountSupportSection */}
+      {session?.user ? (
+        <Sheet open={signOutOpen} onClose={() => setSignOutOpen(false)} title={t('sign_out')}>
+          <div className="pt-1">
+            <div className="h-12 w-12 rounded-2xl bg-muted flex items-center justify-center mx-auto"><LogOut size={22} strokeWidth={1.75} /></div>
+            <h3 className="text-lg font-bold text-center mt-3">{t('sign_out_confirm')}</h3>
+            <p className="text-sm text-muted-foreground text-center mt-1.5">{t('sign_out_confirm_body')}</p>
+            <div className="mt-5 space-y-2">
+              <PrimaryButton onClick={() => { setSignOutOpen(false); signOut?.() }} data-testid="profile-signout-confirm">{t('sign_out')}</PrimaryButton>
+              <button type="button" onClick={() => setSignOutOpen(false)} className="w-full rounded-xl bg-card border border-border/60 font-semibold py-3.5 text-[15px]">{t('cancel')}</button>
+            </div>
+          </div>
+        </Sheet>
+      ) : null}
     </Sheet>
   )
 }
