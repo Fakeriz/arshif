@@ -296,10 +296,10 @@ export default function NotificationsSheet({ open, onClose }) {
                           )}
                         >
                           {n.isOverdue
-                            ? 'Terlewat'
+                            ? t('notif_overdue_badge')
                             : n.type === 'budget'
-                            ? 'Anggaran'
-                            : 'Mendekati Tempo'}
+                            ? t('notif_budget_badge')
+                            : t('notif_due_soon_badge')}
                         </span>
                       )}
                     </div>

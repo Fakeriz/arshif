@@ -268,7 +268,7 @@ export default function SetBudgetModal({
   const handleSave = async () => {
     const num = budgetLimit || Number(amountInput) || 0
     if (!num || num <= 0) {
-      toast.error('Masukkan pagu anggaran yang valid')
+      toast.error(t?.('budget_invalid_amount') || 'Enter a valid budget amount')
       return
     }
 
@@ -290,19 +290,19 @@ export default function SetBudgetModal({
           await store.updateBudget(budget.id, payload)
         }
         triggerHaptic('success')
-        toast.success(t?.('saved_msg') || 'Anggaran diperbarui')
+        toast.success(t?.('saved_msg') || 'Saved')
       } else {
         if (store?.createBudget) {
           await store.createBudget(payload)
         }
         triggerHaptic('success')
-        toast.success(t?.('saved_msg') || 'Anggaran berhasil diset')
+        toast.success(t?.('saved_msg') || 'Saved')
       }
 
       onSaved?.()
       onClose?.()
     } catch (e) {
-      toast.error(e?.message || t?.('error') || 'Gagal menyimpan anggaran')
+      toast.error(e?.message || t?.('error') || 'Failed to save budget')
     } finally {
       setIsSaving(false)
     }
@@ -315,11 +315,11 @@ export default function SetBudgetModal({
       if (store?.deleteBudget) {
         await store.deleteBudget(budget.id)
       }
-      toast.success(t?.('deleted') || 'Anggaran dihapus')
+      toast.success(t?.('deleted') || 'Deleted')
       onDeleted?.()
       onClose?.()
     } catch (e) {
-      toast.error(e?.message || t?.('error') || 'Gagal menghapus anggaran')
+      toast.error(e?.message || t?.('error') || 'Failed to delete budget')
     }
   }
 

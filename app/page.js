@@ -275,7 +275,7 @@ export default function App() {
       // buka sheet dengan autoPick agar user bisa pilih foto manual.
       if (dataUrl) open('scan', { image: dataUrl })
       else {
-        try { toast.info('Gambar tidak terbawa — pilih foto struk ya') } catch {}
+        try { toast.info(t('receipt_not_found')) } catch {}
         open('scan', { autoPick: true })
       }
     }, 400)

@@ -134,7 +134,7 @@ export default function PaywallSheet({ open, onClose }) {
         {isPremium ? (
           <div className="mt-5 space-y-2">
             <PrimaryButton onClick={handleUpgrade} disabled={loading} data-testid="paywall-confirm-upgrade">
-              'Akun Anda Sudah Aktif'
+              {t('account_already_active')}
             </PrimaryButton>
             <SecondaryButton onClick={onClose}>{t('maybe_later')}</SecondaryButton>
           </div>

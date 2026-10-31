@@ -145,7 +145,7 @@ export default function ReceiptPreviewWithDrive({
                 {merchantName ? `Struk ${merchantName}` : 'Pratinjau Struk'}
               </p>
               <p className="text-[11px] text-zinc-500 mt-0.5">
-                {isGoogleDrive ? 'Tersimpan aman di Google Drive' : 'Foto struk belanja'}
+                {isGoogleDrive ? t('receipt_drive_safe') : t('receipt_photo_desc')}
               </p>
             </div>
           </div>

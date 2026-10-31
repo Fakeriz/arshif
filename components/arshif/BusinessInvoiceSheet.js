@@ -130,7 +130,7 @@ export default function BusinessInvoiceSheet({ open, onClose }) {
   const shareInvoice = async (inv) => {
     const cur = inv?.currency || home
     const lines = [
-      cfg.brand ? `*${cfg.brand}*` : '*Invoice*',
+      cfg.brand ? `*${cfg.brand}*` : `*${t('bi_invoice')}*`,
       `${t('bi_invoice')}: ${inv?.number || ''}`,
       `${t('bi_client')}: ${inv?.client || '-'}`,
       inv?.due_date ? `${t('bi_due_date')}: ${safeDate(inv.due_date)}` : null,

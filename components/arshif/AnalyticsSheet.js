@@ -270,20 +270,20 @@ export default function AnalyticsSheet({ open, onClose }) {
         })
       } else if (typeof navigator !== 'undefined' && navigator?.clipboard) {
         await navigator.clipboard.writeText(text)
-        toast.success('Ringkasan laporan disalin ke clipboard!')
+        toast.success(t('report_copied'))
       } else {
-        toast.info('Laporan siap diekspor')
+        toast.info(t('report_ready'))
       }
     } catch (err) {
       if (err?.name !== 'AbortError') {
-        toast.info('Ringkasan laporan siap')
+        toast.info(t('report_ready_short'))
       }
     }
   }
 
   const handleExportCsv = () => {
     if (!filteredTxs || filteredTxs.length === 0) {
-      toast.info('Tidak ada transaksi pada periode ini untuk diekspor')
+      toast.info(t('report_empty_period'))
       return
     }
     const headers = ['Date', 'Type', 'Category', 'Amount', 'Currency', 'Note/Merchant']
@@ -303,7 +303,7 @@ export default function AnalyticsSheet({ open, onClose }) {
     document.body.appendChild(link)
     link.click()
     document.body.removeChild(link)
-    toast.success('Laporan CSV berhasil diunduh')
+    toast.success(t('report_csv_downloaded'))
   }
 
   return (

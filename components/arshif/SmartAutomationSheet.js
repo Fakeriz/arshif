@@ -72,8 +72,7 @@ function buildShortcutText(t) {
     '6. Selesai. Jalankan shortcut dari Home Screen, Share Sheet,',
     '    Action Button, atau Back Tap (Settings > Accessibility > Touch).',
     '',
-    'Setiap teks yang dibagikan ke Arshif akan otomatis diisi',
-    'ke dalam form transaksi: nominal, kategori, dan akun.',
+    t('share_autofill_desc'),
   ].join('\n')
 }
 

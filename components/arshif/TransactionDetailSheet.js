@@ -41,12 +41,14 @@ export default function TransactionDetailSheet({ open, isOpen: propIsOpen, onClo
 
   // per-person totals for split-by-items.
   // NOTE: declared BEFORE any conditional return so hook order stays constant (Rules of Hooks).
+  // Line total = price × qty: the item list shows "2× Item" so the split must charge
+  // the multiplied line total, not the unit price (qty was silently ignored before).
   const perPerson = useMemo(() => {
     const totals = Object.fromEntries((people || []).map((p) => [p?.id, 0]))
     let unassigned = 0
     ;(items || []).forEach((it, idx) => {
       const assignees = assign?.[idx] || []
-      const price = Number(it?.price) || 0
+      const price = (Number(it?.price) || 0) * (Number(it?.qty) || 1)
       if (!assignees.length) { unassigned += price; return }
       const share = price / assignees.length
       assignees.forEach((pid) => { if (totals[pid] != null) totals[pid] += share })
@@ -62,6 +64,11 @@ export default function TransactionDetailSheet({ open, isOpen: propIsOpen, onClo
   const acc = (accounts || []).find((a) => a?.id === tx?.account_id)
   const isForeign = cur !== home
   const total = Number(tx.amount) || (items || []).reduce((s, i) => s + (Number(i?.price) || 0), 0)
+  // Sum of item line totals (price × qty). When it drifts from the transaction
+  // amount (AI misread, manual amount edit), per-person splits can exceed the
+  // real expense — surface the mismatch instead of letting it pass silently.
+  const itemsSum = (items || []).reduce((s, i) => s + (Number(i?.price) || 0) * (Number(i?.qty) || 1), 0)
+  const itemsMismatch = items.length > 0 && Math.abs(itemsSum - total) > 0.01
 
   const dateStr = tx?.date || tx?.transaction_date
   const formattedDate = (() => {
@@ -185,9 +192,13 @@ export default function TransactionDetailSheet({ open, isOpen: propIsOpen, onClo
               {editingItems ? <button type="button" onClick={addItem} className="w-full px-4 py-3 text-sm font-bold flex items-center gap-1.5 text-zinc-600 dark:text-zinc-400 hover:text-zinc-950 dark:hover:text-white"><Plus size={15} /> {t('add_item')}</button> : null}
               <div className="grid grid-cols-[1fr_auto] px-4 py-3 font-bold border-t border-zinc-200/60 dark:border-white/5 text-zinc-950 dark:text-white"><span>{t('total')}</span><span className="tabular-nums">{fmt(total, cur)}</span></div>
             </Card>
+            {itemsMismatch ? <p className="text-xs text-amber-600 dark:text-amber-400 font-medium mt-1.5 px-1">{t('items_sum_mismatch')} — {t('items')}: {fmt(itemsSum, cur)} · {t('total')}: {fmt(total, cur)}</p> : null}
           </div>
         ) : (
           <div className="mt-3 space-y-4">
+            {itemsMismatch ? (
+              <p className="text-xs text-amber-600 dark:text-amber-400 font-medium rounded-xl border border-amber-300 dark:border-amber-500/40 bg-amber-50 dark:bg-amber-500/10 px-3 py-2">{t('items_sum_mismatch')} — {t('items')}: {fmt(itemsSum, cur)} · {t('total')}: {fmt(total, cur)}</p>
+            ) : null}
             {/* Participants */}
             <div>
               <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-zinc-600 dark:text-zinc-400 mb-2">{t('participants')}</p>

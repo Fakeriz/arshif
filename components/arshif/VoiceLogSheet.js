@@ -270,7 +270,7 @@ export default function VoiceLogSheet({ open, onClose, onResult }) {
       onClose?.()
     } catch (err) {
       console.error('Gagal batch insert transaksi suara:', err)
-      toast.error('Gagal menyimpan beberapa transaksi')
+      toast.error(t('voice_save_partial_error'))
     } finally {
       setState('result')
     }
