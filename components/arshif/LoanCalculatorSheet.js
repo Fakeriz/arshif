@@ -50,7 +50,7 @@ export default function LoanCalculatorSheet({ open, onClose }) {
   const addToBills = async () => {
     if (result.monthly <= 0) { toast.error(t('error')); return }
     try {
-      await store.createBill({ title: 'Loan installment', amount: roundMoney(result.monthly, currency), currency, due_day: 1, category: 'bills', account_id: null })
+      await store.createBill({ title: t('loan_installment'), amount: roundMoney(result.monthly, currency), currency, due_day: 1, category: 'bills', account_id: null })
       toast.success(t('saved_msg'))
     } catch (e) { toast.error(e?.message || t('error')) }
   }
@@ -59,29 +59,29 @@ export default function LoanCalculatorSheet({ open, onClose }) {
     <>
       <Sheet open={open} onClose={onClose} full title={t('loan_calculator')}>
         <div className="space-y-5 pt-2">
-          <Field label={t('loan_amount') || 'Loan amount'}>
+          <Field label={t('loan_amount')}>
             <div className="flex gap-2">
               <button type="button" onClick={() => setPickCur(true)} className="shrink-0 rounded-xl bg-muted border border-border/60 px-3 py-3 flex items-center gap-1.5" data-testid="loan-currency">
-                <span className="font-bold text-sm">{getCurrency(currency).symbol} {currency}</span>
+                <span className="font-bold text-sm">{getCurrency(currency).symbol}</span>
                 <ChevronRight size={15} className="text-muted-foreground" />
               </button>
               <TextInput type="text" inputMode="decimal" value={amount} onChange={(e) => setAmount(sanitizeAmount(e.target.value))} placeholder="0" className="flex-1 text-lg font-bold" data-testid="loan-amount" />
             </div>
           </Field>
 
-          <Field label={t('interest_rate') || 'Interest rate (% per year)'}>
+          <Field label={t('interest_rate')}>
             <TextInput type="text" inputMode="decimal" value={rate} onChange={(e) => setRate(sanitizeAmount(e.target.value))} placeholder="e.g. 3.5" data-testid="loan-rate" />
           </Field>
 
-          <Field label={t('loan_tenure') || 'Loan tenure'}>
+          <Field label={t('loan_tenure')}>
             <div className="flex gap-2">
               <TextInput type="number" inputMode="numeric" value={tenure} onChange={(e) => setTenure(e.target.value)} placeholder="0" className="flex-1" data-testid="loan-tenure" />
-              <Segmented size="sm" className="w-40 shrink-0" value={unit} onChange={setUnit} options={[{ id: 'months', label: t('loan_months') || 'Months' }, { id: 'years', label: t('loan_years') || 'Years' }]} />
+              <Segmented size="sm" className="w-40 shrink-0" value={unit} onChange={setUnit} options={[{ id: 'months', label: t('loan_months') }, { id: 'years', label: t('loan_years') }]} />
             </div>
           </Field>
 
-          <Field label={t('calc_type') || 'Interest calculation type'}>
-            <Segmented value={method} onChange={setMethod} options={[{ id: 'flat', label: t('flat_rate') || 'Flat' }, { id: 'reducing', label: t('reducing_balance') || 'Menurun' }]} />
+          <Field label={t('calc_type')}>
+            <Segmented value={method} onChange={setMethod} options={[{ id: 'flat', label: t('flat_rate') }, { id: 'reducing', label: t('reducing_balance') }]} />
           </Field>
 
           {/* Output */}

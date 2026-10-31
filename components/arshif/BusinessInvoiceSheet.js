@@ -263,7 +263,7 @@ export default function BusinessInvoiceSheet({ open, onClose }) {
           <Field label={t('bi_due_date')}><TextInput type="date" value={due} onChange={(e) => setDue(e.target.value)} data-testid="bi-due" /></Field>
           <Field label={t('currency')}>
             <button type="button" onClick={() => setPickCur(true)} className="w-full rounded-xl bg-background border border-border/60 px-3 py-3 flex items-center gap-1.5" data-testid="bi-currency">
-              <span className="font-bold text-sm">{getCurrency(currency).symbol} {currency}</span>
+              <span className="font-bold text-sm">{getCurrency(currency).symbol}</span>
               <ChevronRight size={15} className="text-muted-foreground ml-auto" />
             </button>
           </Field>

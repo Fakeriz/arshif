@@ -459,7 +459,7 @@ export default function NewAccountSheet({ open, onClose }) {
                 className="shrink-0 rounded-xl bg-zinc-100 dark:bg-[#1c1c1e] border border-zinc-200 dark:border-white/10 px-3.5 py-3 flex items-center gap-1.5 text-zinc-950 dark:text-white"
                 data-testid="account-currency"
               >
-                <span className="font-bold text-sm">{getCurrency(currency).symbol} {currency}</span>
+                <span className="font-bold text-sm">{getCurrency(currency).symbol}</span>
                 <ChevronRight size={15} className="text-zinc-500 dark:text-zinc-400" />
               </button>
               <input

@@ -316,7 +316,7 @@ export default function NetWorthSheet({ open, onClose }) {
             <Field label={t('amount', 'Amount')}>
               <div className="flex gap-2">
                 <button type="button" onClick={() => setPickCur(true)} className="shrink-0 rounded-xl bg-background border border-border/60 px-3 py-3 flex items-center gap-1.5" data-testid="nw-currency">
-                  <span className="font-bold text-sm">{getCurrency(currency).symbol} {currency}</span>
+                  <span className="font-bold text-sm">{getCurrency(currency).symbol}</span>
                   <ChevronRight size={15} className="text-muted-foreground" />
                 </button>
                 <TextInput type="text" inputMode="decimal" value={amount} onChange={(e) => setAmount(sanitizeAmount(e.target.value))} placeholder="0" className="flex-1 text-lg font-bold" data-testid="nw-amount" />
