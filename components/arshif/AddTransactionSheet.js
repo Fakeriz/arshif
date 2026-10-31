@@ -3,13 +3,12 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { ChevronRight, Calculator, Camera, Delete, Check, X, FileText, Search, Sparkles } from 'lucide-react'
 import { toast } from 'sonner'
 import { useApp } from './context'
-import { Sheet, SheetTextButton, Segmented, Pill, Field, TextInput, CategoryBadge, CategoryIcon, Card, SectionLabel } from './ui'
+import { Sheet, SheetTextButton, Segmented, Pill, Field, TextInput, CategoryBadge, CategoryIcon, Card, SectionLabel, Switch } from './ui'
 import CurrencySheet from './CurrencySheet'
 import { CATEGORIES, PAYMENT_METHODS } from '@/lib/categories'
 import { getCurrency, roundMoney } from '@/lib/currencies'
 import { convert, getRate, formatRate } from '@/lib/rates'
 import { applyTxToBalances, evaluateExpression, toLocalDatetimeValue, fileToDataUrl } from '@/lib/ledger'
-import { Switch } from '@/components/ui/switch'
 import { cn } from '@/lib/utils'
 import { sanitizeAmount } from '@/lib/amount'
 import { useHaptic } from '@/hooks/useHaptic'
@@ -364,7 +363,7 @@ export default function AddTransactionSheet({ open, isOpen: propIsOpen, onClose,
                   <p className="font-bold text-zinc-950 dark:text-white">{t('tax_deductible')}</p>
                   <p className="text-xs text-zinc-600 dark:text-zinc-400">{t('tax_deductible_sub')}</p>
                 </div>
-                <Switch checked={tax} onCheckedChange={setTax} data-testid="tax-switch" />
+                <Switch checked={tax} onChange={setTax} data-testid="tax-switch" />
               </Card>
             ) : null}
           </div>

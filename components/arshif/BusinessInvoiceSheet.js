@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { Briefcase, Plus, Trash2, Share2, CheckCircle2, FileText, ChevronRight, X } from 'lucide-react'
 import { toast } from 'sonner'
 import { useApp } from './context'
-import { Sheet, TextInput, Field, Segmented } from './ui'
+import { Sheet, TextInput, Field, Segmented, Switch } from './ui'
 import CurrencySheet from './CurrencySheet'
 import { getCurrency } from '@/lib/currencies'
 import { cn } from '@/lib/utils'
@@ -165,10 +165,7 @@ export default function BusinessInvoiceSheet({ open, onClose }) {
               <p className="font-semibold text-[15px]">{t('bi_enable')}</p>
               <p className="text-xs text-muted-foreground mt-0.5 leading-snug">{t('bi_enable_desc')}</p>
             </div>
-            <button type="button" role="switch" aria-checked={!!cfg.enabled} onClick={() => persistCfg({ enabled: !cfg.enabled })}
-              className={cn('shrink-0 h-7 w-12 rounded-full transition-colors relative', cfg.enabled ? 'bg-foreground' : 'bg-zinc-300 dark:bg-white/15')} data-testid="bi-toggle">
-              <span className={cn('absolute top-0.5 h-6 w-6 rounded-full bg-background transition-all', cfg.enabled ? 'left-[22px]' : 'left-0.5')} />
-            </button>
+            <Switch checked={!!cfg.enabled} onChange={(v) => persistCfg({ enabled: v })} data-testid="bi-toggle" />
           </div>
           {cfg.enabled ? (
             <div className="mt-3">

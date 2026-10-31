@@ -7,7 +7,7 @@ import {
 import { toast } from 'sonner'
 import { useApp } from './context'
 import CurrencySheet from './CurrencySheet'
-import { Sheet, CategoryIcon, DatePickerInput } from './ui'
+import { Sheet, CategoryIcon, DatePickerInput, Switch } from './ui'
 import { CATEGORIES } from '@/lib/categories'
 import { getCurrency } from '@/lib/currencies'
 import { cn, triggerHaptic } from '@/lib/utils'
@@ -370,23 +370,7 @@ export default function SubscriptionSheet({
                         {t('subscription_bill_hint')}
                       </p>
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => setShowAsBill(!showAsBill)}
-                      className={cn(
-                        'w-11 h-6 rounded-full transition-colors relative shrink-0 cursor-pointer',
-                        showAsBill ? 'bg-emerald-500' : 'bg-zinc-300 dark:bg-zinc-700'
-                      )}
-                      role="switch"
-                      aria-checked={showAsBill}
-                    >
-                      <div
-                        className={cn(
-                          'w-5 h-5 rounded-full bg-white shadow-md transform transition-transform absolute top-0.5',
-                          showAsBill ? 'translate-x-[22px]' : 'translate-x-0.5'
-                        )}
-                      />
-                    </button>
+                    <Switch checked={showAsBill} onChange={setShowAsBill} />
                   </div>
 
                   <div className="border-t border-border/20" />
@@ -399,23 +383,7 @@ export default function SubscriptionSheet({
                         Marking it paid records the expense and updates your balance
                       </p>
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => setAutoLogExpense(!autoLogExpense)}
-                      className={cn(
-                        'w-11 h-6 rounded-full transition-colors relative shrink-0 cursor-pointer',
-                        autoLogExpense ? 'bg-emerald-500' : 'bg-zinc-300 dark:bg-zinc-700'
-                      )}
-                      role="switch"
-                      aria-checked={autoLogExpense}
-                    >
-                      <div
-                        className={cn(
-                          'w-5 h-5 rounded-full bg-white shadow-md transform transition-transform absolute top-0.5',
-                          autoLogExpense ? 'translate-x-[22px]' : 'translate-x-0.5'
-                        )}
-                      />
-                    </button>
+                    <Switch checked={autoLogExpense} onChange={setAutoLogExpense} />
                   </div>
                 </div>
 

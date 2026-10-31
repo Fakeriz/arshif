@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { Bell, BellOff, CalendarClock, Wallet, Megaphone, Send, Loader2, Smartphone, RefreshCw } from 'lucide-react'
 import { toast } from 'sonner'
 import { useApp } from './context'
-import { Sheet, SectionLabel } from './ui'
+import { Sheet, SectionLabel, Switch } from './ui'
 import { cn } from '@/lib/utils'
 import {
   isPushSupported,
@@ -17,34 +17,6 @@ import {
   getCachedPushSettings,
 } from '@/lib/push'
 
-function Toggle({ checked, onChange, disabled }) {
-  return (
-    <button
-      type="button"
-      role="switch"
-      aria-checked={checked}
-      disabled={disabled}
-      onClick={(e) => { e.stopPropagation(); onChange?.(!checked) }}
-      className={cn(
-        'relative h-7 w-12 shrink-0 rounded-full transition-colors duration-200',
-        checked ? 'bg-zinc-950 dark:bg-white' : 'bg-zinc-200 dark:bg-zinc-700',
-        disabled && 'opacity-40'
-      )}
-    >
-      <span
-        className={cn(
-          'absolute top-1 h-5 w-5 rounded-full bg-white dark:bg-zinc-950 shadow transition-all duration-200',
-          checked ? 'left-6' : 'left-1',
-          // Kontras knob saat aktif di dark mode
-          checked && 'dark:bg-zinc-950',
-          !checked && 'dark:bg-zinc-300'
-        )}
-        style={checked ? { background: '#fff' } : undefined}
-      />
-    </button>
-  )
-}
-
 function SettingRow({ icon: Icon, title, desc, checked, onChange, disabled }) {
   return (
     <div className="flex items-center gap-3 px-4 py-3.5">
@@ -55,7 +27,7 @@ function SettingRow({ icon: Icon, title, desc, checked, onChange, disabled }) {
         <p className="font-semibold text-[15px] text-zinc-950 dark:text-white">{title}</p>
         {desc ? <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5 leading-relaxed">{desc}</p> : null}
       </div>
-      <Toggle checked={checked} onChange={onChange} disabled={disabled} />
+      <Switch checked={checked} onChange={onChange} disabled={disabled} />
     </div>
   )
 }

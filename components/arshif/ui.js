@@ -102,6 +102,39 @@ export function Pill({ active, children, onClick, className, icon: Icon }) {
   )
 }
 
+// Satu-satunya switch di app. Ukuran h-7 w-12, warna aktif mengikuti
+// PrimaryButton (zinc-950 / putih) supaya serasi di semua sheet.
+export function Switch({ checked, onChange, disabled, className, ...props }) {
+  return (
+    <button
+      type="button"
+      role="switch"
+      aria-checked={checked}
+      disabled={disabled}
+      onClick={(e) => {
+        e.stopPropagation()
+        triggerHaptic('light')
+        onChange?.(!checked)
+      }}
+      className={cn(
+        'relative h-7 w-12 shrink-0 rounded-full transition-colors duration-200 cursor-pointer',
+        'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-500',
+        checked ? 'bg-zinc-950 dark:bg-white' : 'bg-zinc-200 dark:bg-zinc-700',
+        disabled && 'opacity-40 cursor-not-allowed',
+        className
+      )}
+      {...props}
+    >
+      <span
+        className={cn(
+          'absolute top-1 h-5 w-5 rounded-full shadow transition-all duration-200',
+          checked ? 'left-6 bg-white dark:bg-zinc-950' : 'left-1 bg-white dark:bg-zinc-300'
+        )}
+      />
+    </button>
+  )
+}
+
 export function PrimaryButton({ children, className, disabled, onClick, ...props }) {
   return (
     <button

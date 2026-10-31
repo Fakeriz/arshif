@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { ChevronLeft, ChevronRight, Plus, Receipt, Info, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { useApp } from './context'
-import { Sheet, TextInput, Field, PrimaryButton, DatePickerInput } from './ui'
+import { Sheet, TextInput, Field, PrimaryButton, DatePickerInput, Switch } from './ui'
 import SwipeBillRow from './SwipeBillRow'
 import { CATEGORIES } from '@/lib/categories'
 import { roundMoney } from '@/lib/currencies'
@@ -740,23 +740,7 @@ export default function BillsTrackerSheet({ open, onClose }) {
                   {t('auto_log_expense_sub')}
                 </p>
               </div>
-              <button
-                type="button"
-                onClick={() => setAutoLogExpense(!autoLogExpense)}
-                className={cn(
-                  'w-12 h-6 rounded-full transition-colors relative shrink-0 cursor-pointer',
-                  autoLogExpense ? 'bg-emerald-500' : 'bg-zinc-300 dark:bg-zinc-700'
-                )}
-                role="switch"
-                aria-checked={autoLogExpense}
-              >
-                <div
-                  className={cn(
-                    'w-5 h-5 rounded-full bg-white shadow-md transform transition-transform absolute top-0.5',
-                    autoLogExpense ? 'translate-x-6' : 'translate-x-0.5'
-                  )}
-                />
-              </button>
+              <Switch checked={autoLogExpense} onChange={setAutoLogExpense} />
             </div>
           </div>
 
@@ -909,23 +893,7 @@ export default function BillsTrackerSheet({ open, onClose }) {
                   {t('auto_log_expense_sub')}
                 </p>
               </div>
-              <button
-                type="button"
-                onClick={() => setEditAutoLog(!editAutoLog)}
-                className={cn(
-                  'w-12 h-6 rounded-full transition-colors relative shrink-0 cursor-pointer',
-                  editAutoLog ? 'bg-emerald-500' : 'bg-zinc-300 dark:bg-zinc-700'
-                )}
-                role="switch"
-                aria-checked={editAutoLog}
-              >
-                <div
-                  className={cn(
-                    'w-5 h-5 rounded-full bg-white shadow-md transform transition-transform absolute top-0.5',
-                    editAutoLog ? 'translate-x-6' : 'translate-x-0.5'
-                  )}
-                />
-              </button>
+              <Switch checked={editAutoLog} onChange={setEditAutoLog} />
             </div>
           </div>
 
