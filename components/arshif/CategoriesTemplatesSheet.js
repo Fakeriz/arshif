@@ -12,22 +12,23 @@ import { sanitizeAmount } from '@/lib/amount'
 const ICONS = { Utensils, ShoppingBasket, Car, Receipt, ShoppingBag, Clapperboard, HeartPulse, GraduationCap, CircleDashed, Wallet, Laptop, TrendingUp, Briefcase, Gift, Home, Plane, Coffee, Zap, Heart, Smartphone }
 const ICON_KEYS = ['Utensils', 'ShoppingBasket', 'Car', 'Receipt', 'ShoppingBag', 'Clapperboard', 'HeartPulse', 'GraduationCap', 'Wallet', 'TrendingUp', 'Briefcase', 'Gift', 'Home', 'Plane', 'Coffee', 'Zap', 'Heart', 'Smartphone', 'CircleDashed']
 
+// Preset tidak lagi simpan name Inggris: id dipakai untuk mapping t('cat_'+id), icon+type tetap statis
 const PRESETS = [
-  { name: 'Food & Dining', icon: 'Utensils', type: 'expense' },
-  { name: 'Groceries', icon: 'ShoppingBasket', type: 'expense' },
-  { name: 'Transport', icon: 'Car', type: 'expense' },
-  { name: 'Bills & Utilities', icon: 'Receipt', type: 'expense' },
-  { name: 'Shopping', icon: 'ShoppingBag', type: 'expense' },
-  { name: 'Entertainment', icon: 'Clapperboard', type: 'expense' },
-  { name: 'Healthcare', icon: 'HeartPulse', type: 'expense' },
-  { name: 'Education', icon: 'GraduationCap', type: 'expense' },
-  { name: 'Others', icon: 'CircleDashed', type: 'expense' },
-  { name: 'Salary', icon: 'Wallet', type: 'income' },
-  { name: 'Freelance', icon: 'Laptop', type: 'income' },
-  { name: 'Investment', icon: 'TrendingUp', type: 'income' },
-  { name: 'Business', icon: 'Briefcase', type: 'income' },
-  { name: 'Bonus', icon: 'Gift', type: 'income' },
-  { name: 'Others', icon: 'CircleDashed', type: 'income' },
+  { id: 'food', icon: 'Utensils', type: 'expense' },
+  { id: 'groceries', icon: 'ShoppingBasket', type: 'expense' },
+  { id: 'transport', icon: 'Car', type: 'expense' },
+  { id: 'bills', icon: 'Receipt', type: 'expense' },
+  { id: 'shopping', icon: 'ShoppingBag', type: 'expense' },
+  { id: 'entertainment', icon: 'Clapperboard', type: 'expense' },
+  { id: 'health', icon: 'HeartPulse', type: 'expense' },
+  { id: 'education', icon: 'GraduationCap', type: 'expense' },
+  { id: 'other', icon: 'CircleDashed', type: 'expense' },
+  { id: 'salary', icon: 'Wallet', type: 'income' },
+  { id: 'freelance', icon: 'Laptop', type: 'income' },
+  { id: 'investment', icon: 'TrendingUp', type: 'income' },
+  { id: 'business', icon: 'Briefcase', type: 'income' },
+  { id: 'gift', icon: 'Gift', type: 'income' },
+  { id: 'other', icon: 'CircleDashed', type: 'income' },
 ]
 const SEED_FLAG = 'arshif_cats_seeded'
 
@@ -62,7 +63,7 @@ export default function CategoriesTemplatesSheet({ open, onClose }) {
         const existing = (await store.listCategories()) || []
         const seeded = (() => { try { return localStorage.getItem(SEED_FLAG) === '1' } catch { return false } })()
         if (existing.length === 0 && !seeded) {
-          for (const c of PRESETS) { await store.createCategory({ name: c.name, icon: c.icon, type: c.type, preset: true }) }
+          for (const c of PRESETS) { await store.createCategory({ name: t(`cat_${c.id}`), icon: c.icon, type: c.type, preset: true }) }
           try { localStorage.setItem(SEED_FLAG, '1') } catch {}
         }
       } catch {}
@@ -87,7 +88,8 @@ export default function CategoriesTemplatesSheet({ open, onClose }) {
     try { await store.createCategory({ name: catName.trim(), icon: catIcon, type: sub, preset: false }); setCatName(''); setCatIcon('Utensils'); setAddingCat(false); await loadCats(); toast.success(t('saved_msg')) } catch (e) { toast.error(e?.message || t('error')) }
   }
   const editCat = async (c) => {
-    const name = typeof window !== 'undefined' ? window.prompt('Category name', c?.name || '') : null
+    // window.prompt tidak bisa di-style, tapi teksnya tetap harus ikut bahasa user
+    const name = typeof window !== 'undefined' ? window.prompt(t('category_name_placeholder'), c?.name || '') : null
     if (name == null) return
     try { await store.updateCategory(c.id, { name: name.trim() || c.name }); await loadCats() } catch (e) { toast.error(e?.message || t('error')) }
   }
@@ -105,7 +107,7 @@ export default function CategoriesTemplatesSheet({ open, onClose }) {
 
   return (
     <Sheet open={open} onClose={onClose} full title={t('categories_templates')}>
-      <Segmented className="mt-1" value={tab} onChange={setTab} options={[{ id: 'categories', label: 'Categories' }, { id: 'templates', label: 'Quick Templates' }]} />
+      <Segmented className="mt-1" value={tab} onChange={setTab} options={[{ id: 'categories', label: t('cat_tab_categories') }, { id: 'templates', label: t('cat_tab_templates') }]} />
 
       <div className="w-full py-2 box-border">
         <div className="relative flex items-center w-full">
@@ -129,9 +131,9 @@ export default function CategoriesTemplatesSheet({ open, onClose }) {
               return (
                 <div key={c.id} className="flex items-center gap-3 rounded-xl bg-white dark:bg-[#1c1c1e] border border-zinc-200 dark:border-white/10 px-3.5 py-3" data-testid="cat-row">
                   <div className="h-9 w-9 rounded-xl bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center text-zinc-900 dark:text-white"><Icon size={18} strokeWidth={1.5} /></div>
-                  <span className="flex-1 font-bold text-[15px] truncate text-zinc-950 dark:text-white">{c?.name}</span>
-                  <button type="button" onClick={() => editCat(c)} className="h-11 w-11 rounded-lg flex items-center justify-center text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white transition-colors" aria-label="edit"><Pencil size={15} /></button>
-                  <button type="button" onClick={() => delCat(c)} className="h-11 w-11 rounded-lg flex items-center justify-center text-zinc-400 hover:text-rose-500 dark:text-zinc-500 dark:hover:text-rose-400 transition-colors" aria-label="delete"><Trash2 size={15} /></button>
+                  <span className="flex-1 font-bold text-[15px] truncate text-zinc-950 dark:text-white">{c?.preset && c?.id && t(`cat_${c.id}`) !== `cat_${c.id}` ? t(`cat_${c.id}`) : c?.name}</span>
+                  <button type="button" onClick={() => editCat(c)} className="h-11 w-11 rounded-lg flex items-center justify-center text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white transition-colors" aria-label={t('a11y_edit')}><Pencil size={15} /></button>
+                  <button type="button" onClick={() => delCat(c)} className="h-11 w-11 rounded-lg flex items-center justify-center text-zinc-400 hover:text-rose-500 dark:text-zinc-500 dark:hover:text-rose-400 transition-colors" aria-label={t('a11y_delete')}><Trash2 size={15} /></button>
                 </div>
               )
             })}
@@ -174,7 +176,7 @@ export default function CategoriesTemplatesSheet({ open, onClose }) {
                   <p className="text-xs text-zinc-600 dark:text-zinc-400 mt-0.5">{t(`cat_${tp?.category || 'other'}`)} · {fmt(tp?.amount, tp?.currency || home)}</p>
                 </button>
                 <span className="font-bold tabular-nums text-[15px] text-zinc-950 dark:text-white">{getCurrency(tp?.currency || home).symbol} {fmt(tp?.amount, tp?.currency || home)}</span>
-                <button type="button" onClick={() => delTpl(tp)} className="h-11 w-11 rounded-lg flex items-center justify-center text-zinc-400 hover:text-rose-500 dark:text-zinc-500 dark:hover:text-rose-400 transition-colors" aria-label="delete"><Trash2 size={15} /></button>
+                <button type="button" onClick={() => delTpl(tp)} className="h-11 w-11 rounded-lg flex items-center justify-center text-zinc-400 hover:text-rose-500 dark:text-zinc-500 dark:hover:text-rose-400 transition-colors" aria-label={t('a11y_delete')}><Trash2 size={15} /></button>
               </div>
             ))}
             {filteredTpls.length === 0 ? <p className="text-center text-sm text-zinc-500 dark:text-zinc-400 py-6">{t('no_templates')}</p> : null}
@@ -182,7 +184,7 @@ export default function CategoriesTemplatesSheet({ open, onClose }) {
 
           {addingTpl ? (
             <div className="mt-4 rounded-2xl bg-white dark:bg-[#1c1c1e] border border-zinc-200 dark:border-white/10 p-4 space-y-3">
-              <Field label="Title"><TextInput value={tTitle} onChange={(e) => setTTitle(e.target.value)} placeholder={t('cat_name_placeholder')} data-testid="tpl-title" /></Field>
+              <Field label={t('bill_title')}><TextInput value={tTitle} onChange={(e) => setTTitle(e.target.value)} placeholder={t('cat_name_placeholder')} data-testid="tpl-title" /></Field>
               <Field label={`Amount (${home})`}><TextInput type="text" inputMode="decimal" value={tAmount} onChange={(e) => setTAmount(sanitizeAmount(e.target.value))} placeholder="0" data-testid="tpl-amount" /></Field>
               <Field label={t('category')}>
                 <div className="flex gap-2 overflow-x-auto no-scrollbar">

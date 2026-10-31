@@ -72,10 +72,12 @@ export default function DebtTrackerSheet({ open, onClose }) {
   }
   const remind = async (d) => {
     const amt = fmt(d?.amount, d?.currency || home)
+    // tanggal jatuh tempo jadi blok terpisah biar posisinya ikut tata bahasa tiap bahasa
+    const duePart = d?.due_date ? t('debt_reminder_due', { date: safeDate(d.due_date) }) : ''
     const msg = d?.direction === 'lent'
-      ? `Hi ${d?.person}, just a friendly reminder about the ${amt} I lent you${d?.due_date ? ` (due ${safeDate(d.due_date)})` : ''}. Thank you!`
-      : `Hi ${d?.person}, reminder that I owe you ${amt}${d?.due_date ? ` (due ${safeDate(d.due_date)})` : ''}. I'll settle it soon!`
-    try { await navigator.clipboard.writeText(msg); toast.success('Reminder copied') } catch { toast(msg) }
+      ? t('debt_reminder_msg_lent', { person: d?.person, amt, due: duePart })
+      : t('debt_reminder_msg_owe', { person: d?.person, amt, due: duePart })
+    try { await navigator.clipboard.writeText(msg); toast.success(t('debt_reminder_copied')) } catch { toast(msg) }
   }
 
   return (
@@ -86,11 +88,11 @@ export default function DebtTrackerSheet({ open, onClose }) {
         <div className="mt-1 rounded-2xl bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-white/10 p-4">
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <p className="text-[11px] uppercase tracking-wide text-zinc-600 dark:text-zinc-400 font-semibold">I Am Owed</p>
+              <p className="text-[11px] uppercase tracking-wide text-zinc-600 dark:text-zinc-400 font-semibold">{t('debt_tracker_summary_owed')}</p>
               <p className="text-lg font-extrabold tabular-nums text-emerald-600 dark:text-emerald-400 mt-0.5" data-testid="debt-owed">{fmt(summary.owed, home)}</p>
             </div>
             <div>
-              <p className="text-[11px] uppercase tracking-wide text-zinc-600 dark:text-zinc-400 font-semibold">I Owe</p>
+              <p className="text-[11px] uppercase tracking-wide text-zinc-600 dark:text-zinc-400 font-semibold">{t('debt_tracker_summary_owe')}</p>
               <p className="text-lg font-extrabold tabular-nums text-rose-600 dark:text-rose-400 mt-0.5" data-testid="debt-owe">{fmt(summary.owe, home)}</p>
             </div>
           </div>
@@ -103,7 +105,7 @@ export default function DebtTrackerSheet({ open, onClose }) {
         </div>
 
         <Segmented className="mt-4" size="sm" value={filter} onChange={setFilter}
-          options={[{ id: 'lent', label: t('debt_owe_me') || 'Owe Me' }, { id: 'borrowed', label: t('debt_i_owe') || 'I Owe' }, { id: 'settled', label: t('debt_settled') || 'Settled' }]} />
+          options={[{ id: 'lent', label: t('debt_owe_me') }, { id: 'borrowed', label: t('debt_i_owe') }, { id: 'settled', label: t('debt_settled') }]} />
 
         <div className="mt-4 space-y-2.5">
           {list.length === 0 ? (
@@ -117,17 +119,17 @@ export default function DebtTrackerSheet({ open, onClose }) {
               <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0">
                   <p className="font-bold text-[15px] truncate text-zinc-950 dark:text-white">{d?.person}</p>
-                  <p className="text-xs text-zinc-600 dark:text-zinc-400 mt-0.5">{d?.direction === 'lent' ? t('debt_lent') || 'Lent' : t('debt_borrowed') || 'Borrowed'}{d?.due_date ? ` · due ${safeDate(d.due_date)}` : ''}{d?.note ? ` · ${d.note}` : ''}</p>
+                  <p className="text-xs text-zinc-600 dark:text-zinc-400 mt-0.5">{d?.direction === 'lent' ? t('debt_lent') : t('debt_borrowed')}{d?.due_date ? ` · ${t('debt_due_short')} ${safeDate(d.due_date)}` : ''}{d?.note ? ` · ${d.note}` : ''}</p>
                 </div>
                 <p className={cn('font-bold tabular-nums text-[15px] shrink-0', d?.direction === 'lent' ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400')}>{fmt(d?.amount, d?.currency || home)}</p>
               </div>
               {!d?.settled ? (
                 <div className="flex gap-2 mt-3">
-                  <button type="button" onClick={() => settle(d)} className="flex-1 rounded-xl bg-zinc-950 text-white dark:bg-white dark:text-zinc-950 text-sm font-bold py-2 flex items-center justify-center gap-1.5 transition-colors" data-testid="debt-settle"><Check size={15} /> {t('debt_mark_paid') || 'Mark as Paid'}</button>
-                  <button type="button" onClick={() => remind(d)} className="rounded-xl bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-white/10 text-zinc-950 dark:text-white text-sm font-bold py-2 px-3 flex items-center justify-center gap-1.5 transition-colors" data-testid="debt-remind"><Share2 size={15} /> {t('debt_remind') || 'Remind'}</button>
+                  <button type="button" onClick={() => settle(d)} className="flex-1 rounded-xl bg-zinc-950 text-white dark:bg-white dark:text-zinc-950 text-sm font-bold py-2 flex items-center justify-center gap-1.5 transition-colors" data-testid="debt-settle"><Check size={15} /> {t('debt_mark_paid')}</button>
+                  <button type="button" onClick={() => remind(d)} className="rounded-xl bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-white/10 text-zinc-950 dark:text-white text-sm font-bold py-2 px-3 flex items-center justify-center gap-1.5 transition-colors" data-testid="debt-remind"><Share2 size={15} /> {t('debt_remind')}</button>
                 </div>
               ) : (
-                <p className="mt-2 text-xs font-semibold text-emerald-600 dark:text-emerald-400 inline-flex items-center gap-1"><Check size={13} /> {t('debt_settled_badge') || 'Settled'}</p>
+                <p className="mt-2 text-xs font-semibold text-emerald-600 dark:text-emerald-400 inline-flex items-center gap-1"><Check size={13} /> {t('debt_settled_badge')}</p>
               )}
             </div>
           ))}
@@ -136,13 +138,13 @@ export default function DebtTrackerSheet({ open, onClose }) {
       </Sheet>
 
       {/* Add debt */}
-      <Sheet open={adding} onClose={() => setAdding(false)} title={t('debt_add_title') || 'Add Debt / IOU'} zIndex={70}
+      <Sheet open={adding} onClose={() => setAdding(false)} title={t('debt_add_title')} zIndex={70}
         left={<button type="button" onClick={() => setAdding(false)} className="text-sm font-semibold text-zinc-600 hover:text-zinc-950 dark:text-zinc-400 dark:hover:text-white transition-colors">{t('cancel')}</button>}
         right={<button type="button" onClick={save} disabled={!person.trim() || !(Number(amount) || 0)} className={cn('text-[15px] font-bold py-1 px-1 text-zinc-950 dark:text-white', (!person.trim() || !(Number(amount) || 0)) && 'opacity-40')} data-testid="debt-save">{t('save')}</button>}>
         <div className="space-y-5 pt-2">
-          <Segmented value={direction} onChange={setDirection} options={[{ id: 'lent', label: t('debt_lent') || 'Lent' }, { id: 'borrowed', label: t('debt_borrowed') || 'Borrowed' }]} />
-          <Field label={t('contact_name') || 'Contact name'}><TextInput value={person} onChange={(e) => setPerson(e.target.value)} placeholder={t('debt_contact_ph') || 'e.g. Budi'} data-testid="debt-person" /></Field>
-          <Field label={t('amount') || 'Amount'}>
+          <Segmented value={direction} onChange={setDirection} options={[{ id: 'lent', label: t('debt_lent') }, { id: 'borrowed', label: t('debt_borrowed') }]} />
+          <Field label={t('contact_name')}><TextInput value={person} onChange={(e) => setPerson(e.target.value)} placeholder={t('debt_contact_ph')} data-testid="debt-person" /></Field>
+          <Field label={t('amount')}>
             <div className="flex gap-2">
               <button type="button" onClick={() => setPickCur(true)} className="shrink-0 rounded-xl bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-white/10 px-3 py-3 flex items-center gap-1.5 text-zinc-950 dark:text-white" data-testid="debt-currency">
                 <span className="font-bold text-sm">{getCurrency(currency).symbol}</span>
@@ -152,7 +154,7 @@ export default function DebtTrackerSheet({ open, onClose }) {
             </div>
           </Field>
           <DatePickerInput label={t('debt_due_date')} value={due} onChange={setDue} data-testid="debt-due" clearable />
-          <Field label={t('note') || 'Note'}><TextInput value={note} onChange={(e) => setNote(e.target.value)} placeholder={t('optional') || 'Optional'} /></Field>
+          <Field label={t('note')}><TextInput value={note} onChange={(e) => setNote(e.target.value)} placeholder={t('optional')} /></Field>
           <Field label={t('source_account')}>
             <div className="flex gap-2 overflow-x-auto no-scrollbar">
               <button type="button" onClick={() => setAccountId(null)} className={cn('shrink-0 rounded-xl border px-3 py-2 text-sm font-semibold transition-colors', accountId === null ? 'bg-zinc-950 text-white border-zinc-950 dark:bg-white dark:text-zinc-950 dark:border-white' : 'bg-white dark:bg-[#1c1c1e] border-zinc-200 dark:border-white/10 text-zinc-950 dark:text-white')}>{t('no_account_opt')}</button>
