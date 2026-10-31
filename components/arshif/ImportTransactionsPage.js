@@ -6,7 +6,7 @@ import { toast } from 'sonner'
 import { useApp } from './context'
 import { Sheet, Field, Segmented, CategoryBadge, SectionLabel, TextInput } from './ui'
 import CurrencySheet from './CurrencySheet'
-import { CATEGORIES } from '@/lib/categories'
+import { CATEGORIES, DEFAULT_ACCOUNT_TYPE } from '@/lib/categories'
 import { convert, getRate } from '@/lib/rates'
 import { getCurrency, roundMoney } from '@/lib/currencies'
 import { LOCALE_MAP } from '@/lib/i18n'
@@ -123,7 +123,7 @@ export default function ImportTransactionsPage({ onClose }) {
     if (!name) { toast.error(t('import_wallet_name')); return }
     setBusy(true)
     try {
-      const w = await store.createAccount({ name, currency: (nwCurrency || home || 'MYR').toUpperCase(), type: 'bank', balance: 0 })
+      const w = await store.createAccount({ name, currency: (nwCurrency || home || 'MYR').toUpperCase(), type: DEFAULT_ACCOUNT_TYPE, balance: 0 })
       if (refresh) await refresh()
       setWalletId(w?.id || null)
       setNewWallet(false); setNwName('')

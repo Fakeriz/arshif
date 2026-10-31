@@ -56,7 +56,7 @@ create table if not exists public.accounts (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references auth.users(id) on delete cascade,
   name text not null,
-  type text default 'bank',             -- bank | ewallet | cash | card | crypto
+  type text default 'savings',          -- enum account_type produksi: savings | cash | ewallet | credit_card
   balance numeric default 0,
   currency text default 'IDR',
   country text default 'ID',            -- ID | MY | TR | GLOBAL
@@ -70,7 +70,7 @@ create table if not exists public.accounts (
 
 -- Kolom tambahan idempoten untuk accounts
 alter table public.accounts add column if not exists name text default '';
-alter table public.accounts add column if not exists type text default 'bank';
+alter table public.accounts add column if not exists type text default 'savings';
 alter table public.accounts add column if not exists balance numeric default 0;
 alter table public.accounts add column if not exists currency text default 'IDR';
 alter table public.accounts add column if not exists country text default 'ID';

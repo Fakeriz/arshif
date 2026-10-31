@@ -73,7 +73,7 @@ export default function NetWorthSheet({ open, onClose }) {
 
   const totals = useMemo(() => {
     const accountAssets = (accounts || []).reduce((s, a) => {
-      if (String(a?.type || '').toLowerCase() === 'credit' || signedAccountBalance(a) < 0) return s
+      if (String(a?.type || '').toLowerCase() === 'credit_card' || signedAccountBalance(a) < 0) return s
       return s + toHome(a?.balance, a?.currency)
     }, 0)
     const accountLiabs = (accounts || []).reduce((s, a) => {

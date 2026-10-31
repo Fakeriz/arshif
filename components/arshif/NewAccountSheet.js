@@ -10,7 +10,7 @@ import { useApp } from './context'
 import { Sheet, LogoBadge } from './ui'
 import CurrencySheet from './CurrencySheet'
 import { BankCard, CardMotifTexture, EmvChip, ContactlessWave } from './BankCard'
-import { CARD_THEMES, BANK_LOGOS, ACCOUNT_TYPES, ACCOUNT_ICONS, getTheme } from '@/lib/categories'
+import { CARD_THEMES, BANK_LOGOS, ACCOUNT_TYPES, ACCOUNT_ICONS, getTheme, DEFAULT_ACCOUNT_TYPE } from '@/lib/categories'
 import { getCurrency, roundMoney } from '@/lib/currencies'
 import { convert, getRate } from '@/lib/rates'
 import { cn } from '@/lib/utils'
@@ -66,7 +66,7 @@ export function PreviewCard({ name, balance, currency, theme, logo, icon = 'card
 export default function NewAccountSheet({ open, onClose }) {
   const { t, home, accounts = [], store, refresh, fmt, rates } = useApp()
   const [name, setName] = useState('')
-  const [type, setType] = useState('bank')
+  const [type, setType] = useState(DEFAULT_ACCOUNT_TYPE)
   const [icon, setIcon] = useState('card')
   const [currency, setCurrency] = useState(home)
   const [theme, setTheme] = useState('parang')
@@ -82,7 +82,7 @@ export default function NewAccountSheet({ open, onClose }) {
   useEffect(() => {
     if (!open) return
     setName('')
-    setType('bank')
+    setType(DEFAULT_ACCOUNT_TYPE)
     setIcon('card')
     setCurrency(home)
     setTheme('parang')

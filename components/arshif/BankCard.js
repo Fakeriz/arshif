@@ -1,7 +1,7 @@
 'use client'
 
 import { useMemo } from 'react'
-import { getTheme, ACCOUNT_TYPES } from '@/lib/categories'
+import { getTheme, ACCOUNT_TYPES, DEFAULT_ACCOUNT_TYPE } from '@/lib/categories'
 import { getCurrency } from '@/lib/currencies'
 import { LogoBadge } from './ui'
 import { cn } from '@/lib/utils'
@@ -192,7 +192,7 @@ export function BankCard({
   theme = 'parang',
   logo = null,
   icon = 'card',
-  type = 'bank',
+  type = DEFAULT_ACCOUNT_TYPE,
   id = null,
   fmt = null,
   className = '',

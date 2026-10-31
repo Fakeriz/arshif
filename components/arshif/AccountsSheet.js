@@ -7,7 +7,7 @@ import { toast } from 'sonner'
 import { useApp } from './context'
 import { BankCard } from './BankCard'
 import { EmptyState } from './ui'
-import { CARD_THEMES, ACCOUNT_TYPES } from '@/lib/categories'
+import { CARD_THEMES, ACCOUNT_TYPES, DEFAULT_ACCOUNT_TYPE, isValidAccountType } from '@/lib/categories'
 import { cn } from '@/lib/utils'
 
 export default function AccountsSheet({ open, onClose }) {
@@ -44,7 +44,7 @@ export default function AccountsSheet({ open, onClose }) {
 
   const [editName, setEditName] = useState('')
   const [editTheme, setEditTheme] = useState('parang')
-  const [editType, setEditType] = useState('bank')
+  const [editType, setEditType] = useState(DEFAULT_ACCOUNT_TYPE)
 
   // Sync ordered accounts with incoming accounts & preserved localStorage order
   useEffect(() => {
@@ -141,7 +141,9 @@ export default function AccountsSheet({ open, onClose }) {
     setEditingAccount(a)
     setEditName(a.name || '')
     setEditTheme(a.theme || 'parang')
-    setEditType(a.type || 'bank')
+    // Tipe legacy di luar enum (bank/credit/other) tidak bisa disimpan ke DB,
+    // jadi fallback ke nilai enum valid agar tombol simpan tidak gagal.
+    setEditType(isValidAccountType(a.type) ? a.type : DEFAULT_ACCOUNT_TYPE)
   }
 
   // Save Edit
