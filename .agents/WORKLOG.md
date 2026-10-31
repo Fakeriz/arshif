@@ -84,3 +84,14 @@ Status: done
 Baca: components/arshif/DebtTrackerSheet.js + SplitBillSheet.js + CategoriesTemplatesSheet.js (semua hardcoded + fallback || 'English'), lib/i18n.js (debt_* di 4 blok; debt_owe_me..debt_settled_badge TERNYATA sudah ada di en+id, cuma ms+tr yang kurang)
 Temuan: (1) Reminder hutang di-i18n via debt_reminder_msg_lent/owe + debt_reminder_due (blok tanggal terpisah {due} biar posisi ikut tata bahasa), toast pakai debt_reminder_copied, label summary 'I Am Owed'/'I Owe' ikut ditemukan & difix (debt_tracker_summary_owed/owe). (2) 16 fallback || 'English' dihapus dari DebtTracker. (3) debt_due_date dipakai DatePickerInput sebelumnya TANPA key - sekarang ada 4 bahasa (double-check audit: juga missing). (4) PRESETS diganti id → seed pakai t(`cat_${id}`), render: kategori preset dipaksa tampil via t(`cat_${id}`) kalau id dikenal (nama Inggris lama di DB tetap aman, custom name user tak tertimpa). (5) window.prompt judul pakai t('category_name_placeholder'), tab 'Categories'/'Quick Templates' → cat_tab_categories/cat_tab_templates, Field 'Title' → t('bill_title'), aria-label edit/delete/assign → a11y_edit/a11y_delete/a11y_assign. (6) split_desc_ph/split_name_ph ditemukan missing di 4 blok (dipakai placeholder). Total 21 key baru × 4 bahasa. Verifikasi node: 0 missing di 3 file, cat_* preset ALL OK, fallback bersih. npm test 115 pass, next build sukses.
 Commit: bb5ffd6
+
+## [2026-10-31 14:55] Hermes (Forge) — fix SplitBillSheet: bug reindex assign + i18n 9 key + validasi spesifik
+Status: done
+Baca: components/arshif/SplitBillSheet.js, lib/i18n.js (4 blok), lib/split-bill.js, lib/currencies.js (allocateEqualShares), lib/amount.js
+Temuan:
+1. BUG KRITIS delItem: assign key ber-index item; hapus index i tidak menggeser kunci setelahnya → item berikutnya ambil assignment item yang sudah dihapus (data corruption mode by-items). Fix: filter + map reindex kunci > i turun 1.
+2. i18n 9 key (equally/uneven/by_items/person/item_name/unassigned_items/participants/add_participant/you) hanya di blok EN → fallback silent ke EN saat user pakai id/ms/tr. Ditambah ke 3 blok. Karakter Turkiye di blok tr sudah diperbaiki (Eşit, Öğe adı, Atanmamış dll).
+3. Validasi save() pakai t('error') generik semua kondisi. Dipisah 5 key spesifik: split_need_total, split_need_2, split_name_all, split_total_mismatch, split_unassigned (4 bahasa).
+4. UI: peserta tanpa nama di mode equally/uneven tampil tanda penghubung (–) bukan 0, karena 0 menyesatkan (mereka tidak dihitung).
+next build sukses, npm test 115 pass.
+Commit: 34297b9
