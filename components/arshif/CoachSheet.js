@@ -1,12 +1,20 @@
 'use client'
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Send, Sparkles, SquarePen } from 'lucide-react'
+import { Copy, Send, Sparkles, SquarePen, Wallet, TrendingUp, Target, AlertTriangle } from 'lucide-react'
 import { toast } from 'sonner'
 import { useApp } from './context'
 import { Sheet, DotsLoader } from './ui'
 import CoachMarkdown from './CoachMarkdown'
 import { safeConvert } from '@/lib/rates'
 import { signedAccountBalance } from '@/lib/ledger'
+import { cn } from '@/lib/utils'
+
+const GREETINGS = {
+  id: 'Halo! Saya AI Financial Coach Arshif kamu. Tanya apa saja soal keuanganmu — aku sudah membaca saldo, anggaran, dan targetmu.',
+  ms: 'Hai! Saya AI Financial Coach Arshif anda. Tanya apa sahaja tentang kewangan anda — saya sudah baca baki, belanjawan dan matlamat anda.',
+  en: "Hi! I'm your Arshif AI Financial Coach. Ask me anything about your money — I've already read your balance, budgets and goals.",
+  tr: 'Merhaba! Ben Arshif AI Finans Koçunuz. Paranızla ilgili her şeyi sorun — bakiyenizi, bütçelerinizi ve hedeflerinizi okudum.',
+}
 
 export default function CoachSheet({ open, onClose }) {
   const { t, home, lang, transactions = [], accounts = [], goals = [], budgets = [], rates, fmt, session, isAiAllowed, open: openSheet, store } = useApp()
@@ -22,14 +30,6 @@ export default function CoachSheet({ open, onClose }) {
   const chatKey = `arshif:coach-chat:${uid}`
   const MAX_SAVED = 40
 
-  const greetingFor = (l) => l === 'id'
-    ? 'Halo! Saya AI Financial Coach kamu. Tanya apa saja soal keuanganmu.'
-    : l === 'ms'
-      ? 'Hai! Saya AI Financial Coach anda. Tanya apa sahaja tentang kewangan anda.'
-      : l === 'tr'
-        ? 'Merhaba! Ben AI Finans Koçunuzum. Finansınız hakkında her şeyi sorun.'
-        : "Hi! I'm your AI Financial Coach. Ask me anything about your money."
-
   const loadHistory = () => {
     try {
       const raw = localStorage.getItem(chatKey)
@@ -42,7 +42,7 @@ export default function CoachSheet({ open, onClose }) {
   }
 
   const startNewChat = () => {
-    const g = [{ role: 'assistant', content: greetingFor(lang) }]
+    const g = [{ role: 'assistant', content: GREETINGS[lang] || GREETINGS.en }]
     setMessages(g)
     try { localStorage.setItem(chatKey, JSON.stringify(g)) } catch {}
   }
@@ -74,12 +74,10 @@ export default function CoachSheet({ open, onClose }) {
     const sum = (type) => inMonth.filter((tx) => tx.type === type).reduce((s, tx) => s + (safeConvert(tx.amount, tx.currency, home, rates) ?? 0), 0)
     const byCat = {}
     inMonth.filter((tx) => tx.type === 'expense').forEach((tx) => { byCat[tx.category] = (byCat[tx.category] || 0) + (safeConvert(tx.amount, tx.currency, home, rates) ?? 0) })
-    // Saldo akun dikonversi ke mata uang home agar konsisten dengan totalBalance
     const totalBalance = accounts.reduce((s, a) => s + (safeConvert(signedAccountBalance(a), a.currency, home, rates) ?? 0), 0)
     const monthIncome = sum('income')
     const monthSpending = sum('expense')
 
-    // Tren 3 bulan terakhir (income vs spending)
     const trend = []
     for (let i = 2; i >= 0; i--) {
       const d = new Date(now.getFullYear(), now.getMonth() - i, 1)
@@ -92,7 +90,6 @@ export default function CoachSheet({ open, onClose }) {
       })
     }
 
-    // Progres anggaran: limit dikonversi ke home currency agar sebanding dengan spent
     const budgetProgress = (budgets || [])
       .map((b) => {
         const limitHome = safeConvert(Number(b?.limit_amount) || 0, b?.currency || home, home, rates) ?? (Number(b?.limit_amount) || 0)
@@ -121,7 +118,6 @@ export default function CoachSheet({ open, onClose }) {
       .sort((a, b) => b.pct - a.pct)
       .slice(0, 6)
 
-    // Beban hutang & langganan per bulan (dinormalkan ke 1 bulan, konversi ke home)
     const debtMonthly = (debts || []).reduce((s, d) => s + (safeConvert(Number(d?.installment_amount || d?.monthly_payment || d?.amount) || 0, d?.currency || home, home, rates) ?? 0), 0)
     const subMonthly = (subscriptions || []).reduce((s, sub) => {
       const rawAmt = Number(sub?.amount) || 0
@@ -133,7 +129,6 @@ export default function CoachSheet({ open, onClose }) {
       return s + (safeConvert(monthlyAmt, sub?.currency || home, home, rates) ?? 0)
     }, 0)
 
-    // Proyeksi tiap goal: sisa bulan, kebutuhan per bulan, status on_track/behind
     const goalProjection = (goals || []).map((g) => {
       const targetHome = safeConvert(Number(g?.target_amount) || 0, g?.currency || home, home, rates) ?? (Number(g?.target_amount) || 0)
       const savedHome = safeConvert(Number(g?.saved_amount) || 0, g?.currency || home, home, rates) ?? (Number(g?.saved_amount) || 0)
@@ -180,27 +175,18 @@ export default function CoachSheet({ open, onClose }) {
     }
   }, [transactions, accounts, goals, budgets, debts, subscriptions, home, rates])
 
-  // Saran pertanyaan: statis + kontekstual dari data user
+  // Saran pertanyaan: kontekstual dari data user — pakai key i18n + var
   const starters = useMemo(() => {
     const list = []
-    const pick = (l) => l
-    if (context.budgets.some((b) => b.pct >= 80)) {
-      const worst = context.budgets.find((b) => b.pct >= 80)
-      list.push(pick(lang === 'id' ? `Kenapa anggaran ${worst.category} aku sudah ${worst.pct}%?` : lang === 'ms' ? `Kenapa belanja ${worst.category} saya sudah ${worst.pct}%?` : lang === 'tr' ? `${worst.category} bütçem neden %${worst.pct} oldu?` : `Why is my ${worst.category} budget already at ${worst.pct}%?`))
-    }
+    const hot = context.budgets.find((b) => b.pct >= 80)
+    if (hot) list.push({ key: 'coach_q_budget', vars: { category: hot.category, pct: hot.pct } })
     const behind = context.goals.find((g) => g.status === 'behind' || g.status === 'overdue')
-    if (behind) {
-      list.push(pick(lang === 'id' ? `Bagaimana aku mengejar target "${behind.name}"?` : lang === 'ms' ? `Macam mana nak kejar matlamat "${behind.name}"?` : lang === 'tr' ? `"${behind.name}" hedefimi nasıl yakalarım?` : `How do I catch up on my "${behind.name}" goal?`))
-    }
-    if (context.savingsRate !== null && context.savingsRate < 20) {
-      list.push(pick(lang === 'id' ? 'Rasio tabunganku rendah, apa yang harus dipotong?' : lang === 'ms' ? 'Kadar simpanan saya rendah, apa perlu dipotong?' : lang === 'tr' ? 'Tasarruf oranım düşük, neyi kısmalıyım?' : 'My savings rate is low - what should I cut?'))
-    }
-    list.push(
-      lang === 'id' ? 'Analisa pengeluaranku bulan ini' : lang === 'ms' ? 'Analisa perbelanjaan saya bulan ini' : lang === 'tr' ? 'Bu ayki harcamalarımı analiz et' : 'Analyze my spending this month',
-      lang === 'id' ? 'Bagaimana cara menabung lebih banyak?' : lang === 'ms' ? 'Bagaimana nak menabung lebih?' : lang === 'tr' ? 'Nasıl daha fazla biriktirebilirim?' : 'How can I save more?',
-    )
+    if (behind) list.push({ key: 'coach_q_goal', vars: { name: behind.name } })
+    if (context.savingsRate !== null && context.savingsRate < 20) list.push({ key: 'coach_q_savings', vars: {} })
+    list.push({ key: 'coach_q_analyze', vars: {} })
+    list.push({ key: 'coach_q_save', vars: {} })
     return list.slice(0, 4)
-  }, [context, lang])
+  }, [context])
 
   useEffect(() => {
     if (open) {
@@ -209,9 +195,10 @@ export default function CoachSheet({ open, onClose }) {
         openSheet?.('aiPremium')
         return
       }
-      setMessages(loadHistory() || [{ role: 'assistant', content: greetingFor(lang) }])
+      setMessages(loadHistory() || [{ role: 'assistant', content: GREETINGS[lang] || GREETINGS.en }])
     }
-  }, [open, lang, isAiAllowed, onClose, openSheet])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, isAiAllowed])
 
   useEffect(() => { scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' }) }, [messages, busy])
 
@@ -226,7 +213,7 @@ export default function CoachSheet({ open, onClose }) {
       openSheet?.('aiPremium')
       return
     }
-    const content = (text ?? input).trim()
+    const content = (typeof text === 'string' ? text : t(text.key, text.vars)).trim()
     if (!content || busy) return
     const next = [...messages, { role: 'user', content }]
     setMessages(next)
@@ -240,7 +227,7 @@ export default function CoachSheet({ open, onClose }) {
       const res = await fetch('/api/ai/coach', {
         method: 'POST',
         headers,
-        body: JSON.stringify({ messages: next.filter((m) => m.role !== 'system'), language: lang, context }),
+        body: JSON.stringify({ messages: next, language: lang, context }),
       })
       const data = await res.json()
       if (!res.ok) {
@@ -250,18 +237,35 @@ export default function CoachSheet({ open, onClose }) {
           return
         }
         if (res.status === 429 || data?.code === 'AI_QUOTA_EXCEEDED') {
-          toast.error(data?.error || 'Kuota AI harian Anda telah habis.')
-          setMessages((m) => [...m, { role: 'assistant', content: `⚠️ ${data?.error || 'Kuota AI harian Anda telah habis.'}` }])
+          const msg = t('coach_quota_exhausted')
+          toast.error(msg)
+          setMessages((m) => [...m, { role: 'assistant', content: `⚠️ ${msg}` }])
           return
         }
-        throw new Error(data?.error || t('error'))
+        throw new Error(data?.error || t('coach_error'))
       }
 
-      setMessages((m) => [...m, { role: 'assistant', content: data.reply }])
+      setMessages((m) => [...m, { role: 'assistant', content: data.reply || t('coach_error') }])
     } catch (e) {
-      setMessages((m) => [...m, { role: 'assistant', content: `⚠️ ${e?.message || t('error')}` }])
+      setMessages((m) => [...m, { role: 'assistant', content: `⚠️ ${e?.message || t('coach_error')}` }])
     } finally { setBusy(false) }
   }
+
+  const copyLast = async () => {
+    const last = [...messages].reverse().find((m) => m.role === 'assistant' && m.content)
+    if (!last) return
+    try {
+      await navigator.clipboard.writeText(last.content)
+      toast.success(t('coach_copied'))
+    } catch {}
+  }
+
+  // Snapshot ringkas bulan ini (chips atas area chat)
+  const chips = useMemo(() => [
+    { icon: Wallet, label: t('total_balance'), value: fmt(context.totalBalance, home), alert: false },
+    { icon: TrendingUp, label: t('spending'), value: fmt(context.monthSpending, home), alert: context.savingsRate !== null && context.savingsRate < 0 },
+    { icon: Target, label: t('coach_chip_savings'), value: context.savingsRate === null ? '—' : `${context.savingsRate}%`, alert: context.savingsRate !== null && context.savingsRate < 10 },
+  ], [context, fmt, home, t])
 
   return (
     <Sheet
@@ -269,39 +273,99 @@ export default function CoachSheet({ open, onClose }) {
       onClose={onClose}
       full
       noPadding
-      title={<span className="flex items-center justify-center gap-2"><video src="/coach-avatar-anim.mp4" autoPlay muted loop playsInline className="h-7 w-7 rounded-full object-cover" /> {t('ai_coach')}</span>}
-      right={<button type="button" onClick={startNewChat} title={t('coach_new_chat')} aria-label={t('coach_new_chat')} className="flex h-9 w-9 items-center justify-center rounded-full text-muted-foreground transition-colors hover:text-foreground"><SquarePen size={18} /></button>}
+      title={
+        <span className="flex items-center justify-center gap-2">
+          <video src="/coach-avatar-anim.mp4" autoPlay muted loop playsInline className="h-7 w-7 rounded-full object-cover" />
+          <span className="text-base font-extrabold tracking-tight">{t('ai_coach')}</span>
+          <span className="text-[9px] font-bold tracking-wider text-emerald-500 bg-emerald-500/10 rounded-full px-1.5 py-0.5">{t('coach_new')}</span>
+        </span>
+      }
+      right={
+        <div className="flex items-center gap-1">
+          <button type="button" onClick={copyLast} title={t('coach_copied')} aria-label={t('coach_copied')} className="flex h-9 w-9 items-center justify-center rounded-full text-muted-foreground transition-colors hover:text-foreground">
+            <Copy size={17} />
+          </button>
+          <button type="button" onClick={startNewChat} title={t('coach_new_chat')} aria-label={t('coach_new_chat')} className="flex h-9 w-9 items-center justify-center rounded-full text-muted-foreground transition-colors hover:text-foreground">
+            <SquarePen size={18} />
+          </button>
+        </div>
+      }
     >
       <div className="flex flex-col h-full">
-        <div className="px-3 py-2 bg-muted/50 text-[11px] text-muted-foreground text-center">
-          {fmt(context.totalBalance, home)} · {t('spending')}: {fmt(context.monthSpending, home)}
+        {/* Ringkasan bulan ini */}
+        <div className="px-3 pt-2.5 pb-1.5">
+          <p className="text-[10px] font-semibold tracking-wider text-muted-foreground uppercase mb-2 px-1">{t('coach_summary')}</p>
+          <div className="flex gap-1.5 overflow-x-auto no-scrollbar">
+            {chips.map((c, i) => (
+              <div key={i} className={cn('shrink-0 flex items-center gap-1.5 rounded-xl border px-2.5 py-1.5 text-xs', c.alert ? 'border-amber-500/40 bg-amber-500/10' : 'border-border/40 bg-muted/40')}>
+                <c.icon size={13} className={c.alert ? 'text-amber-500' : 'text-muted-foreground'} />
+                <span className="text-muted-foreground">{c.label}</span>
+                <span className={cn('font-bold tabular-nums', c.alert ? 'text-amber-500' : 'text-foreground')}>{c.value}</span>
+              </div>
+            ))}
+          </div>
+          {context.budgets[0]?.pct >= 80 ? (
+            <div className="mt-2 flex items-center gap-1.5 text-[11px] text-amber-500 px-1">
+              <AlertTriangle size={12} />
+              {t('coach_alert_budget', { category: context.budgets[0].category, pct: context.budgets[0].pct })}
+            </div>
+          ) : null}
         </div>
-        <div ref={scrollRef} className="flex-1 overflow-y-auto no-scrollbar px-4 py-4 space-y-3">
+
+        <div ref={scrollRef} className="flex-1 overflow-y-auto no-scrollbar px-4 py-3 space-y-3">
           {messages.map((m, i) => m.role === 'user' ? (
             <div key={i} className="flex justify-end">
-              <div className="max-w-[82%] rounded-2xl rounded-br-md bg-foreground text-background px-4 py-2.5 text-sm leading-relaxed whitespace-pre-wrap">{m.content}</div>
+              <div className="max-w-[85%] rounded-2xl rounded-br-md bg-foreground text-background px-4 py-2.5 text-sm leading-relaxed whitespace-pre-wrap">{m.content}</div>
             </div>
           ) : (
             <div key={i} className="flex items-start gap-2.5">
               <img src="/coach-avatar.webp" alt="" className="mt-0.5 h-[34px] w-[34px] flex-none rounded-full object-cover ring-1 ring-foreground/10" />
-              <div className="max-w-[80%] rounded-2xl rounded-bl-md border border-border/50 bg-card px-4 py-2.5 text-sm leading-relaxed"><CoachMarkdown text={m.content} /></div>
+              <div className="max-w-[85%] rounded-2xl rounded-bl-md border border-border/50 bg-card px-4 py-2.5 text-sm leading-relaxed shadow-xs">
+                <CoachMarkdown text={m.content} />
+              </div>
             </div>
           ))}
           {busy ? (
             <div className="flex items-start gap-2.5">
               <img src="/coach-avatar.webp" alt="" className="mt-0.5 h-[34px] w-[34px] flex-none rounded-full object-cover ring-1 ring-foreground/10" />
-              <div className="rounded-2xl rounded-bl-md border border-border/50 bg-card px-4 py-3.5"><DotsLoader size="sm" /></div>
+              <div className="rounded-2xl rounded-bl-md border border-border/50 bg-card px-4 py-3.5 shadow-xs"><DotsLoader size="sm" /></div>
             </div>
           ) : null}
           {messages.length <= 1 ? (
             <div className="flex flex-wrap gap-2 pt-2">
-              {starters.map((s) => <button key={s} type="button" onClick={() => send(s)} className="rounded-xl border border-border/60 bg-card px-3 py-2 text-xs font-medium flex items-center gap-1.5"><Sparkles size={12} /> {s}</button>)}
+              {starters.map((s) => (
+                <button
+                  key={s.key}
+                  type="button"
+                  onClick={() => send(s)}
+                  className="rounded-xl border border-border/60 bg-card px-3 py-2 text-xs font-medium text-foreground flex items-center gap-1.5 shadow-xs active:scale-[0.98] transition-transform"
+                >
+                  <Sparkles size={12} className="text-emerald-500" />
+                  {t(s.key, s.vars)}
+                </button>
+              ))}
             </div>
           ) : null}
         </div>
         <div className="border-t border-border/40 p-3 safe-bottom flex gap-2">
-          <input value={input} onChange={(e) => setInput(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && send()} placeholder="..." className="flex-1 rounded-xl bg-muted px-4 py-3 text-base outline-none" data-testid="coach-input" />
-          <button type="button" onClick={() => send()} disabled={busy || !input.trim()} className="h-11 w-11 rounded-xl bg-foreground text-background flex items-center justify-center disabled:opacity-40" data-testid="coach-send"><Send size={18} /></button>
+          <input
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && send()}
+            placeholder={t('coach_input_ph')}
+            className="flex-1 rounded-xl bg-muted px-4 py-3 text-base outline-none text-foreground placeholder:text-muted-foreground/60"
+            data-testid="coach-input"
+          />
+          <button
+            type="button"
+            onClick={() => send()}
+            disabled={busy || !input.trim()}
+            className="h-11 w-11 rounded-xl bg-foreground text-background flex items-center justify-center disabled:opacity-40 active:scale-95 transition-transform"
+            data-testid="coach-send"
+            aria-label={t('coach_input_ph')}
+          >
+            <Send size={18} />
+          </button>
         </div>
       </div>
     </Sheet>
