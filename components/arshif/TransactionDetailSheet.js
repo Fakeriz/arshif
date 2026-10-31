@@ -272,7 +272,7 @@ export default function TransactionDetailSheet({ open, isOpen: propIsOpen, onClo
                 className="mt-4 flex items-center gap-2 px-5 py-2.5 rounded-full bg-white/15 hover:bg-white/25 text-white text-xs font-bold backdrop-blur-md transition-all active:scale-95 cursor-pointer shadow-lg border border-white/10"
               >
                 <ExternalLink size={14} />
-                <span>Buka Berkas di Google Drive</span>
+                {t('tx_open_drive')}
               </a>
             )}
           </div>

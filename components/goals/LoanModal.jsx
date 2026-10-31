@@ -21,7 +21,7 @@ import { getCurrency } from '@/lib/currencies'
 import { cn, triggerHaptic } from '@/lib/utils'
 import { Sheet, DatePickerInput } from '@/components/arshif/ui'
 
-// Indonesian Providers for Cicilan Tetap
+// Indonesian providers for fixed-installment loans
 const INDO_PROVIDERS = [
   { id: 'cc', name: 'Cicilan Kartu Kredit', icon: CreditCard, defaultRate: 0 },
   { id: 'spaylater', name: 'SPayLater', icon: ShoppingBag, defaultRate: 2.95 },
@@ -61,7 +61,7 @@ export default function LoanModal({
   store,
   t = (k) => k,
 }) {
-  // Mode: 'instalment' (Cicilan Tetap) | 'running' (Saldo Berjalan) | 'compare' (Bandingkan Bunga)
+  // Mode: instalment | running | compare
   const [activeTab, setActiveTab] = useState('instalment')
 
   const [principalAmount, setPrincipalAmount] = useState('')
@@ -452,7 +452,7 @@ export default function LoanModal({
                     : 'text-muted-foreground hover:text-foreground'
                 )}
               >
-                Cicilan Tetap
+                {t('loan_tab_instalment')}
               </button>
               <button
                 type="button"
@@ -464,7 +464,7 @@ export default function LoanModal({
                     : 'text-muted-foreground hover:text-foreground'
                 )}
               >
-                Saldo Berjalan
+                {t('loan_tab_running')}
               </button>
               <button
                 type="button"
@@ -476,7 +476,7 @@ export default function LoanModal({
                     : 'text-muted-foreground hover:text-foreground'
                 )}
               >
-                Bandingkan Bunga
+                {t('loan_tab_compare')}
               </button>
             </div>
 
@@ -486,7 +486,7 @@ export default function LoanModal({
                 {/* Provider Indonesia (Pill Horizontal) */}
                 <div>
                   <label className="text-[11px] font-semibold tracking-wider text-muted-foreground uppercase mb-2 block">
-                    PILIH PENYEDIA CICILAN (INDONESIA)
+                    {t('loan_choose_provider')}
                   </label>
                   <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1">
                     {INDO_PROVIDERS.map((prov) => {
@@ -515,21 +515,21 @@ export default function LoanModal({
                 {/* Field Nama Rencana */}
                 <div>
                   <label className="text-xs text-muted-foreground font-medium mb-1 block">
-                    Nama Rencana / Barang
+                    {t('loan_plan_name')}
                   </label>
                   <input
                     type="text"
                     value={planName}
                     onChange={(e) => setPlanName(e.target.value)}
-                    placeholder="e.g. iPhone 15 - Cicilan 12 Bln"
+                    placeholder={t('loan_plan_placeholder')}
                     className="w-full bg-muted/40 rounded-2xl p-3.5 text-sm font-medium text-foreground outline-none border border-border/30 placeholder:text-muted-foreground/40 focus:border-foreground/40 transition-colors"
                   />
                 </div>
 
-                {/* Field Pilihan Tenor (Bulan) */}
+                {/* Field Pilihan t('loan_tenor') */}
                 <div>
                   <label className="text-xs text-muted-foreground font-medium mb-1.5 block">
-                    Pilihan Tenor (Bulan)
+                    Pilihan t('loan_tenor')
                   </label>
                   <div className="grid grid-cols-5 gap-2">
                     {TENOR_OPTIONS.map((t) => {
@@ -546,7 +546,7 @@ export default function LoanModal({
                               : 'bg-muted/40 border-border/30 text-muted-foreground hover:text-foreground'
                           )}
                         >
-                          {t} Bln
+                          {t} t('loan_monthly_label')
                         </button>
                       )
                     })}
@@ -608,7 +608,7 @@ export default function LoanModal({
                 {/* Tanggal Jatuh Tempo */}
                 <div>
                   <label className="text-xs text-muted-foreground font-medium mb-1 block">
-                    Tanggal Jatuh Tempo Bulanan (1–31)
+                    {t('loan_due_day')}
                   </label>
                   <div className="relative w-full h-12 rounded-2xl bg-[#F6F6F6] dark:bg-[#18181b] border border-border/70 dark:border-white/10 text-sm font-semibold text-foreground px-4 flex items-center gap-2.5">
                     <Calendar size={16} className="text-muted-foreground shrink-0" />
@@ -622,7 +622,7 @@ export default function LoanModal({
                       className="w-full text-sm font-semibold text-foreground bg-transparent outline-none tabular-nums text-left"
                     />
                     <span className="text-xs text-muted-foreground font-medium shrink-0">
-                      Tiap bulan
+                    {t('loan_monthly_label')}
                     </span>
                   </div>
                 </div>
@@ -631,10 +631,10 @@ export default function LoanModal({
                 <div className="p-3.5 rounded-2xl bg-muted/30 border border-border/30 flex items-center justify-between">
                   <div className="pr-3">
                     <span className="text-xs font-semibold text-foreground block">
-                      Pantau Bulanan di Tagihan (Bills)
+                      {t('loan_track_bills')}
                     </span>
                     <span className="text-[11px] text-muted-foreground block mt-0.5">
-                      Otomatis menautkan jadwal angsuran bulanan ke lembar checklist Bills di Home tab.
+                      {t('loan_track_bills_desc')}
                     </span>
                   </div>
                   <button
@@ -659,7 +659,7 @@ export default function LoanModal({
                   <div className="flex justify-between items-start">
                     <div>
                       <span className="text-[10px] font-semibold uppercase tracking-wider text-zinc-400 block mb-0.5">
-                        PEMBAYARAN BULANAN
+                        {t('loan_monthly_payment')}
                       </span>
                       <span className="text-lg font-bold text-white tabular-nums">
                         {formatMoney(calculations.monthlyInstallment)}
@@ -668,7 +668,7 @@ export default function LoanModal({
                     </div>
                     <div className="text-right">
                       <span className="text-[10px] font-semibold uppercase tracking-wider text-zinc-400 block mb-0.5">
-                        TOTAL PEMBAYARAN
+                        {t('loan_total_payment')}
                       </span>
                       <span className="text-base font-bold text-white tabular-nums">
                         {formatMoney(calculations.totalPayment)}
@@ -701,7 +701,7 @@ export default function LoanModal({
                 {/* Tipe Utang */}
                 <div>
                   <label className="text-[11px] font-semibold tracking-wider text-muted-foreground uppercase mb-2 block">
-                    TIPE UTANG
+                    {t('loan_debt_type')}
                   </label>
                   <div className="grid grid-cols-2 gap-2">
                     {RUNNING_DEBT_TYPES.map((t) => {
@@ -725,10 +725,10 @@ export default function LoanModal({
                   </div>
                 </div>
 
-                {/* Pilihan Akun Pembayaran (Paid From) */}
+                {/* Pilihan t('loan_paid_from') */}
                 <div>
                   <label className="text-xs text-muted-foreground font-medium mb-1 block">
-                    Akun Pembayaran (Paid From)
+                    {t('loan_paid_from')}
                   </label>
                   <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1">
                     {combinedAccounts.map((acc) => {
@@ -752,10 +752,10 @@ export default function LoanModal({
                   </div>
                 </div>
 
-                {/* Sub-Segment: Sudah Pernah Dibayar Sebagian vs Sisa Saldo Penuh */}
+                {/* Sub-Segment: Sudah Pernah Dibayar Sebagian vs t('loan_full_remaining') */}
                 <div>
                   <label className="text-xs text-muted-foreground font-medium mb-1.5 block">
-                    Status Saldo Pembuka
+                    {t('loan_opening_status')}
                   </label>
                   <div className="grid grid-cols-2 gap-2">
                     <button
@@ -768,7 +768,7 @@ export default function LoanModal({
                           : 'bg-muted/40 border-border/30 text-muted-foreground'
                       )}
                     >
-                      Sisa Saldo Penuh
+                      {t('loan_full_remaining')}
                     </button>
                     <button
                       type="button"
@@ -780,7 +780,7 @@ export default function LoanModal({
                           : 'bg-muted/40 border-border/30 text-muted-foreground'
                       )}
                     >
-                      Sudah Dibayar Sebagian
+                      {t('loan_partially_paid')}
                     </button>
                   </div>
                 </div>
@@ -788,7 +788,7 @@ export default function LoanModal({
                 {balanceMode === 'partial' && (
                   <div>
                     <label className="text-xs text-muted-foreground font-medium mb-1 block">
-                      Jumlah yang Sudah Pernah Dibayar
+                      {t('loan_amount_paid')}
                     </label>
                     <div className="relative rounded-2xl bg-muted/40 border border-border/30 p-3.5 flex items-center gap-2">
                       <span className="text-sm font-bold text-foreground select-none shrink-0 pl-1">
@@ -822,7 +822,7 @@ export default function LoanModal({
                 {/* Unggah Foto Bukti/Cover (Opsional) */}
                 <div>
                   <label className="text-[11px] font-semibold tracking-wider text-muted-foreground uppercase mb-1.5 block">
-                    FOTO BUKTI / COVER (OPSIONAL)
+                    {t('loan_cover_optional')}
                   </label>
                   <input
                     ref={fileInputRef}
@@ -847,7 +847,7 @@ export default function LoanModal({
                         />
                         <div className="absolute inset-0 bg-black/40 flex items-center justify-center gap-2">
                           <span className="text-xs text-white font-medium bg-black/50 px-3 py-1.5 rounded-lg">
-                            Ganti Foto
+                            {t('loan_change_photo')}
                           </span>
                           <button
                             type="button"
@@ -864,7 +864,7 @@ export default function LoanModal({
                     ) : (
                       <div className="flex items-center gap-2 text-muted-foreground">
                         <Camera size={18} />
-                        <span className="text-xs font-medium">Unggah foto bukti tagihan</span>
+                        <span className="text-xs font-medium">t('loan_upload_photo')</span>
                       </div>
                     )}
                   </div>
@@ -923,7 +923,7 @@ export default function LoanModal({
                           onClick={() => applyComparedProvider(item)}
                           className="flex items-center gap-1 text-xs font-bold text-foreground hover:opacity-80 transition-opacity cursor-pointer bg-muted/60 px-3 py-1.5 rounded-xl border border-border/40"
                         >
-                          <span>Pilih Skema Ini</span>
+                          <span>{t('loan_choose_scheme')}</span>
                           <ArrowRight size={13} />
                         </button>
                       </div>
@@ -942,7 +942,7 @@ export default function LoanModal({
                   disabled={isSubmitting}
                   className="w-full text-center text-sm font-semibold text-rose-500 hover:opacity-80 py-2.5 rounded-xl transition-all cursor-pointer"
                 >
-                  Hapus Pinjaman Ini
+                  {t('loan_delete_this')}
                 </button>
               </div>
             )}

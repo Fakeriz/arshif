@@ -159,7 +159,7 @@ export default function CategoriesTemplatesSheet({ open, onClose }) {
             </div>
           ) : (
             <button type="button" onClick={() => setAddingCat(true)} className="mt-4 w-full rounded-xl border border-dashed border-zinc-300 dark:border-zinc-700 py-3.5 font-bold text-[15px] flex items-center justify-center gap-2 text-zinc-700 dark:text-zinc-300 hover:text-zinc-950 dark:hover:text-white transition-colors" data-testid="cat-add">
-              <Plus size={18} /> Add Custom Category
+                  {t('cat_add_custom')}
             </button>
           )}
           <div className="h-6" />
@@ -182,7 +182,7 @@ export default function CategoriesTemplatesSheet({ open, onClose }) {
 
           {addingTpl ? (
             <div className="mt-4 rounded-2xl bg-white dark:bg-[#1c1c1e] border border-zinc-200 dark:border-white/10 p-4 space-y-3">
-              <Field label="Title"><TextInput value={tTitle} onChange={(e) => setTTitle(e.target.value)} placeholder="e.g. Morning coffee" data-testid="tpl-title" /></Field>
+              <Field label="Title"><TextInput value={tTitle} onChange={(e) => setTTitle(e.target.value)} placeholder={t('cat_name_placeholder')} data-testid="tpl-title" /></Field>
               <Field label={`Amount (${home})`}><TextInput type="text" inputMode="decimal" value={tAmount} onChange={(e) => setTAmount(sanitizeAmount(e.target.value))} placeholder="0" data-testid="tpl-amount" /></Field>
               <Field label={t('category')}>
                 <div className="flex gap-2 overflow-x-auto no-scrollbar">
@@ -206,7 +206,7 @@ export default function CategoriesTemplatesSheet({ open, onClose }) {
             </div>
           ) : (
             <button type="button" onClick={() => setAddingTpl(true)} className="mt-4 w-full rounded-xl border border-dashed border-zinc-300 dark:border-zinc-700 py-3.5 font-bold text-[15px] flex items-center justify-center gap-2 text-zinc-700 dark:text-zinc-300 hover:text-zinc-950 dark:hover:text-white transition-colors" data-testid="tpl-add">
-              <Plus size={18} /> Create New Template
+                  {t('cat_create_template')}
             </button>
           )}
           <div className="h-6" />

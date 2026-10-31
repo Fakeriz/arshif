@@ -236,7 +236,7 @@ export default function AccountsSheet({ open, onClose }) {
             {/* Sub-header Utilitas: "Drag card to reorder" & "↓↑ Sort" */}
             <div className="flex items-center justify-between px-5 pb-3 pt-0.5">
               <span className="text-xs text-muted-foreground font-medium">
-                Drag card to reorder
+                {t('drag_reorder')}
               </span>
               <button
                 type="button"
@@ -541,7 +541,7 @@ export default function AccountsSheet({ open, onClose }) {
                   {t('delete_account') || 'Hapus Akun'} "{deletingAccount.name}"?
                 </h3>
                 <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-2 leading-relaxed">
-                  Semua transaksi yang tertaut dengan akun ini mungkin terpengaruh. Tindakan ini tidak dapat dibatalkan.
+                  {t('account_delete_warning')}
                 </p>
               </div>
               <div className="grid grid-cols-2 gap-2 pt-1">

@@ -103,7 +103,7 @@ export default function LoanCalculatorSheet({ open, onClose }) {
           <button type="button" onClick={addToBills} disabled={result.monthly <= 0}
             className={cn('w-full rounded-xl bg-muted border border-border/60 font-semibold py-3.5 text-[15px] flex items-center justify-center gap-2 active:scale-[0.98] transition', result.monthly <= 0 && 'opacity-40')}
             data-testid="loan-add-bill">
-            <Plus size={18} /> Add to Bills Tracker
+                  {t('loancalc_add_bills')}
           </button>
           <div className="h-4" />
         </div>

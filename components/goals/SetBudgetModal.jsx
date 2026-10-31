@@ -333,7 +333,7 @@ export default function SetBudgetModal({
         zIndex={70}
         title={
           <span className="inline-flex items-center justify-center gap-1.5">
-            <span>{budget ? 'Edit Budget' : 'Set Budget'}</span>
+            <span>{budget ? t('budget_edit') : t('budget_set')}</span>
             <button
               type="button"
               onClick={(e) => {
@@ -353,7 +353,7 @@ export default function SetBudgetModal({
             onClick={onClose}
             className="text-sm font-semibold text-foreground hover:opacity-80 transition-opacity cursor-pointer"
           >
-            Cancel
+            {t('cancel')}
           </button>
         }
         right={
@@ -371,7 +371,7 @@ export default function SetBudgetModal({
           {/* Input limit & opsi cepat */}
           <div className="space-y-2">
             <label className="text-xs font-semibold tracking-wider text-muted-foreground uppercase">
-              BUDGET LIMIT
+              {t('budget_limit_label')}
             </label>
             <div
               onClick={() => inputRef.current?.focus()}
@@ -393,14 +393,14 @@ export default function SetBudgetModal({
                 />
               </div>
               <p className="text-[11px] text-muted-foreground mt-1">
-                Ketik nominal manual atau pilih opsi cepat di bawah
+                {t('budget_manual_hint')}
               </p>
             </div>
 
             {/* Opsi cepat */}
             <div className="pt-1">
               <div className="text-[10px] font-semibold tracking-wider text-muted-foreground uppercase mb-1.5 px-0.5">
-                QUICK OPTIONS
+                {t('budget_quick_options')}
               </div>
               <div className="flex items-center gap-2 overflow-x-auto no-scrollbar py-0.5">
                 {quickOptions.map((opt) => {
@@ -428,7 +428,7 @@ export default function SetBudgetModal({
           {/* Periode & durasi */}
           <div>
             <label className="text-[11px] font-semibold tracking-wider text-muted-foreground uppercase block mb-1.5">
-              PERIOD
+              {t('budget_period_label')}
             </label>
             <div className="bg-muted/30 border border-border/40 rounded-2xl p-4 space-y-3">
               <div className="grid grid-cols-2 gap-3">
@@ -455,7 +455,7 @@ export default function SetBudgetModal({
           {/* Perulangan */}
           <div>
             <label className="text-[11px] font-semibold tracking-wider text-muted-foreground uppercase block mb-1.5">
-              REPEAT
+              {t('budget_repeat_label')}
             </label>
             <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar p-1 bg-muted/20 border border-border/40 rounded-full">
               {[
@@ -520,13 +520,13 @@ export default function SetBudgetModal({
             
             <div className="flex items-center justify-between mt-5 mb-2 px-0.5">
               <span className="text-[11px] font-semibold tracking-wider text-muted-foreground uppercase">
-                CHOOSE CATEGORY
+                {t('budget_choose_category')}
               </span>
               <button
                 type="button"
                 onClick={handleManageCategories}
                 className="p-1 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-colors active:scale-95 cursor-pointer"
-                title="Kelola / Edit Kategori"
+                title={t('budget_manage_categories')}
                 aria-label={t('aria_manage_categories')}
               >
                 <Pencil className="stroke-[2]" size={12} />
@@ -577,7 +577,7 @@ export default function SetBudgetModal({
             {availableSubcategories.length > 0 && (
               <div className="mt-4">
                 <div className="text-[11px] font-semibold tracking-wider text-muted-foreground uppercase mb-2 px-0.5">
-                  CHOOSE SUBCATEGORY
+                  {t('budget_choose_subcategory')}
                 </div>
                 <div className="flex items-center gap-2 overflow-x-auto no-scrollbar py-1">
                   {availableSubcategories.map((sub) => {
@@ -623,22 +623,16 @@ export default function SetBudgetModal({
       {showHelp && (
         <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-150">
           <div className="w-full max-w-sm rounded-3xl bg-card border border-border/40 p-6 shadow-2xl space-y-3">
-            <h3 className="font-bold text-base text-foreground">How Budgets Work</h3>
+            <h3 className="font-bold text-base text-foreground">{t('budget_how_works_title')}</h3>
             <p className="text-xs text-muted-foreground leading-relaxed">
-              Set a spending limit for any date range. Pick a start and end date to track spending for a specific period — weekly, fortnightly, or monthly.
-            </p>
-            <p className="text-xs text-muted-foreground leading-relaxed">
-              With Repeat on, the budget rolls into the next period by itself and spending starts back at zero. Turn it off for a one-off budget that simply ends.
-            </p>
-            <p className="text-xs text-muted-foreground leading-relaxed">
-              Arshif will notify you if you go over budget.
+              {t('budget_how_works_desc')}
             </p>
             <button
               type="button"
               onClick={() => setShowHelp(false)}
               className="w-full bg-muted/70 hover:bg-muted text-foreground py-3 rounded-2xl font-semibold mt-4 text-sm transition-colors cursor-pointer"
             >
-              Got it
+              {t('budget_got_it')}
             </button>
           </div>
         </div>

@@ -230,7 +230,7 @@ export default function ScanReceiptSheet({ open, onClose, onUse, initialImage, a
           <div className="rounded-2xl border-2 border-dashed border-zinc-300 dark:border-zinc-700 h-48 flex flex-col items-center justify-center text-zinc-500 dark:text-zinc-400 gap-2">
             <ScanLine size={36} />
             <p className="text-sm font-semibold text-zinc-950 dark:text-white">{t('upload_receipt')}</p>
-            <p className="text-[10px] text-zinc-500 dark:text-zinc-400 font-medium">Gemini Vision OCR</p>
+                {t('scan_gemini_ocr')}
           </div>
           <div className="grid grid-cols-2 gap-3 mt-4">
             <PrimaryButton
@@ -257,8 +257,7 @@ export default function ScanReceiptSheet({ open, onClose, onUse, initialImage, a
               }}
               data-testid="scan-upload"
             >
-              <Upload size={18} className="inline mr-2" />
-              Upload
+                {t('scan_upload')}
             </SecondaryButton>
           </div>
         </div>

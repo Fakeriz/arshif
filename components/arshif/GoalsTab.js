@@ -336,8 +336,8 @@ export default function GoalsTab() {
       {/* Subscriptions */}
       <div className="mt-5">
         <div className="flex items-center justify-between mb-3">
-          <span className="text-xs font-semibold tracking-wider text-muted-foreground uppercase">
-            SUBSCRIPTIONS
+          <span className="text-[11px] font-semibold tracking-wider text-muted-foreground uppercase">
+            {t('section_subscriptions')}
           </span>
           <div className="flex items-center">
             <span className="text-xs text-muted-foreground mr-3 font-medium">
@@ -414,8 +414,8 @@ export default function GoalsTab() {
       <div className="mt-8">
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-1.5">
-            <span className="text-xs font-semibold tracking-wider text-muted-foreground uppercase">
-              MONTHLY BUDGETS
+            <span className="text-[11px] font-semibold tracking-wider text-muted-foreground uppercase">
+              {t('section_monthly_budgets')}
             </span>
             <button
               type="button"

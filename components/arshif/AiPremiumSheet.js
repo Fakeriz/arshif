@@ -45,7 +45,7 @@ export default function AiPremiumSheet({ open, onClose, onUpgrade }) {
           className="text-sm font-semibold text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
           data-testid="ai-premium-cancel-header"
         >
-          Cancel
+          {t('cancel')}
         </button>
       }
     >
@@ -56,7 +56,7 @@ export default function AiPremiumSheet({ open, onClose, onUpgrade }) {
             <Crown size={24} className="text-white dark:text-zinc-950" />
           </div>
           <h3 className="text-xl font-extrabold text-zinc-950 dark:text-white tracking-tight">
-            Akses Eksklusif Fitur AI
+            {t('ai_title')}
           </h3>
           <p className="text-xs sm:text-sm text-zinc-600 dark:text-zinc-400 mt-2 leading-relaxed max-w-sm mx-auto">
             Fitur pemindaian struk otomatis (OCR), pencatatan instan via suara, dan AI Financial Coach ditenagai oleh Google Gemini AI berkecepatan tinggi.
@@ -71,7 +71,7 @@ export default function AiPremiumSheet({ open, onClose, onUpgrade }) {
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-bold text-zinc-950 dark:text-white">{t('premium_ocr_title')}</p>
-              <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">Foto struk kasir langsung jadi transaksi</p>
+              <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">{t('ai_receipt_desc')}</p>
             </div>
           </div>
 
@@ -81,7 +81,7 @@ export default function AiPremiumSheet({ open, onClose, onUpgrade }) {
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-bold text-zinc-950 dark:text-white">{t('premium_voice_title')}</p>
-              <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">&ldquo;Catat transaksi hanya dengan berbicara&rdquo;</p>
+              <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">{t('ai_voice_desc')}</p>
             </div>
           </div>
 
@@ -90,8 +90,8 @@ export default function AiPremiumSheet({ open, onClose, onUpgrade }) {
               <Bot size={18} />
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-bold text-zinc-950 dark:text-white">Personal AI Financial Coach 24/7</p>
-              <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">Analisis pengeluaran dan rekomendasi hemat cerdas</p>
+              <p className="text-sm font-bold text-zinc-950 dark:text-white">{t('ai_coach_title')}</p>
+              <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">{t('ai_coach_desc')}</p>
             </div>
           </div>
         </div>
@@ -104,14 +104,14 @@ export default function AiPremiumSheet({ open, onClose, onUpgrade }) {
             data-testid="ai-premium-upgrade"
             className="w-full rounded-2xl bg-zinc-950 hover:bg-zinc-900 text-white dark:bg-white dark:hover:bg-zinc-100 dark:text-zinc-950 font-bold py-3.5 text-[15px] transition-all shadow-md shadow-black/15 active:scale-[0.98] cursor-pointer"
           >
-            Upgrade ke Premium
+            {t('ai_upgrade')}
           </button>
           <SecondaryButton
             onClick={onClose}
             data-testid="ai-premium-later"
             className="w-full text-zinc-700 dark:text-zinc-300 font-semibold py-3.5 rounded-2xl"
           >
-            Nanti Saja
+            {t('ai_later')}
           </SecondaryButton>
         </div>
       </div>

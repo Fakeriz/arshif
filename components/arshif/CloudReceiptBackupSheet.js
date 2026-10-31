@@ -129,7 +129,7 @@ export default function CloudReceiptBackupSheet({ open, onClose }) {
         {/* Subtitle Header */}
         <div className="text-center px-2 pb-2">
           <p className="text-sm text-muted-foreground font-medium">
-            Keep a copy of every receipt image outside Arshif
+            {t('cloud_backup_desc')}
           </p>
         </div>
 
@@ -150,14 +150,14 @@ export default function CloudReceiptBackupSheet({ open, onClose }) {
               </div>
               <div>
                 <h4 className="font-extrabold text-[15px] tracking-tight text-foreground">
-                  ICLOUD DRIVE
+                  {t('cloud_icloud')}
                 </h4>
                 <p className="text-xs text-muted-foreground">Apple Files & Cloud Mirror</p>
               </div>
             </div>
-            <span className="inline-flex items-center rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider bg-foreground text-background">
-              RECOMMENDED
-            </span>
+              <span className="text-[9px] font-bold tracking-wider text-emerald-600 bg-emerald-500/10 px-2 py-0.5 rounded-full shrink-0">
+                {t('cloud_recommended')}
+              </span>
           </div>
 
           <p className="text-xs text-muted-foreground leading-relaxed mb-4">
@@ -206,7 +206,7 @@ export default function CloudReceiptBackupSheet({ open, onClose }) {
               </div>
               <div>
                 <h4 className="font-extrabold text-[15px] tracking-tight text-foreground">
-                  GOOGLE DRIVE
+                  {t('cloud_gdrive')}
                 </h4>
                 <p className="text-xs text-muted-foreground">{t('cloud_automated_sync')}</p>
               </div>
@@ -219,7 +219,7 @@ export default function CloudReceiptBackupSheet({ open, onClose }) {
           </div>
 
           <p className="text-xs text-muted-foreground leading-relaxed mb-4">
-            Memicu signInWithOAuth Google dengan izin berkas struk saja (<code className="text-[11px] bg-muted px-1 py-0.5 rounded">auth/drive.file</code>). Gambar otomatis tersimpan aman di Google Drive Anda.
+            {t('cloud_google_desc')} <code className="text-[11px] bg-muted px-1 py-0.5 rounded">auth/drive.file</code>
           </p>
 
           <button
@@ -267,9 +267,9 @@ export default function CloudReceiptBackupSheet({ open, onClose }) {
               </div>
               <div>
                 <h4 className="font-extrabold text-[15px] tracking-tight text-foreground">
-                  DEVICE STORAGE
+                  {t('cloud_local')}
                 </h4>
-                <p className="text-xs text-muted-foreground">Private On-Device IndexedDB</p>
+                <p className="text-xs text-muted-foreground">{t('cloud_local_sub')}</p>
               </div>
             </div>
             {activeProvider === 'local' ? (
@@ -280,7 +280,7 @@ export default function CloudReceiptBackupSheet({ open, onClose }) {
           </div>
 
           <p className="text-xs text-muted-foreground leading-relaxed mb-4">
-            Foto hanya disimpan di localStorage perangkat tanpa sinkronisasi cloud eksternal.
+            {t('cloud_device_desc')}
           </p>
 
           <button

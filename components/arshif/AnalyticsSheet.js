@@ -337,7 +337,7 @@ export default function AnalyticsSheet({ open, onClose }) {
               type="button"
               onClick={handleExportCsv}
               className="h-8 w-8 rounded-full bg-muted/60 border border-border/50 flex items-center justify-center text-foreground hover:bg-muted active:scale-95 transition-all cursor-pointer"
-              title="Ekspor CSV"
+              title={t('analytics_export_csv')}
               aria-label="Ekspor CSV"
             >
               <Download size={14} />
@@ -414,9 +414,9 @@ export default function AnalyticsSheet({ open, onClose }) {
                 ? 'bg-foreground text-background font-bold shadow-sm'
                 : 'bg-muted/40 border border-border/40 text-muted-foreground hover:text-foreground'
             )}
-          >
-            All accounts
-          </button>
+            >
+              {t('analytics_all_accounts')}
+            </button>
           {(accounts || []).map((acc) => (
             <button
               key={acc?.id}
@@ -443,7 +443,7 @@ export default function AnalyticsSheet({ open, onClose }) {
             {fmt(allTimeCash, home)}
           </p>
           <p className="text-xs text-muted-foreground font-medium pt-0.5 tabular-nums">
-            Opening {fmt(openingBal, home)} + In {fmt(periodIncome, home)} - Out {fmt(periodExpense, home)}
+            {t('analytics_opening_calc', { opening: fmt(openingBal, home), in: fmt(periodIncome, home), out: fmt(periodExpense, home) })}
           </p>
         </div>
 
@@ -451,19 +451,19 @@ export default function AnalyticsSheet({ open, onClose }) {
         <div className="grid grid-cols-3 gap-2.5 mb-5">
           {/* Baris 1: Income, Expense, Net */}
           <div className="rounded-2xl bg-muted/20 border border-border/40 p-3 flex flex-col justify-between min-h-[64px]">
-            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider truncate">Income</p>
+            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider truncate">{t('income_tab')}</p>
             <p className="text-sm font-bold text-emerald-600 dark:text-emerald-400 tabular-nums truncate">
               +{fmt(periodIncome, home)}
             </p>
           </div>
           <div className="rounded-2xl bg-muted/20 border border-border/40 p-3 flex flex-col justify-between min-h-[64px]">
-            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider truncate">Expense</p>
+            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider truncate">{t('expense')}</p>
             <p className="text-sm font-bold text-rose-600 dark:text-rose-400 tabular-nums truncate">
               -{fmt(periodExpense, home)}
             </p>
           </div>
           <div className="rounded-2xl bg-muted/20 border border-border/40 p-3 flex flex-col justify-between min-h-[64px]">
-            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider truncate">Net</p>
+            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider truncate">{t('net')}</p>
             <p className={cn('text-sm font-bold tabular-nums truncate', net >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400')}>
               {net >= 0 ? '+' : ''}{fmt(net, home)}
             </p>
@@ -471,11 +471,11 @@ export default function AnalyticsSheet({ open, onClose }) {
 
           {/* Baris 2: Entries, Avg / day, Top day */}
           <div className="rounded-2xl bg-muted/20 border border-border/40 p-3 flex flex-col justify-between min-h-[64px]">
-            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider truncate">Entries</p>
+            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider truncate">{t('analytics_entries')}</p>
             <p className="text-sm font-bold text-foreground tabular-nums truncate">{entryCount}</p>
           </div>
           <div className="rounded-2xl bg-muted/20 border border-border/40 p-3 flex flex-col justify-between min-h-[64px]">
-            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider truncate">Avg / day</p>
+            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider truncate">{t('analytics_avg_day')}</p>
             <p className="text-sm font-bold text-foreground tabular-nums truncate">{fmt(avgPerDay, home)}</p>
           </div>
           <div className="rounded-2xl bg-muted/20 border border-border/40 p-3 flex flex-col justify-between min-h-[64px]">
@@ -487,12 +487,12 @@ export default function AnalyticsSheet({ open, onClose }) {
         {/* Section SPENDING PACE & FIXED COMMITMENTS */}
         <div className="mb-5">
           <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-2 px-1">
-            SPENDING PACE &amp; FIXED COMMITMENTS
+            {t('analytics_pace_header')}
           </p>
           <div className="rounded-3xl bg-muted/30 border border-border/40 p-5 space-y-3">
             <div>
               <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
-                SPENT SO FAR
+                {t('analytics_spent_so_far')}
               </p>
               <p className="text-2xl font-extrabold text-foreground tabular-nums mt-0.5">
                 {fmt(periodExpense, home)}
@@ -558,9 +558,9 @@ export default function AnalyticsSheet({ open, onClose }) {
         {/* TOP CATEGORIES breakdown */}
         {catRows.length > 0 ? (
           <div>
-            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-2 px-1">
-              TOP CATEGORIES
-            </p>
+              <p className="text-[11px] font-semibold tracking-wider text-muted-foreground uppercase">
+                {t('analytics_top_categories')}
+              </p>
             <div className="space-y-4 rounded-3xl bg-muted/20 border border-border/40 p-4">
               {catRows.map(([cat, val]) => {
                 const pct = Math.round((val / Math.max(1, periodExpense)) * 100)

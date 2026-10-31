@@ -308,7 +308,7 @@ export default function AddTransactionSheet({ open, isOpen: propIsOpen, onClose,
             </Field>
 
             <Field label={t('merchant')}>
-              <TextInput value={merchant} onChange={(e) => setMerchant(e.target.value)} placeholder="e.g. Era Superstore" />
+              <TextInput value={merchant} onChange={(e) => setMerchant(e.target.value)} placeholder={t('tx_desc_placeholder')} />
             </Field>
 
             <Field label={t('note')}>

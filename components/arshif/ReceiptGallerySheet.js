@@ -287,7 +287,7 @@ export default function ReceiptGallerySheet({ open, onClose, onOpenScanner }) {
                     type="text"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="Cari merchant, catatan, atau kategori..."
+                    placeholder={t('receipt_search_ph')}
                     className="w-full h-10 pl-9 pr-8 rounded-xl bg-zinc-100 dark:bg-[#18181b] border border-zinc-200/80 dark:border-white/10 text-base text-zinc-950 dark:text-white placeholder:text-zinc-400 outline-none focus:border-zinc-400 dark:focus:border-white/20 transition-all"
                     autoFocus
                   />
@@ -339,7 +339,7 @@ export default function ReceiptGallerySheet({ open, onClose, onOpenScanner }) {
                 )}
                 data-testid="folder-unfiled"
               >
-                Unfiled
+                {t('receipt_unfiled')}
               </button>
 
               {/* Tab: New folder (border dashed) */}
@@ -388,10 +388,10 @@ export default function ReceiptGallerySheet({ open, onClose, onOpenScanner }) {
                 <div className="min-h-[260px] flex flex-col items-center justify-center text-center px-4">
                   <Search size={28} className="text-zinc-400 mb-3" />
                   <p className="font-bold text-sm text-zinc-950 dark:text-white">
-                    No matching receipts found
+                    {t('receipt_no_match')}
                   </p>
                   <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">
-                    Try searching with another keyword or reset the filter.
+                    {t('receipt_no_match_sub')}
                   </p>
                 </div>
               ) : (

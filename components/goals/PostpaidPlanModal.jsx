@@ -221,7 +221,7 @@ export default function PostpaidPlanModal({
               {/* Pilihan Provider Indonesia (Pill) */}
               <div>
                 <label className="text-[11px] font-semibold tracking-wider text-muted-foreground uppercase mb-2 block">
-                  PILIH PENYEDIA PAYLATER
+                  {t('postpaid_choose_provider')}
                 </label>
                 <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1">
                   {POSTPAID_PROVIDERS.map((prov) => {
@@ -250,13 +250,13 @@ export default function PostpaidPlanModal({
               {/* Field Form: Nama Paket */}
               <div>
                 <label className="text-xs text-muted-foreground font-medium mb-1 block">
-                  Nama Paket
+                  {t('postpaid_plan_name')}
                 </label>
                 <input
                   type="text"
                   value={packageName}
                   onChange={(e) => setPackageName(e.target.value)}
-                  placeholder="e.g. SPayLater Bulanan"
+                  placeholder={t('postpaid_plan_placeholder')}
                   className="w-full bg-muted/40 rounded-2xl p-3.5 text-sm font-medium text-foreground outline-none border border-border/30 placeholder:text-muted-foreground/40 focus:border-foreground/40 transition-colors"
                 />
               </div>
@@ -294,7 +294,7 @@ export default function PostpaidPlanModal({
                     className="w-full text-sm font-semibold text-foreground bg-transparent outline-none tabular-nums text-left"
                   />
                   <span className="text-xs text-muted-foreground font-medium shrink-0">
-                    Tiap bulan
+                    {t('loan_monthly_label')}
                   </span>
                 </div>
                 <p className="text-[11px] text-muted-foreground mt-1 px-1">
@@ -305,7 +305,7 @@ export default function PostpaidPlanModal({
               {/* Field Form: Limit Kredit (Opsional) */}
               <div>
                 <label className="text-xs text-muted-foreground font-medium mb-1 block">
-                  Limit Kredit (Opsional)
+                  {t('postpaid_credit_limit')}
                 </label>
                 <div className="relative rounded-2xl bg-muted/40 border border-border/30 p-3.5 flex items-center gap-2">
                   <span className="text-base font-bold text-foreground select-none shrink-0 pl-1">
@@ -321,14 +321,14 @@ export default function PostpaidPlanModal({
                   />
                 </div>
                 <p className="text-[11px] text-muted-foreground mt-1 px-1">
-                  Pagu batas maksimal saldo paylater yang dapat digunakan.
+                  {t('postpaid_credit_hint')}
                 </p>
               </div>
 
               {/* Field Form: Tagihan Bulan Ini (Opsional) */}
               <div>
                 <label className="text-xs text-muted-foreground font-medium mb-1 block">
-                  Estimasi Tagihan Bulan Ini (Opsional)
+                  {t('postpaid_est_bill')}
                 </label>
                 <div className="relative rounded-2xl bg-muted/40 border border-border/30 p-3.5 flex items-center gap-2">
                   <span className="text-base font-bold text-foreground select-none shrink-0 pl-1">
@@ -353,10 +353,10 @@ export default function PostpaidPlanModal({
                   </div>
                   <div>
                     <span className="text-xs font-semibold text-foreground block">
-                      Pengingat (Reminder)
+                      {t('postpaid_reminder')}
                     </span>
                     <span className="text-[11px] text-muted-foreground block mt-0.5">
-                      Beri pengingat tagihan dan tampilkan di checklist Bills sebelum jatuh tempo.
+                      {t('postpaid_reminder_desc')}
                     </span>
                   </div>
                 </div>
@@ -380,7 +380,7 @@ export default function PostpaidPlanModal({
               {/* Field Form: Catatan (Opsional) */}
               <div>
                 <label className="text-xs text-muted-foreground font-medium mb-1 block">
-                  Catatan (Opsional)
+                  {t('postpaid_note_optional')}
                 </label>
                 <div className="relative rounded-2xl bg-muted/40 border border-border/30 p-3 flex items-start gap-2">
                   <FileText size={16} className="text-muted-foreground shrink-0 mt-1" />
@@ -388,7 +388,7 @@ export default function PostpaidPlanModal({
                     rows={2}
                     value={note}
                     onChange={(e) => setNote(e.target.value)}
-                    placeholder="e.g. Auto-debet dari Rekening BCA"
+                    placeholder={t('postpaid_note_placeholder')}
                     className="w-full text-xs font-medium text-foreground bg-transparent outline-none placeholder:text-muted-foreground/40 resize-none"
                   />
                 </div>
@@ -403,7 +403,7 @@ export default function PostpaidPlanModal({
                     disabled={isSubmitting}
                     className="w-full text-center text-sm font-semibold text-rose-500 hover:opacity-80 py-2.5 rounded-xl transition-all cursor-pointer"
                   >
-                    Hapus Paket PayLater Ini
+                    {t('postpaid_delete_this')}
                   </button>
                 </div>
               )}

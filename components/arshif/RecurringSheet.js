@@ -65,9 +65,9 @@ export default function RecurringSheet({ open, onClose }) {
           {(items || []).length === 0 && !adding ? (
             <div className="flex flex-col items-center justify-center py-14 text-center">
               <div className="h-14 w-14 rounded-2xl bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center mb-3 text-zinc-400 dark:text-zinc-500"><Repeat size={24} strokeWidth={1.5} /></div>
-              <p className="font-bold text-zinc-950 dark:text-white">Belum ada jadwal berulang</p>
-              <p className="text-sm text-zinc-600 dark:text-zinc-400 mt-1">Tambahkan langganan, gaji, atau tagihan rutin.</p>
-              <button type="button" onClick={openAdd} className="mt-5 inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-zinc-950 dark:bg-white dark:text-zinc-950 text-white font-bold text-sm active:scale-95 transition-all cursor-pointer" data-testid="recurring-add-cta"><Plus size={14} /> Tambah jadwal</button>
+                {t('recurring_empty')}
+                {t('recurring_empty_sub')}
+                {t('recurring_add')}
             </div>
           ) : null}
 
@@ -92,7 +92,7 @@ export default function RecurringSheet({ open, onClose }) {
 
         {adding ? (
           <div className="mt-4 rounded-2xl bg-white dark:bg-[#1c1c1e] border border-zinc-200 dark:border-white/10 p-4 space-y-4">
-            <Field label={t('recurring_title_label')}><TextInput value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Nama langganan" data-testid="recurring-title" /></Field>
+            <Field label={t('recurring_title_label')}><TextInput value={title} onChange={(e) => setTitle(e.target.value)} placeholder={t('recurring_name_ph')} data-testid="recurring-title" /></Field>
             <Field label={t('amount') || 'Amount'}>
               <div className="flex gap-2">
                 <button type="button" onClick={() => setPickCur(true)} className="shrink-0 rounded-xl bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-white/10 px-3 py-3 flex items-center gap-1.5 text-zinc-950 dark:text-white" data-testid="recurring-currency">

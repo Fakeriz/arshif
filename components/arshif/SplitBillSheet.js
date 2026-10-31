@@ -85,7 +85,7 @@ export default function SplitBillSheet({ open, onClose }) {
   return (
     <Sheet open={open} onClose={onClose} full title={t('split_bill')} left={<SheetTextButton muted onClick={onClose}>{t('cancel')}</SheetTextButton>} right={<SheetTextButton bold onClick={save}>{t('save')}</SheetTextButton>}>
       <div className="space-y-5 pt-2">
-        <Field label={t('goal_name')}><TextInput value={title} onChange={(e) => setTitle(e.target.value)} placeholder="e.g. Dinner at Murni" data-testid="split-title" /></Field>
+        <Field label={t('goal_name')}><TextInput value={title} onChange={(e) => setTitle(e.target.value)} placeholder={t('split_desc_ph')} data-testid="split-title" /></Field>
         <Segmented value={mode} onChange={setMode} options={[{ id: 'equally', label: t('equally') }, { id: 'uneven', label: t('uneven') }, { id: 'items', label: t('by_items') }]} />
 
         {mode !== 'items' ? (
@@ -119,7 +119,7 @@ export default function SplitBillSheet({ open, onClose }) {
             {people.map((p) => (
               <div key={p.id} className={cn('flex items-center gap-2 p-2.5 bg-white dark:bg-[#121214] border border-zinc-200 dark:border-white/10 rounded-2xl transition-all', mode === 'items' && activePerson === p.id && 'ring-2 ring-zinc-950 dark:ring-white')} onClick={mode === 'items' ? () => setActivePerson(p.id) : undefined}>
                 <div className="h-9 w-9 rounded-full bg-zinc-950 text-white dark:bg-white dark:text-zinc-950 flex items-center justify-center text-sm font-bold shrink-0">{(p.name.trim()[0] || '?').toUpperCase()}</div>
-                <input value={p.name} onChange={(e) => setPerson(p.id, { name: e.target.value })} placeholder="Name" className="flex-1 bg-transparent focus-visible:ring-2 focus-visible:ring-foreground/20 rounded text-base font-bold min-w-0 text-zinc-950 dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-500 outline-none" onClick={(e) => e.stopPropagation()} />
+                <input value={p.name} onChange={(e) => setPerson(p.id, { name: e.target.value })} placeholder={t('split_name_ph')} className="flex-1 bg-transparent focus-visible:ring-2 focus-visible:ring-foreground/20 rounded text-base font-bold min-w-0 text-zinc-950 dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-500 outline-none" onClick={(e) => e.stopPropagation()} />
                 {mode === 'uneven' ? (
                   <input type="text" inputMode="decimal" value={p.amount || ''} onChange={(e) => setPerson(p.id, { amount: sanitizeAmount(e.target.value) })} placeholder="0" className="w-20 bg-zinc-100 dark:bg-zinc-800 rounded-lg px-2 py-1.5 text-base font-bold text-right focus-visible:ring-2 focus-visible:ring-foreground/20 tabular-nums text-zinc-950 dark:text-white border border-zinc-200 dark:border-white/5 outline-none" onClick={(e) => e.stopPropagation()} />
                 ) : (

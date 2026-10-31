@@ -222,7 +222,7 @@ export default function SubscriptionSheet({
             disabled={saving}
             className="text-sm font-bold text-foreground hover:opacity-80 transition-opacity cursor-pointer disabled:opacity-40"
           >
-            {saving ? '...' : 'Done'}
+            {saving ? '...' : t('done')}
           </button>
         }
       >
@@ -230,13 +230,13 @@ export default function SubscriptionSheet({
           {/* Field 1 - Service Name */}
           <div className="space-y-1.5">
             <label className="text-xs text-muted-foreground font-medium block">
-              Service name
+              {t('sub_service_name')}
             </label>
             <input
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="Nama langganan"
+              placeholder={t('sub_name_placeholder')}
                     className="w-full bg-muted/40 rounded-2xl p-4 text-base font-medium text-foreground outline-none border border-border/20 focus:border-foreground/30 transition-colors"
                   />
                 </div>
@@ -245,7 +245,7 @@ export default function SubscriptionSheet({
                 <div className="space-y-1.5">
                   <div className="flex items-center justify-between">
                     <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
-                      AMOUNT
+                      {t('amount')}
                     </span>
                     <button
                       type="button"
@@ -274,7 +274,7 @@ export default function SubscriptionSheet({
                 {/* Field 3 - Cover Logo / Image (Optional) */}
                 <div className="space-y-1.5">
                   <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider block">
-                    COVER LOGO/IMAGE (OPTIONAL)
+                    {t('sub_cover_optional')}
                   </span>
                   <input
                     ref={fileInputRef}
@@ -320,7 +320,7 @@ export default function SubscriptionSheet({
                         <Camera size={20} />
                       </div>
                       <span className="text-xs text-muted-foreground font-medium">
-                        Tap to upload cover or logo
+                        {t('sub_tap_upload')}
                       </span>
                     </div>
                   )}
@@ -329,7 +329,7 @@ export default function SubscriptionSheet({
                 {/* Field 4 - Billing Cycle */}
                 <div className="space-y-1.5">
                   <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider block">
-                    BILLING CYCLE
+                    {t('billing_cycle')}
                   </span>
                   <div className="flex bg-muted/40 p-1 rounded-2xl border border-border/20 overflow-x-auto no-scrollbar gap-1">
                     {CYCLES.map((opt) => {
@@ -378,9 +378,9 @@ export default function SubscriptionSheet({
                   {/* Toggle 2: Auto-log expense */}
                   <div className="flex items-center justify-between gap-3">
                     <div className="flex-1 pr-2">
-                      <p className="text-sm font-semibold text-foreground">Auto-log expense</p>
+                      <p className="text-sm font-semibold text-foreground">{t('auto_log_expense')}</p>
                       <p className="text-xs text-muted-foreground mt-0.5">
-                        Marking it paid records the expense and updates your balance
+                        {t('sub_auto_log_desc')}
                       </p>
                     </div>
                     <Switch checked={autoLogExpense} onChange={setAutoLogExpense} />
@@ -390,7 +390,7 @@ export default function SubscriptionSheet({
                 {/* Field 7 - Account Selector */}
                 <div className="space-y-1.5">
                   <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider block">
-                    ACCOUNT
+                    {t('sub_account_label')}
                   </span>
                   <div className="flex gap-2 overflow-x-auto no-scrollbar -mx-5 px-5 py-1">
                     {accounts.map((a) => {
@@ -421,7 +421,7 @@ export default function SubscriptionSheet({
                           : 'bg-muted/40 text-muted-foreground hover:text-foreground font-medium border border-border/30'
                       )}
                     >
-                      Unassigned
+                      {t('sub_unassigned')}
                     </button>
                   </div>
                 </div>
@@ -429,7 +429,7 @@ export default function SubscriptionSheet({
                 {/* Field 8 - Payment Method */}
                 <div className="space-y-1.5">
                   <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider block">
-                    PAYMENT METHOD
+                    {t('sub_payment_method')}
                   </span>
                   <div className="flex gap-2 overflow-x-auto no-scrollbar -mx-5 px-5 py-1">
                     {paymentMethods.map((m) => {
@@ -458,7 +458,7 @@ export default function SubscriptionSheet({
                 {/* Field 9 - Category (Optional) */}
                 <div className="space-y-1.5">
                   <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider block">
-                    CATEGORY (OPTIONAL)
+                    {t('sub_category_optional')}
                   </span>
                   <div className="flex gap-3 overflow-x-auto no-scrollbar -mx-5 px-5 py-1">
                     {/* None Option */}
@@ -478,7 +478,7 @@ export default function SubscriptionSheet({
                         <X size={20} strokeWidth={2} />
                       </div>
                       <span className="text-[10px] font-medium text-muted-foreground text-center max-w-[56px] truncate">
-                        None
+                        {t('sub_none')}
                       </span>
                     </button>
 
@@ -531,14 +531,14 @@ export default function SubscriptionSheet({
                           disabled={saving}
                           className="flex-1 bg-rose-500 text-white font-semibold py-2.5 rounded-xl text-xs hover:bg-rose-600 transition-colors"
                         >
-                          Confirm Delete
+                          {t('sub_confirm_delete')}
                         </button>
                         <button
                           type="button"
                           onClick={() => setConfirmDelete(false)}
                           className="flex-1 bg-muted text-muted-foreground font-semibold py-2.5 rounded-xl text-xs hover:text-foreground transition-colors"
                         >
-                          Cancel
+                          {t('cancel')}
                         </button>
                       </div>
                     ) : (
@@ -547,7 +547,7 @@ export default function SubscriptionSheet({
                         onClick={() => setConfirmDelete(true)}
                         className="text-sm font-medium text-rose-500 hover:opacity-80 py-2 w-full text-center transition-opacity cursor-pointer block"
                       >
-                        Delete subscription
+                        {t('sub_delete_title')}
                       </button>
                     )
                   )}

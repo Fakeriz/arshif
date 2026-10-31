@@ -88,7 +88,7 @@ export default function ProfileSheet({ open, onClose }) {
       </div>
 
       <div className="space-y-6 mt-7">
-        <Field label={t('full_name')}><TextInput value={name} onChange={(e) => setName(e.target.value)} placeholder="Nama lengkap" data-testid="profile-name" /></Field>
+        <Field label={t('full_name')}><TextInput value={name} onChange={(e) => setName(e.target.value)} placeholder={t('profile_full_name_ph')} data-testid="profile-name" /></Field>
 
         <div>
           <Field label={t('how_you_use')}>
@@ -109,11 +109,11 @@ export default function ProfileSheet({ open, onClose }) {
                     {biz.logo ? <img src={biz.logo} alt="logo" className="h-full w-full object-contain" /> : <span className="flex flex-col items-center text-muted-foreground text-xs"><ImagePlus size={20} strokeWidth={1.5} /> <span className="mt-1">PNG / JPG · 3:1</span></span>}
                   </button>
                 </div>
-                <Field label={t('company_name')}><TextInput value={biz.companyName} onChange={(e) => setB({ companyName: e.target.value })} placeholder="Nama usaha" /></Field>
-                <Field label={t('address')}><TextInput value={biz.address} onChange={(e) => setB({ address: e.target.value })} placeholder="Alamat usaha" /></Field>
+                <Field label={t('company_name')}><TextInput value={biz.companyName} onChange={(e) => setB({ companyName: e.target.value })} placeholder={t('profile_business_name')} /></Field>
+                <Field label={t('address')}><TextInput value={biz.address} onChange={(e) => setB({ address: e.target.value })} placeholder={t('profile_business_address')} /></Field>
                 <div className="grid grid-cols-2 gap-2">
                   <Field label={t('phone')}><TextInput value={biz.phone} onChange={(e) => setB({ phone: e.target.value })} placeholder="+62..." inputMode="tel" /></Field>
-                  <Field label={t('email')}><TextInput value={biz.email} onChange={(e) => setB({ email: e.target.value })} placeholder="email@contoh.com" inputMode="email" /></Field>
+                  <Field label={t('email')}><TextInput value={biz.email} onChange={(e) => setB({ email: e.target.value })} placeholder={t('email_ph')} inputMode="email" /></Field>
                 </div>
               </div>
             </div>
@@ -122,10 +122,10 @@ export default function ProfileSheet({ open, onClose }) {
               <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground mb-2 px-1">{t('invoice_bank_account')}</p>
               <div className={cn(card, 'space-y-4')}>
                 <Field label={t('bank_name')}>
-                  <input list="id-banks" value={biz.bankName} onChange={(e) => setB({ bankName: e.target.value })} placeholder="BCA, Mandiri, BRI..." className="w-full rounded-xl bg-background border border-border/60 dark:border-white/10 px-4 py-3 text-base outline-none focus:ring-2 focus:ring-ring/60 placeholder:text-muted-foreground" />
+                  <input list="id-banks" value={biz.bankName} onChange={(e) => setB({ bankName: e.target.value })} placeholder={t('profile_bank_list_ph')} className="w-full rounded-xl bg-background border border-border/60 dark:border-white/10 px-4 py-3 text-base outline-none focus:ring-2 focus:ring-ring/60 placeholder:text-muted-foreground" />
                   <datalist id="id-banks">{ID_BANKS.map((b) => <option key={b} value={b} />)}</datalist>
                 </Field>
-                <Field label={t('account_holder')}><TextInput value={biz.accHolder} onChange={(e) => setB({ accHolder: e.target.value })} placeholder="Nama pemegang akun" /></Field>
+                <Field label={t('account_holder')}><TextInput value={biz.accHolder} onChange={(e) => setB({ accHolder: e.target.value })} placeholder={t('profile_bank_account_name')} /></Field>
                 <Field label={t('account_number')}><TextInput value={biz.accNumber} onChange={(e) => setB({ accNumber: e.target.value })} placeholder="1234567890" inputMode="numeric" /></Field>
               </div>
             </div>

@@ -3,6 +3,7 @@
 import { useState, useMemo, useEffect } from 'react'
 import { Eye, HardDrive, ExternalLink, Image as ImageIcon, RefreshCw } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { useApp } from './context'
 
 export function extractDriveFileId(url) {
   if (!url || typeof url !== 'string') return null
@@ -40,6 +41,7 @@ export default function ReceiptPreviewWithDrive({
   receiptCache,
   onOpenFullImage,
 }) {
+  const { t } = useApp() || {}
   const [imgError, setImgError] = useState(false)
   const [imgLoading, setImgLoading] = useState(true)
   const [fallbackIndex, setFallbackIndex] = useState(0)
@@ -176,7 +178,7 @@ export default function ReceiptPreviewWithDrive({
             </div>
             <div className="min-w-0 text-left">
               <p className="text-xs font-bold text-zinc-950 dark:text-white">
-                Google Drive Receipt
+                {t?.('drive_receipt_title') || 'Google Drive Receipt'}
               </p>
               <p className="text-[11px] text-zinc-500 font-mono truncate max-w-[210px] sm:max-w-xs">
                 {receiptUrl}

@@ -107,9 +107,9 @@ export default function PaywallSheet({ open, onClose }) {
 
         <div className="mt-5 rounded-xl bg-white dark:bg-[#1c1c1e] border border-zinc-200 dark:border-white/10 overflow-hidden">
           <div className="grid grid-cols-[1fr_auto_auto] gap-2 px-4 py-2.5 bg-zinc-50 dark:bg-white/5 text-xs font-bold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
-            <span>Fitur</span>
+                {t('paywall_feature')}
             <span className="text-right w-14">{t('free')}</span>
-            <span className="text-right w-16">Premium</span>
+                {t('paywall_premium')}
           </div>
           {Object.keys(PLAN_LIMITS).map((resource) => (
             <div
@@ -148,7 +148,7 @@ export default function PaywallSheet({ open, onClose }) {
               <PrimaryButton className="w-full" disabled={loading} data-testid="paywall-confirm-upgrade">
                 {loading ? (
                   <span className="flex items-center justify-center gap-2">
-                    <Loader2 size={18} className="animate-spin" /> Membuka email...
+                  {t('paywall_opening_email')}
                   </span>
                 ) : (
                   <span className="flex items-center justify-center gap-2">

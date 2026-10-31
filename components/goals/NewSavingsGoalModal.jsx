@@ -266,7 +266,7 @@ export default function NewSavingsGoalModal({
           onClick={onClose}
           className="text-sm font-semibold text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
         >
-          Cancel
+          {t('cancel')}
         </button>
       }
     >
@@ -274,7 +274,7 @@ export default function NewSavingsGoalModal({
         {/* Cover photo (opsional) */}
               <div>
                 <label className="text-[11px] font-semibold tracking-wider text-muted-foreground uppercase mb-2 block">
-                  COVER PHOTO (OPTIONAL)
+                  {t('goal_icon')}
                 </label>
                 <input
                   ref={fileInputRef}
@@ -309,7 +309,7 @@ export default function NewSavingsGoalModal({
                           }}
                           className="px-3.5 py-1.5 rounded-xl bg-black/60 hover:bg-black/80 text-white text-xs font-semibold backdrop-blur-sm transition-all"
                         >
-                          Change photo
+              {t('goal_change_photo')}
                         </button>
                         <button
                           type="button"
@@ -330,7 +330,7 @@ export default function NewSavingsGoalModal({
                         <Camera size={20} strokeWidth={1.75} />
                       </div>
                       <span className="text-xs font-medium text-muted-foreground mt-0.5">
-                        Add a photo
+              {t('goal_add_photo')}
                       </span>
                     </div>
                   )}
@@ -369,20 +369,20 @@ export default function NewSavingsGoalModal({
               {/* Form inputs */}
                             <div>
                 <label className="text-xs text-muted-foreground font-medium mb-1 block">
-                  Goal name
+                  {t('goal_name')}
                 </label>
                 <input
                   type="text"
                   value={goalName}
                   onChange={(e) => setGoalName(e.target.value)}
-                  placeholder="e.g. New iPhone, Holiday trip..."
+                  placeholder={t('goal_placeholder_hint')}
                   className="w-full bg-muted/40 rounded-2xl p-4 text-sm font-medium text-foreground outline-none border border-border/30 placeholder:text-muted-foreground/40 focus:border-foreground/40 transition-colors"
                 />
               </div>
 
                             <div>
                 <label className="text-xs text-muted-foreground font-medium mb-1 block">
-                  Target amount
+                  {t('goal_target_amount')}
                 </label>
                 <div className="relative rounded-2xl bg-muted/40 border border-border/30 p-3.5 flex items-center gap-2 focus-within:border-foreground/40 transition-colors">
                   <span className="text-base font-bold text-foreground select-none shrink-0 pl-1">
@@ -404,7 +404,7 @@ export default function NewSavingsGoalModal({
 
                             <div>
                 <label className="text-xs text-muted-foreground font-medium mb-1 block">
-                  Starting saved balance
+                  {t('goal_starting_balance')}
                 </label>
                 <div className="relative rounded-2xl bg-muted/40 border border-border/30 p-3.5 flex items-center gap-2 focus-within:border-foreground/40 transition-colors">
                   <span className="text-base font-bold text-foreground select-none shrink-0 pl-1">
@@ -423,7 +423,7 @@ export default function NewSavingsGoalModal({
                   />
                 </div>
                 <p className="text-[11px] text-muted-foreground mt-1 px-1">
-                  Opening balance isn't counted as money saved this month.
+                  {t('goal_starting_hint')}
                 </p>
               </div>
 
@@ -443,7 +443,7 @@ export default function NewSavingsGoalModal({
 
                             <div>
                 <label className="text-xs text-muted-foreground font-medium mb-1 block">
-                  Monthly savings target (optional)
+                  {t('goal_monthly_target')}
                 </label>
                 <div className="relative rounded-2xl bg-muted/40 border border-border/30 p-3.5 flex items-center gap-2 focus-within:border-foreground/40 transition-colors">
                   <span className="text-base font-bold text-foreground select-none shrink-0 pl-1">
@@ -459,7 +459,7 @@ export default function NewSavingsGoalModal({
                   />
                 </div>
                 <p className="text-[11px] text-muted-foreground mt-1 px-1">
-                  How much you aim to put toward this goal each month.
+                  {t('goal_monthly_hint')}
                 </p>
               </div>
 
