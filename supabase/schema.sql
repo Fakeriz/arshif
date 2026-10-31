@@ -311,7 +311,10 @@ create table if not exists public.transactions (
   merchant text,                         -- Nama toko / merchant
   receipt_number text,                   -- Nomor bukti / invoice
   receipt_url text,                      -- URL file bukti transaksi di storage
-  items jsonb default '[]'::jsonb,       -- Rincian produk / metadata split
+  items jsonb default '[]'::jsonb,       -- Rincian produk / metadata split.
+                                       -- Baris: { name, qty, price, discount? } dengan
+                                       -- line total = price*qty - discount; baris diskon
+                                       -- struk-level: { ..., price: <negatif>, is_discount: true }
   tax_deductible boolean default false,  -- Apakah dapat dipotong pajak
   is_tax_deductible boolean default false,-- Alias tax_deductible
   fee numeric default 0,                 -- Biaya admin transaksi

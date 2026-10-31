@@ -6,7 +6,9 @@ import { useApp } from './context'
 import { Sheet, PrimaryButton, SecondaryButton, Card } from './ui'
 import { QuotaBadge } from './QuotaBadge'
 import { fileToDataUrl } from '@/lib/ledger'
+import { lineTotal } from '@/lib/split-bill'
 import { consumeFeatureUsage } from '@/lib/feature-usage'
+import { cn } from '@/lib/utils'
 
 export default function ScanReceiptSheet({ open, onClose, onUse, initialImage, autoPick }) {
   const { t, home, fmt, session, isAiAllowed, open: openSheet, profile } = useApp()
@@ -287,12 +289,20 @@ export default function ScanReceiptSheet({ open, onClose, onUse, initialImage, a
                 <span className="text-[10px] font-bold uppercase rounded-md bg-zinc-950 text-white dark:bg-white dark:text-zinc-950 px-2 py-1">{t(`cat_${result.category || 'other'}`)}</span>
               </div>
               <p className="text-4xl font-extrabold mt-4 tabular-nums text-zinc-950 dark:text-white">{fmt(result.total, cur)}</p>
+              {result.totals_match === false ? (
+                <p className="mt-2 text-xs text-amber-600 dark:text-amber-400 font-medium rounded-xl border border-amber-300 dark:border-amber-500/40 bg-amber-50 dark:bg-amber-500/10 px-3 py-2">
+                  {t('items_sum_mismatch')} — {t('items')}: {fmt(result.items_total, cur)} · {t('total')}: {fmt(result.total, cur)}
+                </p>
+              ) : null}
               <Card className="mt-4 overflow-hidden">
                 <div className="grid grid-cols-[1fr_auto] px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.12em] text-zinc-600 dark:text-zinc-400 border-b border-zinc-200/60 dark:border-white/5"><span>{t('item')}</span><span>{t('price')}</span></div>
                 {(result.items || []).map((it, i) => (
                   <div key={i} className="grid grid-cols-[1fr_auto] px-4 py-2.5 text-sm border-b border-zinc-200/40 dark:border-white/5 last:border-0 text-zinc-950 dark:text-white">
-                    <span className="truncate font-medium">{it.qty > 1 ? `${it.qty}× ` : ''}{it.name}</span>
-                    <span className="tabular-nums font-bold">{fmt(it.price, cur)}</span>
+                    <span className="truncate font-medium">
+                      {it.qty > 1 ? `${it.qty}× ` : ''}{it.name}
+                      {Number(it.discount) > 0 ? ` · −${t('discount')} ${fmt(it.discount, cur)}` : ''}
+                    </span>
+                    <span className={cn('tabular-nums font-bold', it.is_discount ? 'text-emerald-600 dark:text-emerald-400' : undefined)}>{fmt(lineTotal(it), cur)}</span>
                   </div>
                 ))}
                 {!(result.items || []).length ? <p className="px-4 py-3 text-sm text-zinc-400 dark:text-zinc-500">—</p> : null}
