@@ -325,7 +325,7 @@ export default function GoalsTab() {
     <div className="px-5 pb-28">
       {/* Sticky header */}
       <div className="sticky top-0 z-30 pt-6 pb-2 bg-background/95 backdrop-blur-md">
-        <h1 className="text-2xl font-bold tracking-tight text-foreground">
+        <h1 className="text-2xl font-extrabold tracking-tight text-foreground">
           {t('goals') || 'Goals'}
         </h1>
         <p className="text-xs text-muted-foreground mt-0.5 font-medium">

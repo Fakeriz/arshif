@@ -47,7 +47,7 @@ export default function MoreTab() {
       : 'Local Storage'
 
   return (
-    <div className="px-5 pt-2 pb-36">
+    <div className="px-5 pb-36">
       <div className="flex items-center justify-between pt-6">
         <h1 className="text-2xl font-extrabold tracking-tight text-zinc-950 dark:text-white">{t('more')}</h1>
         <div className="flex items-center gap-2">
