@@ -159,7 +159,7 @@ export default function ProfileSheet({ open, onClose }) {
         <div className="h-2" />
       </div>
 
-      {/* Sign Out confirmation — pattern sama AccountSupportSection */}
+      {/* Sign Out confirmation - pattern sama AccountSupportSection */}
       {session?.user ? (
         <Sheet open={signOutOpen} onClose={() => setSignOutOpen(false)} title={t('sign_out')}>
           <div className="pt-1">

@@ -197,7 +197,7 @@ export function DotsLoadingScreen({
 }
 
 /**
- * DotsButtonLoader — Khusus disematkan di dalam Action Button
+ * DotsButtonLoader - Khusus disematkan di dalam Action Button
  * Otomatis mengambil warna teks (bg-current) dan ukuran rapat (sm/xs)
  */
 export function DotsButtonLoader({ className, size = 'sm', ...props }) {

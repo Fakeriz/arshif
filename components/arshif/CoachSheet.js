@@ -10,10 +10,10 @@ import { signedAccountBalance } from '@/lib/ledger'
 import { cn } from '@/lib/utils'
 
 const GREETINGS = {
-  id: 'Halo! Saya AI Financial Coach Arshif kamu. Tanya apa saja soal keuanganmu — aku sudah membaca saldo, anggaran, dan targetmu.',
-  ms: 'Hai! Saya AI Financial Coach Arshif anda. Tanya apa sahaja tentang kewangan anda — saya sudah baca baki, belanjawan dan matlamat anda.',
-  en: "Hi! I'm your Arshif AI Financial Coach. Ask me anything about your money — I've already read your balance, budgets and goals.",
-  tr: 'Merhaba! Ben Arshif AI Finans Koçunuz. Paranızla ilgili her şeyi sorun — bakiyenizi, bütçelerinizi ve hedeflerinizi okudum.',
+  id: 'Halo! Saya AI Financial Coach Arshif kamu. Tanya apa saja soal keuanganmu - aku sudah membaca saldo, anggaran, dan targetmu.',
+  ms: 'Hai! Saya AI Financial Coach Arshif anda. Tanya apa sahaja tentang kewangan anda - saya sudah baca baki, belanjawan dan matlamat anda.',
+  en: "Hi! I'm your Arshif AI Financial Coach. Ask me anything about your money - I've already read your balance, budgets and goals.",
+  tr: 'Merhaba! Ben Arshif AI Finans Koçunuz. Paranızla ilgili her şeyi sorun - bakiyenizi, bütçelerinizi ve hedeflerinizi okudum.',
 }
 
 export default function CoachSheet({ open, onClose }) {
@@ -175,7 +175,7 @@ export default function CoachSheet({ open, onClose }) {
     }
   }, [transactions, accounts, goals, budgets, debts, subscriptions, home, rates])
 
-  // Saran pertanyaan: kontekstual dari data user — pakai key i18n + var
+  // Saran pertanyaan: kontekstual dari data user - pakai key i18n + var
   const starters = useMemo(() => {
     const list = []
     const hot = context.budgets.find((b) => b.pct >= 80)
@@ -264,7 +264,7 @@ export default function CoachSheet({ open, onClose }) {
   const chips = useMemo(() => [
     { icon: Wallet, label: t('total_balance'), value: fmt(context.totalBalance, home), alert: false },
     { icon: TrendingUp, label: t('spending'), value: fmt(context.monthSpending, home), alert: context.savingsRate !== null && context.savingsRate < 0 },
-    { icon: Target, label: t('coach_chip_savings'), value: context.savingsRate === null ? '—' : `${context.savingsRate}%`, alert: context.savingsRate !== null && context.savingsRate < 10 },
+    { icon: Target, label: t('coach_chip_savings'), value: context.savingsRate === null ? '-' : `${context.savingsRate}%`, alert: context.savingsRate !== null && context.savingsRate < 10 },
   ], [context, fmt, home, t])
 
   return (
