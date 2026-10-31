@@ -52,14 +52,25 @@ export default function SplitBillSheet({ open, onClose }) {
   const removePerson = (id) => { if (id === 'me') return; setPeople((ps) => ps.filter((p) => p.id !== id)); setAssign((a) => Object.fromEntries(Object.entries(a).map(([k, v]) => [k, v.filter((x) => x !== id)]))); if (activePerson === id) setActivePerson('me') }
   const addItem = () => setItems((x) => [...x, { name: '', price: 0 }])
   const setItem = (i, patch) => setItems((x) => x.map((it, idx) => (idx === i ? { ...it, ...patch } : it)))
-  const delItem = (i) => { setItems((x) => x.filter((_, idx) => idx !== i)); setAssign((a) => { const c = { ...a }; delete c[i]; return c }) }
+  const delItem = (i) => {
+    setItems((x) => x.filter((_, idx) => idx !== i))
+    // assign key ber-index item; hapus index i lalu geser kunci setelahnya turun
+    setAssign((a) => {
+      const sorted = Object.entries(a)
+        .filter(([k]) => Number(k) !== i)
+        .map(([k, v]) => [Number(k) > i ? Number(k) - 1 : Number(k), v])
+      return Object.fromEntries(sorted)
+    })
+  }
   const toggleAssign = (i) => setAssign((a) => { const cur = a[i] || []; return { ...a, [i]: cur.includes(activePerson) ? cur.filter((x) => x !== activePerson) : [...cur, activePerson] } })
 
   const save = async () => {
     const unevenTotal = roundMoney(people.reduce((sum, person) => sum + (Number(person.amount) || 0), 0), home)
-    if (!title.trim() || totalNum <= 0 || named.length < 2 || named.length !== people.length) { toast.error(t('error')); return }
-    if (mode === 'uneven' && unevenTotal !== totalNum) { toast.error(t('error')); return }
-    if (mode === 'items' && perPerson.unassigned > 0) { toast.error(t('error')); return }
+    if (!title.trim() || totalNum <= 0) { toast.error(t('split_need_total')); return }
+    if (named.length < 2) { toast.error(t('split_need_2')); return }
+    if (named.length !== people.length) { toast.error(t('split_name_all')); return }
+    if (mode === 'uneven' && unevenTotal !== totalNum) { toast.error(t('split_total_mismatch')); return }
+    if (mode === 'items' && perPerson.unassigned > 0) { toast.error(t('split_unassigned')); return }
     if (!store?.createSplitBill) { toast.error(t('error')); return }
     const participants = named.map((person) => ({
       ...person,
@@ -123,7 +134,7 @@ export default function SplitBillSheet({ open, onClose }) {
                 {mode === 'uneven' ? (
                   <input type="text" inputMode="decimal" value={p.amount || ''} onChange={(e) => setPerson(p.id, { amount: sanitizeAmount(e.target.value) })} placeholder="0" className="w-20 bg-zinc-100 dark:bg-zinc-800 rounded-lg px-2 py-1.5 text-base font-bold text-right focus-visible:ring-2 focus-visible:ring-foreground/20 tabular-nums text-zinc-950 dark:text-white border border-zinc-200 dark:border-white/5 outline-none" onClick={(e) => e.stopPropagation()} />
                 ) : (
-                  <span className="text-sm font-bold tabular-nums text-zinc-950 dark:text-white pr-1">{fmt(perPerson.totals[p.id] || 0, home)}</span>
+                  <span className="text-sm font-bold tabular-nums text-zinc-950 dark:text-white pr-1">{p.name.trim() ? fmt(perPerson.totals[p.id] || 0, home) : '–'}</span>
                 )}
                 {p.id !== 'me' ? <button type="button" onClick={(e) => { e.stopPropagation(); removePerson(p.id) }} className="p-1.5 text-zinc-400 hover:text-rose-500 dark:text-zinc-500 dark:hover:text-rose-400 transition-colors"><X size={15} /></button> : null}
               </div>
