@@ -150,7 +150,7 @@ export default function ProfileSheet({ open, onClose }) {
 
         <PrimaryButton onClick={save} disabled={saving} data-testid="profile-save-btn">{t('save_changes')}</PrimaryButton>
         {!isGuest ? (
-          <button type="button" onClick={() => signOut?.()} className="w-full flex items-center justify-center gap-2 py-3 text-sm font-medium text-zinc-500 dark:text-zinc-400 hover:text-rose-500 dark:hover:text-rose-400 active:text-rose-600 transition">
+          <button type="button" onClick={() => signOut?.()} className="w-full flex items-center justify-center gap-2 py-3 text-sm font-medium text-zinc-500 dark:text-zinc-400 hover:text-rose-500 dark:hover:text-rose-400 active:text-rose-600 transition cursor-pointer">
             <LogOut size={15} strokeWidth={2} />
             {t('sign_out')}
           </button>
