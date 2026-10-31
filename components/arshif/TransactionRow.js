@@ -2,26 +2,20 @@
 import { useApp } from './context'
 import { CategoryBadge } from './ui'
 import { getCurrency } from '@/lib/currencies'
+import { sanitizeMerchant, stripActionPrefix } from '@/lib/ai-parse-sanitize'
 import { cn } from '@/lib/utils'
 import { ArrowLeftRight } from 'lucide-react'
 
-// Pembersih otomatis kata awalan seperti "Beli", "Bayar", "Jajan", dll.
+// Judul baris: nama toko asli atau nama barang; kata awalan "Beli"/"Bayar" dibuang.
 function formatCleanTitle(tx, fallback) {
-  if (tx?.merchant && !/^(beli|jajan|bayar|pesan|order|topup|tarik)\b/i.test(tx.merchant.trim())) {
-    return tx.merchant.trim()
-  }
+  const merchantName = sanitizeMerchant(tx?.merchant, tx?.items)
+  if (merchantName) return merchantName
 
-  let raw =
-    (Array.isArray(tx?.items) && tx.items.length > 0 ? tx.items.map((i) => i.name).join(' & ') : '') ||
-    tx?.note ||
-    tx?.description ||
-    fallback ||
-    'Transaksi'
+  const itemsTitle = Array.isArray(tx?.items) && tx.items.length > 0 ? tx.items.map((i) => i.name).join(' & ') : ''
+  const raw = itemsTitle || tx?.note || tx?.description || fallback || ''
+  const cleaned = stripActionPrefix(raw)
 
-  // Pangkas kata awalan "beli", "jajan", "bayar", "pesan"
-  const cleaned = raw.replace(/^(beli|jajan|bayar|pesan|order|belanja)\s+/i, '').trim()
-
-  return cleaned ? cleaned.charAt(0).toUpperCase() + cleaned.slice(1) : fallback || 'Transaksi'
+  return cleaned ? cleaned.charAt(0).toUpperCase() + cleaned.slice(1) : fallback || ''
 }
 
 // Safe time/date formatting - never throws on null/invalid values.

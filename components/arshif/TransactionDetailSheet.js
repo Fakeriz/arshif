@@ -10,6 +10,7 @@ import { applyTxToBalances } from '@/lib/ledger'
 import { computeSplitTotals, lineTotal, itemsSum } from '@/lib/split-bill'
 import { cn } from '@/lib/utils'
 import { sanitizeAmount } from '@/lib/amount'
+import { sanitizeMerchant, stripActionPrefix } from '@/lib/ai-parse-sanitize'
 
 export default function TransactionDetailSheet({ open, isOpen: propIsOpen, onClose, tx: propTx, transaction, onEdit }) {
   const isOpen = open ?? propIsOpen
@@ -52,6 +53,12 @@ export default function TransactionDetailSheet({ open, isOpen: propIsOpen, onClo
   if (!isOpen || !activeTx) return null
 
   const tx = activeTx
+
+  // Judul detail: nama toko asli atau nama barang; kata "beli" dibuang.
+  const itemsTitle = Array.isArray(tx?.items) && tx.items.length > 0 ? tx.items.map((i) => i.name).join(' & ') : ''
+  const detailTitle = sanitizeMerchant(tx?.merchant, tx?.items) ||
+    stripActionPrefix(itemsTitle || tx?.note || tx?.description || '') ||
+    t(`cat_${tx?.category || 'other'}`)
 
   const cur = tx?.currency || home
   const acc = (accounts || []).find((a) => a?.id === tx?.account_id)
@@ -135,7 +142,7 @@ export default function TransactionDetailSheet({ open, isOpen: propIsOpen, onClo
       <div className="flex items-center gap-3 mt-4">
         <CategoryBadge id={tx.category} size="lg" />
         <div className="flex-1">
-          <p className="text-xl font-extrabold text-zinc-950 dark:text-white">{tx.merchant || tx.note || tx.description || t(`cat_${tx.category || 'other'}`)}</p>
+          <p className="text-xl font-extrabold text-zinc-950 dark:text-white">{detailTitle}</p>
           <span className="inline-block mt-1 text-[10px] font-bold uppercase rounded-md bg-zinc-100 dark:bg-zinc-800 px-2 py-0.5 text-zinc-600 dark:text-zinc-400">{t(`cat_${tx.category || 'other'}`)}</span>
         </div>
       </div>
@@ -143,7 +150,7 @@ export default function TransactionDetailSheet({ open, isOpen: propIsOpen, onClo
       <ReceiptPreviewWithDrive
         receiptUrl={tx.receipt_url}
         storageProvider={tx.storage_provider}
-        merchantName={tx.merchant || tx.note || tx.description}
+        merchantName={detailTitle}
         receiptCache={tx.receipt_cache || tx.receipt_preview}
         onOpenFullImage={() => setViewImg(true)}
       />

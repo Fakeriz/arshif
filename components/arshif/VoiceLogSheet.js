@@ -7,7 +7,16 @@ import { useApp } from './context'
 import { Sheet, PrimaryButton, TextInput, CategoryBadge, Card } from './ui'
 import { QuotaBadge } from './QuotaBadge'
 import { CATEGORIES } from '@/lib/categories'
+import { sanitizeMerchant, stripActionPrefix } from '@/lib/ai-parse-sanitize'
 import { cn } from '@/lib/utils'
+
+// Judul kartu hasil parse: nama toko asli atau nama barang, tanpa kata "beli".
+function parsedTitle(tx, fallback) {
+  const merchantName = sanitizeMerchant(tx?.merchant, tx?.items)
+  if (merchantName) return merchantName
+  const itemsTitle = Array.isArray(tx?.items) && tx.items.length > 0 ? tx.items.map((i) => i.name).join(' & ') : ''
+  return stripActionPrefix(itemsTitle || tx?.note || '') || fallback
+}
 
 export default function VoiceLogSheet({ open, onClose, onResult }) {
   const { t, home, lang, accounts = [], fmt, session, isAiAllowed, open: openSheet, store, refresh } = useApp()
@@ -328,9 +337,7 @@ export default function VoiceLogSheet({ open, onClose, onResult }) {
                     <CategoryBadge id={tx?.category} />
                     <div className="flex-1 min-w-0">
                       <p className="font-bold truncate text-[15px]">
-                        {tx?.merchant && !/^(beli|jajan|bayar|pesan)\b/i.test(tx.merchant)
-                          ? tx.merchant
-                          : (tx?.items?.length ? tx.items.map((i) => i.name).join(' & ') : tx?.note || 'Transaction')}
+                        {parsedTitle(tx, t('tx_default_title'))}
                       </p>
                       <p className="text-xs text-muted-foreground">
                         {t(`cat_${tx?.category || 'other'}`)} · {t(tx?.payment_method || 'cash')}

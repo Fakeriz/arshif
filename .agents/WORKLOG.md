@@ -58,3 +58,17 @@ Status: done
 Baca: lib/split-bill.js (tambah reconcileItems(items,total) pure: diff=sum-total, diff>0→baris diskon price NEGATIF, diff<0→missing), components/arshif/ScanReceiptSheet.js (banner mismatch + tombol reconcile/edit, state reconciled, section Diskon struk dari result.discounts)
 Temuan: sign konvensi WAJIB diff=sum-total (bukan total-sum); baris diskon harus price NEGATIF kalau tidak sum makin besar dan tak pernah match. Kasus Watsons: 954.55-636.20=318.35→price:-318.35. openSheet name untuk detail transaksi = 'txDetail' (bukan 'transactionDetail'), payload objek transaksi.
 Commit: af955cb
+
+## [2026-10-31 10:45] ENI — debug voice parse 'beli hdmi 20.000'
+Status: wip
+Baca: app/api/_handlers/ai.js handleParse (baris 87-340: currency regex baris 104-120, prompt rules baris 125-260, sanitasi baris 262-330), components/arshif/VoiceLogSheet.js (parseText baris 59, onResult baris 210, render baris 331)
+Temuan: 3 bug teridentifikasi:
+1. RM salah deteksi: input 'beli hdmi 20.000' TANPA keyword currency → harusnya fallback homeCurrency (IDR). Tapi regex /\b(rm)\b/i bisa match substring lain; atau Gemini output currency MYR langsung dan sanitasi TIDAK memaksa fallback ke home saat tidak yakin. Perlu: kalau Gemini kasih currency yang tidak ada di teks (tidak match GLOBAL_CURRENCIES regex + tidak match account currency) → force homeCurrency.
+2. Merchant salah: 'HDMI' jadi merchant (produk bukan toko). Regex baris 277 cuma buang prefix beli/jajan/bayar — tidak buang nama produk. Prompt rule 1 sudah bilang 'jangan jadikan ucapan belanja sebagai toko' tapi tidak cukup. Perlu: whitelist kata sambung + validasi merchant bukan item name; ATAU kalau merchant == item name → null.
+3. 'beli' nempel di list transaksi (baris 2: 'Beli HDMI'): note dari input asli ikut jadi merchant di suatu jalur. Cek note field di payload baris 305: note: tx?.note || items names — note yang berisi 'beli hdmi' di-render sebagai merchant di baris 331 kalau merchant null. Seharusnya di-parse: hapus kata 'beli/jajan' dari note sebelum display, atau jangan pakai note sebagai merchant display.
+
+## [2026-10-31 12:10] subagent-deleg_parse_fix — fix 3 bug parse voice/text (currency, merchant, judul)
+Status: done
+Baca: app/api/_handlers/ai.js (handleParse: GLOBAL_CURRENCIES + sanitasi + prompt), lib/ai-parse-sanitize.js (baru), components/arshif/{VoiceLogSheet,TransactionRow,SwipeTransactionRow,TransactionDetailSheet}.js, lib/i18n.js (4 blok), tests/ai-parse.test.mjs (baru)
+Temuan: sanitasi currency/merchant/note diekstrak ke lib/ai-parse-sanitize.js (fungsi pure, dipakai server + client). BUG 1: currency Gemini tanpa bukti di teks asli dibuang, jatuh ke homeCurrency/account currency; prompt ditambah rule "JANGAN menebak currency". BUG 2: merchant divalidasi terhadap item names, blacklist produk elektronik/generic (toko/warung), dan nominal di dalam nama; prompt rule merchant dipertegas. BUG 3: note server di-strip awalan beli/jajan/bayar, judul client pakai sanitizeMerchant + stripActionPrefix (items names dulu, baru note). Key i18n baru tx_default_title di en/id/ms/tr. npm test 115 pass (103 lama + 12 baru), next build sukses.
+Commit: (lihat git log)

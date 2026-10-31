@@ -5,6 +5,7 @@ import { Pencil, Trash2, ArrowLeftRight } from 'lucide-react'
 import { useApp } from './context'
 import { CategoryIcon } from './ui'
 import { getCurrency } from '@/lib/currencies'
+import { sanitizeMerchant, stripActionPrefix } from '@/lib/ai-parse-sanitize'
 import { cn } from '@/lib/utils'
 
 // Safe time/date formatting - never throws on null/invalid values.
@@ -98,7 +99,11 @@ export default function SwipeTransactionRow({
   const isTransfer = tx?.type === 'transfer'
   const acc = accList.find((a) => a?.id === tx?.account_id)
   const toAcc = accList.find((a) => a?.id === tx?.to_account_id)
-  const title = tx?.merchant || tx?.note || tx?.description || (t ? t(`cat_${tx?.category || 'other'}`) : (tx?.category || 'Other'))
+  // Merchant dari parse AI sudah disanitasi dua kali; note mentah jangan
+  // tampil sebagai judul karena isinya ucapan user ("beli hdmi 20.000").
+  const merchantName = sanitizeMerchant(tx?.merchant, tx?.items)
+  const itemsTitle = Array.isArray(tx?.items) && tx.items.length > 0 ? tx.items.map((i) => i.name).join(' & ') : ''
+  const title = merchantName || stripActionPrefix(itemsTitle || tx?.note || tx?.description || '') || (t ? t(`cat_${tx?.category || 'other'}`) : (tx?.category || 'Other'))
   const foreign = tx?.currency && tx?.currency !== home
 
   let homeAmount = null

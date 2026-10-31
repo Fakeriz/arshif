@@ -2,6 +2,7 @@
 // transcribe, parse, coach, ocr, parse-statement. Gemini dari ./gemini,
 // helper HTTP dari ./http, kuota/auth dari ./quota.
 import { parseMoneyOrZero } from '@/lib/money-parse'
+import { sanitizeCurrency, sanitizeMerchant, stripActionPrefix } from '@/lib/ai-parse-sanitize'
 import { validateReceiptTotals } from '@/lib/split-bill'
 import { callGemini, extractJson } from './gemini'
 import { json, err, MAX_AUDIO_BYTES, MAX_IMAGE_BYTES, MAX_PDF_BYTES, AUDIO_MIME_TYPES, IMAGE_MIME_TYPES, base64ByteLength } from './http'
@@ -100,25 +101,6 @@ async function handleParse(request, quota = null) {
       ? JSON.stringify(accounts.map((a) => (typeof a === 'string' ? { name: a } : { id: a.id, name: a.name, currency: a.currency })))
       : '[]'
 
-    const GLOBAL_CURRENCIES = [
-      { regex: /\b(ringgit|rm)\b/i, code: 'MYR' },
-      { regex: /\b(rupiah|rp|perak)\b/i, code: 'IDR' },
-      { regex: /\b(lira|tl|turki)\b/i, code: 'TRY' },
-      { regex: /\b(usd|dollar|dolar|buck|bucks|\$)\b/i, code: 'USD' },
-      { regex: /\b(eur|euro|€)\b/i, code: 'EUR' },
-      { regex: /\b(sgd|sing\s*dollar|dolar\s*singapura)\b/i, code: 'SGD' },
-      { regex: /\b(gbp|pound|sterling|£)\b/i, code: 'GBP' },
-      { regex: /\b(jpy|yen|¥)\b/i, code: 'JPY' },
-      { regex: /\b(aud|aussie|dolar\s*australia)\b/i, code: 'AUD' },
-      { regex: /\b(thb|baht)\b/i, code: 'THB' },
-      { regex: /\b(sar|riyal|riyal\s*saudi)\b/i, code: 'SAR' },
-      { regex: /\b(aed|dirham)\b/i, code: 'AED' },
-      { regex: /\b(cny|yuan|renminbi)\b/i, code: 'CNY' },
-      { regex: /\b(krw|won)\b/i, code: 'KRW' },
-      { regex: /\b(php|peso)\b/i, code: 'PHP' },
-      { regex: /\b(vnd|dong)\b/i, code: 'VND' },
-    ]
-
     const system = `You are Arshif, an international multi-currency financial voice parser.
 Extract the transaction details into JSON.
 
@@ -150,6 +132,7 @@ CURRENCY DETECTION RULES:
 
 3. FALLBACK:
    - If no currency or account is mentioned, strictly use the user's home currency: "${homeCurrency}".
+   - NEVER guess or invent a currency. Text without any currency word (e.g. "beli hdmi 20.000") means the currency is "${homeCurrency}".
 
 4. SAME STORE VS DIFFERENT STORES:
    - Same place: 1 transaction with detailed "items" array [{ name, qty, unit, price }].
@@ -166,8 +149,10 @@ RULES FOR ITEM UNITS & QUANTITIES:
 
 RULES FOR ITEMS, TOTALS & MERCHANT:
 1. MERCHANT/STORE NAME:
-   - Jika pengguna tidak menyebutkan nama toko secara spesifik, JANGAN jadikan ucapan belanja seperti "beli sapi..." atau "jajan..." sebagai nama toko[cite: 21].
-   - Isi "merchant": null[cite: 22].
+   - "merchant" is ONLY a real store or brand name the user actually says (e.g. Alfamart, Indomaret, Tokopedia, JCO, Maybank).
+   - If the user only mentions the item bought (e.g. "beli hdmi", "beli charger", "jajan bakso"), set "merchant": null. Product names (HDMI, kabel, charger, mouse, keyboard, iPhone) are NEVER merchants.
+   - Generic words without a proper name (toko, kedai, warung, minimarket, supermarket) are NOT merchants: "merchant": null.
+   - JANGAN jadikan ucapan belanja seperti "beli sapi..." atau "jajan..." sebagai nama toko.
 
 2. ITEM PRICE CALCULATION (PENTING!):
    - Jika pengguna mengatakan "beli sapi dua ekor 5.000 ringgit", itu artinya TOTAL harga untuk 2 ekor sapi tersebut adalah 5000 (maka harga satuan per ekor adalah 2500)[cite: 21].
@@ -271,25 +256,18 @@ OUTPUT FORMAT (JSON ONLY):
         }
       }
 
-      // Filter nama merchant agar tidak mengambil kata ucapan belanja
-      let merchantName = tx?.merchant || null
-      if (merchantName && /^(beli|jajan|bayar|pesan|dapat|terima)\b/i.test(merchantName.trim())) {
-        merchantName = null
-      }
+      // Merchant cuma nama toko yang benar-benar disebut user; nama produk
+      // (HDMI, charger) dan kata generik (toko, warung) jadi null.
+      const merchantName = sanitizeMerchant(tx?.merchant, items)
 
-      // Mata uang yang diucapkan menimpa mata uang akun
-      let spokenCurrency = null
-      for (const cur of GLOBAL_CURRENCIES) {
-        if (cur.regex.test(text)) {
-          spokenCurrency = cur.code
-          break
-        }
-      }
-
-      const finalCurrency =
-        spokenCurrency ||
-        matchedAccountCurrency ||
-        (tx?.currency ? String(tx.currency).toUpperCase().slice(0, 3) : homeCurrency)
+      // Kata currency di teks menang, lalu mata uang akun. Tebakan currency
+      // dari Gemini tanpa bukti di teks asli dibuang supaya jatuh ke home currency.
+      const finalCurrency = sanitizeCurrency({
+        text,
+        txCurrency: tx?.currency,
+        accountCurrency: matchedAccountCurrency,
+        homeCurrency,
+      })
 
       let txType = ['expense', 'income', 'transfer'].includes(tx?.type) ? tx.type : 'expense'
       if (/gaji|salary|bonus|dapat\s*uang|terima\s*(uang|transfer)|income|pendapatan/i.test(text)) {
@@ -316,7 +294,7 @@ OUTPUT FORMAT (JSON ONLY):
         account_name: accountName,
         account_id: accountId,
         merchant: merchantName || (txType === 'income' ? 'Gaji' : null),
-        note: tx?.note || (items.length > 0 ? items.map((i) => i.name).join(', ') : text),
+        note: stripActionPrefix(tx?.note) || (items.length > 0 ? items.map((i) => i.name).join(', ') : stripActionPrefix(text)),
         items,
       }
     })
