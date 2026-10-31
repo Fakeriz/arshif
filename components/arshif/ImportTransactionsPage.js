@@ -135,6 +135,7 @@ export default function ImportTransactionsPage({ onClose }) {
   const mappingValid = () => {
     if (mapping.date < 0 || mapping.desc < 0) return false
     if (dirMode === 'split') return mapping.debit >= 0 && mapping.credit >= 0
+    if (dirMode === 'type_col') return mapping.amount >= 0 && mapping.type >= 0
     return mapping.amount >= 0
   }
 
@@ -463,6 +464,7 @@ export default function ImportTransactionsPage({ onClose }) {
     const show = role === 'date' || role === 'desc' || role === 'balance'
       || (dirMode === 'signed' && role === 'amount')
       || (dirMode === 'split' && (role === 'debit' || role === 'credit'))
+      || (dirMode === 'type_col' && (role === 'amount' || role === 'type'))
     if (!show) return null
     const colCount = Math.max(headers.length, ...aoa.map((r) => (r || []).length), 0)
     const sampleRow = aoa[0] || []
@@ -677,7 +679,8 @@ export default function ImportTransactionsPage({ onClose }) {
                 <p className="text-xs text-muted-foreground px-1 -mt-1 mb-2">{t('import_map_hint')}</p>
                 <MapRow role="date" label={t('import_col_date')} required />
                 <MapRow role="desc" label={t('import_col_desc')} required />
-                <MapRow role="amount" label={t('import_col_amount')} required={dirMode === 'signed'} />
+                <MapRow role="amount" label={t('import_col_amount')} required={dirMode === 'signed' || dirMode === 'type_col'} />
+                <MapRow role="type" label={t('import_col_type')} required={dirMode === 'type_col'} />
                 <MapRow role="debit" label={t('import_col_debit')} required={dirMode === 'split'} />
                 <MapRow role="credit" label={t('import_col_credit')} required={dirMode === 'split'} />
                 <MapRow role="balance" label={t('import_col_balance')} />
@@ -843,7 +846,7 @@ export default function ImportTransactionsPage({ onClose }) {
                           onClick={() => { setPickCatFor(r.idx); setCatSearch('') }}
                           className="flex-1 min-w-0 text-left"
                         >
-                          <p className="text-[15px] font-semibold truncate">{r.desc}</p>
+                          <p className="text-[15px] font-semibold truncate">{r.desc || t('import_no_desc')}</p>
                           <p className="text-[12px] text-muted-foreground mt-0.5 truncate">
                             <span className="inline-block h-1.5 w-1.5 rounded-full bg-current mr-1.5 align-middle" />
                             {t(`cat_${catOf(r)}`)}
@@ -871,7 +874,7 @@ export default function ImportTransactionsPage({ onClose }) {
                     {dupeRows.map((r) => (
                       <div key={r.idx} className={cn(card, 'p-3.5 flex items-center gap-3')}>
                         <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium truncate">{r.desc}</p>
+                          <p className="text-sm font-medium truncate">{r.desc || t('import_no_desc')}</p>
                           <p className="text-xs text-muted-foreground tabular-nums">{r.dateStr} · {r.dupInFile ? t('import_dup_infile') : t('import_dup_exists')}</p>
                         </div>
                         <p className="text-sm font-bold tabular-nums">

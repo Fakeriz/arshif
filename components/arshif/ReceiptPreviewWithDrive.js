@@ -124,7 +124,7 @@ export default function ReceiptPreviewWithDrive({
         {!imgError ? (
           <img
             src={currentImageSrc}
-            alt={merchantName ? `Struk ${merchantName}` : t('receipt_preview')}
+            alt={t('receipt_preview')}
             className="w-full h-full object-contain p-2 select-none"
             referrerPolicy="no-referrer"
             crossOrigin="anonymous"
@@ -155,7 +155,7 @@ export default function ReceiptPreviewWithDrive({
         <button
           type="button"
           onClick={handleEyeClick}
-          aria-label="Lihat gambar penuh"
+          aria-label={t('view_full_image')}
           className="absolute bottom-2.5 right-2.5 w-9 h-9 rounded-full bg-black/75 hover:bg-black text-white flex items-center justify-center backdrop-blur-md shadow-md transition-all active:scale-95 cursor-pointer z-20"
           data-testid="receipt-preview-eye-btn"
         >

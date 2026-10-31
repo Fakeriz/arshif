@@ -5,6 +5,7 @@ import { cva } from "class-variance-authority";
 import { PanelLeft } from "lucide-react"
 
 import { useIsMobile } from "@/hooks/use-mobile"
+import { useApp } from "@/components/arshif/context"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -227,7 +228,9 @@ const Sidebar = React.forwardRef((
 })
 Sidebar.displayName = "Sidebar"
 
-const SidebarTrigger = React.forwardRef(({ className, onClick, toggleLabel = "Toggle Sidebar", ...props }, ref) => {
+const SidebarTrigger = React.forwardRef(({ className, onClick, toggleLabel, ...props }, ref) => {
+  const { t } = useApp()
+  const label = toggleLabel ?? t?.('toggle_sidebar') ?? 'Toggle Sidebar'
   const { toggleSidebar } = useSidebar()
 
   return (
@@ -243,23 +246,25 @@ const SidebarTrigger = React.forwardRef(({ className, onClick, toggleLabel = "To
       }}
       {...props}>
       <PanelLeft />
-      <span className="sr-only">{toggleLabel}</span>
+      <span className="sr-only">{label}</span>
     </Button>
   );
 })
 SidebarTrigger.displayName = "SidebarTrigger"
 
-const SidebarRail = React.forwardRef(({ className, toggleLabel = "Toggle Sidebar", ...props }, ref) => {
+const SidebarRail = React.forwardRef(({ className, toggleLabel, ...props }, ref) => {
+  const { t } = useApp()
+  const label = toggleLabel ?? t?.('toggle_sidebar') ?? 'Toggle Sidebar'
   const { toggleSidebar } = useSidebar()
 
   return (
     <button
       ref={ref}
       data-sidebar="rail"
-      aria-label={toggleLabel}
+      aria-label={label}
       tabIndex={-1}
       onClick={toggleSidebar}
-      title={toggleLabel}
+      title={label}
       className={cn(
         "absolute inset-y-0 z-20 hidden w-4 -translate-x-1/2 transition-all ease-linear after:absolute after:inset-y-0 after:left-1/2 after:w-[2px] hover:after:bg-sidebar-border group-data-[side=left]:-right-4 group-data-[side=right]:left-0 sm:flex",
         "[[data-side=left]_&]:cursor-w-resize [[data-side=right]_&]:cursor-e-resize",

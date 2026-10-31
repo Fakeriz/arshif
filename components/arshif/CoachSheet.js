@@ -276,7 +276,7 @@ export default function CoachSheet({ open, onClose }) {
       title={
         <span className="flex items-center justify-center gap-2">
           <video src="/coach-avatar-anim.mp4" autoPlay muted loop playsInline className="h-7 w-7 rounded-full object-cover" />
-          <span className="text-base font-extrabold tracking-tight">{t('ai_coach')}</span>
+          <span className="text-base font-extrabold tracking-tight truncate">{t('ai_coach')}</span>
           <span className="text-[9px] font-bold tracking-wider text-emerald-500 bg-emerald-500/10 rounded-full px-1.5 py-0.5">{t('coach_new')}</span>
         </span>
       }

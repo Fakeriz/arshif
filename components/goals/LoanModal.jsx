@@ -842,7 +842,7 @@ export default function LoanModal({
                       <>
                         <img
                           src={coverPhoto}
-                          alt="Cover"
+                          alt={t('cover_preview')}
                           className="w-full h-full object-cover absolute inset-0"
                         />
                         <div className="absolute inset-0 bg-black/40 flex items-center justify-center gap-2">

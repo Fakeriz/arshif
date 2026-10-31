@@ -447,7 +447,7 @@ export default function AccountSupportSection() {
                   {filePreview ? (
                     <img
                       src={filePreview}
-                      alt="Preview"
+                      alt={t('receipt_preview')}
                       className="w-14 h-14 object-cover rounded-xl border border-border/50 shrink-0"
                     />
                   ) : (

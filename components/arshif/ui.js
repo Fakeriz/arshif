@@ -188,7 +188,7 @@ export function Field({ label, children, className }) {
   )
 }
 
-export function formatDateLabel(val, placeholder = 'Pilih Tanggal') {
+export function formatDateLabel(val, placeholder = 'Pilih tanggal') {
   if (!val) return placeholder
   try {
     const raw = String(val).split('T')[0]
@@ -216,7 +216,7 @@ export function DatePickerInput({
   label,
   className,
   disabled = false,
-  placeholder = 'Pilih Tanggal',
+  placeholder,
   min,
   max,
   clearable = false,
@@ -224,9 +224,13 @@ export function DatePickerInput({
   id,
   'data-testid': dataTestId,
 }) {
+  // Komponen di dalam context arshif; fallback teks untuk luar context
+  const app = typeof useApp === 'function' ? useApp() : null
+  const tFn = app?.t
+  const resolvedPlaceholder = placeholder !== undefined ? placeholder : (tFn ? tFn('select_date') : 'Pilih tanggal')
   const displayDate = useMemo(() => {
-    return formatDateLabel(value, placeholder)
-  }, [value, placeholder])
+    return formatDateLabel(value, resolvedPlaceholder)
+  }, [value, resolvedPlaceholder])
 
   return (
     <div className={cn('space-y-1.5 w-full', className)}>
@@ -290,7 +294,9 @@ export function DatePickerInput({
 
 export function TextInput({ className, type, ...props }) {
   if (type === 'date' || type === 'datetime-local') {
-    const display = formatDateLabel(props.value, props.placeholder || 'Pilih tanggal')
+    const app = useApp()
+    const ph = props.placeholder !== undefined ? props.placeholder : (app?.t ? app.t('select_date') : 'Pilih tanggal')
+    const display = formatDateLabel(props.value, ph)
     return (
       <div
         className={cn(
@@ -334,7 +340,7 @@ export function DateSelector({
   value,
   onChange,
   displayValue,
-  placeholder = 'Pilih tanggal',
+  placeholder,
   type = 'date',
   className,
   clearable = false,
@@ -342,6 +348,9 @@ export function DateSelector({
   disabled = false,
   ...props
 }) {
+  // Komponen di dalam context arshif; fallback teks untuk luar context
+  const app = useApp()
+  const ph = placeholder !== undefined ? placeholder : (app?.t ? app.t('select_date') : 'Pilih tanggal')
   return (
     <div
       className={cn(
@@ -357,7 +366,7 @@ export function DateSelector({
           value ? 'text-foreground' : 'text-muted-foreground/60 font-medium'
         )}
       >
-        {displayValue || value || placeholder}
+        {displayValue || value || ph}
       </span>
       {clearable && value && (
         <button
@@ -368,7 +377,7 @@ export function DateSelector({
           }}
           className="text-xs text-muted-foreground hover:text-foreground p-1 z-20 shrink-0 cursor-pointer"
         >
-          Clear
+          {app?.t ? app.t('clear', 'Clear') : 'Clear'}
         </button>
       )}
       <input
