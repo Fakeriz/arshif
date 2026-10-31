@@ -165,7 +165,7 @@ export default function BillsTrackerSheet({ open, onClose }) {
           })
 
           if (!isDuplicate) {
-            const billTitle = b.name || b.title || 'Tagihan'
+            const billTitle = b.name || b.title || t('bills')
             const currentIso = new Date().toISOString()
             const txCurrency = b.currency || home || 'USD'
             const rate = getRate(txCurrency, home, rates)

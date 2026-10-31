@@ -315,7 +315,7 @@ export default function NotificationsSheet({ open, onClose }) {
 
                     {isClickable && (
                       <div className="mt-2.5 flex items-center gap-1 text-[11px] font-semibold text-foreground group-hover:underline">
-                        <span>{n.action === 'bills' ? 'Buka Tagihan' : 'Buka Tab Goals'}</span>
+                        <span>{n.action === 'bills' ? t('notif_open_bills') : t('notif_open_goals')}</span>
                         <ChevronRight size={13} strokeWidth={2} />
                       </div>
                     )}
@@ -326,7 +326,7 @@ export default function NotificationsSheet({ open, onClose }) {
                     type="button"
                     onClick={(e) => dismissNotification(e, n.id)}
                     className="absolute top-3.5 right-3.5 h-6 w-6 rounded-lg text-muted-foreground hover:text-foreground flex items-center justify-center hover:bg-muted/50 transition-colors"
-                    aria-label="Tutup notifikasi"
+                    aria-label={t('notif_dismiss')}
                   >
                     <X size={14} />
                   </button>
