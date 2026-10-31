@@ -412,7 +412,7 @@ export default function BillsTrackerSheet({ open, onClose }) {
             type="button"
             onClick={() => shiftMonth(-1)}
             className="h-9 w-9 rounded-full bg-white dark:bg-zinc-700/80 text-zinc-700 dark:text-zinc-200 shadow-sm flex items-center justify-center transition-all active:scale-95 hover:bg-zinc-50 cursor-pointer"
-            aria-label="previous month"
+            aria-label={t('prev_month')}
             data-testid="bills-prev"
           >
             <ChevronLeft size={18} />
@@ -427,7 +427,7 @@ export default function BillsTrackerSheet({ open, onClose }) {
             type="button"
             onClick={() => shiftMonth(1)}
             className="h-9 w-9 rounded-full bg-white dark:bg-zinc-700/80 text-zinc-700 dark:text-zinc-200 shadow-sm flex items-center justify-center transition-all active:scale-95 hover:bg-zinc-50 cursor-pointer"
-            aria-label="next month"
+            aria-label={t('next_month')}
             data-testid="bills-next"
           >
             <ChevronRight size={18} />
@@ -663,13 +663,13 @@ export default function BillsTrackerSheet({ open, onClose }) {
 
           <div className="grid grid-cols-2 gap-3">
             <DatePickerInput
-              label="Mulai Dari (Opsional)"
+              label={t('date_from_optional')}
               value={startsFrom}
               onChange={setStartsFrom}
               clearable
             />
             <DatePickerInput
-              label="Berakhir Setelah (Opsional)"
+              label={t('date_to_optional')}
               value={endsAfter}
               onChange={setEndsAfter}
               clearable
@@ -817,13 +817,13 @@ export default function BillsTrackerSheet({ open, onClose }) {
 
           <div className="grid grid-cols-2 gap-3">
             <DatePickerInput
-              label="Mulai Dari (Opsional)"
+              label={t('date_from_optional')}
               value={editStartsFrom}
               onChange={setEditStartsFrom}
               clearable
             />
             <DatePickerInput
-              label="Berakhir Setelah (Opsional)"
+              label={t('date_to_optional')}
               value={editEndsAfter}
               onChange={setEditEndsAfter}
               clearable

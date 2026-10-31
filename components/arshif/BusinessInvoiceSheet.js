@@ -206,7 +206,7 @@ export default function BusinessInvoiceSheet({ open, onClose }) {
                     </div>
                     <div className="text-right shrink-0">
                       <p className="font-extrabold tabular-nums text-[15px]">{fmt(invoiceTotal(inv), inv?.currency || home)}</p>
-                      <button type="button" onClick={() => remove(inv?.id)} className="text-muted-foreground mt-1 inline-flex" aria-label="delete"><Trash2 size={14} /></button>
+                      <button type="button" onClick={() => remove(inv?.id)} className="text-muted-foreground mt-1 inline-flex" aria-label={t('delete')}><Trash2 size={14} /></button>
                     </div>
                   </div>
                   <div className="flex gap-2 mt-3">
@@ -275,7 +275,7 @@ export default function BusinessInvoiceSheet({ open, onClose }) {
                 <div key={it.id} className="rounded-xl bg-zinc-100 border border-zinc-200/60 dark:bg-[#141416] dark:border-white/5 p-3 space-y-2">
                   <div className="flex items-center gap-2">
                     <TextInput value={it.desc} onChange={(e) => updItem(it.id, { desc: e.target.value })} placeholder={t('bi_desc')} className="flex-1" data-testid="bi-item-desc" />
-                    {(items || []).length > 1 ? <button type="button" onClick={() => delItem(it.id)} className="text-muted-foreground shrink-0" aria-label="remove item"><X size={16} /></button> : null}
+                    {(items || []).length > 1 ? <button type="button" onClick={() => delItem(it.id)} className="text-muted-foreground shrink-0" aria-label={t('remove_item')}><X size={16} /></button> : null}
                   </div>
                   <div className="flex gap-2">
                     <div className="w-20"><TextInput type="text" inputMode="decimal" value={it.qty} onChange={(e) => updItem(it.id, { qty: sanitizeAmount(e.target.value) })} placeholder={t('bi_qty')} /></div>

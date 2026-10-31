@@ -52,7 +52,7 @@ export default function NewPasswordSheet({ onDone }) {
         <form onSubmit={submit} className="space-y-3">
           <div className="relative">
             <TextInput type={show ? 'text' : 'password'} autoComplete="new-password" placeholder={t('new_password')} value={password} onChange={(e) => setPassword(e.target.value)} className="pr-12" data-testid="new-password" />
-            <button type="button" onClick={() => setShow(!show)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground p-1" aria-label="toggle password">
+            <button type="button" onClick={() => setShow(!show)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground p-1" aria-label={t('toggle_password')}>
               {show ? <EyeOff size={18} /> : <Eye size={18} />}
             </button>
           </div>

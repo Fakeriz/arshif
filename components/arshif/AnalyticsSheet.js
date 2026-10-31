@@ -338,7 +338,7 @@ export default function AnalyticsSheet({ open, onClose }) {
               onClick={handleExportCsv}
               className="h-8 w-8 rounded-full bg-muted/60 border border-border/50 flex items-center justify-center text-foreground hover:bg-muted active:scale-95 transition-all cursor-pointer"
               title={t('analytics_export_csv')}
-              aria-label="Ekspor CSV"
+              aria-label={t('export_csv')}
             >
               <Download size={14} />
             </button>
@@ -346,7 +346,7 @@ export default function AnalyticsSheet({ open, onClose }) {
               type="button"
               onClick={handleShare}
               className="h-8 w-8 rounded-full bg-muted/60 border border-border/50 flex items-center justify-center text-foreground hover:bg-muted active:scale-95 transition-all cursor-pointer"
-              aria-label="Bagikan laporan"
+              aria-label={t('share_report')}
             >
               <Share2 size={14} />
             </button>
@@ -386,7 +386,7 @@ export default function AnalyticsSheet({ open, onClose }) {
             type="button"
             onClick={handlePrev}
             className="h-9 w-9 rounded-xl flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors cursor-pointer"
-            aria-label="Periode sebelumnya"
+            aria-label={t('prev_period')}
           >
             <ChevronLeft size={20} />
           </button>
@@ -397,7 +397,7 @@ export default function AnalyticsSheet({ open, onClose }) {
             type="button"
             onClick={handleNext}
             className="h-9 w-9 rounded-xl flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors cursor-pointer"
-            aria-label="Periode berikutnya"
+            aria-label={t('next_period')}
           >
             <ChevronRight size={20} />
           </button>

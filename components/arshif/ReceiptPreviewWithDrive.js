@@ -124,7 +124,7 @@ export default function ReceiptPreviewWithDrive({
         {!imgError ? (
           <img
             src={currentImageSrc}
-            alt={merchantName ? `Struk ${merchantName}` : 'Receipt preview'}
+            alt={merchantName ? `Struk ${merchantName}` : t('receipt_preview')}
             className="w-full h-full object-contain p-2 select-none"
             referrerPolicy="no-referrer"
             crossOrigin="anonymous"

@@ -297,7 +297,7 @@ export default function NewSavingsGoalModal({
                     <>
                       <img
                         src={coverPhoto}
-                        alt="Cover Preview"
+                        alt={t('cover_preview')}
                         className="w-full h-full object-cover absolute inset-0"
                       />
                       <div className="absolute inset-0 bg-black/35 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2 p-3">
@@ -428,7 +428,7 @@ export default function NewSavingsGoalModal({
               </div>
 
                             <DatePickerInput
-                label="Deadline (optional)"
+                label={t('deadline_optional')}
                 value={deadline}
                 onChange={(val) => {
                   setDeadline(val)

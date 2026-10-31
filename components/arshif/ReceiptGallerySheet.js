@@ -491,7 +491,7 @@ export default function ReceiptGallerySheet({ open, onClose, onOpenScanner }) {
               </button>
               <img
                 src={previewImage}
-                alt="Receipt preview"
+                alt={t('receipt_preview')}
                 referrerPolicy="no-referrer"
                 crossOrigin="anonymous"
                 className="max-h-[85dvh] max-w-full object-contain rounded-xl select-none"

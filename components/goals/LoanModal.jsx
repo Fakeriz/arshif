@@ -814,7 +814,7 @@ export default function LoanModal({
 
                 {/* Tanggal Pembayaran Pertama */}
                 <DatePickerInput
-                  label="Tanggal Pembayaran Pertama"
+                  label={t('loan_first_payment')}
                   value={firstPaymentDate}
                   onChange={setFirstPaymentDate}
                 />

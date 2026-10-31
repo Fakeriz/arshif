@@ -142,7 +142,7 @@ export default function SwipeTransactionRow({
             onEdit?.(tx)
           }}
           className="w-9 h-9 rounded-xl bg-muted/70 text-foreground flex items-center justify-center active:scale-90 transition-transform shadow-xs cursor-pointer"
-          aria-label="edit transaction"
+          aria-label={t('a11y_edit_tx')}
           data-testid="tx-swipe-edit"
         >
           <Pencil size={16} strokeWidth={2} />
@@ -154,7 +154,7 @@ export default function SwipeTransactionRow({
             onDelete?.(tx)
           }}
           className="w-9 h-9 rounded-xl bg-rose-500 text-white flex items-center justify-center active:scale-90 transition-transform shadow-xs cursor-pointer"
-          aria-label="delete transaction"
+          aria-label={t('a11y_delete_tx')}
           data-testid="tx-swipe-delete"
         >
           <Trash2 size={16} strokeWidth={2} />

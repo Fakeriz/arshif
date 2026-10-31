@@ -118,7 +118,7 @@ export default function SwipeBillRow({
                 ? 'bg-emerald-500 border-emerald-500 text-white shadow-sm'
                 : 'border-zinc-300 dark:border-zinc-700 hover:border-emerald-500 text-transparent'
             )}
-            aria-label="toggle bill paid"
+            aria-label={t('toggle_bill_paid')}
             data-testid="bill-toggle"
           >
             {isPaid ? <Check size={16} strokeWidth={3} /> : null}

@@ -115,7 +115,7 @@ export default function Login({ onGuest }) {
           <TextInput type="email" autoComplete="email" placeholder={t('email')} value={email} onChange={(e) => setEmail(e.target.value)} data-testid="login-email" />
           <div className="relative">
             <TextInput type={show ? 'text' : 'password'} autoComplete={isSignup ? 'new-password' : 'current-password'} placeholder={t('password')} value={password} onChange={(e) => setPassword(e.target.value)} className="pr-12" data-testid="login-password" />
-            <button type="button" onClick={() => setShow(!show)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground p-1" aria-label="toggle password">
+            <button type="button" onClick={() => setShow(!show)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground p-1" aria-label={t('toggle_password')}>
               {show ? <EyeOff size={18} /> : <Eye size={18} />}
             </button>
           </div>

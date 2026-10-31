@@ -263,7 +263,7 @@ export default function PostpaidPlanModal({
 
               {/* Field Form: Tanggal Pembayaran Pertama */}
               <DatePickerInput
-                label="Tanggal Tagihan / Pembayaran Pertama"
+                label={t('bill_first_payment')}
                 value={firstPaymentDate}
                 onChange={(val) => {
                   setFirstPaymentDate(val)

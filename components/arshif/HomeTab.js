@@ -215,7 +215,7 @@ export function TotalBalanceCard() {
             type="button"
             onClick={() => setHideBalance(!hideBalance)}
             className="text-white/50 hover:text-white transition-colors cursor-pointer select-none focus:outline-none p-0 bg-transparent border-0 flex items-center justify-center"
-            aria-label="toggle balance"
+            aria-label={t('toggle_balance')}
           >
             {hideBalance ? <EyeOff size={13} strokeWidth={1.75} /> : <Eye size={13} strokeWidth={1.75} />}
           </button>
