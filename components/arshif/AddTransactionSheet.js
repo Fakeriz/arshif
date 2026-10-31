@@ -171,7 +171,7 @@ export default function AddTransactionSheet({ open, isOpen: propIsOpen, onClose,
       onClose?.()
       toast.success(t('saved_msg'))
 
-      // Data URL struk masuk tx.receipt_cache (kolom DB) lewat create/update —
+      // Data URL struk masuk tx.receipt_cache (kolom DB) lewat create/update -
       // ikut sinkron antar-perangkat, bukan localStorage.
       if (receipt?.dataUrl && receipt.dataUrl.startsWith('data:') && !tx.receipt_cache) {
         tx.receipt_cache = receipt.dataUrl

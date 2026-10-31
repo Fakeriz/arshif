@@ -98,7 +98,7 @@ export default function App() {
       .catch(() => {})
       .finally(() => { if (active) setBooting(false) })
     const { data: listener } = supabase.auth.onAuthStateChange((_e, next) => {
-      // Password recovery link opened — show the "Set new password" screen instead of Home.
+      // Password recovery link opened - show the "Set new password" screen instead of Home.
       if (_e === 'PASSWORD_RECOVERY') { setRecovery(true); setSession(next || null); return }
       setSession(next || null)
       if (next?.user) { setIsGuest(false); try { localStorage.removeItem(GUEST_KEY) } catch {} }

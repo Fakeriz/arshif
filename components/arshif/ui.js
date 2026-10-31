@@ -563,7 +563,7 @@ export function CloseButton({ onClick }) {
   )
 }
 
-// Local React Error Boundary — prevents a single bad tab from crashing the whole app.
+// Local React Error Boundary - prevents a single bad tab from crashing the whole app.
 export class ErrorBoundary extends Component {
   constructor(props) {
     super(props)

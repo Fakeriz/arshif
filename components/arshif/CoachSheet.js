@@ -193,7 +193,7 @@ export default function CoachSheet({ open, onClose }) {
       list.push(pick(lang === 'id' ? `Bagaimana aku mengejar target "${behind.name}"?` : lang === 'ms' ? `Macam mana nak kejar matlamat "${behind.name}"?` : lang === 'tr' ? `"${behind.name}" hedefimi nasıl yakalarım?` : `How do I catch up on my "${behind.name}" goal?`))
     }
     if (context.savingsRate !== null && context.savingsRate < 20) {
-      list.push(pick(lang === 'id' ? 'Rasio tabunganku rendah, apa yang harus dipotong?' : lang === 'ms' ? 'Kadar simpanan saya rendah, apa perlu dipotong?' : lang === 'tr' ? 'Tasarruf oranım düşük, neyi kısmalıyım?' : 'My savings rate is low — what should I cut?'))
+      list.push(pick(lang === 'id' ? 'Rasio tabunganku rendah, apa yang harus dipotong?' : lang === 'ms' ? 'Kadar simpanan saya rendah, apa perlu dipotong?' : lang === 'tr' ? 'Tasarruf oranım düşük, neyi kısmalıyım?' : 'My savings rate is low - what should I cut?'))
     }
     list.push(
       lang === 'id' ? 'Analisa pengeluaranku bulan ini' : lang === 'ms' ? 'Analisa perbelanjaan saya bulan ini' : lang === 'tr' ? 'Bu ayki harcamalarımı analiz et' : 'Analyze my spending this month',

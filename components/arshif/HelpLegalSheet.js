@@ -6,7 +6,7 @@ import { useApp } from './context'
 import { Sheet } from './ui'
 import { cn } from '@/lib/utils'
 
-// Support email — placeholder until the team confirms the public address.
+// Support email - placeholder until the team confirms the public address.
 export const SUPPORT_EMAIL = 'support@arshif.biz.id'
 
 const FAQ_ITEMS = [

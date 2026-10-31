@@ -205,7 +205,7 @@ export default function GoalsTab() {
     return (budgets || []).reduce((sum, b) => sum + (safeConvert(Number(b?.limit_amount) || 0, b?.currency || home, home, rates) ?? (Number(b?.limit_amount) || 0)), 0)
   }, [budgets, home, rates])
 
-  // Isolasi savings murni — pinjaman/hutang/cicilan tidak pernah ikut dihitung
+  // Isolasi savings murni - pinjaman/hutang/cicilan tidak pernah ikut dihitung
   const savingsGoals = useMemo(() => {
     return (goals || []).filter((g) => {
       if (!g) return false
@@ -300,7 +300,7 @@ export default function GoalsTab() {
       setFundAccount('')
       await refresh()
       if (txWarning) {
-        toast.warning(`${t('saved_msg') || 'Dana ditambahkan'} — transaksi gagal dicatat: ${txWarning}`)
+        toast.warning(`${t('saved_msg') || 'Dana ditambahkan'} - transaksi gagal dicatat: ${txWarning}`)
       } else {
         toast.success(t('saved_msg') || 'Dana ditambahkan')
       }
@@ -479,7 +479,7 @@ export default function GoalsTab() {
                         </p>
                         {b.projectedOver ? (
                           <p className="text-[11px] font-medium text-rose-500 mt-0.5">
-                            {t('budget_projected', 'Projected')} {fmt(Math.round(b.projectedSpend), home)} {t('budget_projected_over', 'by month end — over limit')}
+                            {t('budget_projected', 'Projected')} {fmt(Math.round(b.projectedSpend), home)} {t('budget_projected_over', 'by month end - over limit')}
                           </p>
                         ) : null}
                       </div>

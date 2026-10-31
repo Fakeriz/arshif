@@ -10,26 +10,26 @@ const manrope = Manrope({
 
 export const metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'),
-  title: 'Arshif — Personal & Business Finance',
+  title: 'Arshif - Personal & Business Finance',
   description: 'Multi-currency personal and business finance tracker with AI receipt scanning, voice log, debts, and bills tracking.',
   manifest: '/manifest.json',
   appleWebApp: { capable: true, statusBarStyle: 'black-translucent', title: 'Arshif' },
   icons: { icon: '/icon-192.png', apple: '/apple-touch-icon.png' },
   openGraph: {
-    title: 'Arshif — Personal & Business Finance',
+    title: 'Arshif - Personal & Business Finance',
     description: 'Multi-currency personal and business finance tracker with AI receipt scanning, voice log, debts, and bills tracking.',
     images: [
       {
         url: '/og-image.jpg',
         width: 1200,
         height: 630,
-        alt: 'Arshif — Personal & Business Finance',
+        alt: 'Arshif - Personal & Business Finance',
       },
     ],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Arshif — Personal & Business Finance',
+    title: 'Arshif - Personal & Business Finance',
     description: 'Multi-currency personal and business finance tracker with AI receipt scanning, voice log, debts, and bills tracking.',
     images: ['/og-image.jpg'],
   },

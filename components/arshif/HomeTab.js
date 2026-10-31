@@ -16,13 +16,13 @@ import { supabase } from '@/lib/supabase'
 import { APP_VERSION } from '@/lib/version'
 
 export function safeFormatDate(d, locale = 'en-GB', options = { weekday: 'short', day: 'numeric', month: 'short' }) {
-  if (!d) return '—'
+  if (!d) return '-'
   try {
     const x = typeof d === 'string' || typeof d === 'number' ? new Date(d) : d
-    if (isNaN(x.getTime())) return '—'
+    if (isNaN(x.getTime())) return '-'
     return x.toLocaleDateString(locale, options)
   } catch {
-    return '—'
+    return '-'
   }
 }
 
@@ -201,7 +201,7 @@ export function TotalBalanceCard() {
       className="h-full w-full rounded-2xl p-5 sm:p-6 relative overflow-hidden flex flex-col justify-between select-none text-white border border-white/10 bg-gradient-to-br from-[#151518] via-[#0c0c0e] to-[#08080a]"
       data-testid="balance-card"
     >
-      {/* Depth: sheen diagonal + hairline highlight atas — cahaya radial dihapus agar tidak melebihi dose cap glow (R-13) */}
+      {/* Depth: sheen diagonal + hairline highlight atas - cahaya radial dihapus agar tidak melebihi dose cap glow (R-13) */}
       <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/[0.03] to-white/[0.07] pointer-events-none" />
       <div className="absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent via-white/25 to-transparent pointer-events-none" />
 
@@ -269,7 +269,7 @@ function BalanceCarousel() {
   const goTo = useCallback((i) => setIdx(Math.max(0, Math.min(i, totalSlides - 1))), [totalSlides])
 
   // Slide di-memo agar identitas stabil. AccountDeck menyinkronkan berbasis ID,
-  // bukan identitas array — re-render parent tidak me-reset posisi kartu.
+  // bukan identitas array - re-render parent tidak me-reset posisi kartu.
   const slides = useMemo(
     () => [
       {

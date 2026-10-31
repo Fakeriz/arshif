@@ -20,7 +20,7 @@ export function EmvChip({ className = '', isLight = false }) {
     <div
       className={cn(
         'w-8 h-6 rounded-md relative overflow-hidden shrink-0 select-none shadow-xs',
-        'bg-gradient-to-br from-amber-300 via-amber-400 to-amber-600 border border-amber-500/80', /* Amber gradien purposeful: meniru warna emas/kuning kartu debit fisik — identity motif produk (R-01) */
+        'bg-gradient-to-br from-amber-300 via-amber-400 to-amber-600 border border-amber-500/80', /* Amber gradien purposeful: meniru warna emas/kuning kartu debit fisik - identity motif produk (R-01) */
         className
       )}
     >
@@ -276,7 +276,7 @@ export function BankCard({
         <div className="flex items-start justify-between gap-3 relative z-10 w-full">
           <div className="flex flex-col items-start min-w-0">
             <p className={cn('text-xs sm:text-sm font-bold uppercase tracking-[0.2em] truncate leading-tight', titleCls)}>
-              {name || '—'}
+              {name || '-'}
             </p>
             <span className={cn('text-[9px] font-bold uppercase tracking-[0.26em] mt-0 opacity-80', subCls)}>
               {typeLabel || 'BANK'}
@@ -308,7 +308,7 @@ export function BankCard({
           <div className="flex items-start justify-between gap-3 relative z-10 w-full">
             <div className="flex flex-col items-start min-w-0">
               <p className={cn('text-xs sm:text-sm font-bold uppercase tracking-[0.2em] truncate leading-tight', titleCls)}>
-                {name || '—'}
+                {name || '-'}
               </p>
               <span className={cn('text-[9px] font-bold uppercase tracking-[0.26em] mt-0 opacity-80', subCls)}>
                 {typeLabel || 'BANK'}

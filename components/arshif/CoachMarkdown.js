@@ -2,7 +2,7 @@
 import { useMemo } from 'react'
 
 // Renderer markdown ringan khusus jawaban AI Financial Coach.
-// Aman: tanpa dangerouslySetInnerHTML — semua teks jadi React text node,
+// Aman: tanpa dangerouslySetInnerHTML - semua teks jadi React text node,
 // lalu **bold**, *italic*, bullet list, numbered list, dan heading di-parse manual.
 function renderInline(text, prefix) {
   const out = []

@@ -23,13 +23,13 @@ function dayKey(d) {
 }
 
 export function safeFormatDate(d, locale = 'en-GB', options = { weekday: 'short', day: 'numeric', month: 'short' }) {
-  if (!d) return '—'
+  if (!d) return '-'
   try {
     const x = typeof d === 'string' || typeof d === 'number' ? new Date(d) : d
-    if (isNaN(x.getTime())) return '—'
+    if (isNaN(x.getTime())) return '-'
     return x.toLocaleDateString(locale, options)
   } catch {
-    return '—'
+    return '-'
   }
 }
 
@@ -89,7 +89,7 @@ function TransactionsContent() {
   const today = dayKey(new Date())
   const yesterday = dayKey(new Date(Date.now() - 86400000))
 
-  // Safe label — never crashes on null / invalid dates.
+  // Safe label - never crashes on null / invalid dates.
   const labelFor = (k) => {
     if (!k || k === 'unknown') return t('recent') !== 'recent' ? t('recent') : 'Recent'
     if (k === today) return t('today')

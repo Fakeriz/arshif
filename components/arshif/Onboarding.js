@@ -9,7 +9,7 @@ import { cn } from '@/lib/utils'
 import { Mic, Receipt, Globe2 } from 'lucide-react'
 
 function Illustration({ step, t, lang }) {
-  // Abstract monochrome card illustrations — konten demo mengikuti bahasa aktif
+  // Abstract monochrome card illustrations - konten demo mengikuti bahasa aktif
   const demo = ONBOARD_DEMO[lang] || ONBOARD_DEMO.en
   if (step === 0) {
     return (

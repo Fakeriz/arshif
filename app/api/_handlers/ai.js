@@ -353,11 +353,11 @@ async function handleCoach(request, quota = null) {
     const fallbackLang = langNames[body?.language] || 'Bahasa Indonesia'
 
     const systemInstruction = `Kamu adalah Arshif AI Financial Coach: asisten keuangan pribadi yang praktis, ringkas, dan solutif.
-ATURAN BAHASA (wajib dipatuhi): selalu jawab dalam bahasa yang SAMA dengan pesan terakhir dari user. Deteksi bahasanya dari pesan terakhir itu — contoh: user bertanya dalam English, jawab dalam English; user bertanya dalam Bahasa Melayu, jawab dalam Bahasa Melayu. Jika bahasanya tidak bisa dikenali, jawab dalam ${fallbackLang}.
+ATURAN BAHASA (wajib dipatuhi): selalu jawab dalam bahasa yang SAMA dengan pesan terakhir dari user. Deteksi bahasanya dari pesan terakhir itu - contoh: user bertanya dalam English, jawab dalam English; user bertanya dalam Bahasa Melayu, jawab dalam Bahasa Melayu. Jika bahasanya tidak bisa dikenali, jawab dalam ${fallbackLang}.
 
 CARA MENJAWAB:
 - Gunakan poin-poin padat (maksimal 200 kata).
-- Selalu kutip angka konkret dari konteks (saldo, pemasukan, pengeluaran, persentase anggaran, nominal goal) — jangan jawab generik.
+- Selalu kutip angka konkret dari konteks (saldo, pemasukan, pengeluaran, persentase anggaran, nominal goal) - jangan jawab generik.
 - Jika ada anggaran dengan pct >= 80, warnai sebagai risiko. Jika ada goal berstatus behind/overdue, sarankan langkah mengejar target. Jika savingsRate rendah, sarankan pos yang bisa dipotong.
 - Akhiri dengan 1-2 tindakan konkret yang bisa dilakukan bulan ini.
 - Jangan mengarang data yang tidak ada di konteks.
@@ -453,7 +453,7 @@ CRITICAL RULES:
 6. Skip non-transaction rows: headers, subtotals, page footers, brought-forward balances, blank rows.
 7. List transactions in the order printed. Extract ALL of them, including all pages.
 8. All monetary amounts must be plain numbers without currency symbols or thousand separators.
-9. "currency": detect it from the statement itself — bank name, currency symbols, and amount scale. "Rp" means IDR, "RM" means MYR, "€" means EUR, "£" means GBP. Indonesian banks (BCA, Mandiri, BRI, BNI, Jago, SeaBank, CIMB Niaga, Danamon, etc.) use IDR — never return MYR for an Indonesian statement. If genuinely unclear, return null.`
+9. "currency": detect it from the statement itself - bank name, currency symbols, and amount scale. "Rp" means IDR, "RM" means MYR, "€" means EUR, "£" means GBP. Indonesian banks (BCA, Mandiri, BRI, BNI, Jago, SeaBank, CIMB Niaga, Danamon, etc.) use IDR - never return MYR for an Indonesian statement. If genuinely unclear, return null.`
 
 async function handleStatementPdf(request, quota = null) {
   try {
@@ -611,7 +611,7 @@ async function handleOcr(request, quota = null) {
     const total = rawTotal > 0 ? rawTotal : calculatedTotal
 
     // Validasi: jumlah item (setelah potongan) harus mendekati total struk.
-    // Mismatch berarti OCR kelewat potongan/harga — kirim flag ke client
+    // Mismatch berarti OCR kelewat potongan/harga - kirim flag ke client
     // supaya user bisa periksa, jangan diam-diam salah hitung.
     const validation = validateReceiptTotals({
       items: allItems,

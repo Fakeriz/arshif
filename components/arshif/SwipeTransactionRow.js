@@ -7,7 +7,7 @@ import { CategoryIcon } from './ui'
 import { getCurrency } from '@/lib/currencies'
 import { cn } from '@/lib/utils'
 
-// Safe time/date formatting — never throws on null/invalid values.
+// Safe time/date formatting - never throws on null/invalid values.
 const safeTime = (dateStr, locale) => {
   if (!dateStr) return ''
   try {

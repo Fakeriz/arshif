@@ -16,7 +16,7 @@ import { convert, getRate } from '@/lib/rates'
 import { cn } from '@/lib/utils'
 import { sanitizeAmount } from '@/lib/amount'
 
-// Country filter tabs — Order: [All] -> [Indonesia] -> [Turkey] -> [Malaysia]
+// Country filter tabs - Order: [All] -> [Indonesia] -> [Turkey] -> [Malaysia]
 const COUNTRY_TABS = [
   { id: 'all', labelKey: 'all', defaultLabel: 'All' },
   { id: 'id', labelKey: 'indonesia', defaultLabel: 'Indonesia' },
@@ -45,7 +45,7 @@ const ICON_MAP = {
 // Adaptive input styling: light grey on light mode, obsidian on dark mode.
 const INPUT_CLS = 'w-full bg-zinc-100 dark:bg-[#1c1c1e] border border-zinc-200 dark:border-white/10 text-zinc-950 dark:text-white placeholder-zinc-400 dark:placeholder-zinc-500 outline-none focus:border-zinc-400 dark:focus:border-white/25'
 
-// Exported PreviewCard — delegates to BankCard with exact physical card anatomy
+// Exported PreviewCard - delegates to BankCard with exact physical card anatomy
 export function PreviewCard({ name, balance, currency, theme, logo, icon = 'card', type, id, fmt, className }) {
   return (
     <BankCard
@@ -206,7 +206,7 @@ export default function NewAccountSheet({ open, onClose }) {
             fmt={fmt}
           />
 
-          {/* Section 1 — CARD DESIGN */}
+          {/* Section 1 - CARD DESIGN */}
           <section>
             <Label right={activeTheme?.name}>{t('card_design')}</Label>
             <div className="flex gap-3 overflow-x-auto no-scrollbar -mx-4 px-4 py-1.5">
@@ -247,7 +247,7 @@ export default function NewAccountSheet({ open, onClose }) {
             </div>
           </section>
 
-          {/* Section 2 — ACCOUNT DETAILS */}
+          {/* Section 2 - ACCOUNT DETAILS */}
           <section>
             <Label>{t('account_details')}</Label>
             <input
@@ -259,7 +259,7 @@ export default function NewAccountSheet({ open, onClose }) {
             />
           </section>
 
-          {/* Section 3 — TYPE */}
+          {/* Section 3 - TYPE */}
           <section>
             <Label>{t('account_type')}</Label>
             <div className="grid grid-cols-3 gap-2">
@@ -285,7 +285,7 @@ export default function NewAccountSheet({ open, onClose }) {
             </div>
           </section>
 
-{/* Section 4 — ICON (Horizontal Swipeable Row) */}
+{/* Section 4 - ICON (Horizontal Swipeable Row) */}
           <section>
             <Label>{t('account_icon')}</Label>
             <div className="flex items-center gap-2.5 overflow-x-auto no-scrollbar snap-x touch-pan-x py-1 -mx-4 px-4">
@@ -318,7 +318,7 @@ export default function NewAccountSheet({ open, onClose }) {
             </div>
           </section>
 
-          {/* Section 5 — BANK / E-WALLET (OPTIONAL) */}
+          {/* Section 5 - BANK / E-WALLET (OPTIONAL) */}
           <section>
             <Label>{t('bank_ewallet_opt')}</Label>
             <div className="w-full py-2 box-border">
@@ -412,7 +412,7 @@ export default function NewAccountSheet({ open, onClose }) {
             </div>
           </section>
 
-          {/* Section 6 — OPENING BALANCE */}
+          {/* Section 6 - OPENING BALANCE */}
           <section>
             <Label>{t('opening_balance')}</Label>
             <div className="flex bg-zinc-100 dark:bg-[#1c1c1e] border border-zinc-200 dark:border-white/10 rounded-xl p-1 gap-1">

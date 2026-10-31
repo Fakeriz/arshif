@@ -22,7 +22,7 @@ const STEPS = ['upload', 'setup', 'review', 'done']
 export default function ImportTransactionsPage({ onClose }) {
   const { t, lang, accounts = [], store, refresh, home, rates, session, open: openSheet } = useApp()
   const fileRef = useRef(null)
-  const parsedRef = useRef(null) // baris mentah pra-finalize — untuk rebuild review saat dompet diganti
+  const parsedRef = useRef(null) // baris mentah pra-finalize - untuk rebuild review saat dompet diganti
   const [step, setStep] = useState(0)
   const [busy, setBusy] = useState(false)
   const [fileName, setFileName] = useState('')
@@ -139,7 +139,7 @@ export default function ImportTransactionsPage({ onClose }) {
   }
 
   // Finalisasi baris kanonis → review. Dipakai jalur CSV/XLSX (buildReview)
-  // maupun jalur PDF+AI (continueAiReview) — dedup, cek saldo, overlap sama.
+  // maupun jalur PDF+AI (continueAiReview) - dedup, cek saldo, overlap sama.
   // wid eksplisit agar ganti dompet di layar review bisa rebuild.
   const finalizeParsedRows = async (parsed, wid) => {
     parsed = parsed.map((r, i) => ({
@@ -412,7 +412,7 @@ export default function ImportTransactionsPage({ onClose }) {
     const sign = signed ? (v < 0 ? '−' : v > 0 ? '+' : '') : ''
     return `${sign}${sym} ${num}`
   }
-  // Stats values can overflow their column on large amounts — compact them (e.g. "Rp 88,3 jt")
+  // Stats values can overflow their column on large amounts - compact them (e.g. "Rp 88,3 jt")
   const fmtStat = (n, cur) => {
     const v = Number(n) || 0
     if (Math.abs(v) >= 1000000) {
@@ -438,7 +438,7 @@ export default function ImportTransactionsPage({ onClose }) {
     </div>
   )
 
-  // Tombol primer putih ala preview — hanya di bottom bar
+  // Tombol primer putih ala preview - hanya di bottom bar
   const PrimaryBarButton = ({ onClick, disabled, children, testId }) => (
     <motion.button
       type="button"
@@ -474,7 +474,7 @@ export default function ImportTransactionsPage({ onClose }) {
             type="button"
             onClick={() => setMapping((m) => ({ ...m, [role]: -1 }))}
             className={cn('shrink-0 rounded-xl border px-3 py-2 text-sm font-medium self-center', mapping[role] === -1 ? 'bg-foreground text-background border-foreground' : 'bg-background border-border/60 text-muted-foreground')}
-          >—</button>
+          >-</button>
           {Array.from({ length: colCount }, (_, i) => {
             const colLabel = (headers[i] || '').trim() || t('import_col_n').replace('{n}', i + 1)
             const sample = String(sampleRow[i] ?? '').trim()
@@ -514,7 +514,7 @@ export default function ImportTransactionsPage({ onClose }) {
     return { label: t('import_back_start'), onClick: close, disabled: false }
   })()
 
-  // Pilih dompet — dipakai langkah setup CSV maupun persetujuan PDF+AI
+  // Pilih dompet - dipakai langkah setup CSV maupun persetujuan PDF+AI
   const WalletPicker = () => (
     <>
       <Field label={t('import_choose_wallet')}>
@@ -751,13 +751,13 @@ export default function ImportTransactionsPage({ onClose }) {
             <div className="space-y-5">
               <PageHead title={t('import_review_title')} desc={t('import_review_sub').replace('{n}', String(rows.length))} />
 
-              {/* dompet tujuan — bisa diganti, review di-rebuild */}
+              {/* dompet tujuan - bisa diganti, review di-rebuild */}
               <button type="button" onClick={() => setPickWallet(true)} className={cn(card, 'w-full p-4 flex items-center gap-3 text-left')}>
                 <div className={cn(tile, 'h-12 w-12 rounded-2xl text-[15px] font-bold')}>
                   {wallet ? walletInitials(wallet.name) : '?'}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="font-bold text-[16px] truncate">{wallet?.name || '—'}</p>
+                  <p className="font-bold text-[16px] truncate">{wallet?.name || '-'}</p>
                   <p className="text-[13px] text-muted-foreground mt-0.5">{t('import_target_wallet')} · {walletCur}</p>
                 </div>
                 <ChevronRight size={18} className="text-muted-foreground shrink-0" />

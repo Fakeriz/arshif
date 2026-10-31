@@ -91,7 +91,7 @@ export default function BusinessInvoiceSheet({ open, onClose }) {
 
   const saveInvoice = async () => {
     if (!canSave) return
-    // Invoice baru mengkonsumsi jatah bulanan (free 5 / premium 30) — cek
+    // Invoice baru mengkonsumsi jatah bulanan (free 5 / premium 30) - cek
     // sebelum invoice tersimpan supaya user tidak mengira sudah tersimpan.
     const usage = await consumeFeatureUsage('invoices_per_month')
     if (usage.allowed === false) {
@@ -135,7 +135,7 @@ export default function BusinessInvoiceSheet({ open, onClose }) {
       `${t('bi_client')}: ${inv?.client || '-'}`,
       inv?.due_date ? `${t('bi_due_date')}: ${safeDate(inv.due_date)}` : null,
       '',
-      ...((inv?.items || []).map((it) => `• ${it?.desc || '-'} — ${it?.qty || 0} x ${getCurrency(cur).symbol}${Number(it?.price) || 0} = ${fmt((Number(it?.qty) || 0) * (Number(it?.price) || 0), cur)}`)),
+      ...((inv?.items || []).map((it) => `• ${it?.desc || '-'} - ${it?.qty || 0} x ${getCurrency(cur).symbol}${Number(it?.price) || 0} = ${fmt((Number(it?.qty) || 0) * (Number(it?.price) || 0), cur)}`)),
       '',
       `${t('bi_total')}: ${fmt(invoiceTotal(inv), cur)}`,
       `${t('bi_status')}: ${inv?.status === 'paid' ? t('bi_status_paid') : t('bi_status_unpaid')}`,

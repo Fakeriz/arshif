@@ -40,7 +40,7 @@ export async function POST(request) {
 
   const payload = JSON.stringify({
     title: 'Arshif',
-    body: 'Test notification — push is active on this device.',
+    body: 'Test notification - push is active on this device.',
     icon: '/icon-192.png',
     badge: '/icon-192.png',
     data: { action: 'notifications', type: 'test' },

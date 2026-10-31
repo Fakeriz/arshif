@@ -59,19 +59,19 @@ export default function TransactionDetailSheet({ open, isOpen: propIsOpen, onClo
   const total = Number(tx.amount) || (items || []).reduce((s, i) => s + (Number(i?.price) || 0), 0)
   // Sum of item line totals (price × qty − discount, incl. negative discount
   // rows). When it drifts from the transaction amount (AI misread, manual
-  // amount edit), per-person splits can exceed the real expense — surface the
+  // amount edit), per-person splits can exceed the real expense - surface the
   // mismatch instead of letting it pass silently.
   const itemsMismatch = items.length > 0 && Math.abs(itemsSum(items) - total) > 0.01
 
   const dateStr = tx?.date || tx?.transaction_date
   const formattedDate = (() => {
-    if (!dateStr) return '—'
+    if (!dateStr) return '-'
     try {
       const parsed = new Date(dateStr)
-      if (isNaN(parsed.getTime())) return '—'
+      if (isNaN(parsed.getTime())) return '-'
       return parsed.toLocaleDateString(lang === 'en' ? 'en-GB' : 'id-ID', { day: 'numeric', month: 'long', year: 'numeric' })
     } catch {
-      return '—'
+      return '-'
     }
   })()
 
@@ -165,33 +165,44 @@ export default function TransactionDetailSheet({ open, isOpen: propIsOpen, onClo
             </div>
             <Card className="overflow-hidden">
               <div className="grid grid-cols-[1fr_auto] px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.12em] text-zinc-600 dark:text-zinc-400 border-b border-zinc-200/60 dark:border-white/5"><span>{t('item')}</span><span>{t('price')}</span></div>
-              {items.map((it, i) => (
-                <div key={i} className="flex items-center gap-2 px-4 py-2.5 text-sm border-b border-zinc-200/40 dark:border-white/5 last:border-0 text-zinc-950 dark:text-white">
-                  {editingItems ? (
-                    <>
-                      <input value={it.name} onChange={(e) => setItem(i, { name: e.target.value })} placeholder={t('item_name')} className="flex-1 bg-transparent text-base focus-visible:ring-2 focus-visible:ring-foreground/20 rounded min-w-0 text-zinc-950 dark:text-white outline-none" />
-                      <input type="text" inputMode="decimal" value={it.price} onChange={(e) => setItem(i, { price: Number(sanitizeAmount(e.target.value)) || 0 })} className="w-20 bg-zinc-100 dark:bg-zinc-800 text-base text-zinc-950 dark:text-white rounded-lg px-2 py-1 text-right focus-visible:ring-2 focus-visible:ring-foreground/20 tabular-nums font-semibold outline-none" />
-                      <button type="button" onClick={() => delItem(i)} className="p-1 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200"><X size={15} /></button>
-                    </>
-                  ) : (
-                    <>
-                      <span className="flex-1 truncate font-medium">{it.qty > 1 ? `${it.qty}× ` : ''}{it.name || t('item')}{Number(it.discount) > 0 ? ` · −${t('discount')} ${fmt(it.discount, cur)}` : ''}</span>
-                      {Number(it.discount) > 0 ? <span className="tabular-nums text-zinc-400 dark:text-zinc-500 line-through text-xs">{fmt(it.price * (Number(it.qty) || 1), cur)}</span> : null}
-                      <span className={cn('tabular-nums font-bold', it.is_discount ? 'text-emerald-600 dark:text-emerald-400' : 'text-zinc-950 dark:text-white')}>{fmt(lineTotal(it), cur)}</span>
-                    </>
-                  )}
-                </div>
-              ))}
-              {!items.length ? <p className="px-4 py-3 text-sm text-zinc-400 dark:text-zinc-500">—</p> : null}
+              {items.map((it, i) => {
+                const qty = Number(it.qty) || 1
+                const disc = Number(it.discount) || 0
+                const notes = []
+                if (it.is_discount) notes.push(t('store_promo'))
+                if (qty > 1) notes.push(`${qty} × ${fmt(it.price, cur)}`)
+                if (disc > 0) notes.push(`−${t('discount')} ${fmt(disc, cur)}`)
+                return (
+                  <div key={i} className="flex items-center gap-2 px-4 py-2.5 text-sm border-b border-zinc-200/40 dark:border-white/5 last:border-0 text-zinc-950 dark:text-white">
+                    {editingItems ? (
+                      <>
+                        <input value={it.name} onChange={(e) => setItem(i, { name: e.target.value })} placeholder={t('item_name')} className="flex-1 bg-transparent text-base focus-visible:ring-2 focus-visible:ring-foreground/20 rounded min-w-0 text-zinc-950 dark:text-white outline-none" />
+                        <input type="text" inputMode="decimal" value={it.price} onChange={(e) => setItem(i, { price: Number(sanitizeAmount(e.target.value)) || 0 })} className="w-20 bg-zinc-100 dark:bg-zinc-800 text-base text-zinc-950 dark:text-white rounded-lg px-2 py-1 text-right focus-visible:ring-2 focus-visible:ring-foreground/20 tabular-nums font-semibold outline-none" />
+                        <button type="button" onClick={() => delItem(i)} className="p-1 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200"><X size={15} /></button>
+                      </>
+                    ) : (
+                      <>
+                        <span className="flex-1 min-w-0">
+                          <span className="block truncate font-medium">{qty > 1 ? `${qty}× ` : ''}{it.name || t('item')}</span>
+                          {notes.length ? <span className="mt-0.5 block truncate text-xs text-zinc-500 dark:text-zinc-400">{notes.join(' · ')}</span> : null}
+                        </span>
+                        {disc > 0 ? <span className="tabular-nums text-zinc-400 dark:text-zinc-500 line-through text-xs">{fmt(it.price * qty, cur)}</span> : null}
+                        <span className={cn('tabular-nums font-bold', it.is_discount ? 'text-emerald-600 dark:text-emerald-400' : 'text-zinc-950 dark:text-white')}>{fmt(lineTotal(it), cur)}</span>
+                      </>
+                    )}
+                  </div>
+                )
+              })}
+              {!items.length ? <p className="px-4 py-3 text-sm text-zinc-400 dark:text-zinc-500">-</p> : null}
               {editingItems ? <button type="button" onClick={addItem} className="w-full px-4 py-3 text-sm font-bold flex items-center gap-1.5 text-zinc-600 dark:text-zinc-400 hover:text-zinc-950 dark:hover:text-white"><Plus size={15} /> {t('add_item')}</button> : null}
               <div className="grid grid-cols-[1fr_auto] px-4 py-3 font-bold border-t border-zinc-200/60 dark:border-white/5 text-zinc-950 dark:text-white"><span>{t('total')}</span><span className="tabular-nums">{fmt(total, cur)}</span></div>
             </Card>
-            {itemsMismatch ? <p className="text-xs text-amber-600 dark:text-amber-400 font-medium mt-1.5 px-1">{t('items_sum_mismatch')} — {t('items')}: {fmt(itemsSum(items), cur)} · {t('total')}: {fmt(total, cur)}</p> : null}
+            {itemsMismatch ? <p className="text-xs text-amber-600 dark:text-amber-400 font-medium mt-1.5 px-1">{t('items_sum_mismatch')} · {t('items')}: {fmt(itemsSum(items), cur)} · {t('total')}: {fmt(total, cur)}</p> : null}
           </div>
         ) : (
           <div className="mt-3 space-y-4">
             {itemsMismatch ? (
-              <p className="text-xs text-amber-600 dark:text-amber-400 font-medium rounded-xl border border-amber-300 dark:border-amber-500/40 bg-amber-50 dark:bg-amber-500/10 px-3 py-2">{t('items_sum_mismatch')} — {t('items')}: {fmt(itemsSum(items), cur)} · {t('total')}: {fmt(total, cur)}</p>
+              <p className="text-xs text-amber-600 dark:text-amber-400 font-medium rounded-xl border border-amber-300 dark:border-amber-500/40 bg-amber-50 dark:bg-amber-500/10 px-3 py-2">{t('items_sum_mismatch')} · {t('items')}: {fmt(itemsSum(items), cur)} · {t('total')}: {fmt(total, cur)}</p>
             ) : null}
             {/* Participants */}
             <div>
@@ -216,17 +227,28 @@ export default function TransactionDetailSheet({ open, isOpen: propIsOpen, onClo
             {items.length ? (
               <div>
                 <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-zinc-600 dark:text-zinc-400 mb-1">{t('assign_items')}</p>
-                <p className="text-xs text-zinc-600 dark:text-zinc-400 mb-2">{t('tap_to_assign')}: <span className="font-bold text-zinc-950 dark:text-white">{people.find((p) => p.id === activePerson)?.name || '—'}</span></p>
+                <p className="text-xs text-zinc-600 dark:text-zinc-400 mb-2">{t('tap_to_assign')}: <span className="font-bold text-zinc-950 dark:text-white">{people.find((p) => p.id === activePerson)?.name || '-'}</span></p>
                 <Card className="overflow-hidden">
                   {items.map((it, i) => {
                     const assignees = assign[i] || []
                     const mine = activePerson && assignees.includes(activePerson)
+                    const qty = Number(it.qty) || 1
+                    const disc = Number(it.discount) || 0
+                    const notes = []
+                    if (it.is_discount) notes.push(t('store_promo'))
+                    if (qty > 1) notes.push(`${qty} × ${fmt(it.price, cur)}`)
+                    if (disc > 0) notes.push(`−${t('discount')} ${fmt(disc, cur)}`)
                     return (
                       <button key={i} type="button" onClick={() => toggleAssign(i)} className="w-full flex items-center gap-3 px-4 py-2.5 text-sm border-b border-zinc-200/40 dark:border-white/5 last:border-0 text-left">
                         <span className={cn('h-5 w-5 rounded-md border flex items-center justify-center shrink-0 transition-colors', mine ? 'bg-zinc-950 border-zinc-950 text-white dark:bg-white dark:border-white dark:text-zinc-950' : 'border-zinc-300 dark:border-zinc-700')}>{mine ? <Check size={13} strokeWidth={3} /> : null}</span>
-                        <span className="flex-1 truncate font-medium text-zinc-950 dark:text-white">{it.name || t('item')}</span>
-                        <span className={cn('tabular-nums font-bold', it.is_discount ? 'text-emerald-600 dark:text-emerald-400' : 'text-zinc-950 dark:text-white')}>{fmt(lineTotal(it), cur)}</span>
-                        {assignees.length ? <span className="text-[10px] text-zinc-500 dark:text-zinc-400">/{assignees.length}</span> : null}
+                        <span className="flex-1 min-w-0">
+                          <span className="block truncate font-medium text-zinc-950 dark:text-white">{it.name || t('item')}</span>
+                          {notes.length ? <span className="mt-0.5 block truncate text-xs text-zinc-500 dark:text-zinc-400">{notes.join(' · ')}</span> : null}
+                        </span>
+                        <span className="text-right">
+                          <span className={cn('block font-bold tabular-nums', it.is_discount ? 'text-emerald-600 dark:text-emerald-400' : 'text-zinc-950 dark:text-white')}>{fmt(lineTotal(it), cur)}</span>
+                          {assignees.length ? <span className="text-[10px] text-zinc-500 dark:text-zinc-400">/{assignees.length}</span> : null}
+                        </span>
                       </button>
                     )
                   })}

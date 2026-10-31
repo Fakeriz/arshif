@@ -78,7 +78,7 @@ export default function ScanReceiptSheet({ open, onClose, onUse, initialImage, a
         })
       }
 
-      // Konsumsi kuota OCR bulanan hanya setelah scan sukses — gagal OCR
+      // Konsumsi kuota OCR bulanan hanya setelah scan sukses - gagal OCR
       // tidak boleh memotong jatah. Blokir dari server (RPC P0001) tetap
       // jalan sendiri; di sini hanya feedback plus ke paywall.
       const usage = await consumeFeatureUsage('receipt_ocr_per_month')
@@ -291,21 +291,32 @@ export default function ScanReceiptSheet({ open, onClose, onUse, initialImage, a
               <p className="text-4xl font-extrabold mt-4 tabular-nums text-zinc-950 dark:text-white">{fmt(result.total, cur)}</p>
               {result.totals_match === false ? (
                 <p className="mt-2 text-xs text-amber-600 dark:text-amber-400 font-medium rounded-xl border border-amber-300 dark:border-amber-500/40 bg-amber-50 dark:bg-amber-500/10 px-3 py-2">
-                  {t('items_sum_mismatch')} — {t('items')}: {fmt(result.items_total, cur)} · {t('total')}: {fmt(result.total, cur)}
+                  {t('items_sum_mismatch')} · {t('items')}: {fmt(result.items_total, cur)} · {t('total')}: {fmt(result.total, cur)}
                 </p>
               ) : null}
               <Card className="mt-4 overflow-hidden">
                 <div className="grid grid-cols-[1fr_auto] px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.12em] text-zinc-600 dark:text-zinc-400 border-b border-zinc-200/60 dark:border-white/5"><span>{t('item')}</span><span>{t('price')}</span></div>
-                {(result.items || []).map((it, i) => (
-                  <div key={i} className="grid grid-cols-[1fr_auto] px-4 py-2.5 text-sm border-b border-zinc-200/40 dark:border-white/5 last:border-0 text-zinc-950 dark:text-white">
-                    <span className="truncate font-medium">
-                      {it.qty > 1 ? `${it.qty}× ` : ''}{it.name}
-                      {Number(it.discount) > 0 ? ` · −${t('discount')} ${fmt(it.discount, cur)}` : ''}
-                    </span>
-                    <span className={cn('tabular-nums font-bold', it.is_discount ? 'text-emerald-600 dark:text-emerald-400' : undefined)}>{fmt(lineTotal(it), cur)}</span>
-                  </div>
-                ))}
-                {!(result.items || []).length ? <p className="px-4 py-3 text-sm text-zinc-400 dark:text-zinc-500">—</p> : null}
+                {(result.items || []).map((it, i) => {
+                  const qty = Number(it.qty) || 1
+                  const disc = Number(it.discount) || 0
+                  const notes = []
+                  if (it.is_discount) notes.push(t('store_promo'))
+                  if (qty > 1) notes.push(`${qty} × ${fmt(it.price, cur)}`)
+                  if (disc > 0) notes.push(`−${t('discount')} ${fmt(disc, cur)}`)
+                  return (
+                    <div key={i} className="grid grid-cols-[1fr_auto] items-start gap-x-3 px-4 py-2.5 text-sm border-b border-zinc-200/40 dark:border-white/5 last:border-0">
+                      <span className="min-w-0">
+                        <span className="block truncate font-medium text-zinc-950 dark:text-white">{it.name}</span>
+                        {notes.length ? <span className="mt-0.5 block truncate text-xs text-zinc-500 dark:text-zinc-400">{notes.join(' · ')}</span> : null}
+                      </span>
+                      <span className="text-right">
+                        {disc > 0 && !it.is_discount ? <span className="block text-xs font-normal tabular-nums text-zinc-400 dark:text-zinc-500 line-through">{fmt(it.price * qty, cur)}</span> : null}
+                        <span className={cn('block font-bold tabular-nums', it.is_discount ? 'text-emerald-600 dark:text-emerald-400' : 'text-zinc-950 dark:text-white')}>{fmt(lineTotal(it), cur)}</span>
+                      </span>
+                    </div>
+                  )
+                })}
+                {!(result.items || []).length ? <p className="px-4 py-3 text-sm text-zinc-400 dark:text-zinc-500">-</p> : null}
               </Card>
               <div className="mt-5 space-y-2">
                 <PrimaryButton onClick={useIt} disabled={uploadingBackup} data-testid="scan-use">

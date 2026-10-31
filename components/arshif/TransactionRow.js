@@ -24,7 +24,7 @@ function formatCleanTitle(tx, fallback) {
   return cleaned ? cleaned.charAt(0).toUpperCase() + cleaned.slice(1) : fallback || 'Transaksi'
 }
 
-// Safe time/date formatting — never throws on null/invalid values.
+// Safe time/date formatting - never throws on null/invalid values.
 const safeTime = (dateStr, locale) => {
   if (!dateStr) return ''
   try {
@@ -61,7 +61,7 @@ export default function TransactionRow({ tx, onClick, showDate = false, hideBala
 
   const foreign = tx?.currency && tx?.currency !== home
 
-  // Guard conversion — only show ≈ home amount when we actually have a number.
+  // Guard conversion - only show ≈ home amount when we actually have a number.
   let homeAmount = null
   try {
     homeAmount = typeof convertToHome === 'function' ? convertToHome(tx?.amount, tx?.currency) : tx?.converted_amount

@@ -210,7 +210,7 @@ export const UserFilled = ({ size = 22, className = '', ...props }) => (
   </svg>
 )
 
-// Document (Outline) — dari reicon.dev (reicon-react), 24x24 grid
+// Document (Outline) - dari reicon.dev (reicon-react), 24x24 grid
 export const DocumentOutline = ({ size = 22, className = '', ...props }) => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
@@ -225,7 +225,7 @@ export const DocumentOutline = ({ size = 22, className = '', ...props }) => (
   </svg>
 )
 
-// Document (Filled) — dari reicon.dev (reicon-react), 24x24 grid
+// Document (Filled) - dari reicon.dev (reicon-react), 24x24 grid
 export const DocumentFilled = ({ size = 22, className = '', ...props }) => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
@@ -240,7 +240,7 @@ export const DocumentFilled = ({ size = 22, className = '', ...props }) => (
   </svg>
 )
 
-// Receipt (Outline) — dari reicon.dev (reicon-react), 24x24 grid
+// Receipt (Outline) - dari reicon.dev (reicon-react), 24x24 grid
 export const ReceiptOutline = ({ size = 22, className = '', ...props }) => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
@@ -255,7 +255,7 @@ export const ReceiptOutline = ({ size = 22, className = '', ...props }) => (
   </svg>
 )
 
-// Receipt (Filled) — dari reicon.dev (reicon-react), 24x24 grid
+// Receipt (Filled) - dari reicon.dev (reicon-react), 24x24 grid
 export const ReceiptFilled = ({ size = 22, className = '', ...props }) => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
@@ -270,7 +270,7 @@ export const ReceiptFilled = ({ size = 22, className = '', ...props }) => (
   </svg>
 )
 
-// Profile2user (Outline) — dari reicon.dev (reicon-react), 24x24 grid
+// Profile2user (Outline) - dari reicon.dev (reicon-react), 24x24 grid
 export const Profile2userOutline = ({ size = 22, className = '', ...props }) => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
@@ -285,7 +285,7 @@ export const Profile2userOutline = ({ size = 22, className = '', ...props }) => 
   </svg>
 )
 
-// Profile2user (Filled) — dari reicon.dev (reicon-react), 24x24 grid
+// Profile2user (Filled) - dari reicon.dev (reicon-react), 24x24 grid
 export const Profile2userFilled = ({ size = 22, className = '', ...props }) => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
@@ -300,7 +300,7 @@ export const Profile2userFilled = ({ size = 22, className = '', ...props }) => (
   </svg>
 )
 
-// ChartPie (Outline) — dari reicon.dev (reicon-react), 24x24 grid
+// ChartPie (Outline) - dari reicon.dev (reicon-react), 24x24 grid
 export const ChartPieOutline = ({ size = 22, className = '', ...props }) => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
@@ -315,7 +315,7 @@ export const ChartPieOutline = ({ size = 22, className = '', ...props }) => (
   </svg>
 )
 
-// ChartPie (Filled) — dari reicon.dev (reicon-react), 24x24 grid
+// ChartPie (Filled) - dari reicon.dev (reicon-react), 24x24 grid
 export const ChartPieFilled = ({ size = 22, className = '', ...props }) => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
