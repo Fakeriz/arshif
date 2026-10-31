@@ -90,7 +90,9 @@ declare
   v_month text;
 begin
   v_uid := coalesce(new.user_id, old.user_id, auth.uid());
-  v_curr := current_setting('app.home_currency', true) on error null;
+  -- current_setting(missing_ok) SUDAH mengembalikan null kalau belum diset —
+  -- klausa 'on error null' bukan sintaks PL/pgSQL dan bikin migrasi gagal.
+  v_curr := current_setting('app.home_currency', true);
   v_curr := coalesce(v_curr, 'IDR');
 
   -- Ambil bulan dari entri terbaru yang diubah
