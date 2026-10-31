@@ -82,7 +82,7 @@ export default function PostpaidPlanModal({
   const handleProviderSelect = (prov) => {
     setSelectedProvider(prov.id)
     if (!plan) {
-      setPackageName(prov.id === 'other' ? 'Tagihan PayLater' : `${prov.name} Bulanan`)
+      setPackageName(prov.id === 'other' ? (t?.('paylater_bill_name') || 'PayLater Bill') : `${prov.name} Bulanan`)
       setDueDay(String(prov.defaultDue))
       if (prov.defaultLimit) {
         setCreditLimit(String(prov.defaultLimit))
@@ -94,7 +94,7 @@ export default function PostpaidPlanModal({
 
   const handleSave = async () => {
     if (!packageName.trim()) {
-      toast.error('Masukkan nama paket paylater')
+      toast.error(t?.('paylater_name_required') || 'Enter a paylater plan name')
       return
     }
     const dueDayNum = Number(dueDay) || 1
