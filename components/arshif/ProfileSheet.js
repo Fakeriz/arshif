@@ -1,6 +1,6 @@
 'use client'
 import { useEffect, useRef, useState } from 'react'
-import { Camera, Building2, ImagePlus, LogOut } from 'lucide-react'
+import { Camera, Building2, ImagePlus, LogOut, ShieldCheck } from 'lucide-react'
 import { toast } from 'sonner'
 import { useApp } from './context'
 import { Sheet, SheetTextButton, Field, TextInput, Segmented, PrimaryButton } from './ui'
@@ -107,7 +107,7 @@ export default function ProfileSheet({ open, onClose }) {
                   <p className="text-sm font-medium mb-1.5">{t('company_logo_invoice')}</p>
                   <input ref={logoRef} type="file" accept="image/png,image/jpeg" className="hidden" onChange={onLogo} />
                   <button type="button" onClick={() => logoRef.current?.click()} className="w-full aspect-[3/1] rounded-xl border border-dashed border-border flex items-center justify-center overflow-hidden bg-background" data-testid="profile-logo">
-                    {biz.logo ? <img src={biz.logo} alt="logo" className="h-full w-full object-contain" /> : <span className="flex flex-col items-center text-muted-foreground text-xs"><ImagePlus size={20} strokeWidth={1.5} /> <span className="mt-1">PNG / JPG · 3:1</span></span>}
+                    {biz.logo ? <img src={biz.logo} alt="logo" className="h-full w-full object-contain" /> : <span className="flex flex-col items-center text-muted-foreground text-xs"><ImagePlus size={20} strokeWidth={1.5} /> <span className="mt-1">{t('logo_format_hint')}</span></span>}
                   </button>
                 </div>
                 <Field label={t('company_name')}><TextInput value={biz.companyName} onChange={(e) => setB({ companyName: e.target.value })} placeholder={t('profile_business_name')} /></Field>
@@ -134,8 +134,8 @@ export default function ProfileSheet({ open, onClose }) {
             <div>
               <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground mb-2 px-1">{t('tax_business_details')}</p>
               <div className={cn(card, 'space-y-4')}>
-                <Field label={t('company_legal_name')}><TextInput value={biz.legalName} onChange={(e) => setB({ legalName: e.target.value })} placeholder="PT / CV / UD ..." /></Field>
-                <Field label={t('npwp')}><TextInput value={biz.npwp} onChange={(e) => setB({ npwp: e.target.value })} placeholder="01.234.567.8-901.000 / NIK 16 digit" inputMode="numeric" /></Field>
+                <Field label={t('company_legal_name')}><TextInput value={biz.legalName} onChange={(e) => setB({ legalName: e.target.value })} placeholder={t('biz_name_ph')} /></Field>
+                <Field label={t('npwp')}><TextInput value={biz.npwp} onChange={(e) => setB({ npwp: e.target.value })} placeholder={t('biz_id_ph')} inputMode="numeric" /></Field>
                 <Field label={t('nib_oss')}><TextInput value={biz.nib} onChange={(e) => setB({ nib: e.target.value })} placeholder="1234567890123" inputMode="numeric" /></Field>
                 <Field label={t('tax_status')}>
                   <Segmented value={biz.taxStatus} onChange={(v) => setB({ taxStatus: v })} options={[{ id: 'nonpkp', label: t('non_pkp') }, { id: 'pkp', label: t('pkp_label') }]} />
@@ -151,10 +151,15 @@ export default function ProfileSheet({ open, onClose }) {
 
         <PrimaryButton onClick={save} disabled={saving} data-testid="profile-save-btn">{t('save_changes')}</PrimaryButton>
         {!isGuest ? (
-          <button type="button" onClick={() => setSignOutOpen(true)} className="w-full flex items-center justify-center gap-2 py-3 text-sm font-medium text-zinc-500 dark:text-zinc-400 hover:text-rose-500 dark:hover:text-rose-400 active:text-rose-600 transition cursor-pointer">
-            <LogOut size={15} strokeWidth={2} />
-            {t('sign_out')}
-          </button>
+          <div>
+            <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground mb-2 px-1 flex items-center gap-1.5"><ShieldCheck size={13} /> {t('session_section')}</p>
+            <div className={cn(card, 'space-y-4')}>
+              <button type="button" onClick={() => setSignOutOpen(true)} className="w-full flex items-center justify-center gap-2 py-3 text-sm font-medium text-zinc-500 dark:text-zinc-400 hover:text-rose-500 dark:hover:text-rose-400 active:text-rose-600 transition cursor-pointer">
+                <LogOut size={15} strokeWidth={2} />
+                {t('sign_out')}
+              </button>
+            </div>
+          </div>
         ) : null}
         <div className="h-2" />
       </div>
