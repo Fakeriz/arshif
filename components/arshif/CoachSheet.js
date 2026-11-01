@@ -278,7 +278,10 @@ export default function CoachSheet({ open, onClose }) {
       noPadding
       title={
         <span className="flex items-center justify-center gap-2 min-w-0">
-          <video src="/coach-avatar-anim.mp4" autoPlay muted loop playsInline className="h-7 w-7 flex-none rounded-full object-cover" />
+          <span className="relative h-7 w-7 flex-none rounded-full overflow-hidden bg-zinc-100 dark:bg-white">
+            <img src="/coach-avatar-light.svg" alt="" className="h-7 w-7 object-cover dark:hidden" />
+            <img src="/coach-avatar-dark.svg" alt="" className="hidden dark:block h-7 w-7 object-cover" />
+          </span>
           <span className="text-base font-extrabold tracking-tight truncate min-w-0">{t('ai_coach')}</span>
         </span>
       }
@@ -321,7 +324,8 @@ export default function CoachSheet({ open, onClose }) {
             </div>
           ) : (
             <div key={i} className="flex items-start gap-2.5">
-              <img src="/coach-avatar.webp" alt="" className="mt-0.5 h-[34px] w-[34px] flex-none rounded-full object-cover ring-1 ring-foreground/10" />
+              <img src="/coach-avatar-light.svg" alt="" className="mt-0.5 h-[34px] w-[34px] flex-none rounded-full object-cover ring-1 ring-foreground/10 dark:hidden" />
+              <img src="/coach-avatar-dark.svg" alt="" className="mt-0.5 h-[34px] w-[34px] flex-none rounded-full object-cover ring-1 ring-foreground/10 hidden dark:block" />
               <div className="max-w-[85%] rounded-2xl rounded-bl-md border border-border/50 bg-card px-4 py-2.5 text-sm leading-relaxed shadow-xs">
                 <CoachMarkdown text={m.content} />
               </div>
@@ -329,7 +333,8 @@ export default function CoachSheet({ open, onClose }) {
           ))}
           {busy ? (
             <div className="flex items-start gap-2.5">
-              <img src="/coach-avatar.webp" alt="" className="mt-0.5 h-[34px] w-[34px] flex-none rounded-full object-cover ring-1 ring-foreground/10" />
+              <img src="/coach-avatar-light.svg" alt="" className="mt-0.5 h-[34px] w-[34px] flex-none rounded-full object-cover ring-1 ring-foreground/10 dark:hidden" />
+              <img src="/coach-avatar-dark.svg" alt="" className="mt-0.5 h-[34px] w-[34px] flex-none rounded-full object-cover ring-1 ring-foreground/10 hidden dark:block" />
               <div className="rounded-2xl rounded-bl-md border border-border/50 bg-card px-4 py-3.5 shadow-xs"><DotsLoader size="sm" /></div>
             </div>
           ) : null}

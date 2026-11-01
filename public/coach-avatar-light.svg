@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 960">
+  <circle cx="480" cy="480" r="480" fill="#F4F4F5"/>
+  <g stroke="#18181B" stroke-width="26" fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <!-- badan robot -->
+    <rect x="270" y="360" width="420" height="330" rx="80"/>
+    <!-- antena -->
+    <line x1="480" y1="360" x2="480" y2="270"/>
+    <circle cx="480" cy="240" r="34" fill="#3B82F6" stroke="none"/>
+    <!-- mata -->
+    <circle cx="390" cy="500" r="44" fill="#18181B"/>
+    <circle cx="570" cy="500" r="44" fill="#18181B"/>
+    <!-- senyum -->
+    <path d="M 380 610 Q 480 670 580 610"/>
+    <!-- lengan -->
+    <line x1="270" y1="480" x2="180" y2="430"/>
+    <line x1="690" y1="480" x2="780" y2="430"/>
+  </g>
+</svg>
