@@ -94,9 +94,9 @@ export default function ExportTransactionsSheet({ open, onClose }) {
 
         <Field label={t('accounts')}>
           <div className="flex gap-2 overflow-x-auto no-scrollbar">
-            <button type="button" onClick={() => setAccountId('all')} className={cn('shrink-0 rounded-xl border px-3 py-2 text-sm font-medium', accountId === 'all' ? 'bg-foreground text-background border-foreground' : 'bg-background border-border/60')}>{t('all_accounts')}</button>
+            <button type="button" onClick={() => setAccountId('all')} aria-label={t('all_accounts')} className={cn('shrink-0 rounded-xl border px-3 py-2 text-sm font-medium', accountId === 'all' ? 'bg-foreground text-background border-foreground' : 'bg-background border-border/60')}>{t('all_accounts')}</button>
             {(accounts || []).map((a) => (
-              <button key={a.id} type="button" onClick={() => setAccountId(a.id)} className={cn('shrink-0 rounded-xl border px-3 py-2 text-sm font-medium whitespace-nowrap', accountId === a.id ? 'bg-foreground text-background border-foreground' : 'bg-background border-border/60')}>{a.name}</button>
+              <button key={a.id} type="button" onClick={() => setAccountId(a.id)} aria-label={a.name} className={cn('shrink-0 rounded-xl border px-3 py-2 text-sm font-medium whitespace-nowrap', accountId === a.id ? 'bg-foreground text-background border-foreground' : 'bg-background border-border/60')}>{a.name}</button>
             ))}
           </div>
         </Field>
@@ -109,7 +109,7 @@ export default function ExportTransactionsSheet({ open, onClose }) {
           </div>
         </div>
 
-        <button type="button" onClick={download} disabled={busy || !(filtered || []).length} className={cn('w-full rounded-xl bg-foreground text-background font-semibold py-3.5 text-[15px] flex items-center justify-center gap-2', (busy || !(filtered || []).length) && 'opacity-40')} data-testid="export-download">
+        <button type="button" onClick={download} disabled={busy || !(filtered || []).length} aria-label={t('download_file')} className={cn('w-full rounded-xl bg-foreground text-background font-semibold py-3.5 text-[15px] flex items-center justify-center gap-2', (busy || !(filtered || []).length) && 'opacity-40')} data-testid="export-download">
           <Download size={18} /> {t('download_file')}
         </button>
         <div className="h-2" />

@@ -50,6 +50,9 @@ export default function RootLayout({ children }) {
     <html lang="en" suppressHydrationWarning className={manrope.variable}>
       <head>
         <script dangerouslySetInnerHTML={{__html:'window.addEventListener("error",function(e){if(e.error instanceof DOMException&&e.error.name==="DataCloneError"&&e.message&&e.message.includes("PerformanceServerTiming")){e.stopImmediatePropagation();e.preventDefault()}},true);'}} />
+        {process.env.NEXT_PUBLIC_SENTRY_DSN ? (
+          <script dangerouslySetInnerHTML={{__html:`window.__SENTRY_DSN__=${JSON.stringify(process.env.NEXT_PUBLIC_SENTRY_DSN)}`}} />
+        ) : null}
       </head>
       <body className={`${manrope.variable} font-sans antialiased`}>
         <Providers>{children}</Providers>

@@ -44,28 +44,34 @@ test('validateBackupPayload rejects foreign or malformed payloads', () => {
 
 test('restoreBackupData replaces collections in order', async () => {
   const calls = []
+  let seq = 0
+  const mockCreate = (kind) => async (r) => {
+    calls.push([kind, r.id])
+    seq += 1
+    return { ...r, id: `${kind}-new-${seq}` }
+  }
   const store = {
     listAccounts: async () => [{ id: 'old-a' }],
-    createAccount: async (r) => calls.push(['createAccount', r.id]),
+    createAccount: mockCreate('createAccount'),
     deleteAccount: async (id) => calls.push(['deleteAccount', id]),
     listTransactions: async () => [],
-    createTransaction: async (r) => calls.push(['createTransaction', r.id]),
+    createTransaction: mockCreate('createTransaction'),
     deleteTransaction: async (id) => calls.push(['deleteTransaction', id]),
     listGoals: async () => [],
-    createGoal: async (r) => calls.push(['createGoal', r.id]),
+    createGoal: mockCreate('createGoal'),
     deleteGoal: async (id) => calls.push(['deleteGoal', id]),
   }
   const { restored } = await restoreBackupData(store, {
     accounts: [{ id: 'a' }],
-    transactions: [{ id: 't' }],
-    goals: [{ id: 'g' }],
+    transactions: [{ id: 't', account_id: 'a' }],
+    goals: [{ id: 'g', account_id: 'a' }],
   })
   assert.equal(restored, 3)
   assert.deepEqual(calls, [
     ['deleteAccount', 'old-a'],
-    ['createAccount', 'a'],
-    ['createTransaction', 't'],
-    ['createGoal', 'g'],
+    ['createAccount', undefined],
+    ['createTransaction', undefined],
+    ['createGoal', undefined],
   ])
 })
 

@@ -11,6 +11,23 @@ const queryClient = new QueryClient({
 });
 
 export function Providers({ children }) {
+  // Init Sentry client-side hanya bila DSN diset (opsional, default mati).
+  useEffect(() => {
+    const dsn = process.env.NEXT_PUBLIC_SENTRY_DSN || (typeof window !== 'undefined' ? window.__SENTRY_DSN__ : null)
+    if (!dsn || typeof window === 'undefined') return
+    import('@sentry/nextjs')
+      .then(({ init, browserTracingIntegration }) => {
+        try {
+          init({
+            dsn,
+            environment: process.env.NODE_ENV,
+            tracesSampleRate: 0.1,
+            integrations: [browserTracingIntegration()],
+          })
+        } catch {}
+      })
+      .catch(() => {})
+  }, [])
   // Daftarkan service worker (cuma di production, biar dev nggak ke-cache)
   useEffect(() => {
     if ('serviceWorker' in navigator && process.env.NODE_ENV === 'production') {
