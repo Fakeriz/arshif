@@ -1,6 +1,6 @@
 'use client'
 import { useEffect, useRef, useState } from 'react'
-import { Camera, Building2, ImagePlus, LogOut, ShieldCheck } from 'lucide-react'
+import { Camera, Building2, ChevronRight, ImagePlus, LogOut, ShieldCheck } from 'lucide-react'
 import { toast } from 'sonner'
 import { useApp } from './context'
 import { Sheet, SheetTextButton, Field, TextInput, Segmented, PrimaryButton } from './ui'
@@ -153,10 +153,11 @@ export default function ProfileSheet({ open, onClose }) {
         {!isGuest ? (
           <div>
             <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground mb-2 px-1 flex items-center gap-1.5"><ShieldCheck size={13} /> {t('session_section')}</p>
-            <div className={cn(card, 'space-y-4')}>
-              <button type="button" onClick={() => setSignOutOpen(true)} className="w-full flex items-center justify-center gap-2 py-3 text-sm font-medium text-zinc-500 dark:text-zinc-400 hover:text-rose-500 dark:hover:text-rose-400 active:text-rose-600 transition cursor-pointer">
-                <LogOut size={15} strokeWidth={2} />
-                {t('sign_out')}
+            <div className={cn(card, 'p-0 overflow-hidden')}>
+              <button type="button" onClick={() => setSignOutOpen(true)} className="w-full flex items-center gap-3 px-4 py-3.5 text-left active:bg-zinc-100 dark:active:bg-zinc-800/60 transition cursor-pointer" data-testid="profile-signout-btn">
+                <div className="h-9 w-9 rounded-xl bg-rose-500/10 text-rose-500 dark:bg-rose-500/20 flex items-center justify-center shrink-0"><LogOut size={17} strokeWidth={1.75} /></div>
+                <span className="flex-1 font-semibold text-[15px] text-rose-500 dark:text-rose-400">{t('sign_out')}</span>
+                <ChevronRight size={16} className="text-zinc-400 dark:text-zinc-500 shrink-0" />
               </button>
             </div>
           </div>
