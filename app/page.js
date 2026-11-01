@@ -461,8 +461,14 @@ export default function App() {
 
   if (booting) {
     return (
-      <div className="min-h-dvh flex items-center justify-center bg-background">
-        <div className="h-14 w-14 rounded-2xl bg-foreground text-background flex items-center justify-center text-2xl font-extrabold animate-pulse">P</div>
+      <div className="min-h-dvh flex flex-col items-center justify-center bg-zinc-950">
+        <svg width="72" height="72" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" className="animate-pulse">
+          <rect width="100" height="100" rx="22.5" fill="#18181b"/>
+          <rect x="24" y="28" width="38" height="30" rx="7" fill="none" stroke="#a1a1aa" stroke-width="3.5"/>
+          <rect x="38" y="42" width="38" height="30" rx="7" fill="#a1a1aa" stroke="#18181b" stroke-width="4.5" paint-order="stroke"/>
+          <rect x="38" y="50" width="38" height="5" fill="#18181b"/>
+        </svg>
+        <span className="mt-4 text-lg font-bold text-zinc-100 tracking-wide">Arshif</span>
       </div>
     )
   }
