@@ -74,9 +74,11 @@ export default function CoachSheet({ open, onClose }) {
     const sum = (type) => inMonth.filter((tx) => tx.type === type).reduce((s, tx) => s + (safeConvert(tx.amount, tx.currency, home, rates) ?? 0), 0)
     const byCat = {}
     inMonth.filter((tx) => tx.type === 'expense').forEach((tx) => { byCat[tx.category] = (byCat[tx.category] || 0) + (safeConvert(tx.amount, tx.currency, home, rates) ?? 0) })
+    // Saldo akun dikonversi ke mata uang home agar konsisten dengan totalBalance
     const totalBalance = accounts.reduce((s, a) => s + (safeConvert(signedAccountBalance(a), a.currency, home, rates) ?? 0), 0)
     const monthIncome = sum('income')
     const monthSpending = sum('expense')
+    const savingsRate = monthIncome > 0 ? Math.round(((monthIncome - monthSpending) / monthIncome) * 100) : null
 
     const trend = []
     for (let i = 2; i >= 0; i--) {
@@ -164,7 +166,7 @@ export default function CoachSheet({ open, onClose }) {
       totalBalance: Math.round(totalBalance),
       monthIncome: Math.round(monthIncome),
       monthSpending: Math.round(monthSpending),
-      savingsRate: monthIncome > 0 ? Math.round(((monthIncome - monthSpending) / monthIncome) * 100) : null,
+      savingsRate,
       topCategories: Object.entries(byCat).sort((a, b) => b[1] - a[1]).slice(0, 5).map(([c, v]) => ({ category: c, amount: Math.round(v) })),
       accounts: accounts.map((a) => ({ name: a.name, balance: Math.round(safeConvert(signedAccountBalance(a), a.currency, home, rates) ?? 0) })),
       trend,
@@ -221,8 +223,9 @@ export default function CoachSheet({ open, onClose }) {
     setBusy(true)
     try {
       const headers = { 'Content-Type': 'application/json' }
-      if (session?.access_token) {
-        headers['Authorization'] = `Bearer ${session.access_token}`
+      const authToken = session?.access_token || session?.accessToken
+      if (authToken) {
+        headers['Authorization'] = `Bearer ${authToken}`
       }
       const res = await fetch('/api/ai/coach', {
         method: 'POST',
@@ -264,7 +267,7 @@ export default function CoachSheet({ open, onClose }) {
   const chips = useMemo(() => [
     { icon: Wallet, label: t('total_balance'), value: fmt(context.totalBalance, home), alert: false },
     { icon: TrendingUp, label: t('spending'), value: fmt(context.monthSpending, home), alert: context.savingsRate !== null && context.savingsRate < 0 },
-    { icon: Target, label: t('coach_chip_savings'), value: context.savingsRate === null ? '-' : `${context.savingsRate}%`, alert: context.savingsRate !== null && context.savingsRate < 10 },
+    { icon: Target, label: t('coach_chip_savings_rate'), value: context.savingsRate === null ? '-' : `${context.savingsRate}%`, alert: context.savingsRate !== null && context.savingsRate < 10 },
   ], [context, fmt, home, t])
 
   return (
@@ -274,18 +277,17 @@ export default function CoachSheet({ open, onClose }) {
       full
       noPadding
       title={
-        <span className="flex items-center justify-center gap-2">
-          <video src="/coach-avatar-anim.mp4" autoPlay muted loop playsInline className="h-7 w-7 rounded-full object-cover" />
-          <span className="text-base font-extrabold tracking-tight truncate">{t('ai_coach')}</span>
-          <span className="text-[9px] font-bold tracking-wider text-emerald-500 bg-emerald-500/10 rounded-full px-1.5 py-0.5">{t('coach_new')}</span>
+        <span className="flex items-center justify-center gap-2 min-w-0">
+          <video src="/coach-avatar-anim.mp4" autoPlay muted loop playsInline className="h-7 w-7 flex-none rounded-full object-cover" />
+          <span className="text-base font-extrabold tracking-tight truncate min-w-0">{t('ai_coach')}</span>
         </span>
       }
       right={
-        <div className="flex items-center gap-1">
-          <button type="button" onClick={copyLast} title={t('coach_copied')} aria-label={t('coach_copied')} className="flex h-9 w-9 items-center justify-center rounded-full text-muted-foreground transition-colors hover:text-foreground">
+        <div className="flex items-center gap-0.5">
+          <button type="button" onClick={copyLast} title={t('coach_copy')} aria-label={t('coach_copy')} className="flex h-9 w-9 flex-none items-center justify-center rounded-full text-muted-foreground transition-colors hover:text-foreground">
             <Copy size={17} />
           </button>
-          <button type="button" onClick={startNewChat} title={t('coach_new_chat')} aria-label={t('coach_new_chat')} className="flex h-9 w-9 items-center justify-center rounded-full text-muted-foreground transition-colors hover:text-foreground">
+          <button type="button" onClick={startNewChat} title={t('coach_new_chat')} aria-label={t('coach_new_chat')} className="flex h-9 w-9 flex-none items-center justify-center rounded-full text-muted-foreground transition-colors hover:text-foreground">
             <SquarePen size={18} />
           </button>
         </div>
