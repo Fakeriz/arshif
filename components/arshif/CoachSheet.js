@@ -365,7 +365,7 @@ export default function CoachSheet({ open, onClose }) {
           />
           <button
             type="button"
-            onClick={() => send()}
+            onClick={() => send(input)}
             disabled={busy || !input.trim()}
             className="h-11 w-11 rounded-xl bg-foreground text-background flex items-center justify-center disabled:opacity-40 active:scale-95 transition-transform"
             data-testid="coach-send"
