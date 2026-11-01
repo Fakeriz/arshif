@@ -358,7 +358,7 @@ export default function CoachSheet({ open, onClose }) {
           <input
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && send()}
+            onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && send(input)}
             placeholder={t('coach_input_ph')}
             className="flex-1 rounded-xl bg-muted px-4 py-3 text-base outline-none text-foreground placeholder:text-muted-foreground/60"
             data-testid="coach-input"
