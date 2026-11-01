@@ -180,7 +180,7 @@ export default function NetWorthSheet({ open, onClose }) {
         {/* Trend Chart */}
         {trendData.length > 0 ? (
           <div className="mt-4 rounded-2xl bg-card border border-border/40 p-4">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground mb-3">{t('nw_trend', 'Net Worth Trend')}</p>
+            <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground mb-3">{t('nw_trend')}</p>
             <ResponsiveContainer width="100%" height={120}>
               <AreaChart data={estimatedTrend} margin={{ top: 5, right: 0, left: 0, bottom: 0 }}>
                 <defs>
@@ -202,18 +202,18 @@ export default function NetWorthSheet({ open, onClose }) {
 
         {/* Tabs */}
         <Segmented className="mt-4" value={tab} onChange={(v) => { setTab(v); setAdding(false) }} options={[
-          { id: 'assets', label: t('nw_assets', 'Assets') },
-          { id: 'liabilities', label: t('nw_liabilities', 'Liabilities') },
-          { id: 'breakdown', label: t('nw_breakdown', 'Breakdown') },
+          { id: 'assets', label: t('nw_assets') },
+          { id: 'liabilities', label: t('nw_liabilities') },
+          { id: 'breakdown', label: t('nw_breakdown') },
         ]} />
 
         {/* Breakdown view */}
         {tab === 'breakdown' ? (
           <div className="mt-4 space-y-5">
             <div>
-              <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-2">{t('nw_by_asset_cat', 'Assets by category')}</p>
+              <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-2">{t('nw_by_asset_cat')}</p>
               {assetByCat.length === 0 ? (
-                <p className="text-xs text-muted-foreground py-3 text-center">{t('nw_no_assets', 'No manual assets yet')}</p>
+                <p className="text-xs text-muted-foreground py-3 text-center">{t('nw_no_assets')}</p>
               ) : (
                 <div className="space-y-1.5">
                   {assetByCat.map(([cat, amt]) => (
@@ -229,9 +229,9 @@ export default function NetWorthSheet({ open, onClose }) {
               )}
             </div>
             <div>
-              <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-2">{t('nw_by_liab_cat', 'Liabilities by category')}</p>
+              <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-2">{t('nw_by_liab_cat')}</p>
               {liabByCat.length === 0 ? (
-                <p className="text-xs text-muted-foreground py-3 text-center">{t('nw_no_liabs', 'No manual liabilities yet')}</p>
+                <p className="text-xs text-muted-foreground py-3 text-center">{t('nw_no_liabs')}</p>
               ) : (
                 <div className="space-y-1.5">
                   {liabByCat.map(([cat, amt]) => (
@@ -255,7 +255,7 @@ export default function NetWorthSheet({ open, onClose }) {
                   <div key={a.id} className={cardCls} data-testid="nw-account">
                     <div className="flex-1 min-w-0">
                       <p className="font-semibold text-[15px] truncate">{a?.name}</p>
-                      <p className="text-xs text-muted-foreground mt-0.5">{t('nw_account', 'Account')}</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">{t('nw_account')}</p>
                     </div>
                     <p className="font-bold tabular-nums text-[15px]">{fmt(a?.balance, a?.currency || home)}</p>
                   </div>
@@ -264,13 +264,13 @@ export default function NetWorthSheet({ open, onClose }) {
                   <div key={a.id} className={cardCls} data-testid="nw-asset-row">
                     <div className="flex-1 min-w-0">
                       <p className="font-semibold text-[15px] truncate">{a?.name}</p>
-                      <p className="text-xs text-muted-foreground mt-0.5">{a?.category ? catLabel(a.category) : t('nw_manual_asset', 'Manual asset')}</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">{a?.category ? catLabel(a.category) : t('nw_manual_asset')}</p>
                     </div>
                     <p className="font-bold tabular-nums text-[15px]">{fmt(a?.amount, a?.currency || home)}</p>
                     <button type="button" onClick={() => removeAsset(a?.id)} className="h-11 w-11 rounded-lg flex items-center justify-center text-muted-foreground hover:text-rose-500" aria-label="delete"><Trash2 size={15} /></button>
                   </div>
                 ))}
-                {(assets || []).length === 0 ? <p className="text-center text-sm text-muted-foreground py-6">{t('nw_no_assets', 'No manual assets yet')}</p> : null}
+                {(assets || []).length === 0 ? <p className="text-center text-sm text-muted-foreground py-6">{t('nw_no_assets')}</p> : null}
               </>
             ) : (
               <>
@@ -278,7 +278,7 @@ export default function NetWorthSheet({ open, onClose }) {
                   <div key={a.id} className={cardCls} data-testid="nw-account-liability">
                     <div className="flex-1 min-w-0">
                       <p className="font-semibold text-[15px] truncate">{a?.name}</p>
-                      <p className="text-xs text-muted-foreground mt-0.5">{t('nw_credit_account', 'Credit account')}</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">{t('nw_credit_account')}</p>
                     </div>
                     <p className="font-bold tabular-nums text-[15px] text-rose-600 dark:text-rose-400">{fmt(Math.abs(signedAccountBalance(a)), a?.currency || home)}</p>
                   </div>
@@ -287,13 +287,13 @@ export default function NetWorthSheet({ open, onClose }) {
                   <div key={l.id} className={cardCls} data-testid="nw-liab-row">
                     <div className="flex-1 min-w-0">
                       <p className="font-semibold text-[15px] truncate">{l?.name}</p>
-                      <p className="text-xs text-muted-foreground mt-0.5">{l?.category ? catLabel(l.category) : t('nw_liability', 'Liability')}</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">{l?.category ? catLabel(l.category) : t('nw_liability')}</p>
                     </div>
                     <p className="font-bold tabular-nums text-[15px] text-rose-600 dark:text-rose-400">{fmt(l?.amount, l?.currency || home)}</p>
                     <button type="button" onClick={() => removeLiab(l?.id)} className="h-11 w-11 rounded-lg flex items-center justify-center text-muted-foreground hover:text-rose-500" aria-label="delete"><Trash2 size={15} /></button>
                   </div>
                 ))}
-                {(liabs || []).length === 0 ? <p className="text-center text-sm text-muted-foreground py-6">{t('nw_no_liabilities', 'No liabilities found')}</p> : null}
+                {(liabs || []).length === 0 ? <p className="text-center text-sm text-muted-foreground py-6">{t('nw_no_liabilities')}</p> : null}
               </>
             )}
           </div>
@@ -302,9 +302,9 @@ export default function NetWorthSheet({ open, onClose }) {
         {adding ? (
           <div className="mt-4 rounded-2xl bg-zinc-100 border border-zinc-200/60 dark:bg-white/[0.04] dark:border-white/10 p-4 space-y-4">
             <Field label={tab === 'assets' ? t('nw_asset_name') || 'Asset name' : t('nw_liability_name') || 'Liability name'}>
-              <TextInput value={name} onChange={(e) => setName(e.target.value)} placeholder={tab === 'assets' ? t('nw_asset_ph', 'e.g. House, Car, Stocks') : t('nw_liability_ph', 'e.g. Loan, Credit Card')} data-testid="nw-name" />
+              <TextInput value={name} onChange={(e) => setName(e.target.value)} placeholder={tab === 'assets' ? t('nw_asset_ph') : t('nw_liability_ph')} data-testid="nw-name" />
             </Field>
-            <Field label={t('nw_category', 'Category')}>
+            <Field label={t('nw_category')}>
               <div className="flex flex-wrap gap-1.5">
                 {(tab === 'assets' ? ASSET_CATS : LIAB_CATS).map((c) => (
                   <button key={c.id} type="button" onClick={() => setCategory(c.id)}
@@ -313,7 +313,7 @@ export default function NetWorthSheet({ open, onClose }) {
                 ))}
               </div>
             </Field>
-            <Field label={t('amount', 'Amount')}>
+            <Field label={t('amount')}>
               <div className="flex gap-2">
                 <button type="button" onClick={() => setPickCur(true)} className="shrink-0 rounded-xl bg-background border border-border/60 px-3 py-3 flex items-center gap-1.5" data-testid="nw-currency">
                   <span className="font-bold text-sm">{getCurrency(currency).symbol}</span>
@@ -323,13 +323,13 @@ export default function NetWorthSheet({ open, onClose }) {
               </div>
             </Field>
             <div className="flex gap-2">
-              <button type="button" onClick={() => setAdding(false)} className="flex-1 rounded-xl bg-background border border-border/60 py-2.5 font-medium text-sm">{t('cancel', 'Cancel')}</button>
-              <button type="button" onClick={save} disabled={!name.trim() || !(Number(amount) || 0)} className={cn('flex-1 rounded-xl bg-foreground text-background py-2.5 font-semibold text-sm', (!name.trim() || !(Number(amount) || 0)) && 'opacity-40')} data-testid="nw-save">{t('save', 'Save')}</button>
+              <button type="button" onClick={() => setAdding(false)} className="flex-1 rounded-xl bg-background border border-border/60 py-2.5 font-medium text-sm">{t('cancel')}</button>
+              <button type="button" onClick={save} disabled={!name.trim() || !(Number(amount) || 0)} className={cn('flex-1 rounded-xl bg-foreground text-background py-2.5 font-semibold text-sm', (!name.trim() || !(Number(amount) || 0)) && 'opacity-40')} data-testid="nw-save">{t('save')}</button>
             </div>
           </div>
         ) : (
           <button type="button" onClick={openAdd} className="mt-4 w-full rounded-xl border border-dashed border-border py-3.5 font-semibold text-[15px] flex items-center justify-center gap-2 text-muted-foreground" data-testid="nw-add">
-            <Plus size={18} /> {tab === 'assets' ? t('nw_add_asset', 'Add Asset') : t('nw_add_liability', 'Add Liability')}
+            <Plus size={18} /> {tab === 'assets' ? t('nw_add_asset') : t('nw_add_liability')}
           </button>
         )}
         <div className="h-6" />

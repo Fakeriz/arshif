@@ -82,7 +82,7 @@ export default function AccountSupportSection() {
     const selected = e.target.files?.[0]
     if (!selected) return
     if (selected.size > 5 * 1024 * 1024) {
-      toast.error(t('file_size_max_5mb', 'Ukuran file maksimal 5MB'))
+      toast.error(t('file_size_max_5mb'))
       return
     }
     setFile(selected)
@@ -104,11 +104,11 @@ export default function AccountSupportSection() {
   const handleSubmitReport = async (e) => {
     e?.preventDefault?.()
     if (!subject.trim()) {
-      toast.error(t('please_fill_subject', 'Mohon isi subjek laporan'))
+      toast.error(t('please_fill_subject'))
       return
     }
     if (!description.trim()) {
-      toast.error(t('please_fill_description', 'Mohon isi deskripsi kendala'))
+      toast.error(t('please_fill_description'))
       return
     }
 
@@ -186,7 +186,7 @@ export default function AccountSupportSection() {
       lsSet(REPORTS_KEY, next)
 
       // Feedback sukses + reset form
-      toast.success(t('report_success_toast', 'Laporan berhasil dikirim! Tim Arshif akan segera memeriksanya.'))
+      toast.success(t('report_success_toast'))
       setSubject('')
       setDescription('')
       setRptType('bug')
@@ -194,7 +194,7 @@ export default function AccountSupportSection() {
       setReportsOpen(false)
     } catch (err) {
       console.error('Submit report to Telegram error:', err)
-      toast.error(t('report_error_toast', 'Gagal mengirim laporan. Silakan periksa koneksi.'))
+      toast.error(t('report_error_toast'))
     } finally {
       setIsSubmitting(false)
     }
@@ -246,9 +246,9 @@ export default function AccountSupportSection() {
   }
 
   const typeLabels = {
-    bug: t('report_bug', 'Masalah / Bug'),
-    feature: t('report_feature', 'Saran Fitur'),
-    question: t('report_question', 'Pertanyaan Umum'),
+    bug: t('report_bug'),
+    feature: t('report_feature'),
+    question: t('report_question'),
   }
   const typeIcons = {
     bug: Bug,
@@ -361,7 +361,7 @@ export default function AccountSupportSection() {
         open={reportsOpen}
         onClose={() => { if (!isSubmitting) setReportsOpen(false) }}
         full
-        title={t('report_issue_title', 'Laporkan Masalah / Bantuan')}
+        title={t('report_issue_title')}
         left={
           <button
             type="button"
@@ -380,9 +380,9 @@ export default function AccountSupportSection() {
                 value={rptType}
                 onChange={setRptType}
                 options={[
-                  { id: 'bug', label: t('report_bug', 'Masalah / Bug') },
-                  { id: 'feature', label: t('report_feature', 'Saran Fitur') },
-                  { id: 'question', label: t('report_question', 'Pertanyaan Umum') }
+                  { id: 'bug', label: t('report_bug') },
+                  { id: 'feature', label: t('report_feature') },
+                  { id: 'question', label: t('report_question') }
                 ]}
               />
             </div>
@@ -390,13 +390,13 @@ export default function AccountSupportSection() {
             {/* Subjek */}
             <div>
               <label className="text-xs font-semibold text-muted-foreground uppercase block mb-1.5 px-0.5">
-                {t('subject_label', 'SUBJEK')}
+                {t('subject_label')}
               </label>
               <input
                 type="text"
                 value={subject}
                 onChange={(e) => setSubject(e.target.value)}
-                placeholder={t('support_subject_ph', 'e.g. Saldo tidak sinkron, error kamera saat scan struk...')}
+                placeholder={t('support_subject_ph')}
                 className="w-full rounded-2xl bg-muted/40 border border-border/40 px-4 py-3 text-base text-foreground placeholder:text-muted-foreground outline-none focus:border-border transition-colors"
                 data-testid="support-subject"
               />
@@ -405,12 +405,12 @@ export default function AccountSupportSection() {
             {/* Deskripsi */}
             <div>
               <label className="text-xs font-semibold text-muted-foreground uppercase block mb-1.5 px-0.5">
-                {t('description_label', 'DESKRIPSI')}
+                {t('description_label')}
               </label>
               <textarea
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                placeholder={t('support_desc_ph', 'Jelaskan langkah terjadinya kendala secara mendetail...')}
+                placeholder={t('support_desc_ph')}
                 className="w-full min-h-[110px] rounded-2xl bg-muted/40 p-4 text-base text-foreground border border-border/40 outline-none focus:border-border transition-colors resize-none placeholder:text-muted-foreground"
                 data-testid="support-description"
               />
@@ -419,7 +419,7 @@ export default function AccountSupportSection() {
             {/* Lampiran Berkas / Foto */}
             <div>
               <label className="text-xs font-semibold text-muted-foreground uppercase block mb-1.5 px-0.5">
-                {t('attachment_optional', 'LAMPIRAN BUKTI (OPSIONAL)')}
+                {t('attachment_optional')}
               </label>
               <input
                 type="file"
@@ -439,8 +439,8 @@ export default function AccountSupportSection() {
                     <Paperclip size={18} />
                     <ImageIcon size={18} />
                   </div>
-                  <p className="text-xs font-medium text-foreground">{t('upload_attachment_hint', 'Klik untuk unggah berkas atau tangkapan layar')}</p>
-                  <p className="text-[11px] text-muted-foreground">PNG, JPG, PDF ({t('file_size_max_5mb', 'Maks. 5MB')})</p>
+                  <p className="text-xs font-medium text-foreground">{t('upload_attachment_hint')}</p>
+                  <p className="text-[11px] text-muted-foreground">PNG, JPG, PDF ({t('file_size_max_5mb')})</p>
                 </div>
               ) : (
                 <div className="relative flex items-center gap-3 p-3 rounded-2xl bg-muted/40 border border-border/40">
@@ -465,7 +465,7 @@ export default function AccountSupportSection() {
                     type="button"
                     onClick={handleRemoveFile}
                     className="h-8 w-8 rounded-full bg-background border border-border/60 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors shrink-0"
-                    aria-label={t('remove_file', 'Hapus berkas')}
+                    aria-label={t('remove_file')}
                   >
                     <X size={15} />
                   </button>
@@ -484,17 +484,17 @@ export default function AccountSupportSection() {
               {isSubmitting ? (
                 <>
                   <Loader2 className="w-4 h-4 animate-spin" />
-                  <span>{file ? t('sending_file', 'Mengirim berkas...') : t('sending', 'Mengirim...')}</span>
+                  <span>{file ? t('sending_file') : t('sending')}</span>
                 </>
               ) : (
-                <span>{t('report_submit', 'Kirim Laporan')}</span>
+                <span>{t('report_submit')}</span>
               )}
             </button>
           </div>
 
           <div>
             <p className="text-xs font-semibold tracking-wider text-muted-foreground uppercase mb-2 px-1">
-              {t('your_reports', 'Riwayat Laporan Anda')}
+              {t('your_reports')}
             </p>
             <div className="space-y-2">
               {(reports || []).length === 0 ? (
@@ -518,11 +518,11 @@ export default function AccountSupportSection() {
                         <div className="flex items-center justify-between gap-2">
                           <p className="font-bold text-[14px] truncate text-foreground">{r?.subject || r?.message}</p>
                           <span className="rounded-full border border-border/70 bg-background/50 text-muted-foreground px-2 py-0.5 text-[10px] font-semibold shrink-0">
-                            {r?.status === 'resolved' ? t('status_resolved', 'Selesai') : t('status_in_progress', 'Dalam Proses')}
+                            {r?.status === 'resolved' ? t('status_resolved') : t('status_in_progress')}
                           </span>
                         </div>
                         <p className="text-xs text-muted-foreground font-medium mt-0.5">
-                          {typeLabels[r?.type] || r?.type || t('reports_support', 'Laporan')}
+                          {typeLabels[r?.type] || r?.type || t('reports_support')}
                           {r?.created_at ? ` · ${new Date(r.created_at).toLocaleDateString()}` : ''}
                         </p>
                         {r?.description ? (
@@ -540,7 +540,7 @@ export default function AccountSupportSection() {
                           className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-muted/60 hover:bg-muted text-[11px] font-semibold text-foreground border border-border/40 transition-colors"
                         >
                           <Paperclip size={12} />
-                          <span>{t('view_attachment', 'Lihat Lampiran Bukti')}</span>
+                          <span>{t('view_attachment')}</span>
                           <ExternalLink size={11} className="text-muted-foreground" />
                         </a>
                       </div>

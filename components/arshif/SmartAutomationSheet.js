@@ -153,11 +153,11 @@ export default function SmartAutomationSheet({ open, onClose }) {
 
         {/* Signal tester */}
         <div className="rounded-2xl bg-card border border-border/40 dark:border-white/5 p-4">
-          <p className="label-upper">{t('test_signal', 'Test signal')}</p>
+          <p className="label-upper">{t('test_signal')}</p>
           <textarea
             value={testText}
             onChange={(e) => editTestText(e.target.value)}
-            placeholder={t('test_signal_ph', 'Paste a bank notification here, e.g. RM50.00 DuitNow QR Pay to MCD 123 on 23/10/26')}
+            placeholder={t('test_signal_ph')}
             rows={3}
             data-testid="signal-input"
             className="mt-2 w-full rounded-xl bg-background border border-border/60 px-3 py-2.5 text-base placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-foreground/20 resize-none"
@@ -174,16 +174,16 @@ export default function SmartAutomationSheet({ open, onClose }) {
           {testResult ? (
             <div className="mt-3 rounded-xl bg-muted px-3.5 py-3 text-sm" data-testid="signal-result">
               <p className="font-bold">{testResult.type === 'income' ? '+' : '-'} {testResult.amount ?? '?'} {testResult.currency ?? ''}</p>
-              <p className="text-muted-foreground">{testResult.merchant ? `${testResult.merchant} · ` : ''}{testResult.type} · {testResult.direction} · {t('rule', 'rule')} #{testResult.ruleId}</p>
+              <p className="text-muted-foreground">{testResult.merchant ? `${testResult.merchant} · ` : ''}{testResult.type} · {testResult.direction} · {t('rule')} #{testResult.ruleId}</p>
             </div>
           ) : ran ? (
             <div className="mt-3 rounded-xl bg-muted px-3.5 py-3 text-sm" data-testid="signal-result">
-              <p className="text-muted-foreground">{t('test_signal_nomatch', 'No rule matched this text. It will not be logged automatically.')}</p>
+              <p className="text-muted-foreground">{t('test_signal_nomatch')}</p>
             </div>
           ) : testText.trim() !== '' ? (
-            <p className="mt-3 text-xs text-muted-foreground">{t('test_signal_ready', 'Tap Test to parse this notification.')}</p>
+            <p className="mt-3 text-xs text-muted-foreground">{t('test_signal_ready')}</p>
           ) : (
-            <p className="mt-3 text-xs text-muted-foreground">{t('test_signal_empty', 'No notification yet. Paste one above to see what the detector reads.')}</p>
+            <p className="mt-3 text-xs text-muted-foreground">{t('test_signal_empty')}</p>
           )}
         </div>
 
@@ -198,7 +198,7 @@ export default function SmartAutomationSheet({ open, onClose }) {
           {setupMode === 'steps' ? <Steps items={[t('ap_step1'), t('ap_step2'), t('ap_step3')]} /> : (
             <ol className="space-y-2.5 mt-3">
               {[
-                t('ap_vid1', 'In Wallet, turn on card transaction notifications.'), t('ap_vid2', 'After each payment, copy the notification text.'), t('ap_vid3', 'Open the Arshif shortcut and paste, or use Share to Arshif.'), t('ap_vid4', 'The transaction is filled in automatically, then saved.'),
+                t('ap_vid1'), t('ap_vid2'), t('ap_vid3'), t('ap_vid4'),
               ].map((s, i) => (
                 <li key={i} className="flex gap-3 items-start">
                   <span className="h-6 w-6 rounded-full bg-foreground text-background text-xs font-bold flex items-center justify-center shrink-0">{i + 1}</span>

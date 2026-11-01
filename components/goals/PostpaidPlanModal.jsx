@@ -192,7 +192,7 @@ export default function PostpaidPlanModal({
       open={open}
       onClose={onClose}
       zIndex={70}
-      title={plan ? t('edit_loan', 'Edit Paket PayLater') : t('loan_postpaid_title', 'Paket PayLater Baru')}
+      title={plan ? t('edit_loan') : t('loan_postpaid_title')}
       left={
         <button
           type="button"
@@ -209,7 +209,7 @@ export default function PostpaidPlanModal({
           disabled={!isValid || isSubmitting}
           className="text-sm font-bold text-foreground hover:opacity-80 transition-opacity cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
         >
-          {isSubmitting ? t('saving', 'Menyimpan...') : plan ? t('save', 'Simpan') : t('create', 'Tambah')}
+          {isSubmitting ? t('saving') : plan ? t('save') : t('create')}
         </button>
       }
     >

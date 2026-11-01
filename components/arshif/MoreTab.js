@@ -66,7 +66,7 @@ export default function MoreTab() {
         <div className="absolute -right-8 -top-8 h-32 w-32 rounded-full bg-white/[0.05]" />
         <div className="flex items-center gap-2"><Crown size={18} /><p className="font-bold">{t('premium_title')}</p></div>
         <p className="text-sm text-white/60 mt-1">{t('current_plan')}: <span className="uppercase font-semibold">{userTier}</span></p>
-        <span className="inline-block mt-3 rounded-xl bg-white text-zinc-950 text-sm font-bold px-4 py-2">{isPremium ? t('active', 'Active') : t('upgrade')}</span>
+        <span className="inline-block mt-3 rounded-xl bg-white text-zinc-950 text-sm font-bold px-4 py-2">{isPremium ? t('active') : t('upgrade')}</span>
       </button>
 
       <SectionLabel className="mt-7 mb-2 px-1">{t('everyday')}</SectionLabel>
@@ -93,7 +93,7 @@ export default function MoreTab() {
 
       <SectionLabel className="mt-7 mb-2 px-1">{t('advanced')}</SectionLabel>
       <Card className="divide-y divide-zinc-200/60 dark:divide-white/5 overflow-hidden">
-        <Row icon={Cloud} label={t('cloud_receipt_backup', 'Cloud Receipt Backup')} right={providerSubtitle} onClick={() => open('cloudBackup')} testId="more-cloud-backup" />
+        <Row icon={Cloud} label={t('cloud_receipt_backup')} right={providerSubtitle} onClick={() => open('cloudBackup')} testId="more-cloud-backup" />
         <Row icon={Workflow} label={t('smart_automation')} onClick={() => open('automation')} testId="more-automation" />
         <Row icon={Repeat} label={t('recurring')} onClick={() => setRecurringOpen(true)} testId="more-recurring" />
         <Row icon={TrendingUp} label={t('net_worth')} onClick={() => setNetWorthOpen(true)} testId="more-networth" />

@@ -76,9 +76,9 @@ export default function LoansSection({
 
   // Subtitle based on currency
   const bnplSubtitle = useMemo(() => {
-    if (home === 'MYR') return t('loans_empty_my', 'Track Atome, SPayLater, Grab, bank financing & more.')
-    if (home === 'TRY') return t('loans_empty_tr', 'Track loans, cash advances, BNPL & flexible accounts.')
-    return t('loans_empty_id', 'Track SPayLater, GoPay Later, Kredivo, bank loans & installments.')
+    if (home === 'MYR') return t('loans_empty_my')
+    if (home === 'TRY') return t('loans_empty_tr')
+    return t('loans_empty_id')
   }, [home, t])
 
   // Open appropriate edit modal
@@ -97,7 +97,7 @@ export default function LoansSection({
       {/* Header section with (+) button */}
       <div className="flex items-center justify-between mb-1">
         <span className="text-xs font-semibold tracking-wider text-muted-foreground uppercase">
-          {t('loans_bnpl', 'Loans & BNPL')}
+          {t('loans_bnpl')}
         </span>
         <div className="flex items-center">
           <span className="text-xs text-muted-foreground mr-3 font-medium">
@@ -107,7 +107,7 @@ export default function LoansSection({
             type="button"
             onClick={() => setTypeActionSheetOpen(true)}
             className="w-7 h-7 rounded-full bg-foreground text-background flex items-center justify-center hover:opacity-90 active:scale-95 transition-all shadow-xs cursor-pointer"
-            aria-label={t('add_loan_choice', '+ Add loan or BNPL installment')}
+            aria-label={t('add_loan_choice')}
             data-testid="new-loan"
           >
             <Plus size={15} strokeWidth={2.5} />
@@ -125,7 +125,7 @@ export default function LoansSection({
           onClick={() => setTypeActionSheetOpen(true)}
           className="w-full min-h-[90px] rounded-2xl border border-dashed border-border/80 bg-white dark:bg-[#121214] py-7 px-4 text-center text-sm font-medium text-muted-foreground hover:border-foreground/40 hover:text-foreground transition-all cursor-pointer flex items-center justify-center shadow-xs"
         >
-          {t('add_loan_choice', '+ Add loan or BNPL installment')}
+          {t('add_loan_choice')}
         </button>
       ) : (
         <div className="space-y-2.5">
@@ -148,11 +148,11 @@ export default function LoansSection({
             // Teks Subjudul yang adaptif
             let subtitleText = ''
             if (isPostpaid) {
-              subtitleText = `${t('loan_postpaid_title', 'Monthly Postpaid')} · ${t('due_on_day', 'Due day')} ${dueDay}`
+              subtitleText = `${t('loan_postpaid_title')} · ${t('due_on_day')} ${dueDay}`
             } else if (tenor > 0) {
-              subtitleText = `${tenor} ${t('remaining_tenor', 'months left')} · ${t('due_on_day', 'Due day')} ${dueDay}`
+              subtitleText = `${tenor} ${t('remaining_tenor')} · ${t('due_on_day')} ${dueDay}`
             } else {
-              subtitleText = `${t('due_on_day', 'Due day')} ${dueDay}`
+              subtitleText = `${t('due_on_day')} ${dueDay}`
             }
 
             return (
@@ -167,7 +167,7 @@ export default function LoansSection({
                   </div>
                   <div className="min-w-0">
                     <p className="text-sm font-semibold text-foreground truncate group-hover:text-foreground/90">
-                      {loan.title || loan.name || loan.provider_name || t('loan_instalment_title', 'Loan')}
+                      {loan.title || loan.name || loan.provider_name || t('loan_instalment_title')}
                     </p>
                     <p className="text-xs text-muted-foreground mt-0.5 truncate">
                       {subtitleText}
@@ -182,7 +182,7 @@ export default function LoansSection({
                   </p>
                   {totalPrincipal > 0 && !isPostpaid && (
                     <p className="text-[10px] text-muted-foreground mt-0.5 tabular-nums">
-                      {t('total_payment', 'Total')}: {fmt(totalPrincipal, loan.currency || home)}
+                      {t('total_payment')}: {fmt(totalPrincipal, loan.currency || home)}
                     </p>
                   )}
                   {isPostpaid && Number(loan.credit_limit) > 0 && (
@@ -202,11 +202,11 @@ export default function LoansSection({
         open={typeActionSheetOpen}
         onClose={() => setTypeActionSheetOpen(false)}
         zIndex={70}
-        title={t('choose_loan_type', 'Choose Loan / BNPL Type')}
+        title={t('choose_loan_type')}
       >
         <div className="space-y-4 pt-1">
           <p className="text-xs text-muted-foreground text-center font-medium">
-            {t('choose_loan_type', 'Choose Loan / BNPL Type')}
+            {t('choose_loan_type')}
           </p>
 
           {/* Action Buttons */}
@@ -227,10 +227,10 @@ export default function LoansSection({
                 </div>
                 <div>
                   <p className="text-sm font-bold text-foreground">
-                    {t('loan_instalment_title', 'Loan or BNPL Installment')}
+                    {t('loan_instalment_title')}
                   </p>
                   <p className="text-xs text-muted-foreground mt-0.5">
-                    {t('loan_instalment_desc', 'Cicilan tenor 3–36 bln, KTA, Kartu Kredit, atau PayLater')}
+                    {t('loan_instalment_desc')}
                   </p>
                 </div>
               </div>
@@ -254,10 +254,10 @@ export default function LoansSection({
                 </div>
                 <div>
                   <p className="text-sm font-bold text-foreground">
-                    {t('loan_postpaid_title', 'Monthly Postpaid / PayLater Plan')}
+                    {t('loan_postpaid_title')}
                   </p>
                   <p className="text-xs text-muted-foreground mt-0.5">
-                    {t('loan_postpaid_desc', 'SPayLater, GoPay Later, Kredivo 30 hari tanpa tenor tetap')}
+                    {t('loan_postpaid_desc')}
                   </p>
                 </div>
               </div>

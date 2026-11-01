@@ -78,7 +78,7 @@ export default function ProfileSheet({ open, onClose }) {
 
       <div className="flex flex-col items-center pt-1">
         <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={onAvatar} />
-        <button type="button" onClick={() => fileRef.current?.click()} className="relative">
+        <button type="button" onClick={() => fileRef.current?.click()} className="relative" aria-label={avatar ? t('change_photo') : t('add_photo')}>
           <div className="h-24 w-24 rounded-full bg-foreground text-background text-3xl font-bold flex items-center justify-center overflow-hidden">
             {avatar ? <img src={avatar} alt="avatar" className="h-full w-full object-cover" /> : initial}
           </div>
@@ -106,7 +106,7 @@ export default function ProfileSheet({ open, onClose }) {
                 <div>
                   <p className="text-sm font-medium mb-1.5">{t('company_logo_invoice')}</p>
                   <input ref={logoRef} type="file" accept="image/png,image/jpeg" className="hidden" onChange={onLogo} />
-                  <button type="button" onClick={() => logoRef.current?.click()} className="w-full aspect-[3/1] rounded-xl border border-dashed border-border flex items-center justify-center overflow-hidden bg-background" data-testid="profile-logo">
+                  <button type="button" onClick={() => logoRef.current?.click()} className="w-full aspect-[3/1] rounded-xl border border-dashed border-border flex items-center justify-center overflow-hidden bg-background" data-testid="profile-logo" aria-label={t('company_logo_invoice')}>
                     {biz.logo ? <img src={biz.logo} alt="logo" className="h-full w-full object-contain" /> : <span className="flex flex-col items-center text-muted-foreground text-xs"><ImagePlus size={20} strokeWidth={1.5} /> <span className="mt-1">{t('logo_format_hint')}</span></span>}
                   </button>
                 </div>

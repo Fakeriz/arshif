@@ -53,7 +53,7 @@ export default function TaxReportSheet({ open, onClose }) {
 
   const download = async (format) => {
     if (busy) return
-    if (!report.count) { toast.error(t('tax_report_empty', 'No deductible transactions')); return }
+    if (!report.count) { toast.error(t('tax_report_empty')); return }
     setBusy(true)
     try {
       const XLSX = await import('xlsx')
@@ -75,30 +75,30 @@ export default function TaxReportSheet({ open, onClose }) {
   const hasData = report.count > 0
 
   return (
-    <Sheet open={open} onClose={onClose} title={t('tax_report', 'Tax Report')}>
+    <Sheet open={open} onClose={onClose} title={t('tax_report')}>
       <div className="pt-1 space-y-4">
         <Segmented value={mode} onChange={switchMode} options={[{ id: 'month', label: t('period_month') }, { id: 'year', label: t('period_year') }]} />
 
         {/* Navigasi periode: tombol icon dengan aria-label, semua bisa dikeyboard */}
         <div className="flex items-center justify-between gap-2">
-          <button type="button" onClick={() => bump(-1)} aria-label={t('tax_prev_period', 'Previous period')} className="h-11 w-11 rounded-xl bg-background border border-border/60 flex items-center justify-center text-foreground hover:bg-muted/40 transition">
+          <button type="button" onClick={() => bump(-1)} aria-label={t('tax_prev_period')} className="h-11 w-11 rounded-xl bg-background border border-border/60 flex items-center justify-center text-foreground hover:bg-muted/40 transition">
             <ChevronLeft size={18} />
           </button>
           <p className="flex-1 text-center font-bold text-[15px] text-foreground truncate" aria-live="polite">{periodLabel}</p>
-          <button type="button" onClick={() => bump(1)} aria-label={t('tax_next_period', 'Next period')} className="h-11 w-11 rounded-xl bg-background border border-border/60 flex items-center justify-center text-foreground hover:bg-muted/40 transition">
+          <button type="button" onClick={() => bump(1)} aria-label={t('tax_next_period')} className="h-11 w-11 rounded-xl bg-background border border-border/60 flex items-center justify-center text-foreground hover:bg-muted/40 transition">
             <ChevronRight size={18} />
           </button>
         </div>
 
         {error ? (
           <div role="alert" className={cn(card, 'text-sm font-medium text-foreground')}>
-            {t('tax_report_error', 'Report data could not be processed, totals may be incomplete')}
+            {t('tax_report_error')}
           </div>
         ) : null}
 
         {/* Ringkasan: kartu utama total deductible, fokus satu layar */}
         <div className="rounded-2xl bg-[#0c0c0e] dark:bg-[#141416] border border-white/10 p-5" data-testid="tax-summary">
-          <p className="text-xs font-semibold uppercase tracking-[0.12em] text-white/50">{t('tax_total_deductible', 'Total deductible')}</p>
+          <p className="text-xs font-semibold uppercase tracking-[0.12em] text-white/50">{t('tax_total_deductible')}</p>
           <p className="text-2xl font-extrabold text-white mt-1 truncate">{fmt(report.total, home)}</p>
           <p className="text-sm text-white/60 mt-1">{report.count} {t('transactions').toLowerCase()}</p>
         </div>
@@ -119,8 +119,8 @@ export default function TaxReportSheet({ open, onClose }) {
         ) : (
           <EmptyState
             icon={Landmark}
-            title={t('tax_report_empty', 'No deductible transactions')}
-            subtitle={t('tax_report_empty_sub', 'Mark a transaction as tax deductible to see it here')}
+            title={t('tax_report_empty')}
+            subtitle={t('tax_report_empty_sub')}
           />
         )}
 

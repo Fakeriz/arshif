@@ -922,7 +922,7 @@ export default function ImportTransactionsPage({ onClose }) {
                 </div>
                 {(result.failed || 0) > 0 ? (
                   <div className="flex items-center justify-between py-4">
-                    <p className="text-[14px] text-rose-600 dark:text-rose-400">{t('import_sum_failed', 'Gagal (kurs tidak tersedia / error)')}</p>
+                    <p className="text-[14px] text-rose-600 dark:text-rose-400">{t('import_sum_failed')}</p>
                     <p className="text-[15px] font-bold text-rose-600 dark:text-rose-400">{result.failed} {t('import_tx_unit')}</p>
                   </div>
                 ) : null}

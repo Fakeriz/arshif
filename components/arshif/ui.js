@@ -1,5 +1,5 @@
 'use client'
-import React, { useEffect, useMemo, Component } from 'react'
+import React, { useEffect, useId, useMemo, Component } from 'react'
 import { AnimatePresence, motion, useDragControls } from 'framer-motion'
 import { cn, triggerHaptic } from '@/lib/utils'
 import { useApp } from './context'
@@ -377,7 +377,7 @@ export function DateSelector({
           }}
           className="text-xs text-muted-foreground hover:text-foreground p-1 z-20 shrink-0 cursor-pointer"
         >
-          {app?.t ? app.t('clear', 'Clear') : 'Clear'}
+          {app?.t ? app.t('clear') : 'Clear'}
         </button>
       )}
       <input
@@ -435,6 +435,7 @@ export function Sheet({ open, onClose, children, title, left, right, full = fals
   const app = useApp()
   const cancelText = app?.t ? app.t('cancel') : 'Cancel'
   const controls = useDragControls()
+  const titleId = useId()
 
   useEffect(() => {
     if (!open) {
@@ -485,6 +486,9 @@ export function Sheet({ open, onClose, children, title, left, right, full = fals
             dragConstraints={{ top: 0, bottom: 0 }}
             dragElastic={{ top: 0, bottom: 0.5 }}
             onDragEnd={onDragEnd}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby={titleId}
             className={cn(
               'absolute inset-x-0 bottom-0 mx-auto w-full max-w-md bg-white dark:bg-[#121214] shadow-2xl flex flex-col overflow-hidden border-t sm:border border-border/50 transform-gpu will-change-transform',
               'rounded-t-3xl sm:rounded-3xl',
@@ -513,7 +517,7 @@ export function Sheet({ open, onClose, children, title, left, right, full = fals
                     </button>
                   )}
                 </div>
-                <h2 onPointerDown={startDrag} className="text-base font-bold text-foreground text-center flex-1 truncate cursor-grab active:cursor-grabbing">{title}</h2>
+                <h2 id={titleId} onPointerDown={startDrag} className="text-base font-bold text-foreground text-center flex-1 truncate cursor-grab active:cursor-grabbing">{title}</h2>
                 <div className="min-w-[72px] flex justify-end">{right}</div>
               </div>
             </div>

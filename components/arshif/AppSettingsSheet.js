@@ -58,7 +58,7 @@ export default function AppSettingsSheet({ open, onClose }) {
 
         <div className={box}>
           <Row icon={CalendarDays} label={t('month_start_date')} sub={t('month_start_desc') || t('month_start_sub')} onClick={() => nav(() => openSheet('monthStart'))} testId="set-monthstart" />
-          <Row icon={Cloud} label={t('cloud_receipt_backup', 'Cloud Receipt Backup')} sub={providerSubtitle} onClick={() => nav(() => openSheet('cloudBackup'))} testId="set-cloud-backup" />
+          <Row icon={Cloud} label={t('cloud_receipt_backup')} sub={providerSubtitle} onClick={() => nav(() => openSheet('cloudBackup'))} testId="set-cloud-backup" />
           <Row icon={ShieldCheck} label={t('account_backup')} sub={t('account_backup_sub')} onClick={() => nav(() => openSheet('backup'))} testId="set-backup" />
           <Row icon={Bell} label={t('notifications')} sub={t('notifications_sub')} onClick={() => nav(() => openSheet('notifSettings'))} testId="set-notifications" />
         </div>
