@@ -3,6 +3,11 @@
 import { readBearerToken, getServerSupabase } from '@/lib/api-auth'
 import { json, err } from './http'
 
+// Token dev tidak boleh aktif di production agar tidak membuka bypass auth.
+if (process.env.NODE_ENV === 'production' && process.env.ARSHIF_DEV_ADMIN_TOKEN) {
+  console.warn('ARSHIF_DEV_ADMIN_TOKEN diset saat production, bypass dev nonaktif')
+}
+
 // Access check + konsumsi kuota via RPC. Fail closed kalau service kuota down.
 async function verifyAndConsumeAiAccess(request) {
   const token = readBearerToken(request)
