@@ -65,7 +65,7 @@ export default function LoanCalculatorSheet({ open, onClose }) {
                 <span className="font-bold text-sm">{getCurrency(currency).symbol}</span>
                 <ChevronRight size={15} className="text-muted-foreground" />
               </button>
-              <TextInput type="text" inputMode="decimal" value={amount} onChange={(e) => setAmount(sanitizeAmount(e.target.value))} placeholder="0" className="flex-1 text-lg font-bold" data-testid="loan-amount" />
+              <TextInput type="text" inputMode="decimal" value={amount} onChange={(e) => setAmount(sanitizeAmount(e.target.value))} placeholder={t('amount_placeholder') || '0'} className="flex-1 text-lg font-bold" data-testid="loan-amount" />
             </div>
           </Field>
 
@@ -75,7 +75,7 @@ export default function LoanCalculatorSheet({ open, onClose }) {
 
           <Field label={t('loan_tenure')}>
             <div className="flex gap-2">
-              <TextInput type="number" inputMode="numeric" value={tenure} onChange={(e) => setTenure(e.target.value)} placeholder="0" className="flex-1" data-testid="loan-tenure" />
+              <TextInput type="number" inputMode="numeric" value={tenure} onChange={(e) => setTenure(e.target.value)} placeholder={t('amount_placeholder') || '0'} className="flex-1" data-testid="loan-tenure" />
               <Segmented size="sm" className="w-40 shrink-0" value={unit} onChange={setUnit} options={[{ id: 'months', label: t('loan_months') }, { id: 'years', label: t('loan_years') }]} />
             </div>
           </Field>

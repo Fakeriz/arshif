@@ -62,7 +62,7 @@ export default function MoreTab() {
         </div>
       </div>
 
-      <button type="button" onClick={() => open('paywall')} className="w-full mt-5 rounded-2xl bg-[#0A0A0B] text-white p-5 text-left relative overflow-hidden border border-white/10" data-testid="premium-card">
+      <button type="button" onClick={() => open('paywall')} className="w-full mt-5 rounded-2xl bg-[#0A0A0B] dark:bg-white dark:text-zinc-950 text-white p-5 text-left relative overflow-hidden border border-white/10 dark:border-zinc-200" data-testid="premium-card">
         <div className="absolute -right-8 -top-8 h-32 w-32 rounded-full bg-white/[0.05]" />
         <div className="flex items-center gap-2"><Crown size={18} /><p className="font-bold">{t('premium_title')}</p></div>
         <p className="text-sm text-white/60 mt-1">{t('current_plan')}: <span className="uppercase font-semibold">{userTier}</span></p>

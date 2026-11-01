@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { ChevronRight, Plus, Check, Share2, HandCoins } from 'lucide-react'
 import { toast } from 'sonner'
 import { useApp } from './context'
-import { Sheet, Segmented, TextInput, Field, DatePickerInput } from './ui'
+import { Sheet, Segmented, TextInput, Field, DatePickerInput, EmptyState } from './ui'
 import CurrencySheet from './CurrencySheet'
 import { getCurrency, roundMoney } from '@/lib/currencies'
 import { cn } from '@/lib/utils'
@@ -109,11 +109,11 @@ export default function DebtTrackerSheet({ open, onClose }) {
 
         <div className="mt-4 space-y-2.5">
           {list.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-12 text-center">
-              <div className="h-14 w-14 rounded-2xl bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center mb-3 text-zinc-400 dark:text-zinc-500"><HandCoins size={24} strokeWidth={1.5} /></div>
-              <p className="font-bold text-zinc-950 dark:text-white">{t('debt_empty_title')}</p>
-              <p className="text-sm text-zinc-600 dark:text-zinc-400 mt-1">{t('debt_empty_sub')}</p>
-            </div>
+            <EmptyState
+              icon={HandCoins}
+              title={t('debt_empty_title')}
+              subtitle={t('debt_empty_sub')}
+            />
           ) : list.map((d) => (
             <div key={d.id} className="rounded-2xl bg-white dark:bg-[#1c1c1e] border border-zinc-200 dark:border-white/10 p-4" data-testid="debt-row">
               <div className="flex items-start justify-between gap-2">
@@ -150,7 +150,7 @@ export default function DebtTrackerSheet({ open, onClose }) {
                 <span className="font-bold text-sm">{getCurrency(currency).symbol}</span>
                 <ChevronRight size={15} className="text-zinc-500 dark:text-zinc-400" />
               </button>
-              <TextInput type="text" inputMode="decimal" value={amount} onChange={(e) => setAmount(sanitizeAmount(e.target.value))} placeholder="0" className="flex-1 text-lg font-bold" data-testid="debt-amount" />
+              <TextInput type="text" inputMode="decimal" value={amount} onChange={(e) => setAmount(sanitizeAmount(e.target.value))} placeholder={t('amount_placeholder') || '0'} className="flex-1 text-lg font-bold" data-testid="debt-amount" />
             </div>
           </Field>
           <DatePickerInput label={t('debt_due_date')} value={due} onChange={setDue} data-testid="debt-due" clearable />

@@ -7,7 +7,7 @@ import {
 import { toast } from 'sonner'
 import { useApp } from './context'
 import CurrencySheet from './CurrencySheet'
-import { Sheet, CategoryIcon, DatePickerInput, Switch } from './ui'
+import { Sheet, CategoryIcon, DatePickerInput, Switch, DotsButtonLoader } from './ui'
 import { CATEGORIES } from '@/lib/categories'
 import { getCurrency } from '@/lib/currencies'
 import { cn, triggerHaptic } from '@/lib/utils'
@@ -265,7 +265,7 @@ export default function SubscriptionSheet({
                       inputMode="decimal"
                       value={amount}
                       onChange={(e) => setAmount(e.target.value.replace(/[^0-9.]/g, ''))}
-                      placeholder="0"
+                    placeholder={t('amount_placeholder') || '0'}
                       className="bg-transparent text-base font-semibold text-foreground outline-none w-full placeholder:text-muted-foreground/40"
                     />
                   </div>
@@ -517,9 +517,10 @@ export default function SubscriptionSheet({
                     type="button"
                     onClick={handleSave}
                     disabled={saving}
-                    className="w-full bg-foreground text-background font-bold py-4 rounded-2xl shadow-lg hover:opacity-95 active:scale-[0.99] transition-all text-sm cursor-pointer disabled:opacity-50"
+                    aria-busy={saving}
+                    className="w-full bg-foreground text-background font-bold py-4 rounded-2xl shadow-lg hover:opacity-95 active:scale-[0.99] transition-all text-sm cursor-pointer disabled:opacity-50 flex items-center justify-center min-h-[52px]"
                   >
-                    {saving ? 'Saving...' : 'Save changes'}
+                    {saving ? <DotsButtonLoader /> : 'Save changes'}
                   </button>
 
                   {isEditing && (

@@ -467,7 +467,7 @@ export default function NewAccountSheet({ open, onClose }) {
                 inputMode="decimal"
                 value={balance}
                 onChange={handleAmountChange}
-                placeholder="0"
+                placeholder={t('amount_placeholder') || '0'}
                 className={cn(INPUT_CLS, 'flex-1 px-4 py-3 rounded-xl text-lg font-bold tabular-nums')}
                 data-testid="account-balance"
               />

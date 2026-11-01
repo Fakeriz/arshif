@@ -182,12 +182,12 @@ export default function BillsTrackerSheet({ open, onClose }) {
               rate: rate,
               category: cleanCategory,
               payment_method: b.payment_method || 'bank',
-              description: `${t('bill_payment_prefix', 'Pembayaran Tagihan')}: ${billTitle}`,
+              description: `${t('bill_payment_prefix')}: ${billTitle}`,
               merchant: billTitle,
               transaction_date: currentIso,
               bill_id: b.id,
               billing_month: activeMonthKey,
-              note: `${t('bill_payment_prefix', 'Pembayaran Tagihan')}: ${billTitle}`,
+              note: `${t('bill_payment_prefix')}: ${billTitle}`,
               date: currentIso,
             }
 
@@ -199,10 +199,9 @@ export default function BillsTrackerSheet({ open, onClose }) {
                 if (targetAccountId) {
                   try {
                     await applyTxToBalances(store, accounts, newTransaction, 1, rates)
-                  } catch (balErr) {
+                  } catch {
                     // Balance write failed: remove the created transaction and
                     // restore the bill to unpaid so the ledger stays consistent.
-                    console.warn('Balance apply error:', balErr)
                     try { await store.deleteTransaction(created?.id || newTransaction.id) } catch {}
                     try {
                       const revertedPm = { ...(b.paid_months || {}) }
@@ -210,26 +209,25 @@ export default function BillsTrackerSheet({ open, onClose }) {
                       await store.updateBill(b.id, { paid_months: revertedPm })
                     } catch {}
                     setBills((list) => (list || []).map((x) => (x.id === b.id ? { ...x, paid_months: revertedPm } : x)))
-                    toast.error(t('bill_paid_failed', 'Tagihan ditandai lunas gagal: saldo tidak dapat diperbarui'))
+                    toast.error(t('bill_paid_failed'))
                     return
                   }
                 }
                 if (typeof refresh === 'function') await refresh()
               }
-              toast.success(t('bill_paid_logged') || 'Tagihan lunas & pengeluaran dicatat')
-            } catch (txErr) {
+              toast.success(t('bill_paid_logged'))
+            } catch {
               // Marking paid failed at the transaction level: undo the paid flag
               // so the tracker does not show a payment that was never recorded.
-              console.warn('Auto log bill payment transaction error:', txErr)
               try {
                 const revertedPm = { ...(b.paid_months || {}) }
                 delete revertedPm[activeMonthKey]
                 await store.updateBill(b.id, { paid_months: revertedPm })
                 setBills((list) => (list || []).map((x) => (x.id === b.id ? { ...x, paid_months: revertedPm } : x)))
-              } catch (revertBillErr) {
-                console.warn('Auto log bill payment revert failed:', revertBillErr)
+              } catch {
+                toast.error(t('bill_paid_failed'))
               }
-              toast.error(t('bill_paid_failed', 'Transaksi gagal dibuat, status tagihan dikembalikan'))
+              toast.error(t('bill_paid_failed'))
               return
             }
           }
@@ -249,15 +247,14 @@ export default function BillsTrackerSheet({ open, onClose }) {
               if (linkedTx.account_id) {
                 try {
                   await applyTxToBalances(store, accounts, linkedTx, -1, rates)
-                } catch (revertBalErr) {
-                  console.warn('Balance revert error:', revertBalErr)
-                  toast.error(t('bill_unpaid_failed', 'Pembayaran dibatalkan gagal: saldo tidak dapat dipulihkan'))
+                } catch {
+                  toast.error(t('bill_unpaid_failed'))
                 }
               }
               if (typeof refresh === 'function') await refresh()
             }
-          } catch (revertErr) {
-            console.warn('Revert bill payment transaction error:', revertErr)
+          } catch {
+            toast.error(t('bill_unpaid_failed'))
           }
         }
       }
@@ -642,7 +639,7 @@ export default function BillsTrackerSheet({ open, onClose }) {
               inputMode="decimal"
               value={amount}
               onChange={(e) => setAmount(sanitizeAmount(e.target.value))}
-              placeholder="0"
+              placeholder={t('amount_placeholder') || '0'}
               className="text-lg font-bold"
               data-testid="bill-amount"
             />
@@ -796,7 +793,7 @@ export default function BillsTrackerSheet({ open, onClose }) {
               inputMode="decimal"
               value={editAmount}
               onChange={(e) => setEditAmount(sanitizeAmount(e.target.value))}
-              placeholder="0"
+              placeholder={t('amount_placeholder') || '0'}
               className="text-lg font-bold"
               data-testid="edit-bill-amount"
             />

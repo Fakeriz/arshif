@@ -144,7 +144,7 @@ export default function ProfileSheet({ open, onClose }) {
             </div>
 
             <Field label={`${t('business_opening_balance')} (${getCurrency(home).symbol})`}>
-              <TextInput value={biz.openingBalance} onChange={(e) => setB({ openingBalance: sanitizeAmount(e.target.value) })} placeholder="0" inputMode="decimal" type="text" data-testid="profile-biz-balance" />
+              <TextInput value={biz.openingBalance} onChange={(e) => setB({ openingBalance: sanitizeAmount(e.target.value) })} placeholder={t('amount_placeholder') || '0'} inputMode="decimal" type="text" data-testid="profile-biz-balance" />
             </Field>
           </>
         ) : null}

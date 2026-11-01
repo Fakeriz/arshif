@@ -198,7 +198,7 @@ export function TotalBalanceCard() {
 
   return (
     <div
-      className="h-full w-full rounded-2xl p-5 sm:p-6 relative overflow-hidden flex flex-col justify-between select-none text-white border border-white/10 bg-gradient-to-br from-[#151518] via-[#0c0c0e] to-[#08080a]"
+      className="h-full w-full rounded-2xl p-5 sm:p-6 relative overflow-hidden flex flex-col justify-between select-none text-white border border-white/10 bg-gradient-to-br from-[#151518] via-[#0c0c0e] to-[#08080a] dark:from-zinc-100 dark:via-white dark:to-zinc-200"
       data-testid="balance-card"
     >
       {/* Depth: sheen diagonal + hairline highlight atas - cahaya radial dihapus agar tidak melebihi dose cap glow (R-13) */}

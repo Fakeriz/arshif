@@ -738,7 +738,7 @@ export default function GoalsTab() {
               inputMode="decimal"
               value={fund}
               onChange={(e) => setFund(sanitizeAmount(e.target.value))}
-              placeholder="0"
+              placeholder={t('amount_placeholder') || '0'}
               autoFocus
             />
           </Field>

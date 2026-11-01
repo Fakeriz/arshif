@@ -260,7 +260,7 @@ export function BankCard({
       onClick={onClick}
       style={style}
       className={cn(
-        'w-full aspect-[1.58/1] min-h-[185px] rounded-2xl p-5 relative overflow-hidden flex flex-col justify-between shrink-0 select-none bg-[#0c0c0e]',
+        'w-full aspect-[1.58/1] min-h-[185px] rounded-2xl p-5 relative overflow-hidden flex flex-col justify-between shrink-0 select-none bg-[#0c0c0e] dark:bg-zinc-100',
         th.className,
         topBorderCls,
         occlusionShadowCls,

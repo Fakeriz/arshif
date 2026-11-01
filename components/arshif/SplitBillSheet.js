@@ -100,7 +100,7 @@ export default function SplitBillSheet({ open, onClose }) {
         <Segmented value={mode} onChange={setMode} options={[{ id: 'equally', label: t('equally') }, { id: 'uneven', label: t('uneven') }, { id: 'items', label: t('by_items') }]} />
 
         {mode !== 'items' ? (
-          <Field label={`${t('total')} (${getCurrency(home).code})`}><TextInput type="text" inputMode="decimal" value={total} onChange={(e) => setTotal(sanitizeAmount(e.target.value))} placeholder="0" className="text-lg font-bold" data-testid="split-total" /></Field>
+          <Field label={`${t('total')} (${getCurrency(home).code})`}><TextInput type="text" inputMode="decimal" value={total} onChange={(e) => setTotal(sanitizeAmount(e.target.value))} placeholder={t('amount_placeholder') || '0'} className="text-lg font-bold" data-testid="split-total" /></Field>
         ) : (
           <div>
             <div className="flex items-center justify-between mb-1"><p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-zinc-600 dark:text-zinc-400">{t('items')}</p><span className="text-sm font-bold tabular-nums text-zinc-950 dark:text-white">{fmt(totalNum, home)}</span></div>
@@ -111,7 +111,7 @@ export default function SplitBillSheet({ open, onClose }) {
                   <div key={i} className="flex items-center gap-2 px-3 py-2 border-b border-zinc-200/60 dark:border-white/5 last:border-0">
                     <button type="button" onClick={() => toggleAssign(i)} className="h-11 w-11 rounded-lg flex items-center justify-center shrink-0" aria-label={t('a11y_assign')}><span className={cn('h-5 w-5 rounded-md border flex items-center justify-center transition-colors', mine ? 'bg-zinc-950 border-zinc-950 text-white dark:bg-white dark:border-white dark:text-zinc-950' : 'border-zinc-300 dark:border-zinc-700')}>{mine ? <Check size={12} strokeWidth={3} /> : null}</span></button>
                     <input value={it.name} onChange={(e) => setItem(i, { name: e.target.value })} placeholder={t('item_name')} className="flex-1 bg-transparent text-base min-w-0 text-zinc-950 dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-500 font-medium outline-none focus-visible:ring-2 focus-visible:ring-foreground/20 rounded" />
-                    <input type="text" inputMode="decimal" value={it.price} onChange={(e) => setItem(i, { price: Number(sanitizeAmount(e.target.value)) || 0 })} className="w-20 bg-zinc-100 dark:bg-zinc-800 rounded-lg px-2 py-1 text-right text-base focus-visible:ring-2 focus-visible:ring-foreground/20 tabular-nums font-bold text-zinc-950 dark:text-white border border-zinc-200 dark:border-white/5 outline-none" placeholder="0" />
+                    <input type="text" inputMode="decimal" value={it.price} onChange={(e) => setItem(i, { price: Number(sanitizeAmount(e.target.value)) || 0 })} className="w-20 bg-zinc-100 dark:bg-zinc-800 rounded-lg px-2 py-1 text-right text-base focus-visible:ring-2 focus-visible:ring-foreground/20 tabular-nums font-bold text-zinc-950 dark:text-white border border-zinc-200 dark:border-white/5 outline-none" placeholder={t('amount_placeholder') || '0'} />
                     <button type="button" onClick={() => delItem(i)} className="p-1 text-zinc-400 hover:text-rose-500 dark:text-zinc-500 dark:hover:text-rose-400 transition-colors"><X size={14} /></button>
                   </div>
                 )
@@ -132,7 +132,7 @@ export default function SplitBillSheet({ open, onClose }) {
                 <div className="h-9 w-9 rounded-full bg-zinc-950 text-white dark:bg-white dark:text-zinc-950 flex items-center justify-center text-sm font-bold shrink-0">{(p.name.trim()[0] || '?').toUpperCase()}</div>
                 <input value={p.name} onChange={(e) => setPerson(p.id, { name: e.target.value })} placeholder={t('split_name_ph')} className="flex-1 bg-transparent focus-visible:ring-2 focus-visible:ring-foreground/20 rounded text-base font-bold min-w-0 text-zinc-950 dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-500 outline-none" onClick={(e) => e.stopPropagation()} />
                 {mode === 'uneven' ? (
-                  <input type="text" inputMode="decimal" value={p.amount || ''} onChange={(e) => setPerson(p.id, { amount: sanitizeAmount(e.target.value) })} placeholder="0" className="w-20 bg-zinc-100 dark:bg-zinc-800 rounded-lg px-2 py-1.5 text-base font-bold text-right focus-visible:ring-2 focus-visible:ring-foreground/20 tabular-nums text-zinc-950 dark:text-white border border-zinc-200 dark:border-white/5 outline-none" onClick={(e) => e.stopPropagation()} />
+                  <input type="text" inputMode="decimal" value={p.amount || ''} onChange={(e) => setPerson(p.id, { amount: sanitizeAmount(e.target.value) })} placeholder={t('amount_placeholder') || '0'} className="w-20 bg-zinc-100 dark:bg-zinc-800 rounded-lg px-2 py-1.5 text-base font-bold text-right focus-visible:ring-2 focus-visible:ring-foreground/20 tabular-nums text-zinc-950 dark:text-white border border-zinc-200 dark:border-white/5 outline-none" onClick={(e) => e.stopPropagation()} />
                 ) : (
                   <span className="text-sm font-bold tabular-nums text-zinc-950 dark:text-white pr-1">{p.name.trim() ? fmt(perPerson.totals[p.id] || 0, home) : '–'}</span>
                 )}

@@ -286,24 +286,28 @@ export default function AnalyticsSheet({ open, onClose }) {
       toast.info(t('report_empty_period'))
       return
     }
-    const headers = ['Date', 'Type', 'Category', 'Amount', 'Currency', 'Note/Merchant']
-    const rows = filteredTxs.map((tx) => [
-      tx.date || tx.transaction_date || '',
-      tx.type || 'expense',
-      tx.category || '',
-      tx.amount || 0,
-      tx.currency || home,
-      `"${(tx.merchant || tx.note || '').replace(/"/g, '""')}"`
-    ])
-    const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map((e) => e.join(','))].join('\n')
-    const encodedUri = encodeURI(csvContent)
-    const link = document.createElement('a')
-    link.setAttribute('href', encodedUri)
-    link.setAttribute('download', `arshif_report_${period.toLowerCase()}_${periodLabel.replace(/\s+/g, '_')}.csv`)
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
-    toast.success(t('report_csv_downloaded'))
+    try {
+      const headers = ['Date', 'Type', 'Category', 'Amount', 'Currency', 'Note/Merchant']
+      const rows = filteredTxs.map((tx) => [
+        tx.date || tx.transaction_date || '',
+        tx.type || 'expense',
+        tx.category || '',
+        tx.amount || 0,
+        tx.currency || home,
+        `"${(tx.merchant || tx.note || '').replace(/"/g, '""')}"`
+      ])
+      const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map((e) => e.join(','))].join('\n')
+      const encodedUri = encodeURI(csvContent)
+      const link = document.createElement('a')
+      link.setAttribute('href', encodedUri)
+      link.setAttribute('download', `arshif_report_${period.toLowerCase()}_${periodLabel.replace(/\s+/g, '_')}.csv`)
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      toast.success(t('report_csv_downloaded'))
+    } catch {
+      toast.error(t('report_export_failed'))
+    }
   }
 
   return (
@@ -331,7 +335,7 @@ export default function AnalyticsSheet({ open, onClose }) {
           </div>
           <div className="flex items-center gap-2 shrink-0">
             <span className="rounded-full bg-muted/60 border border-border/50 px-3 py-1 text-xs font-semibold text-foreground">
-              Personal
+              {t('analytics_mode_personal')}
             </span>
             <button
               type="button"
@@ -437,7 +441,7 @@ export default function AnalyticsSheet({ open, onClose }) {
         {/* Kartu Finansial Utama (ALL-TIME CASH POSITION) */}
         <div className="rounded-3xl bg-muted/30 border border-border/40 p-5 space-y-1 mb-4">
           <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
-            ALL-TIME CASH POSITION
+            {t('analytics_cash_position')}
           </p>
           <p className="text-3xl font-extrabold tracking-tight text-foreground tabular-nums">
             {fmt(allTimeCash, home)}
@@ -498,8 +502,8 @@ export default function AnalyticsSheet({ open, onClose }) {
                 {fmt(periodExpense, home)}
               </p>
               <div className="pt-2 flex items-center justify-between text-xs text-muted-foreground font-medium">
-                <span>Rata-rata: {fmt(avgPerDay, home)} / hari</span>
-                <span>{entryCount} transaksi</span>
+                <span>{t('analytics_avg_per_day', { avg: fmt(avgPerDay, home) })}</span>
+                <span>{t('analytics_tx_count', { n: entryCount })}</span>
               </div>
             </div>
 
@@ -508,25 +512,25 @@ export default function AnalyticsSheet({ open, onClose }) {
               <div className="flex items-center justify-between text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-1">
                 <span>{t('spending_trajectory')}</span>
                 {trendData?.peak?.value > 0 && (
-                  <span className="text-[#6A92FC] tabular-nums lowercase font-semibold">
+                  <span className="text-[#6A92FC] dark:text-[#8FADFF] tabular-nums lowercase font-semibold">
                     peak ~ {fmt(trendData.peak.value, home)}
                   </span>
                 )}
               </div>
               <div className="w-full relative overflow-hidden rounded-xl bg-background/50 border border-border/30 p-2">
-                <svg viewBox={`0 0 ${trendData.width} ${trendData.height}`} className="w-full h-20 overflow-visible">
+                <svg viewBox={`0 0 ${trendData.width} ${trendData.height}`} className="w-full h-20 overflow-visible text-[#6A92FC] dark:text-[#8FADFF]">
                   <defs>
                     <linearGradient id="skyBlueTrendGrad" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="#6A92FC" stopOpacity="0.25" />
-                      <stop offset="100%" stopColor="#6A92FC" stopOpacity="0" />
+                      <stop offset="0%" stopColor="currentColor" stopOpacity="0.25" />
+                      <stop offset="100%" stopColor="currentColor" stopOpacity="0" />
                     </linearGradient>
                   </defs>
                   <path d={trendData.areaPath} fill="url(#skyBlueTrendGrad)" />
-                  <path d={trendData.path} fill="none" stroke="#6A92FC" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                  <path d={trendData.path} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                   {trendData?.peak?.value > 0 && (
                     <g>
-                      <circle cx={trendData.peak.x} cy={trendData.peak.y} r="5" fill="#6A92FC" fillOpacity="0.25" />
-                      <circle cx={trendData.peak.x} cy={trendData.peak.y} r="3" fill="#6A92FC" stroke="#ffffff" strokeWidth="1.5" />
+                      <circle cx={trendData.peak.x} cy={trendData.peak.y} r="5" fill="currentColor" fillOpacity="0.25" />
+                      <circle cx={trendData.peak.x} cy={trendData.peak.y} r="3" fill="currentColor" stroke="#ffffff" strokeWidth="1.5" />
                     </g>
                   )}
                 </svg>
@@ -543,12 +547,12 @@ export default function AnalyticsSheet({ open, onClose }) {
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-semibold text-foreground">{t('analytics_fixed_monthly')}</span>
                   <span className="text-xs font-bold tabular-nums text-foreground">
-                    ~{fmt(fixedMonthlyCosts.total, home)}/mo
+                    {t('analytics_per_month', { amt: fmt(fixedMonthlyCosts.total, home) })}
                   </span>
                 </div>
                 <div className="flex items-center justify-between text-[11px] text-muted-foreground">
-                  <span>Subscriptions: {fmt(fixedMonthlyCosts.subTotal, home)}/mo</span>
-                  <span>Loans &amp; BNPL: {fmt(fixedMonthlyCosts.debtTotal, home)}/mo</span>
+                  <span>{t('analytics_subs_monthly', { amt: fmt(fixedMonthlyCosts.subTotal, home) })}</span>
+                  <span>{t('analytics_loans_monthly', { amt: fmt(fixedMonthlyCosts.debtTotal, home) })}</span>
                 </div>
               </div>
             )}

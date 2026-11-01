@@ -244,7 +244,7 @@ export default function NotificationsSheet({ open, onClose }) {
                     className={cn(
                       'h-10 w-10 rounded-xl shrink-0 flex items-center justify-center border',
                       n.type === 'announcement'
-                        ? 'bg-[#6A92FC]/10 border-[#6A92FC]/20 text-[#6A92FC]'
+                        ? 'bg-[#6A92FC]/10 dark:bg-[#8FADFF]/15 border-[#6A92FC]/20 dark:border-[#8FADFF]/30 text-[#6A92FC] dark:text-[#8FADFF]'
                         : n.type === 'budget'
                         ? 'bg-amber-500/10 border-amber-500/20 text-amber-500'
                         : n.isOverdue
@@ -253,7 +253,7 @@ export default function NotificationsSheet({ open, onClose }) {
                     )}
                   >
                     {n.iconType === 'megaphone' && (
-                      <Megaphone size={18} strokeWidth={1.75} className="text-[#6A92FC]" />
+                      <Megaphone size={18} strokeWidth={1.75} className="text-[#6A92FC] dark:text-[#8FADFF]" />
                     )}
                     {n.iconType === 'alert-triangle' && (
                       <AlertTriangle size={18} className="text-amber-500" strokeWidth={1.75} />
@@ -269,7 +269,7 @@ export default function NotificationsSheet({ open, onClose }) {
                       <Calendar size={18} className="text-foreground" strokeWidth={1.75} />
                     )}
                     {n.iconType === 'sparkles' && (
-                      <Sparkles size={18} className="text-[#6A92FC]" strokeWidth={1.75} />
+                      <Sparkles size={18} className="text-[#6A92FC] dark:text-[#8FADFF]" strokeWidth={1.75} />
                     )}
                   </div>
 
@@ -280,7 +280,7 @@ export default function NotificationsSheet({ open, onClose }) {
                         {n.title}
                       </p>
                       {n.type === 'announcement' && (
-                        <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full shrink-0 tracking-wide bg-[#6A92FC]/10 text-[#6A92FC] border border-[#6A92FC]/20">
+                        <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full shrink-0 tracking-wide bg-[#6A92FC]/10 dark:bg-[#8FADFF]/15 text-[#6A92FC] dark:text-[#8FADFF] border border-[#6A92FC]/20 dark:border-[#8FADFF]/30">
                           Pengumuman
                         </span>
                       )}

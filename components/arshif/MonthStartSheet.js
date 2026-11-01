@@ -92,7 +92,7 @@ export default function MonthStartSheet({ open, onClose }) {
                   className={cn(
                     'h-11 min-w-11 px-3 rounded-xl border text-sm font-bold transition-all active:scale-95 cursor-pointer',
                     day === p
-                      ? 'bg-[#FF5F6D] border-[#FF5F6D] text-white'
+                      ? 'bg-[#FF5F6D] dark:bg-[#FF8FA3] border-[#FF5F6D] dark:border-[#FF8FA3] text-white dark:text-zinc-950'
                       : 'border-border/70 bg-white dark:bg-zinc-800/60 text-foreground hover:bg-muted/40'
                   )}
                 >
@@ -104,8 +104,8 @@ export default function MonthStartSheet({ open, onClose }) {
         </div>
 
         {/* Preview */}
-        <div className="rounded-2xl bg-[#FF5F6D]/10 border border-[#FF5F6D]/20 p-4 flex items-start gap-3">
-          <CalendarDays size={18} className="text-[#FF5F6D] shrink-0 mt-0.5" />
+        <div className="rounded-2xl bg-[#FF5F6D]/10 dark:bg-[#FF8FA3]/10 border border-[#FF5F6D]/20 dark:border-[#FF8FA3]/25 p-4 flex items-start gap-3">
+          <CalendarDays size={18} className="text-[#FF5F6D] dark:text-[#FF8FA3] shrink-0 mt-0.5" />
           <div>
             <p className="text-sm font-bold text-foreground">{t('month_start_range')}</p>
             <p className="text-sm text-muted-foreground mt-0.5">{preview}</p>

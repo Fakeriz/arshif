@@ -249,7 +249,7 @@ export default function AddTransactionSheet({ open, isOpen: propIsOpen, onClose,
               value={amount}
               onChange={(e) => setAmount(e.target.value.replace(/[^0-9.,+\-*/×÷−]/g, ''))}
               inputMode="decimal"
-              placeholder="0"
+              placeholder={t('amount_placeholder') || '0'}
               className="bg-transparent text-5xl font-bold tabular-nums tracking-tight text-center outline-none w-full max-w-[260px] text-zinc-950 dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-600 focus-visible:ring-2 focus-visible:ring-foreground/20 rounded"
               data-testid="amount-input"
             />
@@ -379,7 +379,7 @@ export default function AddTransactionSheet({ open, isOpen: propIsOpen, onClose,
               <button type="button" onClick={() => setShowFee(true)} className="text-sm font-bold text-zinc-950 dark:text-white">{t('add_charges')}</button>
             ) : (
               <Field label={`${t('charges')} (${currency})`}>
-                <TextInput type="text" inputMode="decimal" value={fee} onChange={(e) => setFee(sanitizeAmount(e.target.value))} placeholder="0" />
+                <TextInput type="text" inputMode="decimal" value={fee} onChange={(e) => setFee(sanitizeAmount(e.target.value))} placeholder={t('amount_placeholder') || '0'} />
               </Field>
             )}
             <Field label={t('date_time')}>

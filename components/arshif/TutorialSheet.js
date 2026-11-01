@@ -52,7 +52,7 @@ export default function TutorialSheet({ open, onClose }) {
               transition={{ duration: 0.18 }}
               className="p-6 flex flex-col items-center text-center gap-4"
             >
-              <div className="h-16 w-16 rounded-3xl bg-[#FF5F6D]/10 text-[#FF5F6D] flex items-center justify-center shrink-0">
+              <div className="h-16 w-16 rounded-3xl bg-[#FF5F6D]/10 dark:bg-[#FF8FA3]/10 text-[#FF5F6D] dark:text-[#FF8FA3] flex items-center justify-center shrink-0">
                 <step.Icon size={28} />
               </div>
               <div className="space-y-1.5">

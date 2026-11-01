@@ -91,7 +91,7 @@ export default function AccountBackupSheet({ open, onClose }) {
         {/* Export */}
         <div className="rounded-2xl border border-border/70 bg-white dark:bg-[#18181b] p-4 space-y-3">
           <div className="flex items-center gap-3">
-            <div className="h-11 w-11 rounded-2xl bg-[#FF5F6D]/10 text-[#FF5F6D] flex items-center justify-center shrink-0">
+            <div className="h-11 w-11 rounded-2xl bg-[#FF5F6D]/10 dark:bg-[#FF8FA3]/10 text-[#FF5F6D] dark:text-[#FF8FA3] flex items-center justify-center shrink-0">
               <DatabaseBackup size={20} />
             </div>
             <div className="min-w-0 flex-1">
@@ -123,7 +123,7 @@ export default function AccountBackupSheet({ open, onClose }) {
             onDrop={(e) => { e.preventDefault(); setDragOver(false); const f = e.dataTransfer?.files?.[0]; if (f) handleFile(f) }}
             className={cn(
               'rounded-2xl border-2 border-dashed p-6 flex flex-col items-center justify-center text-center gap-2 transition-colors cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-foreground/20',
-              dragOver ? 'border-[#FF5F6D] bg-[#FF5F6D]/10' : 'border-border/70 hover:border-foreground/30'
+              dragOver ? 'border-[#FF5F6D] dark:border-[#FF8FA3] bg-[#FF5F6D]/10 dark:bg-[#FF8FA3]/10' : 'border-border/70 hover:border-foreground/30'
             )}
           >
             <UploadCloud size={26} className="text-muted-foreground" />
@@ -161,7 +161,7 @@ export default function AccountBackupSheet({ open, onClose }) {
       {confirm && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
           <div className="w-full max-w-sm rounded-3xl bg-white dark:bg-[#1c1c1e] border border-zinc-200 dark:border-white/10 p-6 shadow-2xl text-center space-y-4">
-            <div className="h-14 w-14 rounded-2xl bg-[#FF5F6D]/10 text-[#FF5F6D] mx-auto flex items-center justify-center">
+            <div className="h-14 w-14 rounded-2xl bg-[#FF5F6D]/10 dark:bg-[#FF8FA3]/10 text-[#FF5F6D] dark:text-[#FF8FA3] mx-auto flex items-center justify-center">
               <FileJson size={26} />
             </div>
             <div>

@@ -4,7 +4,7 @@ import { motion } from 'framer-motion'
 import { UploadCloud, FileSpreadsheet, FileText, Sparkles, CheckCircle2, ChevronLeft, ChevronRight, ChevronDown, Plus, AlertTriangle, Undo2, Check, Search, X, Lock } from 'lucide-react'
 import { toast } from 'sonner'
 import { useApp } from './context'
-import { Sheet, Field, Segmented, CategoryBadge, SectionLabel, TextInput } from './ui'
+import { Sheet, Field, Segmented, CategoryBadge, SectionLabel, TextInput, EmptyState } from './ui'
 import CurrencySheet from './CurrencySheet'
 import { CATEGORIES, DEFAULT_ACCOUNT_TYPE } from '@/lib/categories'
 import { convert, getRate } from '@/lib/rates'
@@ -638,7 +638,7 @@ export default function ImportTransactionsPage({ onClose }) {
                   onClick={() => fileRef.current?.click()}
                   className={cn(card, 'p-4 text-left relative')}
                 >
-                  <span className="absolute top-4 right-4 text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-[#6A92FC] text-white">{t('import_pdf_badge')}</span>
+                  <span className="absolute top-4 right-4 text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-[#6A92FC] dark:bg-[#8FADFF] text-white dark:text-zinc-950">{t('import_pdf_badge')}</span>
                   <div className={cn(tile, 'h-11 w-11 rounded-2xl')}>
                     <FileText size={20} strokeWidth={1.75} />
                   </div>
@@ -718,9 +718,9 @@ export default function ImportTransactionsPage({ onClose }) {
 
               <WalletPicker />
 
-              <div className="rounded-3xl border border-[#6A92FC]/50 bg-[#6A92FC]/[0.06] p-5">
+              <div className="rounded-3xl border border-[#6A92FC]/50 dark:border-[#8FADFF]/50 bg-[#6A92FC]/[0.06] dark:bg-[#8FADFF]/[0.08] p-5">
                 <div className="flex items-start gap-3.5">
-                  <div className="h-12 w-12 rounded-2xl bg-[#6A92FC] text-white flex items-center justify-center shrink-0">
+                  <div className="h-12 w-12 rounded-2xl bg-[#6A92FC] dark:bg-[#8FADFF] text-white dark:text-zinc-950 flex items-center justify-center shrink-0">
                     <Sparkles size={22} strokeWidth={1.75} />
                   </div>
                   <div className="flex-1 min-w-0">
@@ -823,6 +823,9 @@ export default function ImportTransactionsPage({ onClose }) {
                   </button>
                 </div>
                 <div className="space-y-2.5">
+                  {readyRows.length === 0 && dupeRows.length === 0 ? (
+                    <EmptyState icon={FileSpreadsheet} title={t('import_empty_title')} subtitle={t('import_empty_sub')} />
+                  ) : null}
                   {readyRows.map((r) => {
                     const off = !!excluded[r.idx]
                     return (

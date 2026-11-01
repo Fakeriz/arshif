@@ -81,7 +81,7 @@ export default function HelpLegalSheet({ open, onClose }) {
             <button
               type="button"
               onClick={() => setView('faq')}
-              className="h-16 rounded-2xl border border-[#FF5F6D]/40 bg-[#FF5F6D]/10 text-[#FF5F6D] flex flex-col items-center justify-center gap-1 text-[11px] font-bold transition-all active:scale-95 cursor-pointer"
+              className="h-16 rounded-2xl border border-[#FF5F6D]/40 dark:border-[#FF8FA3]/40 bg-[#FF5F6D]/10 dark:bg-[#FF8FA3]/10 text-[#FF5F6D] dark:text-[#FF8FA3] flex flex-col items-center justify-center gap-1 text-[11px] font-bold transition-all active:scale-95 cursor-pointer"
             >
               <HelpCircle size={18} />
               {t('help_faq')}

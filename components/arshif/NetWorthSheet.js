@@ -319,7 +319,7 @@ export default function NetWorthSheet({ open, onClose }) {
                   <span className="font-bold text-sm">{getCurrency(currency).symbol}</span>
                   <ChevronRight size={15} className="text-muted-foreground" />
                 </button>
-                <TextInput type="text" inputMode="decimal" value={amount} onChange={(e) => setAmount(sanitizeAmount(e.target.value))} placeholder="0" className="flex-1 text-lg font-bold" data-testid="nw-amount" />
+                <TextInput type="text" inputMode="decimal" value={amount} onChange={(e) => setAmount(sanitizeAmount(e.target.value))} placeholder={t('amount_placeholder') || '0'} className="flex-1 text-lg font-bold" data-testid="nw-amount" />
               </div>
             </Field>
             <div className="flex gap-2">

@@ -100,7 +100,7 @@ export default function RecurringSheet({ open, onClose }) {
                   <span className="font-bold text-sm">{getCurrency(currency).symbol}</span>
                   <ChevronRight size={15} className="text-zinc-500 dark:text-zinc-400" />
                 </button>
-                <TextInput type="text" inputMode="decimal" value={amount} onChange={(e) => setAmount(sanitizeAmount(e.target.value))} placeholder="0" className="flex-1 text-lg font-bold" data-testid="recurring-amount" />
+                <TextInput type="text" inputMode="decimal" value={amount} onChange={(e) => setAmount(sanitizeAmount(e.target.value))} placeholder={t('amount_placeholder') || '0'} className="flex-1 text-lg font-bold" data-testid="recurring-amount" />
               </div>
             </Field>
             <Field label={t('frequency')}>

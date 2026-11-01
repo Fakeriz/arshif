@@ -185,7 +185,7 @@ export default function CategoriesTemplatesSheet({ open, onClose }) {
           {addingTpl ? (
             <div className="mt-4 rounded-2xl bg-white dark:bg-[#1c1c1e] border border-zinc-200 dark:border-white/10 p-4 space-y-3">
               <Field label={t('bill_title')}><TextInput value={tTitle} onChange={(e) => setTTitle(e.target.value)} placeholder={t('cat_name_placeholder')} data-testid="tpl-title" /></Field>
-              <Field label={`Amount (${home})`}><TextInput type="text" inputMode="decimal" value={tAmount} onChange={(e) => setTAmount(sanitizeAmount(e.target.value))} placeholder="0" data-testid="tpl-amount" /></Field>
+              <Field label={`Amount (${home})`}><TextInput type="text" inputMode="decimal" value={tAmount} onChange={(e) => setTAmount(sanitizeAmount(e.target.value))} placeholder={t('amount_placeholder') || '0'} data-testid="tpl-amount" /></Field>
               <Field label={t('category')}>
                 <div className="flex gap-2 overflow-x-auto no-scrollbar">
                   {expenseCats.map((c) => (

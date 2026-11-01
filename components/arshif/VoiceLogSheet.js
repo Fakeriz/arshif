@@ -41,8 +41,8 @@ export default function VoiceLogSheet({ open, onClose, onResult }) {
         const data = await res.json()
         setQuota(data)
       }
-    } catch (e) {
-      console.warn('Failed to fetch AI quota:', e)
+    } catch {
+      toast.error(t('voice_quota_load_failed'))
     } finally {
       setQuotaLoading(false)
     }
@@ -106,7 +106,7 @@ export default function VoiceLogSheet({ open, onClose, onResult }) {
           return
         }
         if (res.status === 429 || payload?.code === 'AI_QUOTA_EXCEEDED') {
-          toast.error(payload?.error || 'Kuota AI harian Anda telah habis.')
+          toast.error(payload?.error || t('import_ai_quota'))
           setState('idle')
           return
         }
@@ -174,7 +174,7 @@ export default function VoiceLogSheet({ open, onClose, onResult }) {
               return
             }
             if (res.status === 429 || data?.code === 'AI_QUOTA_EXCEEDED') {
-              toast.error(data?.error || 'Kuota AI harian Anda telah habis.')
+              toast.error(data?.error || t('import_ai_quota'))
               setState('idle')
               return
             }
@@ -272,13 +272,12 @@ export default function VoiceLogSheet({ open, onClose, onResult }) {
         }
       }
 
-      toast.success(`${savedCount} transaksi berhasil dicatat!`)
+      toast.success(t('voice_saved_count', { n: savedCount }))
       if (typeof refresh === 'function') {
         await refresh()
       }
       onClose?.()
     } catch (err) {
-      console.error('Gagal batch insert transaksi suara:', err)
       toast.error(t('voice_save_partial_error'))
     } finally {
       setState('result')
@@ -314,9 +313,9 @@ export default function VoiceLogSheet({ open, onClose, onResult }) {
             </div>
             <p className="font-semibold mt-4">{state === 'recording' ? t('listening') : state === 'processing' ? t('processing') : t('tap_to_speak')}</p>
             <p className="text-sm text-muted-foreground mt-1 text-center">{state === 'recording' ? t('tap_to_stop') : t('say_example')}</p>
-            <p className="text-[10px] text-muted-foreground mt-3">Google Gemini 2.0 Flash · Voice & NLP</p>
+            <p className="text-[10px] text-muted-foreground mt-3">{t('voice_model_note')}</p>
 
-            <button type="button" onClick={() => setShowTyped(!showTyped)} className="mt-6 text-sm font-semibold flex items-center gap-1.5 text-muted-foreground"><Keyboard size={14} /> {showTyped ? t('close') : 'Type instead'}</button>
+            <button type="button" onClick={() => setShowTyped(!showTyped)} className="mt-6 text-sm font-semibold flex items-center gap-1.5 text-muted-foreground"><Keyboard size={14} /> {showTyped ? t('close') : t('voice_type_instead')}</button>
             {showTyped ? (
               <div className="w-full flex gap-2 mt-3">
                 <TextInput value={typed} onChange={(e) => setTyped(e.target.value)} placeholder={t('say_example').replace('Try: ', '').replace(/"/g, '')} data-testid="voice-text" onKeyDown={(e) => { if (e.key === 'Enter' && typed.trim()) parseText(typed.trim()) }} />
@@ -381,7 +380,7 @@ export default function VoiceLogSheet({ open, onClose, onResult }) {
             </p>
             <div className="mt-5 space-y-2">
               <PrimaryButton onClick={useIt} data-testid="voice-use">
-                {(parsed?.transactions?.length || 1) > 1 ? `Simpan ${parsed.transactions.length} Transaksi` : t('review_and_save')}
+                {(parsed?.transactions?.length || 1) > 1 ? t('voice_save_multi', { n: parsed.transactions.length }) : t('review_and_save')}
               </PrimaryButton>
               <button
                 type="button"
