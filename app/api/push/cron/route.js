@@ -7,6 +7,7 @@ import webpush from 'web-push'
 import { SUPABASE_URL } from '@/lib/supabase'
 import { safeSecretEqual } from '@/lib/secret-compare'
 import { deriveNotifications } from '@/lib/notifications'
+import { translate, LOCALE_MAP } from '@/lib/i18n'
 import {
   initWebPush,
   isExpiredOrInvalidSubscription,
@@ -27,17 +28,20 @@ function getAdminSupabase() {
   })
 }
 
-// Format rupiah sederhana untuk push (tanpa dependensi client)
-function fmtAmt(amount, currency) {
-  const n = Number(amount) || 0
-  try {
-    return new Intl.NumberFormat('id-ID', {
-      style: 'currency',
-      currency: currency || 'IDR',
-      maximumFractionDigits: 0,
-    }).format(n)
-  } catch {
-    return `${currency || ''} ${n.toLocaleString('id-ID')}`
+// Format nominal push mengikuti bahasa user, bukan selalu locale Indonesia.
+function makeFormatter(lang) {
+  const locale = LOCALE_MAP[lang] || 'id-ID'
+  return (amount, currency) => {
+    const n = Number(amount) || 0
+    try {
+      return new Intl.NumberFormat(locale, {
+        style: 'currency',
+        currency: currency || 'IDR',
+        maximumFractionDigits: 0,
+      }).format(n)
+    } catch {
+      return `${currency || ''} ${n.toLocaleString(locale)}`
+    }
   }
 }
 
@@ -89,13 +93,17 @@ export async function POST(request) {
         sb.from('bills').select('*').eq('user_id', userId),
         sb.from('budgets').select('*').eq('user_id', userId),
         sb.from('transactions').select('type, amount, currency, category, date, transaction_date').eq('user_id', userId),
-        sb.from('profiles').select('home_currency').eq('id', userId).maybeSingle(),
+        sb.from('profiles').select('home_currency, language').eq('id', userId).maybeSingle(),
       ])
 
       const bills = billsRes.data || []
       const budgets = budgetsRes.data || []
       const transactions = txRes.data || []
       const home = profileRes.data?.home_currency || 'IDR'
+      const lang = profileRes.data?.language || 'id'
+      const fmt = makeFormatter(lang)
+      // Teks notifikasi diterjemahkan di server dengan bahasa profil user.
+      const t = (key, vars) => translate(lang, key, vars)
 
       // Derivasi notifikasi (pakai logic yang sama dengan client)
       const { notifications } = deriveNotifications({
@@ -105,8 +113,8 @@ export async function POST(request) {
         transactions,
         home,
         rates: {},
-        fmt: fmtAmt,
-        t: (k) => k,
+        fmt,
+        t,
       })
 
       // Filter berdasarkan settings per jenis (welcome tidak di-push)
@@ -168,20 +176,27 @@ export async function POST(request) {
         )
 
         // Hapus subscription yang expired atau tidak valid dari database
+        let delivered = 0
         for (let i = 0; i < results.length; i++) {
           const r = results[i]
-          if (r.status === 'rejected') {
-            if (isExpiredOrInvalidSubscription(r.reason)) {
-              await sb.from('push_subscriptions').delete().eq('endpoint', subs[i].endpoint)
-            }
+          if (r.status === 'fulfilled') { delivered++; continue }
+          if (isExpiredOrInvalidSubscription(r.reason)) {
+            await sb.from('push_subscriptions').delete().eq('endpoint', subs[i].endpoint)
+            continue
           }
+          // Kegagalan sementara (500/429/timeout): jangan tandai terkirim supaya
+          // pengingat ini dicoba lagi pada cron berikutnya.
+          errors.push({ userId, notificationId: n.id, error: formatPushError(r.reason) })
         }
 
+        if (delivered === 0) continue
+
         // Catat sebagai terkirim (dedup)
-        await sb.from('push_sent').upsert(
+        const { error: markErr } = await sb.from('push_sent').upsert(
           { user_id: userId, notification_id: n.id },
           { onConflict: 'user_id,notification_id' }
         )
+        if (markErr) errors.push({ userId, notificationId: n.id, error: 'push_sent: ' + markErr.message })
         sent++
       }
     } catch (e) {
