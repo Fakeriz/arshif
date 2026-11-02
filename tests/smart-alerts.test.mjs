@@ -2,8 +2,8 @@ import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { matchAlert, SMART_ALERT_RULE_COUNT } from '../lib/smart-alerts.js'
 
-test('rule engine memuat 32 regex dari riset Belanje', () => {
-  assert.equal(SMART_ALERT_RULE_COUNT, 32)
+test('rule engine memuat 32 regex MY + 9 regex ID', () => {
+  assert.equal(SMART_ALERT_RULE_COUNT, 41)
 })
 
 // Contoh verifikasi dari BELANJE_AI_HANDOFF.md section 5
@@ -111,4 +111,54 @@ test('smart_source_key selalu mengikuti rule yang match', () => {
     const r = matchAlert(text)
     assert.equal(r.smart_source_key, 'smart-alert:' + r.ruleId)
   }
+})
+
+// Notifikasi bank dan e-wallet Indonesia (rule 33-41).
+test('debit BCA dengan rupiah ribuan gaya Indonesia', () => {
+  const r = matchAlert('Transaksi Debit Rp 250.000,00 Tgl 01/11/26 14:32:11 di INDOMARET. Saldo Rp 1.500.000')
+  assert.equal(r.ruleId, 33)
+  assert.equal(r.type, 'expense')
+  assert.equal(r.amount, 250000)
+  assert.equal(r.currency, 'IDR')
+  assert.equal(r.merchant, 'INDOMARET')
+})
+
+test('pembayaran e-wallet ke merchant membuang kata pengisi', () => {
+  const r = matchAlert('Pembayaran Rp25.000 ke Kopi Kenangan berhasil')
+  assert.equal(r.ruleId, 33)
+  assert.equal(r.amount, 25000)
+  assert.equal(r.merchant, 'Kopi Kenangan')
+})
+
+test('dana masuk dari orang lain dibaca income', () => {
+  const r = matchAlert('Anda menerima Rp50.000 dari BUDI SANTOSO')
+  assert.equal(r.ruleId, 35)
+  assert.equal(r.type, 'income')
+  assert.equal(r.direction, 'incoming')
+  assert.equal(r.amount, 50000)
+  assert.equal(r.merchant, 'BUDI SANTOSO')
+})
+
+test('tarik tunai ATM terbaca rule 38 tanpa merchant', () => {
+  const r = matchAlert('Penarikan tunai Rp500.000 di ATM BCA')
+  assert.equal(r.ruleId, 38)
+  assert.equal(r.amount, 500000)
+  assert.equal(r.merchant, null)
+})
+
+test('top up e-wallet dibaca transfer', () => {
+  const r = matchAlert('Top up GoPay Rp100.000 berhasil')
+  assert.equal(r.ruleId, 40)
+  assert.equal(r.type, 'transfer')
+  assert.equal(r.amount, 100000)
+})
+
+test('biaya admin terbaca expense', () => {
+  const r = matchAlert('Biaya admin Rp6.500 telah didebit')
+  assert.equal(r.ruleId, 41)
+  assert.equal(r.amount, 6500)
+})
+
+test('nominal setelah kata saldo tidak dipakai sebagai amount', () => {
+  assert.equal(matchAlert('Sisa saldo Rp100.000'), null)
 })
