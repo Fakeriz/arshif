@@ -47,3 +47,39 @@ test('checkBalanceContinuity still passes a consistent ledger', () => {
   ]
   assert.deepEqual(checkBalanceContinuity(rows), { checked: true, ok: true })
 })
+
+// Regresi audit: tanda minus di belakang dan nama bulan Indonesia.
+test('parseAmount membaca minus di belakang dan minus unicode', async () => {
+  const { parseAmount } = await import('../lib/statement-import.js')
+  assert.equal(parseAmount('100.00-'), -100)
+  assert.equal(parseAmount('1.234,56-'), -1234.56)
+  assert.equal(parseAmount('\u221250'), -50)
+  assert.equal(parseAmount('DR 25.000'), -25000)
+  assert.equal(parseAmount('CR 1,234.56'), 1234.56)
+})
+
+test('normalizeDate mengenali nama bulan Indonesia', async () => {
+  const { normalizeDate } = await import('../lib/statement-import.js')
+  assert.equal(normalizeDate('10 Okt 2026').toISOString().slice(0, 10), '2026-10-10')
+  assert.equal(normalizeDate('10 Agustus 2026').toISOString().slice(0, 10), '2026-08-10')
+  assert.equal(normalizeDate('31 Feb 2026'), null)
+})
+
+test('baris tanpa tanggal terbaca ditandai, bukan diisi hari ini', async () => {
+  const { normalizeRows } = await import('../lib/statement-import.js')
+  const rows = normalizeRows([['tgl ngawur', 'Kopi', '18000']], { date: 0, desc: 1, amount: 2 }, 'single', 'IDR')
+  assert.equal(rows.length, 1)
+  assert.equal(rows[0].date, null)
+  assert.equal(rows[0].dateMissing, true)
+  assert.equal(rows[0].dateStr, '')
+})
+
+test('duplikat dalam file: kejadian pertama tetap ikut impor', async () => {
+  const { markInFileDuplicates } = await import('../lib/statement-import.js')
+  const rows = markInFileDuplicates([
+    { dateStr: '2026-11-01', amount: 18000, currency: 'IDR', desc: 'Kopi Kenangan', idx: 0 },
+    { dateStr: '2026-11-01', amount: 18000, currency: 'IDR', desc: 'Kopi Kenangan', idx: 1 },
+  ])
+  assert.equal(rows[0].dupInFile, false, 'baris pertama tidak ditandai duplikat')
+  assert.equal(rows[1].dupInFile, true, 'salinan kedua ditandai, bisa disertakan manual')
+})

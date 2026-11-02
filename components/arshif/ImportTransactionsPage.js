@@ -44,6 +44,9 @@ export default function ImportTransactionsPage({ onClose }) {
   const [rows, setRows] = useState([])
   const [excluded, setExcluded] = useState({})
   const [catEdits, setCatEdits] = useState({})
+  // Duplikat dalam file tetap bisa disertakan satu per satu; secara default
+  // kejadian pertamanya sudah ikut impor (lihat markInFileDuplicates).
+  const [includeDup, setIncludeDup] = useState({})
   const [pickCatFor, setPickCatFor] = useState(null)
   const [catSearch, setCatSearch] = useState('')
   const [caps, setCaps] = useState({ batchTable: false, columns: false })
@@ -63,7 +66,7 @@ export default function ImportTransactionsPage({ onClose }) {
     setStep(0); setBusy(false); setFileName(''); setFileSize(0); setHeaders([]); setAoa([])
     setMapping({ date: -1, desc: -1, amount: -1, debit: -1, credit: -1, balance: -1 })
     setDirMode('signed'); setWalletId(null); setPickWallet(false); setNewWallet(false); setNwName(''); setNwCurrency(home || 'MYR')
-    setRows([]); setExcluded({}); setCatEdits({}); setPickCatFor(null); setCatSearch('')
+    setRows([]); setExcluded({}); setCatEdits({}); setIncludeDup({}); setPickCatFor(null); setCatSearch('')
     setOverlap([]); setBalanceCheck({ checked: false }); setProgress({ done: 0, total: 0 })
     setResult(null); setBatchId(null); setBatchRecId(null); setNetDelta(0); setShowDupes(false)
     setAiMode(false); setPdfFile(null); setAiRows(null)
@@ -175,7 +178,7 @@ export default function ImportTransactionsPage({ onClose }) {
       }))
     }
     setRows(parsed)
-    setExcluded({}); setCatEdits({}); setShowDupes(false)
+    setExcluded({}); setCatEdits({}); setShowDupes(false); setIncludeDup({})
     setStep(2)
   }
 
@@ -268,8 +271,15 @@ export default function ImportTransactionsPage({ onClose }) {
   }
 
   const catOf = (r) => catEdits[r.idx] || r.category || 'other'
-  const readyRows = useMemo(() => rows.filter((r) => !r.dupInFile && !r.dupExisting && !excluded[r.idx]), [rows, excluded])
+  // Baris tanpa tanggal terbaca tidak boleh ikut impor: dulu diisi tanggal hari
+  // ini sehingga seluruh mutasi masuk ke bulan yang salah.
+  const selectableRows = useMemo(
+    () => rows.filter((r) => !r.dateMissing && !r.dupExisting && (r.dupInFile ? !!includeDup[r.idx] : true)),
+    [rows, includeDup]
+  )
+  const readyRows = useMemo(() => selectableRows.filter((r) => !excluded[r.idx]), [selectableRows, excluded])
   const dupeRows = useMemo(() => rows.filter((r) => r.dupInFile || r.dupExisting), [rows])
+  const missingDateRows = useMemo(() => rows.filter((r) => r.dateMissing), [rows])
   const range = useMemo(() => SI.getDateRange(rows), [rows])
 
   // Total masuk/keluar di layar review (dikonversi ke mata uang dompet)
@@ -284,12 +294,12 @@ export default function ImportTransactionsPage({ onClose }) {
     return { inn, out }
   }, [readyRows, walletCur, rates])
 
-  const allSelected = readyRows.length > 0 && readyRows.every((r) => !excluded[r.idx])
+  const allSelected = selectableRows.length > 0 && selectableRows.every((r) => !excluded[r.idx])
   const toggleAll = () => {
     triggerHaptic('light')
     if (allSelected) {
       const e = {}
-      for (const r of readyRows) e[r.idx] = true
+      for (const r of selectableRows) e[r.idx] = true
       setExcluded(e)
     } else setExcluded({})
   }
@@ -866,6 +876,15 @@ export default function ImportTransactionsPage({ onClose }) {
                   })}
                 </div>
 
+                {missingDateRows.length > 0 && (
+                  <div className={cn(card, 'w-full mt-2.5 p-3.5')}>
+                    <p className="text-sm font-semibold text-amber-700 dark:text-amber-400">
+                      {t('import_missing_date_title').replace('{n}', String(missingDateRows.length))}
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-1">{t('import_missing_date_sub')}</p>
+                  </div>
+                )}
+
                 {dupeRows.length > 0 && (
                   <button type="button" onClick={() => setShowDupes((v) => !v)} className={cn(card, 'w-full mt-2.5 p-3.5 flex items-center justify-between')}>
                     <p className="text-sm font-semibold text-muted-foreground">{t('import_dup_title').replace('{n}', String(dupeRows.length))}</p>
@@ -883,6 +902,16 @@ export default function ImportTransactionsPage({ onClose }) {
                         <p className="text-sm font-bold tabular-nums">
                           {r.type === 'expense' ? '−' : '+'}{fmtAmt(r.amount, r.currency)}
                         </p>
+                        {r.dupInFile && !r.dupExisting && (
+                          <button
+                            type="button"
+                            aria-label={t('import_include_dup')}
+                            onClick={() => setIncludeDup((prev) => ({ ...prev, [r.idx]: !prev[r.idx] }))}
+                            className={cn('h-9 min-w-9 px-3 rounded-xl text-xs font-bold transition active:scale-95', includeDup[r.idx] ? 'bg-foreground text-background' : 'bg-muted text-foreground')}
+                          >
+                            {includeDup[r.idx] ? t('import_included') : t('import_include')}
+                          </button>
+                        )}
                       </div>
                     ))}
                   </div>
