@@ -7,7 +7,7 @@ import { supabase } from '@/lib/supabase'
 import { createStore, DEFAULT_PROFILE } from '@/lib/store'
 import { translate, LOCALE_MAP } from '@/lib/i18n'
 import { formatMoney } from '@/lib/currencies'
-import { safeConvert, FALLBACK_RATES } from '@/lib/rates'
+import { convertOrKeep, FALLBACK_RATES } from '@/lib/rates'
 import { applyTransactionReplacement, applyTxToBalances, buildTransferWithFeeTransactions, computeBalanceDelta, fileToDataUrl, signedAccountBalance } from '@/lib/ledger'
 import { initSyncListener } from '@/lib/sync'
 import { AppContext } from '@/components/arshif/context'
@@ -80,10 +80,10 @@ export default function App() {
 
   const t = useCallback((key, vars, fallback) => translate(lang, key, vars, fallback), [lang])
   const fmt = useCallback((amount, code) => formatMoney(amount, code, { locale: LOCALE_MAP[lang] || 'en-US' }), [lang])
-  // Kurs tidak dikenal: pakai nominal aslinya, jangan 0 (utang/aset bisa hilang dari total).
+  // Kurs tidak dikenal: pakai nominal aslinya, jangan 0 (utang/aset bisa hilang
+  // dari total). Kebijaran sama dengan convertOrKeep di lib/rates.
   const convertToHome = useCallback((amount, code) => {
-    const v = safeConvert(amount, code, home, rates)
-    return typeof v === 'number' && Number.isFinite(v) ? v : Number(amount) || 0
+    return convertOrKeep(amount, code, home, rates).value
   }, [home, rates])
 
   useEffect(() => {
@@ -417,11 +417,13 @@ export default function App() {
 
   // Stats bulan berjalan untuk Home
   const stats = useMemo(() => {
-    const totalBalance = accounts.reduce((s, a) => s + (safeConvert(signedAccountBalance(a), a.currency, home, rates) ?? 0), 0)
+    // Akun berkurs tak dikenal tetap dihitung dengan nominal aslinya, bukan 0:
+    // total tidak boleh menghilangkan uang user.
+    const totalBalance = accounts.reduce((s, a) => s + convertOrKeep(signedAccountBalance(a), a.currency, home, rates).value, 0)
     const now = new Date()
     const inMonth = transactions.filter((tx) => { const d = new Date(tx.date || tx.transaction_date); return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear() })
-    const income = inMonth.filter((tx) => tx.type === 'income').reduce((s, tx) => s + (safeConvert(tx.amount, tx.currency, home, rates) ?? 0), 0)
-    const spending = inMonth.filter((tx) => tx.type === 'expense').reduce((s, tx) => s + (safeConvert(tx.amount, tx.currency, home, rates) ?? 0), 0)
+    const income = inMonth.filter((tx) => tx.type === 'income').reduce((s, tx) => s + convertOrKeep(tx.amount, tx.currency, home, rates).value, 0)
+    const spending = inMonth.filter((tx) => tx.type === 'expense').reduce((s, tx) => s + convertOrKeep(tx.amount, tx.currency, home, rates).value, 0)
     return { totalBalance, income, spending }
   }, [accounts, transactions, home, rates])
 

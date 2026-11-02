@@ -11,6 +11,7 @@ import { BankCard } from './BankCard'
 import AccountDeck from './AccountDeck'
 import { cn } from '@/lib/utils'
 import { applyTxToBalances } from '@/lib/ledger'
+import { convertOrKeep } from '@/lib/rates'
 import { deriveNotifications } from '@/lib/notifications'
 import { supabase } from '@/lib/supabase'
 import { APP_VERSION } from '@/lib/version'
@@ -296,6 +297,7 @@ function BalanceCarousel() {
             flat={true}
             showOcclusionShadow={false}
             approxHome={a.currency !== home ? fmt(convertToHome(a.balance, a.currency), home) : null}
+            rateUnknown={a.currency !== home && !convertOrKeep(1, a.currency, home, rates).converted}
             className="h-full w-full shadow-none"
           />
         ),

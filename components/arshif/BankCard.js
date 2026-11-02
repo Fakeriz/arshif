@@ -200,6 +200,7 @@ export function BankCard({
   showNetwork = true,
   rightHeader = null,
   approxHome = null,
+  rateUnknown = false,
   isCollapsed = false,
   showOcclusionShadow = true,
   flat = false,
@@ -371,6 +372,7 @@ export function BankCard({
               {approxHome ? (
                 <p className={cn('text-[11px] font-normal mt-1 truncate opacity-70', subCls)}>
                   {hideBalance ? '••••••' : String(approxHome).startsWith('≈') ? approxHome : `≈ ${approxHome}`}
+                  {rateUnknown && !hideBalance ? <span className="ml-1 font-semibold" title="Exchange rate unavailable - showing original amount">?</span> : null}
                 </p>
               ) : null}
             </div>
