@@ -112,7 +112,10 @@ export default function BusinessInvoiceSheet({ open, onClose }) {
   const markPaid = async (inv) => {
     if (!inv || inv.status === 'paid') return
     persistInv((invoices || []).map((i) => (i.id === inv.id ? { ...i, status: 'paid', paid_at: new Date().toISOString() } : i)))
-    // Record income to the business (first) account.
+    // Record income to the business (first) account. Kalau pencatatan gagal,
+    // status invoice tetap lunas tapi user diberi tahu agar pendapatannya
+    // tercatat manual, bukan dikira sudah masuk.
+    let incomeLogged = !(store?.createTransaction)
     try {
       if (store?.createTransaction) {
         const acc = (accounts || [])[0]
@@ -121,10 +124,14 @@ export default function BusinessInvoiceSheet({ open, onClose }) {
           category: 'business', account_id: acc?.id || null, date: new Date().toISOString(),
           note: `${cfg.brand || t('business')} · ${inv.number} · ${inv.client || ''}`.trim(),
         })
+        incomeLogged = true
         if (refresh) await refresh()
       }
-    } catch {}
-    toast.success(t('bi_paid_toast'))
+    } catch (e) {
+      console.error('Invoice income logging failed:', e?.message || e)
+    }
+    if (incomeLogged) toast.success(t('bi_paid_toast'))
+    else toast.error(t('bi_paid_no_income'))
   }
 
   const shareInvoice = async (inv) => {

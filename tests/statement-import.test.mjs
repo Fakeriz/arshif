@@ -83,3 +83,29 @@ test('duplikat dalam file: kejadian pertama tetap ikut impor', async () => {
   assert.equal(rows[0].dupInFile, false, 'baris pertama tidak ditandai duplikat')
   assert.equal(rows[1].dupInFile, true, 'salinan kedua ditandai, bisa disertakan manual')
 })
+
+// Kolom dengan tanggal bertanda tidak boleh jadi pasangan debit kosong.
+test('detectMapping tidak menjadikan kolom balance sebagai debit', async () => {
+  const { detectMapping } = await import('../lib/statement-import.js')
+  const r = detectMapping(['Date', 'Desc', 'Amount', 'Balance'], [
+    ['2026-11-01', 'A', '100', '1100'],
+    ['2026-11-02', 'B', '-50', '1050'],
+    ['2026-11-03', 'C', '200', '1250'],
+  ])
+  assert.equal(r.mapping.amount, 2)
+  assert.equal(r.mapping.balance, 3)
+  assert.equal(r.mapping.debit, -1)
+  assert.equal(r.mapping.credit, -1)
+})
+
+test('detectMapping mengenali debit/kredit terpisah', async () => {
+  const { detectMapping } = await import('../lib/statement-import.js')
+  const r = detectMapping(['Date', 'Desc', 'Debit', 'Credit'], [
+    ['2026-11-01', 'A', '100', ''],
+    ['2026-11-02', 'B', '', '500'],
+    ['2026-11-03', 'C', '50', ''],
+  ])
+  assert.equal(r.dirMode, 'split')
+  assert.equal(r.mapping.debit, 2)
+  assert.equal(r.mapping.credit, 3)
+})
