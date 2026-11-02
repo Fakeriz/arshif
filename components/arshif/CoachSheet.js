@@ -1,6 +1,6 @@
 'use client'
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Copy, Send, Sparkles, SquarePen, Wallet, TrendingUp, Target, AlertTriangle } from 'lucide-react'
+import { Copy, Send, Sparkles, SquarePen, Wallet, TrendingUp, Target, AlertTriangle, Plus } from 'lucide-react'
 import { toast } from 'sonner'
 import { useApp } from './context'
 import { Sheet, DotsLoader } from './ui'
@@ -255,7 +255,7 @@ export default function CoachSheet({ open, onClose }) {
         throw new Error(data?.error || t('coach_error'))
       }
 
-      setMessages((m) => [...m, { role: 'assistant', content: data.reply || t('coach_error') }])
+      setMessages((m) => [...m, { role: 'assistant', content: data.reply || t('coach_error'), draft: data.draft || null }])
     } catch (e) {
       setMessages((m) => [...m, { role: 'assistant', content: `⚠️ ${e?.message || t('coach_error')}` }])
     } finally { setBusy(false) }
@@ -335,6 +335,15 @@ export default function CoachSheet({ open, onClose }) {
               <img src="/coach-avatar-dark.svg" alt="" className="mt-0.5 h-[34px] w-[34px] flex-none rounded-full object-cover ring-1 ring-foreground/10 hidden dark:block" />
               <div className="max-w-[85%] rounded-2xl rounded-bl-md border border-border/50 bg-card px-4 py-2.5 text-sm leading-relaxed shadow-xs">
                 <CoachMarkdown text={m.content} />
+                {m.draft && (
+                  <button
+                    type="button"
+                    onClick={() => { onClose?.(); setTimeout(() => openSheet('addTx', m.draft), 150) }}
+                    className="mt-2.5 w-full rounded-xl bg-foreground text-background py-2.5 text-xs font-bold flex items-center justify-center gap-1.5 active:scale-[0.98] transition-transform"
+                  >
+                    <Plus size={14} /> {t('coach_log_tx')}
+                  </button>
+                )}
               </div>
             </div>
           ))}

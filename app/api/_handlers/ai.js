@@ -6,6 +6,7 @@ import { sanitizeCurrency, sanitizeMerchant, stripActionPrefix } from '@/lib/ai-
 import { validateReceiptTotals } from '@/lib/split-bill'
 import { callGemini, extractJson } from './gemini'
 import { encodeCoachContext } from '@/lib/coach-context'
+import { extractDraft } from '@/lib/coach-draft'
 import { json, err, MAX_AUDIO_BYTES, MAX_IMAGE_BYTES, MAX_PDF_BYTES, AUDIO_MIME_TYPES, IMAGE_MIME_TYPES, base64ByteLength } from './http'
 
 // Voice-to-text transcription.
@@ -352,6 +353,17 @@ CARA MENJAWAB:
 - Akhiri dengan 1-2 tindakan konkret yang bisa dilakukan bulan ini.
 - Jangan mengarang data yang tidak ada di konteks.
 
+MENCATAT TRANSAKSI DARI CHAT:
+- Hanya bila user secara eksplisit minta dicatatkan sebuah transaksi (contoh: "catat kopi 25rb", "tadi aku bayar listrik 300 ribu, catat ya").
+- Jangan mencatat untuk kalimat yang cuma bertanya atau bercerita tanpa maksud mencatat.
+- Bila nominal tidak jelas atau ragu antara pemasukan/pengeluaran, tanya dulu, jangan menebak, dan jangan keluarkan blok transaksi.
+- Bila data cukup: balas satu kalimat singkat konfirmasi isi transaksi, lalu di akhir jawaban keluarkan blok persis seperti ini (tanpa teks lain di dalam blok):
+\`\`\`arshif-tx
+{"type":"expense","amount":25000,"currency":"IDR","category":"food","note":"Kopi Kenangan","date":"2026-11-02T08:30:00.000Z"}
+\`\`\`
+- Aturan blok: type salah satu expense|income|transfer, amount angka tanpa pemisah ribuan, currency 3 huruf kapital, category pakai id kategori Arshif (food, transport, bills, shopping, entertainment, health, education, travel, housing, groceries, salary, freelance, business, other). date opsional, pakai ISO bila user menyebut waktu.
+- Blok ini akan diubah jadi draft form oleh aplikasi; user tetap yang menyimpan.
+
 STRUKTUR KONTEKS (mata uang ${homeCurrency}):
 - monthIncome/monthSpending: total pemasukan & pengeluaran bulan ini
 - savingsRate: persentase tabungan bulan ini (bisa null)
@@ -379,8 +391,13 @@ ${contextText.slice(0, 4000)}`
       systemInstruction
     )
 
+    // Blok transaksi dipisah dari teks jawaban: UI hanya menampilkan kalimat,
+    // draft-nya dipakai untuk membuka form transaksi.
+    const { reply: visibleReply, draft } = extractDraft(reply || '')
+
     return json({
-      reply: (reply || '').trim(),
+      reply: visibleReply || (reply || '').trim(),
+      draft,
       model,
       remaining: quota?.remaining,
       total: quota?.total,
