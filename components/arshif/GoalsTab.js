@@ -14,7 +14,7 @@ import NewSavingsGoalModal, { resolveSavingsGoalIcon } from '@/components/goals/
 import LoansSection from '@/components/goals/LoansSection'
 import { CATEGORIES } from '@/lib/categories'
 import { getCurrency } from '@/lib/currencies'
-import { safeConvert } from '@/lib/rates'
+import { convertOrKeep } from '@/lib/rates'
 import { cn } from '@/lib/utils'
 import { sanitizeAmount } from '@/lib/amount'
 
@@ -159,7 +159,7 @@ export default function GoalsTab() {
       else if (s.cycle === '3_months') monthlyAmt = rawAmt / 3
       else if (s.cycle === '6_months') monthlyAmt = rawAmt / 6
       else if (s.cycle === 'yearly') monthlyAmt = rawAmt / 12
-      const inHome = safeConvert(monthlyAmt, s?.currency || home, home, rates) ?? 0
+      const inHome = convertOrKeep(monthlyAmt, s?.currency || home, home, rates).value
       return sum + inHome
     }, 0)
   }, [subscriptions, home, rates])
@@ -188,9 +188,9 @@ export default function GoalsTab() {
           const d = (tx?.date || tx?.transaction_date || '').slice(0, 7)
           return d === currentMonthKey
         })
-        .reduce((sum, tx) => sum + (safeConvert(tx?.amount || 0, tx?.currency || home, home, rates) ?? 0), 0)
+        .reduce((sum, tx) => sum + (convertOrKeep(tx?.amount || 0, tx?.currency || home, home, rates).value), 0)
 
-      const limit = safeConvert(Number(b?.limit_amount) || 0, b?.currency || home, home, rates) ?? (Number(b?.limit_amount) || 0)
+      const limit = convertOrKeep(Number(b?.limit_amount) || 0, b?.currency || home, home, rates).value
       const remaining = Math.max(0, limit - spent)
       const pct = limit > 0 ? Math.min(100, Math.round((spent / limit) * 100)) : 0
       const dailyRemaining = remaining / daysLeft
@@ -202,7 +202,7 @@ export default function GoalsTab() {
   }, [budgets, transactions, currentMonthKey, home, rates, daysLeft, daysInMonth, now])
 
   const totalBudgetsLimit = useMemo(() => {
-    return (budgets || []).reduce((sum, b) => sum + (safeConvert(Number(b?.limit_amount) || 0, b?.currency || home, home, rates) ?? (Number(b?.limit_amount) || 0)), 0)
+    return (budgets || []).reduce((sum, b) => sum + (convertOrKeep(Number(b?.limit_amount) || 0, b?.currency || home, home, rates).value), 0)
   }, [budgets, home, rates])
 
   // Isolasi savings murni - pinjaman/hutang/cicilan tidak pernah ikut dihitung
@@ -218,14 +218,14 @@ export default function GoalsTab() {
   const totalSaved = useMemo(() => {
     return savingsGoals.reduce((sum, g) => {
       const amt = Number(g?.saved_amount) || 0
-      return sum + (safeConvert(amt, g?.currency || home, home, rates) ?? 0)
+      return sum + (convertOrKeep(amt, g?.currency || home, home, rates).value)
     }, 0)
   }, [savingsGoals, home, rates])
 
   const totalLoanInstallment = useMemo(() => {
     return (loans || []).reduce((sum, l) => {
       const amt = Number(l?.installment_amount || l?.monthly_payment || l?.amount) || 0
-      return sum + (safeConvert(amt, l?.currency || home, home, rates) ?? 0)
+      return sum + (convertOrKeep(amt, l?.currency || home, home, rates).value)
     }, 0)
   }, [loans, home, rates])
 
@@ -275,7 +275,7 @@ export default function GoalsTab() {
       let txWarning = null
       if (fundAccount && recordFundTx && typeof addTransaction === 'function') {
         try {
-          const homeAmount = safeConvert(amount, goalCurrency, home, rates) ?? amount
+          const homeAmount = convertOrKeep(amount, goalCurrency, home, rates).value
           await addTransaction({
             type: 'expense',
             amount,

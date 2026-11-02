@@ -5,7 +5,7 @@ import { toast } from 'sonner'
 import { useApp } from './context'
 import { Sheet, DotsLoader } from './ui'
 import CoachMarkdown from './CoachMarkdown'
-import { safeConvert } from '@/lib/rates'
+import { convertOrKeep } from '@/lib/rates'
 import { signedAccountBalance, applyTxToBalances } from '@/lib/ledger'
 import { cn } from '@/lib/utils'
 import { encodeCoachContext } from '@/lib/coach-context'
@@ -77,11 +77,11 @@ export default function CoachSheet({ open, onClose }) {
     const monthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
     const txMonth = (tx) => (tx?.date || tx?.transaction_date || tx?.created_at || '').slice(0, 7)
     const inMonth = transactions.filter((tx) => txMonth(tx) === monthKey)
-    const sum = (type) => inMonth.filter((tx) => tx.type === type).reduce((s, tx) => s + (safeConvert(tx.amount, tx.currency, home, rates) ?? 0), 0)
+    const sum = (type) => inMonth.filter((tx) => tx.type === type).reduce((s, tx) => s + (convertOrKeep(tx.amount, tx.currency, home, rates).value), 0)
     const byCat = {}
-    inMonth.filter((tx) => tx.type === 'expense').forEach((tx) => { byCat[tx.category] = (byCat[tx.category] || 0) + (safeConvert(tx.amount, tx.currency, home, rates) ?? 0) })
+    inMonth.filter((tx) => tx.type === 'expense').forEach((tx) => { byCat[tx.category] = (byCat[tx.category] || 0) + (convertOrKeep(tx.amount, tx.currency, home, rates).value) })
     // Saldo akun dikonversi ke mata uang home agar konsisten dengan totalBalance
-    const totalBalance = accounts.reduce((s, a) => s + (safeConvert(signedAccountBalance(a), a.currency, home, rates) ?? 0), 0)
+    const totalBalance = accounts.reduce((s, a) => s + (convertOrKeep(signedAccountBalance(a), a.currency, home, rates).value), 0)
     const monthIncome = sum('income')
     const monthSpending = sum('expense')
     const savingsRate = monthIncome > 0 ? Math.round(((monthIncome - monthSpending) / monthIncome) * 100) : null
@@ -93,14 +93,14 @@ export default function CoachSheet({ open, onClose }) {
       const monthTx = transactions.filter((tx) => txMonth(tx) === key)
       trend.push({
         month: key,
-        income: Math.round(monthTx.filter((tx) => tx.type === 'income').reduce((s, tx) => s + (safeConvert(tx.amount, tx.currency, home, rates) ?? 0), 0)),
-        spending: Math.round(monthTx.filter((tx) => tx.type === 'expense').reduce((s, tx) => s + (safeConvert(tx.amount, tx.currency, home, rates) ?? 0), 0)),
+        income: Math.round(monthTx.filter((tx) => tx.type === 'income').reduce((s, tx) => s + (convertOrKeep(tx.amount, tx.currency, home, rates).value), 0)),
+        spending: Math.round(monthTx.filter((tx) => tx.type === 'expense').reduce((s, tx) => s + (convertOrKeep(tx.amount, tx.currency, home, rates).value), 0)),
       })
     }
 
     const budgetProgress = (budgets || [])
       .map((b) => {
-        const limitHome = safeConvert(Number(b?.limit_amount) || 0, b?.currency || home, home, rates) ?? (Number(b?.limit_amount) || 0)
+        const limitHome = convertOrKeep(Number(b?.limit_amount) || 0, b?.currency || home, home, rates).value
         if (limitHome <= 0) return null
         const dStart = b?.from_date ? new Date(b.from_date) : null
         const dEnd = b?.to_date ? new Date(b.to_date + 'T23:59:59.999') : null
@@ -114,7 +114,7 @@ export default function CoachSheet({ open, onClose }) {
             }
             return txMonth(tx) === monthKey
           })
-          .reduce((s, tx) => s + (safeConvert(tx?.amount || 0, tx?.currency || home, home, rates) ?? 0), 0)
+          .reduce((s, tx) => s + (convertOrKeep(tx?.amount || 0, tx?.currency || home, home, rates).value), 0)
         return {
           category: b.category,
           limit: Math.round(limitHome),
@@ -126,7 +126,7 @@ export default function CoachSheet({ open, onClose }) {
       .sort((a, b) => b.pct - a.pct)
       .slice(0, 6)
 
-    const debtMonthly = (debts || []).reduce((s, d) => s + (safeConvert(Number(d?.installment_amount || d?.monthly_payment || d?.amount) || 0, d?.currency || home, home, rates) ?? 0), 0)
+    const debtMonthly = (debts || []).reduce((s, d) => s + (convertOrKeep(Number(d?.installment_amount || d?.monthly_payment || d?.amount) || 0, d?.currency || home, home, rates).value), 0)
     const subMonthly = (subscriptions || []).reduce((s, sub) => {
       const rawAmt = Number(sub?.amount) || 0
       let monthlyAmt = rawAmt
@@ -134,12 +134,12 @@ export default function CoachSheet({ open, onClose }) {
       else if (sub.cycle === '3_months') monthlyAmt = rawAmt / 3
       else if (sub.cycle === '6_months') monthlyAmt = rawAmt / 6
       else if (sub.cycle === 'yearly') monthlyAmt = rawAmt / 12
-      return s + (safeConvert(monthlyAmt, sub?.currency || home, home, rates) ?? 0)
+      return s + (convertOrKeep(monthlyAmt, sub?.currency || home, home, rates).value)
     }, 0)
 
     const goalProjection = (goals || []).map((g) => {
-      const targetHome = safeConvert(Number(g?.target_amount) || 0, g?.currency || home, home, rates) ?? (Number(g?.target_amount) || 0)
-      const savedHome = safeConvert(Number(g?.saved_amount) || 0, g?.currency || home, home, rates) ?? (Number(g?.saved_amount) || 0)
+      const targetHome = convertOrKeep(Number(g?.target_amount) || 0, g?.currency || home, home, rates).value
+      const savedHome = convertOrKeep(Number(g?.saved_amount) || 0, g?.currency || home, home, rates).value
       const remaining = Math.max(0, targetHome - savedHome)
       let monthsLeft = null
       let requiredMonthly = null
@@ -148,7 +148,7 @@ export default function CoachSheet({ open, onClose }) {
         const dl = new Date(g.deadline)
         monthsLeft = Math.max(0, (dl.getFullYear() - now.getFullYear()) * 12 + (dl.getMonth() - now.getMonth()))
         if (monthsLeft > 0 && remaining > 0) requiredMonthly = Math.round(remaining / monthsLeft)
-        const monthlyTarget = safeConvert(Number(g?.monthly_target) || 0, g?.currency || home, home, rates) ?? (Number(g?.monthly_target) || 0)
+        const monthlyTarget = convertOrKeep(Number(g?.monthly_target) || 0, g?.currency || home, home, rates).value
         if (remaining <= 0) status = 'completed'
         else if (monthsLeft <= 0) status = 'overdue'
         else if (monthlyTarget > 0 && monthlyTarget >= requiredMonthly) status = 'on_track'
@@ -174,7 +174,7 @@ export default function CoachSheet({ open, onClose }) {
       monthSpending: Math.round(monthSpending),
       savingsRate,
       topCategories: Object.entries(byCat).sort((a, b) => b[1] - a[1]).slice(0, 5).map(([c, v]) => ({ category: c, amount: Math.round(v) })),
-      accounts: accounts.map((a) => ({ name: a.name, balance: Math.round(safeConvert(signedAccountBalance(a), a.currency, home, rates) ?? 0) })),
+      accounts: accounts.map((a) => ({ name: a.name, balance: Math.round(convertOrKeep(signedAccountBalance(a), a.currency, home, rates).value) })),
       trend,
       budgets: budgetProgress,
       debts: { count: (debts || []).length, monthlyTotal: Math.round(debtMonthly) },

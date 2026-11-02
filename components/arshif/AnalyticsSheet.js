@@ -4,7 +4,7 @@ import { Share2, ChevronLeft, ChevronRight, PieChart as PieIcon, Download } from
 import { toast } from 'sonner'
 import { useApp } from './context'
 import { Sheet, CategoryBadge } from './ui'
-import { safeConvert } from '@/lib/rates'
+import { convertOrKeep } from '@/lib/rates'
 import { signedAccountBalance } from '@/lib/ledger'
 import { cn } from '@/lib/utils'
 
@@ -16,7 +16,7 @@ export default function AnalyticsSheet({ open, onClose }) {
   const [selectedAcc, setSelectedAcc] = useState('all')
   const [subscriptions, setSubscriptions] = useState([])
   const [debts, setDebts] = useState([])
-  const toHome = (amount, currency) => safeConvert(amount, currency || home, home, rates) ?? 0
+  const toHome = (amount, currency) => convertOrKeep(amount, currency || home, home, rates).value
 
   useEffect(() => {
     if (open) {

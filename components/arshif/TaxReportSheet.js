@@ -5,7 +5,7 @@ import { toast } from 'sonner'
 import { useApp } from './context'
 import { Sheet, Segmented, EmptyState } from './ui'
 import { buildTaxReport, taxReportRows } from '@/lib/tax-report'
-import { safeConvert } from '@/lib/rates'
+import { convertOrKeep } from '@/lib/rates'
 import { LOCALE_MAP } from '@/lib/i18n'
 import { getCategory } from '@/lib/categories'
 import { cn } from '@/lib/utils'
@@ -20,7 +20,7 @@ export default function TaxReportSheet({ open, onClose }) {
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState(null)
 
-  const toHome = (amount, currency) => safeConvert(amount, currency || home, home, rates) ?? 0
+  const toHome = (amount, currency) => convertOrKeep(amount, currency || home, home, rates).value
 
   const report = useMemo(() => {
     try {
