@@ -55,6 +55,9 @@ export default function ImportTransactionsPage({ onClose }) {
   const [progress, setProgress] = useState({ done: 0, total: 0 })
   const [result, setResult] = useState(null)
   const [batchId, setBatchId] = useState(null)
+  // Id transaksi hasil impor sesi ini: dipakai undo kalau kolom import_batch_id
+  // belum ada di DB (migrasi SQL belum dijalankan).
+  const createdIdsRef = useRef([])
   const [batchRecId, setBatchRecId] = useState(null)
   const [netDelta, setNetDelta] = useState(0)
   const [showDupes, setShowDupes] = useState(false)
@@ -328,6 +331,7 @@ export default function ImportTransactionsPage({ onClose }) {
       return
     }
     setBusy(true)
+    createdIdsRef.current = []
     const bId = (typeof crypto !== 'undefined' && crypto.randomUUID) ? crypto.randomUUID() : `batch-${Date.now()}`
     setBatchId(bId)
     setProgress({ done: 0, total: readyRows.length })
@@ -365,7 +369,8 @@ export default function ImportTransactionsPage({ onClose }) {
             description: r.desc,
             ...(caps.columns ? { import_batch_id: bId, fingerprint: r.fingerprint } : {}),
           }
-          await store.createTransaction(payload)
+          const created = await store.createTransaction(payload)
+          if (created?.id) createdIdsRef.current.push(created.id)
           const delta = convert(r.amount, r.currency, walletCur, rates)
           net += r.type === 'income' ? delta : -delta
           // Pelajari kategori pilihan user untuk file berikutnya
@@ -398,7 +403,19 @@ export default function ImportTransactionsPage({ onClose }) {
     if (busy || !batchId) return
     setBusy(true)
     try {
-      if (caps.columns) await store.deleteTransactionsByImportBatch(batchId)
+      let removed = 0
+      if (caps.columns && batchId) {
+        removed = await store.deleteTransactionsByImportBatch(batchId)
+      } else {
+        for (const id of createdIdsRef.current) {
+          try { await store.deleteTransaction(id); removed += 1 } catch {}
+        }
+      }
+      if (!removed && !caps.columns) {
+        toast.error(t('import_undo_unavailable'))
+        return
+      }
+      createdIdsRef.current = []
       const w = (accounts || []).find((a) => a.id === walletId)
       if (w && netDelta !== 0) {
         try { await store.updateAccount(walletId, { balance: roundMoney((Number(w.balance) || 0) - netDelta, walletCur) }) } catch {}
