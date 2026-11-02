@@ -1,6 +1,6 @@
 'use client'
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { Camera, Upload, Loader2, ScanLine } from 'lucide-react'
+import { Camera, Upload, Loader2, ScanLine, AlertTriangle } from 'lucide-react'
 import { toast } from 'sonner'
 import { useApp } from './context'
 import { Sheet, PrimaryButton, SecondaryButton, Card } from './ui'
@@ -16,6 +16,9 @@ export default function ScanReceiptSheet({ open, onClose, onUse, initialImage, a
   const [busy, setBusy] = useState(false)
   const [uploadingBackup, setUploadingBackup] = useState(false)
   const [result, setResult] = useState(null)
+  // Kegagalan OCR: { kind: 'network'|'unreadable'|'server', message } - dipakai
+  // untuk menampilkan kartu error dengan tombol coba lagi, bukan toast generik.
+  const [error, setError] = useState(null)
   // Status auto-reconcile: 'ok' kalau diskon struk sudah ditambahkan otomatis.
   const [reconciled, setReconciled] = useState(false)
   const [quota, setQuota] = useState(null)
@@ -47,6 +50,7 @@ export default function ScanReceiptSheet({ open, onClose, onUse, initialImage, a
     if (!dataUrl) return
     setBusy(true)
     setResult(null)
+    setError(null)
     setReconciled(false)
     try {
       setPreview(dataUrl)
@@ -93,9 +97,19 @@ export default function ScanReceiptSheet({ open, onClose, onUse, initialImage, a
       }
 
       const receiptData = data?.receipt || data || null
+      // Struk terbaca tapi tidak ada total yang bisa dipakai: perlakukan
+      // sebagai gagal-baca, biar user bisa coba foto ulang, bukan simpan 0.
+      if (!receiptData || !(Number(receiptData.total) > 0)) {
+        setError({ kind: 'unreadable', message: t('scan_error_unreadable') })
+        return
+      }
       setResult(receiptData)
     } catch (err) {
-      toast.error(err?.message || t('error'))
+      const offline = typeof navigator !== 'undefined' && navigator.onLine === false
+      setError({
+        kind: offline ? 'network' : 'server',
+        message: offline ? t('scan_error_network') : (err?.message || t('scan_error_server')),
+      })
     } finally { setBusy(false) }
   }, [session?.access_token, t, openSheet])
 
@@ -130,6 +144,7 @@ export default function ScanReceiptSheet({ open, onClose, onUse, initialImage, a
       }
       setPreview(null)
       setResult(null)
+      setError(null)
       setReconciled(false)
       setBusy(false)
       fetchQuota()
@@ -374,7 +389,37 @@ export default function ScanReceiptSheet({ open, onClose, onUse, initialImage, a
               </div>
             </div>
           ) : !busy ? (
-            <div className="mt-4"><SecondaryButton onClick={() => fileRef.current?.click()}>{t('upload_receipt')}</SecondaryButton></div>
+            <div className="mt-4 space-y-3">
+              {error ? (
+                <div className="rounded-xl border border-red-300 dark:border-red-500/40 bg-red-50 dark:bg-red-500/10 px-3 py-3" data-testid="scan-error">
+                  <div className="flex items-start gap-2">
+                    <AlertTriangle size={16} className="mt-0.5 shrink-0 text-red-600 dark:text-red-400" />
+                    <div className="min-w-0">
+                      <p className="text-sm font-bold text-red-700 dark:text-red-400">{t('scan_failed_title')}</p>
+                      <p className="text-xs text-red-600 dark:text-red-400/90 mt-0.5 break-words">{error.message}</p>
+                    </div>
+                  </div>
+                  <div className="flex gap-2 mt-2.5">
+                    <button
+                      type="button"
+                      onClick={() => { preview ? processDataUrl(preview) : fileRef.current?.click() }}
+                      className="flex-1 rounded-lg bg-red-600 text-white font-bold px-2 py-2 text-xs hover:bg-red-700 transition-colors active:scale-[0.98]"
+                      data-testid="scan-retry"
+                    >
+                      {t('scan_retry')}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => fileRef.current?.click()}
+                      className="rounded-lg border border-red-500/60 text-red-700 dark:text-red-400 font-bold px-3 py-2 text-xs hover:bg-red-100 dark:hover:bg-red-500/10 transition-colors active:scale-[0.98]"
+                    >
+                      {t('scan_new_photo')}
+                    </button>
+                  </div>
+                </div>
+              ) : null}
+              <SecondaryButton onClick={() => fileRef.current?.click()}>{t('upload_receipt')}</SecondaryButton>
+            </div>
           ) : null}
         </div>
       )}
