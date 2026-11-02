@@ -5,6 +5,7 @@ import { toast } from 'sonner'
 import { useApp } from './context'
 import { Sheet, SheetTextButton, Field, TextInput, Segmented, PrimaryButton, Card } from './ui'
 import { allocateEqualShares, getCurrency, roundMoney } from '@/lib/currencies'
+import { lineTotal, itemsSum } from '@/lib/split-bill'
 import { cn } from '@/lib/utils'
 import { sanitizeAmount } from '@/lib/amount'
 
@@ -27,8 +28,11 @@ export default function SplitBillSheet({ open, onClose }) {
   }, [open]) // eslint-disable-line
 
   const named = people.filter((p) => p.name.trim())
+  // lineTotal/itemsSum, bukan Number(it.price): harga baris = price x qty - diskon.
+  // Sheet ini manual (qty selalu 1), tapi memakai rumus yang sama dengan
+  // TransactionDetailSheet mencegah dua versi math yang menyimpang.
   const totalNum = mode === 'items'
-    ? roundMoney(items.reduce((s, i) => s + (Number(i.price) || 0), 0), home)
+    ? roundMoney(itemsSum(items), home)
     : roundMoney(Number(total) || 0, home)
   const equalShares = useMemo(() => allocateEqualShares(totalNum, named.length, home), [totalNum, named.length, home])
   const equalShare = equalShares[0] || 0
@@ -39,7 +43,7 @@ export default function SplitBillSheet({ open, onClose }) {
     if (mode === 'uneven') { people.forEach((p) => { totals[p.id] = roundMoney(Number(p.amount) || 0, home) }); return { totals, unassigned: 0 } }
     let unassigned = 0
     items.forEach((it, idx) => {
-      const a = assign[idx] || []; const price = roundMoney(Number(it.price) || 0, home)
+      const a = assign[idx] || []; const price = roundMoney(lineTotal(it), home)
       if (!a.length) { unassigned = roundMoney(unassigned + price, home); return }
       const shares = allocateEqualShares(price, a.length, home)
       a.forEach((pid, shareIdx) => { if (totals[pid] != null) totals[pid] = roundMoney(totals[pid] + shares[shareIdx], home) })
