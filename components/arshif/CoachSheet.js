@@ -10,7 +10,7 @@ import { signedAccountBalance, applyTxToBalances } from '@/lib/ledger'
 import { cn } from '@/lib/utils'
 import { encodeCoachContext } from '@/lib/coach-context'
 import { CATEGORIES, getCategory } from '@/lib/categories'
-import { buildCoachTx, draftTxId, resolveAccount } from '@/lib/coach-save'
+import { buildCoachTx, draftTxId, resolveAccount, resolveToAccount } from '@/lib/coach-save'
 import { saveTxWithBalance } from '@/lib/tx-save'
 
 const GREETINGS = {
@@ -287,6 +287,11 @@ export default function CoachSheet({ open, onClose }) {
   const saveDraftNow = async (msg, index) => {
     if (!msg?.draft || msg.savedTxId || savingKey || !store?.createTransaction) return
     const key = draftKey(msg, index)
+    // Transfer butuh akun tujuan yang jelas: buka form, jangan tulis diam-diam.
+    if (msg.draft.type === 'transfer' && !resolveToAccount(msg.draft, accounts)) {
+      toast.error(t('coach_save_failed'))
+      return
+    }
     const tx = buildCoachTx(msg.draft, { accounts, home, id: draftTxId(key) })
     if (!tx) {
       toast.error(t('coach_save_failed'))
@@ -394,7 +399,11 @@ export default function CoachSheet({ open, onClose }) {
                       </div>
                       <div className="flex flex-col">
                         <dt className="text-muted-foreground">{t('source_account')}</dt>
-                        <dd className="font-semibold">{resolveAccount(m.draft, accounts)?.name || t('no_account_opt')}</dd>
+                        <dd className="font-semibold">
+                          {m.draft.type === 'transfer'
+                            ? `${resolveAccount(m.draft, accounts)?.name || '?'} → ${resolveToAccount(m.draft, accounts)?.name || '?'}`
+                            : resolveAccount(m.draft, accounts)?.name || t('no_account_opt')}
+                        </dd>
                       </div>
                       <div className="flex flex-col">
                         <dt className="text-muted-foreground">{t('hdr_date')}</dt>

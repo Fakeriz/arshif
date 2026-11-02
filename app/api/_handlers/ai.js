@@ -385,6 +385,7 @@ MENCATAT TRANSAKSI DARI CHAT:
 {"type":"expense","amount":25000,"currency":"IDR","category":"food","note":"Kopi Kenangan","date":"2026-11-02T08:30:00.000Z"}
 \`\`\`
 - Aturan blok: type salah satu expense|income|transfer, amount angka tanpa pemisah ribuan, currency 3 huruf kapital, category wajib dari daftar kategori valid di bawah, account_name dari daftar akun user di bawah. date opsional.
+- Untuk type transfer: account_name adalah akun ASAL dan to_account_name akun TUJUAN, keduanya dari daftar akun. Bila salah satu tidak jelas, tanya dulu dan jangan keluarkan blok.
 - category pakai salah satu id ini (huruf kecil): ${categoryListStr}. category tak dikenal/null jadi null di draft (bukan "food").
 - currency 3 huruf kapital; null/rusak jatuh ke ${homeCurrency}.
 - date: "YYYY-MM-DD" bila user menyebut tanggal, atau ISO "YYYY-MM-DDTHH:mm:ss" bila menyebut jam. kosongkan bila tidak disebut.

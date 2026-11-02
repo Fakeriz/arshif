@@ -54,3 +54,31 @@ test('tanggal dari draft dipakai apa adanya, tanpa konversi zona', () => {
   const tx = buildCoachTx({ amount: 10, date: '2026-11-02T08:30:00.000Z' }, { accounts, home: 'IDR' })
   assert.equal(tx.date, '2026-11-02T08:30:00.000Z')
 })
+
+test('transfer membawa akun tujuan, jenis lain tanpa to_account', () => {
+  const accs = [
+    { id: 'acc-bca', name: 'BCA' },
+    { id: 'acc-maybank', name: 'Maybank' },
+  ]
+  const tx = buildCoachTx(
+    { type: 'transfer', amount: 500000, currency: 'IDR', account_name: 'BCA', to_account_name: 'maybank' },
+    { accounts: accs, home: 'IDR' }
+  )
+  assert.equal(tx.account_id, 'acc-bca')
+  assert.equal(tx.to_account_id, 'acc-maybank')
+
+  const expense = buildCoachTx(
+    { type: 'expense', amount: 10, to_account_name: 'Maybank' },
+    { accounts: accs, home: 'IDR' }
+  )
+  assert.equal(expense.to_account_id, null)
+})
+
+test('akun tujuan tidak jelas tetap null, bukan ditebak', () => {
+  const accs = [{ id: 'acc-bca', name: 'BCA' }]
+  const tx = buildCoachTx(
+    { type: 'transfer', amount: 100, account_name: 'BCA', to_account_name: 'Dompet X' },
+    { accounts: accs, home: 'IDR' }
+  )
+  assert.equal(tx.to_account_id, null)
+})
