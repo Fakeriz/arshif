@@ -12,6 +12,7 @@ import { encodeCoachContext } from '@/lib/coach-context'
 import { CATEGORIES, getCategory } from '@/lib/categories'
 import { buildCoachTx, draftTxId, resolveAccount, resolveToAccount } from '@/lib/coach-save'
 import { saveTxWithBalance } from '@/lib/tx-save'
+import { logCoachEvent, COACH_EVENTS } from '@/lib/coach-events'
 
 const GREETINGS = {
   id: 'Halo! Saya AI Financial Coach Arshif kamu. Tanya apa saja soal keuanganmu - aku sudah membaca saldo, anggaran, dan targetmu.',
@@ -262,7 +263,11 @@ export default function CoachSheet({ open, onClose }) {
         throw new Error(data?.error || t('coach_error'))
       }
 
-      setMessages((m) => [...m, { role: 'assistant', content: data.reply || t('coach_error'), draft: data.draft || null, ts: Date.now() }])
+      const msgTs = Date.now()
+      setMessages((m) => [...m, { role: 'assistant', content: data.reply || t('coach_error'), draft: data.draft || null, ts: msgTs }])
+      if (data.draft) {
+        logCoachEvent(COACH_EVENTS.SHOWN, { draftKey: `${uid}:${msgTs}`, txType: data.draft.type, amount: data.draft.amount })
+      }
     } catch (e) {
       setMessages((m) => [...m, { role: 'assistant', content: `⚠️ ${e?.message || t('coach_error')}` }])
     } finally { setBusy(false) }
@@ -299,9 +304,11 @@ export default function CoachSheet({ open, onClose }) {
     }
     setSavingKey(key)
     try {
-      await saveTxWithBalance({ tx, addTransaction, store, accounts, rates })
-      setMessages((list) => list.map((m, i) => (i === index ? { ...m, savedTxId: tx.id } : m)))
+      const res = await saveTxWithBalance({ tx, addTransaction, store, accounts, rates })
+      const savedId = res?.id || tx.id
+      setMessages((list) => list.map((m, i) => (i === index ? { ...m, savedTxId: savedId } : m)))
       if (typeof refresh === 'function') await refresh()
+      logCoachEvent(COACH_EVENTS.SAVED_NOW, { draftKey: key, txType: tx.type, amount: tx.amount })
       toast.success(t('coach_saved'), {
         action: { label: t('coach_undo'), onClick: () => { undoDraftSave(tx) } },
       })
@@ -427,7 +434,7 @@ export default function CoachSheet({ open, onClose }) {
                         </button>
                         <button
                           type="button"
-                          onClick={() => { onClose?.(); setTimeout(() => openSheet('addTx', m.draft), 150) }}
+                          onClick={() => { logCoachEvent(COACH_EVENTS.FORM_OPENED, { draftKey: draftKey(m, i), txType: m.draft?.type, amount: m.draft?.amount }); onClose?.(); setTimeout(() => openSheet('addTx', m.draft), 150) }}
                           className="rounded-lg border border-border/70 px-2.5 py-2 text-xs font-semibold flex items-center justify-center gap-1.5 active:scale-[0.98] transition-transform"
                           data-testid="coach-edit-form"
                           aria-label={t('coach_log_tx')}
