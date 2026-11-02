@@ -9,6 +9,7 @@ import { CATEGORIES } from '@/lib/categories'
 import { roundMoney } from '@/lib/currencies'
 import { applyTxToBalances } from '@/lib/ledger'
 import { convert, getRate } from '@/lib/rates'
+import { shiftCycleDate } from '@/lib/cycle'
 import { cn } from '@/lib/utils'
 import { sanitizeAmount } from '@/lib/amount'
 
@@ -136,6 +137,21 @@ export default function BillsTrackerSheet({ open, onClose }) {
 
   const shiftMonth = (delta) => setMonth((d) => new Date(d.getFullYear(), d.getMonth() + delta, 1))
 
+  // Langganan yang tercatat sebagai tagihan harus memajukan tanggal tagihannya
+  // setelah dibayar, kalau tidak pengingat terus menunjuk bulan yang sama.
+  const syncSubscriptionCycle = async (bill, direction) => {
+    if (!bill?.subscription_id || typeof store?.updateSubscription !== 'function') return
+    const base = bill.next_billing_date
+      || (mKey && bill.due_day ? `${mKey}-${String(Math.min(31, Math.max(1, Number(bill.due_day) || 1))).padStart(2, '0')}` : null)
+    const next = shiftCycleDate(base, bill.cycle, direction)
+    if (!next) return
+    try {
+      await store.updateSubscription(bill.subscription_id, { next_billing_date: next })
+    } catch (e) {
+      console.warn('Subscription cycle update skipped:', e?.message || e)
+    }
+  }
+
   const handleTogglePaid = async (b) => {
     if (!b?.id) return
     const isNowPaid = !b.paid
@@ -242,6 +258,8 @@ export default function BillsTrackerSheet({ open, onClose }) {
       } else if (isNowPaid) {
         toast.success(t('bill_paid_logged'))
       }
+
+      if (isNowPaid) await syncSubscriptionCycle(b, 1)
     } catch (e) {
       console.error('Bill paid flag failed:', e?.message || e)
       await revertPaidFlag()
@@ -273,6 +291,8 @@ export default function BillsTrackerSheet({ open, onClose }) {
         }
       }
     }
+
+    if (!isNowPaid) await syncSubscriptionCycle(b, -1)
 
     await load()
   }
