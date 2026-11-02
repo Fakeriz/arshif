@@ -83,6 +83,11 @@ tersinkron dengan baris fee lama. Perbaikan yang benar butuh kolom
 - **Rekonsiliasi saldo vs ledger.** Belum ada perintah yang membandingkan
   `accounts.balance` dengan jumlah transaksi per akun; kalau ada baris lama yang
   ditulis sebelum perbaikan #1/#4, selisihnya belum diketahui.
+- **Batas bulan di push cron.** Route `app/api/push/cron` menghitung "bulan ini"
+  dengan `new Date(tx.date).getMonth()` di server (UTC), sedangkan klien memakai
+  zona waktu lokal. Transaksi pada 8 jam pertama tanggal 1 (MYT) masuk bulan
+  sebelumnya di push, tetapi bulan berjalan di aplikasi. Butuh kolom zona waktu
+  di profil untuk memperbaikinya dengan benar.
 - **Pajak dan kurs historis.** `tax-report` memakai `home_currency_amount` yang
   tersimpan saat transaksi, bukan kurs saat pelaporan. Belum diputuskan mana
   yang benar untuk laporan pajak.
