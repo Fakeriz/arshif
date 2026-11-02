@@ -42,7 +42,7 @@ test('validateBackupPayload rejects foreign or malformed payloads', () => {
   assert.equal(validateBackupPayload({ app: 'arshif', schemaVersion: 0, accounts: [], transactions: [], goals: [] }).error, 'bad_schema')
 })
 
-test('restoreBackupData replaces collections in order', async () => {
+test('restoreBackupData menulis data baru dulu, lalu menghapus data lama', async () => {
   const calls = []
   let seq = 0
   const mockCreate = (kind) => async (r) => {
@@ -68,11 +68,56 @@ test('restoreBackupData replaces collections in order', async () => {
   })
   assert.equal(restored, 3)
   assert.deepEqual(calls, [
-    ['deleteAccount', 'old-a'],
     ['createAccount', undefined],
     ['createTransaction', undefined],
     ['createGoal', undefined],
+    ['deleteAccount', 'old-a'],
   ])
+})
+
+test('restoreBackupData rollback saat insert gagal, data lama tetap utuh', async () => {
+  const deleted = []
+  const createdIds = []
+  let n = 0
+  const store = {
+    listAccounts: async () => [{ id: 'old-a' }],
+    createAccount: async () => { n += 1; createdIds.push(`new-${n}`); if (n === 2) throw new Error('insert gagal'); return { id: `new-${n}` } },
+    deleteAccount: async (id) => deleted.push(id),
+    listTransactions: async () => [],
+    createTransaction: async () => ({ id: 'tx-new' }),
+    deleteTransaction: async (id) => deleted.push(id),
+    listGoals: async () => [],
+    createGoal: async () => ({ id: 'goal-new' }),
+    deleteGoal: async (id) => deleted.push(id),
+  }
+  await assert.rejects(
+    restoreBackupData(store, { accounts: [{ id: 'a' }, { id: 'b' }], transactions: [], goals: [] }),
+    /insert gagal/
+  )
+  assert.deepEqual(deleted, ['new-1'], 'baris baru yang sudah masuk dibersihkan')
+  assert.ok(!deleted.includes('old-a'), 'data lama tidak boleh dihapus saat insert gagal')
+})
+
+test('restoreBackupData me-remap to_account_id pada transfer', async () => {
+  const createdTxs = []
+  const store = {
+    listAccounts: async () => [],
+    createAccount: async (r) => ({ ...r, id: `new-${r.name}` }),
+    deleteAccount: async () => {},
+    listTransactions: async () => [],
+    createTransaction: async (r) => { createdTxs.push(r); return { ...r, id: `tx-${createdTxs.length}` } },
+    deleteTransaction: async () => {},
+    listGoals: async () => [],
+    createGoal: async (r) => ({ ...r, id: 'g1' }),
+    deleteGoal: async () => {},
+  }
+  await restoreBackupData(store, {
+    accounts: [{ id: 'a1', name: 'Kas' }, { id: 'a2', name: 'Bank' }],
+    transactions: [{ id: 't1', type: 'transfer', account_id: 'a1', to_account_id: 'a2', amount: 100 }],
+    goals: [],
+  })
+  assert.equal(createdTxs[0].account_id, 'new-Kas')
+  assert.equal(createdTxs[0].to_account_id, 'new-Bank', 'akun tujuan transfer ikut di-remap')
 })
 
 test('month start day defaults to 1 and clamps to 1-31', () => {

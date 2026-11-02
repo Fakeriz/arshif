@@ -74,8 +74,15 @@ export default function AccountBackupSheet({ open, onClose }) {
       if (refresh) await refresh()
       toast.success(t('backup_success'))
     } catch (e) {
-      console.warn('restore failed', e)
-      toast.error(e?.message || t('error'))
+      console.error('restore failed', e)
+      // Sebagian data lama mungkin sudah terhapus: tarik ulang state supaya
+      // layar menampilkan kondisi sebenarnya, bukan data lama di memori.
+      if (e?.partialRestore) {
+        try { if (refresh) await refresh() } catch {}
+        toast.error(t('backup_restore_partial'))
+      } else {
+        toast.error(e?.message || t('error'))
+      }
     } finally {
       setImporting(false)
     }
