@@ -1,15 +1,16 @@
 'use client'
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Copy, Send, Sparkles, SquarePen, Wallet, TrendingUp, Target, AlertTriangle, Plus } from 'lucide-react'
+import { Check, Copy, Send, Sparkles, SquarePen, Wallet, TrendingUp, Target, AlertTriangle, PencilLine } from 'lucide-react'
 import { toast } from 'sonner'
 import { useApp } from './context'
 import { Sheet, DotsLoader } from './ui'
 import CoachMarkdown from './CoachMarkdown'
 import { safeConvert } from '@/lib/rates'
-import { signedAccountBalance } from '@/lib/ledger'
+import { signedAccountBalance, applyTxToBalances } from '@/lib/ledger'
 import { cn } from '@/lib/utils'
 import { encodeCoachContext } from '@/lib/coach-context'
-import { CATEGORIES } from '@/lib/categories'
+import { CATEGORIES, getCategory } from '@/lib/categories'
+import { buildCoachTx, draftTxId, resolveAccount } from '@/lib/coach-save'
 
 const GREETINGS = {
   id: 'Halo! Saya AI Financial Coach Arshif kamu. Tanya apa saja soal keuanganmu - aku sudah membaca saldo, anggaran, dan targetmu.',
@@ -19,10 +20,11 @@ const GREETINGS = {
 }
 
 export default function CoachSheet({ open, onClose }) {
-  const { t, home, lang, transactions = [], accounts = [], goals = [], budgets = [], rates, fmt, session, isAiAllowed, open: openSheet, store } = useApp()
+  const { t, home, lang, transactions = [], accounts = [], goals = [], budgets = [], rates, fmt, session, isAiAllowed, open: openSheet, store, refresh } = useApp()
   const [messages, setMessages] = useState([])
   const [input, setInput] = useState('')
   const [busy, setBusy] = useState(false)
+  const [savingKey, setSavingKey] = useState(null)
   const [debts, setDebts] = useState([])
   const [subscriptions, setSubscriptions] = useState([])
   const scrollRef = useRef(null)
@@ -259,10 +261,50 @@ export default function CoachSheet({ open, onClose }) {
         throw new Error(data?.error || t('coach_error'))
       }
 
-      setMessages((m) => [...m, { role: 'assistant', content: data.reply || t('coach_error'), draft: data.draft || null }])
+      setMessages((m) => [...m, { role: 'assistant', content: data.reply || t('coach_error'), draft: data.draft || null, ts: Date.now() }])
     } catch (e) {
       setMessages((m) => [...m, { role: 'assistant', content: `⚠️ ${e?.message || t('coach_error')}` }])
     } finally { setBusy(false) }
+  }
+
+  // Kunci idempotensi per pesan coach, bukan per isi draft: dua chat berbeda
+  // dengan nominal sama tetap boleh dicatat dua kali.
+  const draftKey = (msg, index) => `${uid}:${msg?.ts || `i${index}:${String(msg?.content || '').slice(0, 24)}`}`
+
+  const undoDraftSave = async (tx) => {
+    try {
+      await applyTxToBalances(store, accounts, tx, -1, rates)
+      await store?.deleteTransaction?.(tx.id)
+      setMessages((list) => list.map((m) => (m.savedTxId === tx.id ? { ...m, savedTxId: null } : m)))
+      if (typeof refresh === 'function') await refresh()
+      toast.success(t('coach_undone'))
+    } catch {
+      toast.error(t('error'))
+    }
+  }
+
+  const saveDraftNow = async (msg, index) => {
+    if (!msg?.draft || msg.savedTxId || savingKey || !store?.createTransaction) return
+    const key = draftKey(msg, index)
+    const tx = buildCoachTx(msg.draft, { accounts, home, id: draftTxId(key) })
+    if (!tx) {
+      toast.error(t('coach_save_failed'))
+      return
+    }
+    setSavingKey(key)
+    try {
+      await store.createTransaction(tx)
+      await applyTxToBalances(store, accounts, tx, 1, rates)
+      setMessages((list) => list.map((m, i) => (i === index ? { ...m, savedTxId: tx.id } : m)))
+      if (typeof refresh === 'function') await refresh()
+      toast.success(t('coach_saved'), {
+        action: { label: t('coach_undo'), onClick: () => { undoDraftSave(tx) } },
+      })
+    } catch (e) {
+      toast.error(e?.message || t('coach_save_failed'))
+    } finally {
+      setSavingKey(null)
+    }
   }
 
   const copyLast = async () => {
@@ -340,13 +382,52 @@ export default function CoachSheet({ open, onClose }) {
               <div className="max-w-[85%] rounded-2xl rounded-bl-md border border-border/50 bg-card px-4 py-2.5 text-sm leading-relaxed shadow-xs">
                 <CoachMarkdown text={m.content} />
                 {m.draft && (
-                  <button
-                    type="button"
-                    onClick={() => { onClose?.(); setTimeout(() => openSheet('addTx', m.draft), 150) }}
-                    className="mt-2.5 w-full rounded-xl bg-foreground text-background py-2.5 text-xs font-bold flex items-center justify-center gap-1.5 active:scale-[0.98] transition-transform"
-                  >
-                    <Plus size={14} /> {t('coach_log_tx')}
-                  </button>
+                  <div className="mt-2.5 rounded-xl border border-border/60 bg-background/60 p-2.5" data-testid="coach-draft">
+                    <dl className="grid grid-cols-2 gap-x-3 gap-y-1 text-[11px] leading-snug">
+                      <div className="flex flex-col">
+                        <dt className="text-muted-foreground">{t('amount')}</dt>
+                        <dd className="font-bold tabular-nums">{fmt(m.draft.amount, m.draft.currency || home)}</dd>
+                      </div>
+                      <div className="flex flex-col">
+                        <dt className="text-muted-foreground">{t('category')}</dt>
+                        <dd className="font-semibold">{t(`cat_${m.draft.category || 'other'}`)}</dd>
+                      </div>
+                      <div className="flex flex-col">
+                        <dt className="text-muted-foreground">{t('source_account')}</dt>
+                        <dd className="font-semibold">{resolveAccount(m.draft, accounts)?.name || t('no_account_opt')}</dd>
+                      </div>
+                      <div className="flex flex-col">
+                        <dt className="text-muted-foreground">{t('hdr_date')}</dt>
+                        <dd className="font-semibold">{(m.draft.date || '').slice(0, 10) || t('today')}</dd>
+                      </div>
+                    </dl>
+                    {m.savedTxId ? (
+                      <div className="mt-2 flex items-center justify-center gap-1.5 rounded-lg bg-emerald-500/10 px-3 py-2 text-xs font-bold text-emerald-600 dark:text-emerald-400">
+                        <Check size={14} /> {t('coach_saved')}
+                      </div>
+                    ) : (
+                      <div className="mt-2 flex gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() => saveDraftNow(m, i)}
+                          disabled={savingKey === draftKey(m, i)}
+                          className="flex-1 rounded-lg bg-foreground text-background py-2 text-xs font-bold flex items-center justify-center gap-1.5 active:scale-[0.98] transition-transform disabled:opacity-60"
+                          data-testid="coach-save-now"
+                        >
+                          <Check size={14} /> {savingKey === draftKey(m, i) ? '...' : t('coach_save_now')}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => { onClose?.(); setTimeout(() => openSheet('addTx', m.draft), 150) }}
+                          className="rounded-lg border border-border/70 px-2.5 py-2 text-xs font-semibold flex items-center justify-center gap-1.5 active:scale-[0.98] transition-transform"
+                          data-testid="coach-edit-form"
+                          aria-label={t('coach_log_tx')}
+                        >
+                          <PencilLine size={14} />
+                        </button>
+                      </div>
+                    )}
+                  </div>
                 )}
               </div>
             </div>
