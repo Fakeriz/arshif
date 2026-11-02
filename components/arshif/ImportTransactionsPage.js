@@ -394,7 +394,7 @@ export default function ImportTransactionsPage({ onClose }) {
       setCreatedCount(createdIdsRef.current.length)
       if (recId) await store.updateImportBatch(recId, { imported_count: ok, skipped_count: rows.length - ok, failed_count: failed, status: 'completed' })
       if (refresh) await refresh()
-      setResult({ ok, skipped: rows.length - ok, failed })
+      setResult(SI.summarizeImport(rows, ok, failed))
       setStep(3)
     } catch {
       toast.error(t('error'))
@@ -993,8 +993,14 @@ export default function ImportTransactionsPage({ onClose }) {
                 </div>
                 <div className="flex items-center justify-between py-4">
                   <p className="text-[14px] text-muted-foreground">{t('import_sum_dup')}</p>
-                  <p className="text-[15px] font-bold">{result.skipped} {t('import_tx_unit')}</p>
+                  <p className="text-[15px] font-bold">{result.dup} {t('import_tx_unit')}</p>
                 </div>
+                {(result.noDate || 0) > 0 ? (
+                  <div className="flex items-center justify-between py-4">
+                    <p className="text-[14px] text-amber-600 dark:text-amber-400">{t('import_sum_nodate')}</p>
+                    <p className="text-[15px] font-bold text-amber-600 dark:text-amber-400">{result.noDate} {t('import_tx_unit')}</p>
+                  </div>
+                ) : null}
                 {(result.failed || 0) > 0 ? (
                   <div className="flex items-center justify-between py-4">
                     <p className="text-[14px] text-rose-600 dark:text-rose-400">{t('import_sum_failed')}</p>
