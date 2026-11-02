@@ -60,7 +60,7 @@ export default function App() {
   const [session, setSession] = useState(null)
   const [isGuest, setIsGuest] = useState(false)
   const [onboarded, setOnboarded] = useState(true)
-  const [lang, setLangState] = useState('en')
+  const [lang, setLangState] = useState('id')
   const [recovery, setRecovery] = useState(false)
 
   const [profile, setProfile] = useState({ ...DEFAULT_PROFILE })
@@ -76,7 +76,7 @@ export default function App() {
   const [hideBalance, setHideBalance] = useState(false)
 
   const store = useMemo(() => createStore(session), [session])
-  const home = profile?.home_currency || 'USD'
+  const home = profile?.home_currency || 'IDR'
 
   const t = useCallback((key, vars, fallback) => translate(lang, key, vars, fallback), [lang])
   const fmt = useCallback((amount, code) => formatMoney(amount, code, { locale: LOCALE_MAP[lang] || 'en-US' }), [lang])
