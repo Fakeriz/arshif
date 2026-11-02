@@ -8,6 +8,7 @@ import CurrencySheet from './CurrencySheet'
 import { getCurrency } from '@/lib/currencies'
 import { cn } from '@/lib/utils'
 import { sanitizeAmount } from '@/lib/amount'
+import { saveTxWithBalance } from '@/lib/tx-save'
 import { consumeFeatureUsage } from '@/lib/feature-usage'
 
 const uid = () => (typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `iv_${Date.now()}_${Math.random().toString(36).slice(2)}`)
@@ -24,7 +25,7 @@ const safeDate = (s) => {
 }
 
 export default function BusinessInvoiceSheet({ open, onClose }) {
-  const { t, home, fmt, convertToHome, session, accounts = [], store, refresh, open: openSheet } = useApp()
+  const { t, home, fmt, convertToHome, session, accounts = [], store, refresh, open: openSheet, rates, addTransaction } = useApp()
   const scope = session?.user?.id || 'guest'
   const INV_KEY = `arshif_invoices_${scope}`
 
@@ -119,10 +120,13 @@ export default function BusinessInvoiceSheet({ open, onClose }) {
     try {
       if (store?.createTransaction) {
         const acc = (accounts || [])[0]
-        await store.createTransaction({
-          type: 'income', amount: invoiceTotal(inv), currency: inv.currency || home,
-          category: 'business', account_id: acc?.id || null, date: new Date().toISOString(),
-          note: `${cfg.brand || t('business')} · ${inv.number} · ${inv.client || ''}`.trim(),
+        await saveTxWithBalance({
+          tx: {
+            type: 'income', amount: invoiceTotal(inv), currency: inv.currency || home,
+            category: 'business', account_id: acc?.id || null, date: new Date().toISOString(),
+            note: `${cfg.brand || t('business')} · ${inv.number} · ${inv.client || ''}`.trim(),
+          },
+          addTransaction, store, accounts, rates,
         })
         incomeLogged = true
         if (refresh) await refresh()

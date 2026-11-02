@@ -8,6 +8,7 @@ import { Sheet, PrimaryButton, TextInput, CategoryBadge, Card } from './ui'
 import { QuotaBadge } from './QuotaBadge'
 import { CATEGORIES } from '@/lib/categories'
 import { sanitizeMerchant, stripActionPrefix } from '@/lib/ai-parse-sanitize'
+import { saveTxWithBalance } from '@/lib/tx-save'
 import { cn } from '@/lib/utils'
 
 // Judul kartu hasil parse: nama toko asli atau nama barang, tanpa kata "beli".
@@ -19,7 +20,7 @@ function parsedTitle(tx, fallback) {
 }
 
 export default function VoiceLogSheet({ open, onClose, onResult }) {
-  const { t, home, lang, accounts = [], fmt, session, isAiAllowed, open: openSheet, store, refresh } = useApp()
+  const { t, home, lang, accounts = [], fmt, session, isAiAllowed, open: openSheet, store, refresh, rates, addTransaction } = useApp()
   const [state, setState] = useState('idle') // idle | recording | processing | result
   const [transcript, setTranscript] = useState('')
   const [parsed, setParsed] = useState(null)
@@ -267,7 +268,9 @@ export default function VoiceLogSheet({ open, onClose, onResult }) {
         }
 
         if (typeof store?.createTransaction === 'function') {
-          await store.createTransaction(payload)
+          // Simpan lewat jalur ber-saldo: createTransaction saja tidak
+          // menggeser balance akun (tidak ada trigger di DB).
+          await saveTxWithBalance({ tx: payload, addTransaction, store, accounts, rates })
           savedCount++
         }
       }

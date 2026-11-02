@@ -11,6 +11,7 @@ import { cn } from '@/lib/utils'
 import { encodeCoachContext } from '@/lib/coach-context'
 import { CATEGORIES, getCategory } from '@/lib/categories'
 import { buildCoachTx, draftTxId, resolveAccount } from '@/lib/coach-save'
+import { saveTxWithBalance } from '@/lib/tx-save'
 
 const GREETINGS = {
   id: 'Halo! Saya AI Financial Coach Arshif kamu. Tanya apa saja soal keuanganmu - aku sudah membaca saldo, anggaran, dan targetmu.',
@@ -20,7 +21,7 @@ const GREETINGS = {
 }
 
 export default function CoachSheet({ open, onClose }) {
-  const { t, home, lang, transactions = [], accounts = [], goals = [], budgets = [], rates, fmt, session, isAiAllowed, open: openSheet, store, refresh } = useApp()
+  const { t, home, lang, transactions = [], accounts = [], goals = [], budgets = [], rates, fmt, session, isAiAllowed, open: openSheet, store, refresh, addTransaction } = useApp()
   const [messages, setMessages] = useState([])
   const [input, setInput] = useState('')
   const [busy, setBusy] = useState(false)
@@ -293,8 +294,7 @@ export default function CoachSheet({ open, onClose }) {
     }
     setSavingKey(key)
     try {
-      await store.createTransaction(tx)
-      await applyTxToBalances(store, accounts, tx, 1, rates)
+      await saveTxWithBalance({ tx, addTransaction, store, accounts, rates })
       setMessages((list) => list.map((m, i) => (i === index ? { ...m, savedTxId: tx.id } : m)))
       if (typeof refresh === 'function') await refresh()
       toast.success(t('coach_saved'), {
