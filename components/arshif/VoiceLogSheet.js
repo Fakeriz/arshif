@@ -83,9 +83,9 @@ export default function VoiceLogSheet({ open, onClose, onResult }) {
           text,
           homeCurrency: home,
           language: lang,
-          accounts: accounts.map((a) => ({ id: a.id, name: a.name, currency: a.currency })),
-          // Sertakan seluruh kategori pemasukan dan pengeluaran:
-          categories: ['salary', 'food', 'groceries', 'transport', 'bills', 'shopping', 'entertainment', 'health', 'travel', 'education', 'business', 'other'],
+          // Server hanya butuh nama + mata uang akun (daftar kategori dan id
+          // akun sudah di pihaknya) - 70% lebih pendek dari format lama.
+          accounts: accounts.map((a) => `${a.name || ''} (${a.currency || home})`),
         }),
       })
 

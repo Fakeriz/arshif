@@ -6,6 +6,9 @@ import { sanitizeCurrency, sanitizeMerchant, stripActionPrefix } from '@/lib/ai-
 import { validateReceiptTotals } from '@/lib/split-bill'
 import { callGemini, extractJson } from './gemini'
 import { encodeCoachContext } from '@/lib/coach-context'
+// Satu-satunya daftar kategori voice: server, bukan client. Client yang lama
+// masih mengirim categories akan diabaikan (lihat handleParse).
+const VOICE_CATEGORIES = ['salary', 'food', 'groceries', 'transport', 'bills', 'shopping', 'entertainment', 'health', 'travel', 'education', 'business', 'other']
 import { extractDraft } from '@/lib/coach-draft'
 import { json, err, MAX_AUDIO_BYTES, MAX_IMAGE_BYTES, MAX_PDF_BYTES, AUDIO_MIME_TYPES, IMAGE_MIME_TYPES, base64ByteLength } from './http'
 
@@ -94,14 +97,25 @@ async function handleParse(request, quota = null) {
     if (!text) return err('text is required', 400)
 
     const homeCurrency = (body?.homeCurrency || 'IDR').toString().toUpperCase().slice(0, 3)
-    const categories = Array.isArray(body?.categories) && body.categories.length
-      ? body.categories
-      : ['salary', 'food', 'groceries', 'transport', 'bills', 'shopping', 'entertainment', 'health', 'travel', 'education', 'business', 'other']
-    const accounts = Array.isArray(body?.accounts) ? body.accounts : []
+    // Daftar kategori diambil dari kode (sumber tunggal), bukan dari client.
+    // Client tidak perlu lagi mengirim categories di tiap voice log.
+    const categories = VOICE_CATEGORIES
+    // Terima string ringkas "Nama (CUR)" dari client baru maupun objek
+    // {id,name,currency} dari client lama. id tidak dibutuhkan model:
+    // pencocokan akun dilakukan di client berdasarkan nama.
+    const accounts = (Array.isArray(body?.accounts) ? body.accounts : []).map((a) => {
+      if (typeof a === 'string') {
+        const m = a.match(/^(.*?)\s*\(([A-Z]{3})\)\s*$/)
+        return { name: (m ? m[1] : a).trim(), currency: (m ? m[2] : homeCurrency) }
+      }
+      return (typeof a === 'object' && a !== null)
+        ? { name: String(a.name || '').trim(), currency: String(a.currency || homeCurrency).toUpperCase().slice(0, 3) }
+        : null
+    }).filter((a) => a && a.name)
 
     const accountsListStr = accounts.length > 0
-      ? JSON.stringify(accounts.map((a) => (typeof a === 'string' ? { name: a } : { id: a.id, name: a.name, currency: a.currency })))
-      : '[]'
+      ? accounts.map((a) => (typeof a === 'string' ? a : `${a.name} (${(a.currency || homeCurrency).toUpperCase().slice(0, 3)})`)).join('; ')
+      : '(tidak ada)'
 
     const system = `You are Arshif, an international multi-currency financial voice parser.
 Extract the transaction details into JSON.
@@ -129,7 +143,7 @@ CURRENCY DETECTION RULES:
      * (And all other world ISO currencies: AUD, CAD, CHF, CNY, KRW, etc.)
 
 2. WALLET CONTEXT OVERRIDE:
-   - If user specifies an account/wallet (e.g., "pake Ziraat", "via Wise USD", "pake BCA", "pake Maybank", "pake TnG"):
+   - If user specifies an account/wallet (e.g., "pake BCA", "pakai GoPay", "via Wise USD", "pake Maybank"):
      Match with the user's account and adopt that account's assigned currency!
 
 3. FALLBACK:
