@@ -35,3 +35,19 @@ test('daftar tabel backup mencakup tabel inti', () => {
     assert.ok(TABLES.includes(t), `${t} harus ikut dibackup`)
   }
 })
+
+test('tabel data user yang ditambahkan setelah migrasi ikut dibackup', () => {
+  for (const t of ['net_worth_entries', 'coach_draft_events', 'invoices', 'receipts', 'balance_applications']) {
+    assert.ok(TABLES.includes(t), `${t} harus ikut dibackup`)
+  }
+})
+
+test('tabel operasional tidak ikut dibackup', () => {
+  for (const t of ['rate_limits', 'webhook_events', 'push_sent', 'announcements', 'exchange_rates']) {
+    assert.ok(!TABLES.includes(t), `${t} tidak perlu dipulihkan`)
+  }
+})
+
+test('tidak ada nama tabel ganda', () => {
+  assert.equal(new Set(TABLES).size, TABLES.length)
+})
