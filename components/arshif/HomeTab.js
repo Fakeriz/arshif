@@ -198,23 +198,23 @@ export function TotalBalanceCard() {
 
   return (
     <div
-      className="h-full w-full rounded-2xl p-5 sm:p-6 relative overflow-hidden flex flex-col justify-between select-none text-white border border-white/10 bg-gradient-to-br from-[#151518] via-[#0c0c0e] to-[#08080a]"
+      className="h-full w-full rounded-2xl p-5 sm:p-6 relative overflow-hidden flex flex-col justify-between select-none text-zinc-950 dark:text-white border border-zinc-950/10 dark:border-white/10 bg-gradient-to-br from-zinc-100 via-white to-zinc-200 dark:from-[#151518] dark:via-[#0c0c0e] dark:to-[#08080a]"
       data-testid="balance-card"
     >
       {/* Depth: sheen diagonal + hairline highlight atas - cahaya radial dihapus agar tidak melebihi dose cap glow (R-13) */}
-      <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/[0.03] to-white/[0.07] pointer-events-none" />
-      <div className="absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent via-white/25 to-transparent pointer-events-none" />
+      <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-black/[0.03] to-black/[0.07] dark:via-white/[0.03] dark:to-white/[0.07] pointer-events-none" />
+      <div className="absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent via-black/15 dark:via-white/25 to-transparent pointer-events-none" />
 
       {/* Group Saldo: ditarik ke tengah-kiri kartu secara vertikal */}
       <div className="relative z-10 flex flex-col gap-1 my-auto text-left">
         <div className="flex items-center gap-2">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-white/50 select-none">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-zinc-600 dark:text-white/50 select-none">
             {t('balance')}
           </p>
           <button
             type="button"
             onClick={() => setHideBalance(!hideBalance)}
-            className="text-white/50 hover:text-white transition-colors cursor-pointer select-none focus:outline-none p-0 bg-transparent border-0 flex items-center justify-center"
+            className="text-zinc-600 hover:text-zinc-950 dark:text-white/50 dark:hover:text-white transition-colors cursor-pointer select-none focus:outline-none p-0 bg-transparent border-0 flex items-center justify-center"
             aria-label={t('toggle_balance')}
           >
             {hideBalance ? <EyeOff size={13} strokeWidth={1.75} /> : <Eye size={13} strokeWidth={1.75} />}
@@ -223,11 +223,11 @@ export function TotalBalanceCard() {
 
         <p className="flex items-baseline gap-1.5 tabular-nums leading-none m-0" data-testid="total-balance">
           {balCcy && (
-            <span className="text-base sm:text-lg font-bold text-white/70 shrink-0 select-none">
+            <span className="text-base sm:text-lg font-bold text-zinc-600 dark:text-white/70 shrink-0 select-none">
               {balCcy}
             </span>
           )}
-          <span className="text-[32px] sm:text-4xl font-extrabold tracking-tight text-white select-text truncate">
+          <span className="text-[32px] sm:text-4xl font-extrabold tracking-tight text-zinc-950 dark:text-white select-text truncate">
             {mask(balMain)}
           </span>
         </p>
@@ -235,19 +235,19 @@ export function TotalBalanceCard() {
 
       {/* Income & Spending */}
       <div className="grid grid-cols-2 gap-2 relative z-10 mt-2.5">
-        <div className="rounded-xl bg-white/[0.05] border border-white/[0.08] px-2.5 py-2">
-          <div className="text-white/50 text-[9px] font-semibold uppercase tracking-[0.12em]">
+        <div className="rounded-xl bg-zinc-950/[0.04] border border-zinc-950/[0.08] dark:bg-white/[0.05] dark:border-white/[0.08] px-2.5 py-2">
+          <div className="text-zinc-600 dark:text-white/50 text-[9px] font-semibold uppercase tracking-[0.12em]">
             {t('income')}
           </div>
-          <p className="font-bold text-[11px] tabular-nums text-white/90 mt-0.5 truncate">
+          <p className="font-bold text-[11px] tabular-nums text-zinc-950 dark:text-white/90 mt-0.5 truncate">
             {mask(fmt(stats?.income || 0, home))}
           </p>
         </div>
-        <div className="rounded-xl bg-white/[0.05] border border-white/[0.08] px-2.5 py-2">
-          <div className="text-white/50 text-[9px] font-semibold uppercase tracking-[0.12em]">
+        <div className="rounded-xl bg-zinc-950/[0.04] border border-zinc-950/[0.08] dark:bg-white/[0.05] dark:border-white/[0.08] px-2.5 py-2">
+          <div className="text-zinc-600 dark:text-white/50 text-[9px] font-semibold uppercase tracking-[0.12em]">
             {t('spending')}
           </div>
-          <p className="font-bold text-[11px] tabular-nums text-white/90 mt-0.5 truncate">
+          <p className="font-bold text-[11px] tabular-nums text-zinc-950 dark:text-white/90 mt-0.5 truncate">
             {mask(fmt(stats?.spending || 0, home))}
           </p>
         </div>

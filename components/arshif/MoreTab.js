@@ -62,11 +62,11 @@ export default function MoreTab() {
         </div>
       </div>
 
-      <button type="button" onClick={() => open('paywall')} className="w-full mt-5 rounded-2xl bg-[#0A0A0B] text-white p-5 text-left relative overflow-hidden border border-white/10" data-testid="premium-card">
-        <div className="absolute -right-8 -top-8 h-32 w-32 rounded-full bg-white/[0.05]" />
+      <button type="button" onClick={() => open('paywall')} className="w-full mt-5 rounded-2xl bg-[#0A0A0B] text-white dark:bg-zinc-100 dark:text-zinc-950 p-5 text-left relative overflow-hidden border border-white/10 dark:border-zinc-950/10" data-testid="premium-card">
+        <div className="absolute -right-8 -top-8 h-32 w-32 rounded-full bg-white/[0.05] dark:bg-zinc-950/[0.04]" />
         <div className="flex items-center gap-2"><Crown size={18} /><p className="font-bold">{t('premium_title')}</p></div>
-        <p className="text-sm text-white/60 mt-1">{t('current_plan')}: <span className="uppercase font-semibold text-white/80">{userTier}</span></p>
-        <span className="inline-block mt-3 rounded-xl bg-white text-zinc-950 text-sm font-bold px-4 py-2">{isPremium ? t('active') : t('upgrade')}</span>
+        <p className="text-sm text-white/60 dark:text-zinc-600 mt-1">{t('current_plan')}: <span className="uppercase font-semibold text-white/80 dark:text-zinc-950">{userTier}</span></p>
+        <span className="inline-block mt-3 rounded-xl bg-white text-zinc-950 dark:bg-zinc-950 dark:text-white text-sm font-bold px-4 py-2">{isPremium ? t('active') : t('upgrade')}</span>
       </button>
 
       <SectionLabel className="mt-7 mb-2 px-1">{t('everyday')}</SectionLabel>
