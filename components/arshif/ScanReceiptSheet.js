@@ -67,7 +67,7 @@ export default function ScanReceiptSheet({ open, onClose, onUse, initialImage, a
           return
         }
         if (res.status === 429 || data?.code === 'AI_QUOTA_EXCEEDED') {
-          toast.error(data?.error || 'Kuota AI harian Anda telah habis.')
+          toast.error(data?.error || t('ai_quota_daily_exhausted'))
           return
         }
         throw new Error(data?.error || t('error'))
@@ -103,7 +103,7 @@ export default function ScanReceiptSheet({ open, onClose, onUse, initialImage, a
   // otomatis) atau laporkan item kurang. Logika murni ada di lib/split-bill.
   const applyReconcile = () => {
     if (!result) return
-    const r = reconcileItems(result.items, result.total)
+    const r = reconcileItems(result.items, result.total, { tax: result.tax })
     if (r.missing) {
       toast.warning(t('reconcile_negative_items'))
       return
@@ -204,7 +204,7 @@ export default function ScanReceiptSheet({ open, onClose, onUse, initialImage, a
           if (data?.url) {
             finalReceiptUrl = data.url
             storageProvider = 'google_drive'
-            toast.success('Foto struk dicadangkan ke Google Drive')
+            toast.success(t('receipt_backed_up_drive'))
           }
         }
       } catch (err) {

@@ -183,3 +183,16 @@ test('reconcileItems: selisih positif dilaporkan sebagai item kurang, tanpa bari
   assert.equal(r.missing, true)
   assert.equal(r.items.length, 1)
 })
+
+// Regresi audit: pajak bukan item, jangan dianggap item hilang atau diskon palsu.
+test('reconcileItems memperhitungkan pajak struk', async () => {
+  const { reconcileItems } = await import('../lib/split-bill.js')
+  const items = [{ name: 'a', qty: 1, price: 100 }]
+  const withTax = reconcileItems(items, 110, { tax: 10 })
+  assert.equal(withTax.matched, true)
+  assert.equal(withTax.missing, false)
+  assert.equal(withTax.items.length, 1, 'tidak menambah baris diskon palsu')
+
+  const noTaxArg = reconcileItems(items, 110)
+  assert.equal(noTaxArg.missing, true, 'tanpa info pajak tetap dilaporkan kurang')
+})

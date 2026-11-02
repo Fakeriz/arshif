@@ -127,12 +127,12 @@ export default function AccountsSheet({ open, onClose }) {
       const sorted = [...orderedAccounts].sort(opt.fn)
       setOrderedAccounts(sorted)
       commitOrder(sorted)
-      toast.success(`Diurutkan berdasarkan ${opt.label}`)
+      toast.success(`${t('accounts_sorted_by')} ${opt.label}`)
     } else {
       const original = [...accounts]
       setOrderedAccounts(original)
       commitOrder(original)
-      toast.info('Urutan kartu dikembalikan semula')
+      toast.info(t('accounts_order_reset'))
     }
   }
 

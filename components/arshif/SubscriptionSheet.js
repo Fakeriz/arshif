@@ -117,7 +117,7 @@ export default function SubscriptionSheet({
     const file = e.target.files?.[0]
     if (!file) return
     if (file.size > 2 * 1024 * 1024) {
-      toast.error('Image size must be under 2MB')
+      toast.error(t('img_too_large'))
       return
     }
     const reader = new FileReader()
@@ -129,12 +129,12 @@ export default function SubscriptionSheet({
 
   const handleSave = async () => {
     if (!name.trim()) {
-      toast.error('Please enter a service name')
+      toast.error(t('sub_name_required'))
       return
     }
     const numAmount = Number(amount)
     if (isNaN(numAmount) || numAmount <= 0) {
-      toast.error('Please enter a valid amount')
+      toast.error(t('amount_invalid'))
       return
     }
 
@@ -176,7 +176,7 @@ export default function SubscriptionSheet({
       await onSaved?.()
       onClose?.()
     } catch (err) {
-      toast.error(err?.message || 'Failed to save subscription')
+      toast.error(err?.message || t('sub_save_failed'))
     } finally {
       setSaving(false)
     }
@@ -192,7 +192,7 @@ export default function SubscriptionSheet({
       await onDeleted?.()
       onClose?.()
     } catch (err) {
-      toast.error(err?.message || 'Failed to delete subscription')
+      toast.error(err?.message || t('sub_delete_failed'))
     } finally {
       setSaving(false)
     }

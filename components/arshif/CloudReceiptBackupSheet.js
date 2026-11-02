@@ -32,9 +32,9 @@ export default function CloudReceiptBackupSheet({ open, onClose }) {
       try {
         localStorage.setItem('arshif_cloud_backup_provider', 'icloud')
       } catch {}
-      toast.success('iCloud Backup enabled')
+      toast.success(t('cloud_icloud_enabled'))
     } catch (err) {
-      toast.error(err?.message || 'Failed to update backup provider')
+      toast.error(err?.message || t('cloud_provider_failed'))
     } finally {
       setBusy(false)
       setConnectingProvider(null)
@@ -59,7 +59,7 @@ export default function CloudReceiptBackupSheet({ open, onClose }) {
 
       // Jika session sudah memiliki token Google, langsung aktifkan tanpa pop-up izin ulang
       if (session?.provider_token) {
-        toast.success('Google Drive connected')
+        toast.success(t('cloud_gdrive_connected'))
         return
       }
 
@@ -79,13 +79,13 @@ export default function CloudReceiptBackupSheet({ open, onClose }) {
 
       if (error) {
         console.warn('Google Drive OAuth warning:', error?.message)
-        toast.success('Google Drive set as backup provider')
+        toast.success(t('cloud_gdrive_selected'))
       } else {
-        toast.success('Connecting Google Drive...')
+        toast.success(t('cloud_gdrive_connecting'))
       }
     } catch (err) {
       console.warn('OAuth trigger:', err)
-      toast.success('Google Drive set as backup provider')
+      toast.success(t('cloud_gdrive_selected'))
     } finally {
       setBusy(false)
       setConnectingProvider(null)
@@ -102,9 +102,9 @@ export default function CloudReceiptBackupSheet({ open, onClose }) {
       try {
         localStorage.setItem('arshif_cloud_backup_provider', 'local')
       } catch {}
-      toast.success('Device Storage selected for receipts')
+      toast.success(t('cloud_device_selected'))
     } catch (err) {
-      toast.error(err?.message || 'Failed to update backup provider')
+      toast.error(err?.message || t('cloud_provider_failed'))
     } finally {
       setBusy(false)
       setConnectingProvider(null)
