@@ -7,7 +7,7 @@ import { useApp } from './context'
 import { Sheet, Field, Segmented, CategoryBadge, SectionLabel, TextInput, EmptyState } from './ui'
 import CurrencySheet from './CurrencySheet'
 import { CATEGORIES, DEFAULT_ACCOUNT_TYPE } from '@/lib/categories'
-import { convert, getRate } from '@/lib/rates'
+import { convert, getRate, convertOrKeep } from '@/lib/rates'
 import { getCurrency, roundMoney } from '@/lib/currencies'
 import { LOCALE_MAP } from '@/lib/i18n'
 import { cn, triggerHaptic } from '@/lib/utils'
@@ -372,7 +372,10 @@ export default function ImportTransactionsPage({ onClose }) {
           }
           const created = await store.createTransaction(payload)
           if (created?.id) createdIdsRef.current.push(created.id)
-          const delta = convert(r.amount, r.currency, walletCur, rates)
+          // convertOrKeep, bukan convert(): bila convert melempar di sini,
+          // baris transaksi sudah terlanjur dibuat tapi delta-nya tidak masuk
+          // `net`, sehingga update saldo akhir menyimpang dari ledger.
+          const delta = convertOrKeep(r.amount, r.currency, walletCur, rates).value
           net += r.type === 'income' ? delta : -delta
           // Pelajari kategori pilihan user untuk file berikutnya
           if (catEdits[r.idx]) SI.learnCategory(r.desc, catEdits[r.idx])

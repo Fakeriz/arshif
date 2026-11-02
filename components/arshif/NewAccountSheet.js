@@ -12,7 +12,7 @@ import CurrencySheet from './CurrencySheet'
 import { BankCard, CardMotifTexture, EmvChip, ContactlessWave } from './BankCard'
 import { CARD_THEMES, BANK_LOGOS, ACCOUNT_TYPES, ACCOUNT_ICONS, getTheme, DEFAULT_ACCOUNT_TYPE } from '@/lib/categories'
 import { getCurrency, roundMoney } from '@/lib/currencies'
-import { convert, getRate } from '@/lib/rates'
+import { convertOrKeep, safeConvert } from '@/lib/rates'
 import { cn } from '@/lib/utils'
 import { sanitizeAmount } from '@/lib/amount'
 
@@ -111,6 +111,26 @@ export default function NewAccountSheet({ open, onClose }) {
   const create = async () => {
     if (!canSave || saving) return
     setSaving(true)
+    // Konversi dihitung SEBELUM ada tulisan apa pun: kalau kurs tak dikenal,
+    // createAccount di bawah sudah berhasil sedangkan transfer saldo awal gagal
+    // -> akun ada tanpa jejak di ledger dan saldo jadi tidak bisa dilacak.
+    let splitDelta = null
+    let openingHomeAmount = null
+    let openingRate = null
+    try {
+      if (source === 'split' && fromId && num > 0) {
+        const from = accounts.find((a) => a.id === fromId)
+        if (from) {
+          splitDelta = convertOrKeep(num, currency, from.currency, rates).value
+        }
+      }
+      openingHomeAmount = convertOrKeep(num, currency, home, rates).value
+      openingRate = safeConvert(1, currency, home, rates)
+    } catch (e) {
+      toast.error(e?.message || t('error'))
+      setSaving(false)
+      return
+    }
     try {
       const acc = await store.createAccount({
         name: name.trim(),
@@ -124,16 +144,15 @@ export default function NewAccountSheet({ open, onClose }) {
       })
       if (source === 'split' && fromId && num > 0) {
         const from = accounts.find((a) => a.id === fromId)
-        if (from) {
-          const delta = convert(num, currency, from.currency, rates)
-          await store.updateAccount(from.id, { balance: roundMoney((Number(from.balance) || 0) - delta, from.currency) })
+        if (from && splitDelta != null) {
+          await store.updateAccount(from.id, { balance: roundMoney((Number(from.balance) || 0) - splitDelta, from.currency) })
           await store.createTransaction({
             type: 'transfer',
             amount: roundMoney(num, currency),
             currency,
             home_currency: home,
-            home_currency_amount: roundMoney(convert(num, currency, home, rates), home),
-            rate: getRate(currency, home, rates),
+            home_currency_amount: roundMoney(openingHomeAmount, home),
+            rate: openingRate,
             category: 'transfer',
             payment_method: 'bank',
             account_id: from.id,

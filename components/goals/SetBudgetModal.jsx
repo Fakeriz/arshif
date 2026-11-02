@@ -6,7 +6,7 @@ import { Sheet, CategoryIcon, DatePickerInput } from '@/components/arshif/ui'
 import { useApp } from '@/components/arshif/context'
 import { CATEGORIES } from '@/lib/categories'
 import { getCurrency } from '@/lib/currencies'
-import { convert } from '@/lib/rates'
+import { convertOrKeep } from '@/lib/rates'
 import { cn, triggerHaptic } from '@/lib/utils'
 
 const EXPENSE_CATEGORIES = CATEGORIES.filter((c) => c.types?.includes('expense'))
@@ -240,7 +240,9 @@ export default function SetBudgetModal({
         return txDate >= dStart && txDate <= dEnd
       })
       .reduce((sum, tx) => {
-        return sum + convert(tx?.amount || 0, tx?.currency || home, home, rates)
+        // convertOrKeep: convert() melempar saat kurs tak dikenal dan membuat
+        // modal anggaran blank untuk user itu.
+        return sum + convertOrKeep(tx?.amount || 0, tx?.currency || home, home, rates).value
       }, 0)
   }, [transactions, category, fromDate, toDate, home, rates])
 

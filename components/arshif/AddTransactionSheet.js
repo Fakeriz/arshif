@@ -7,7 +7,7 @@ import { Sheet, SheetTextButton, Segmented, Pill, Field, TextInput, CategoryBadg
 import CurrencySheet from './CurrencySheet'
 import { CATEGORIES, PAYMENT_METHODS } from '@/lib/categories'
 import { getCurrency, roundMoney } from '@/lib/currencies'
-import { convert, getRate, formatRate } from '@/lib/rates'
+import { convertOrKeep, safeConvert, formatRate } from '@/lib/rates'
 import { applyTxToBalances, applyTransactionReplacement, evaluateExpression, toLocalDatetimeValue, fileToDataUrl } from '@/lib/ledger'
 import { cn } from '@/lib/utils'
 import { sanitizeAmount } from '@/lib/amount'
@@ -110,8 +110,10 @@ export default function AddTransactionSheet({ open, isOpen: propIsOpen, onClose,
 
   const num = useMemo(() => evaluateExpression(amount), [amount])
   const isForeign = currency !== home
-  const converted = convert(num, currency, home, rates)
-  const rate = getRate(currency, home, rates)
+  // convert()/getRate() MELEMAPAR kalau kurs tidak dikenal, dan itu terjadi
+  // saat render: seluruh sheet transaksi jadi blank. Pakai jalur aman.
+  const converted = convertOrKeep(num, currency, home, rates).value
+  const rate = safeConvert(1, currency, home, rates)
   const cur = getCurrency(currency)
   const title = type === 'expense' ? t('add_expense') : type === 'income' ? t('add_income') : t('add_transfer')
   const canSave = num > 0 && (type !== 'transfer' || (accountId && toAccountId && accountId !== toAccountId))
@@ -146,8 +148,11 @@ export default function AddTransactionSheet({ open, isOpen: propIsOpen, onClose,
         amount: finalAmount,
         currency,
         home_currency: home,
-        home_currency_amount: roundMoney(convert(finalAmount, currency, home, rates), home),
-        rate,
+        // convert() melempar bila kurs tak dikenal dan menyelamatkan transaksi
+        // jadi mustahil. convertOrKeep menulis nominal asli + rate null, dan
+        // tampilan sudah menandai angka itu sebagai belum dikonversi.
+        home_currency_amount: roundMoney(convertOrKeep(finalAmount, currency, home, rates).value, home),
+        rate: rate == null ? null : rate,
         category: type === 'transfer' ? 'transfer' : category,
         payment_method: type === 'transfer' ? 'bank' : payment,
         account_id: resolvedAccountId, // <-- Pastikan terisi ID akun
@@ -266,7 +271,7 @@ export default function AddTransactionSheet({ open, isOpen: propIsOpen, onClose,
           {/[+\-*/×÷−]/.test(amount.slice(1)) ? <p className="text-sm font-semibold text-zinc-600 dark:text-zinc-400 mt-1">= {fmt(num, currency)}</p> : null}
           {isForeign && num > 0 ? (
             <div className="inline-flex mt-3 rounded-xl bg-zinc-100 dark:bg-zinc-800 px-3 py-2 text-xs font-semibold text-zinc-600 dark:text-zinc-400" data-testid="conversion-badge">
-              ≈ {fmt(converted, home)} {home} <span className="mx-1.5 opacity-40">|</span> {t('rate')}: 1 {currency} = {formatRate(rate)} {home}
+              ≈ {fmt(converted, home)} {home} <span className="mx-1.5 opacity-40">|</span> {t('rate')}: 1 {currency} = {rate == null ? '?' : formatRate(rate)} {home}
             </div>
           ) : null}
           </div>
