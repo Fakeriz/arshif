@@ -9,6 +9,7 @@ import { safeConvert } from '@/lib/rates'
 import { signedAccountBalance } from '@/lib/ledger'
 import { cn } from '@/lib/utils'
 import { encodeCoachContext } from '@/lib/coach-context'
+import { CATEGORIES } from '@/lib/categories'
 
 const GREETINGS = {
   id: 'Halo! Saya AI Financial Coach Arshif kamu. Tanya apa saja soal keuanganmu - aku sudah membaca saldo, anggaran, dan targetmu.',
@@ -237,6 +238,9 @@ export default function CoachSheet({ open, onClose }) {
           // TOON hemat token; server masih menerima JSON fallback.
           contextToon: encodeCoachContext(context),
           context,
+          // Server validasikan & resolve draft dengan daftar kategori + akun ini.
+          categories: CATEGORIES.map((c) => c.id),
+          wallets: accounts.slice(0, 20).map((a) => `${a.name || ''} (${a.currency || home})`),
         }),
       })
       const data = await res.json()

@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
-import { extractDraft, normalizeDraft } from '../lib/coach-draft.js'
+import { extractDraft, normalizeDraft, parseWallets, resolveDraft } from '../lib/coach-draft.js'
 
 test('blok arshif-tx dipisah dari jawaban dan jadi draft bersih', () => {
   const reply = 'Siap, kopi 25 ribu tadi pagi dicatat sebagai makan.\n```arshif-tx\n{"type":"expense","amount":25000,"currency":"IDR","category":"food","note":"Kopi Kenangan","date":"2026-11-02T08:30:00.000Z"}\n```'
@@ -39,4 +39,65 @@ test('field tidak wajar dibersihkan, bukan diteruskan', () => {
 test('nominal dengan koma desimal dibaca', () => {
   const d = normalizeDraft({ type: 'income', amount: '1.5', currency: 'USD' })
   assert.equal(d.amount, 1.5)
+})
+
+test('tanggal: terima YYYY-MM-DD dan ISO, tolak "today" dan format ambigu', () => {
+  assert.equal(normalizeDraft({ amount: 10, date: '2026-11-02' }).date, '2026-11-02')
+  assert.equal(normalizeDraft({ amount: 10, date: '2026-11-02T08:30:00' }).date, '2026-11-02T08:30:00')
+  assert.equal(normalizeDraft({ amount: 10, date: '2026-11-02T08:30:00.000Z' }).date, '2026-11-02T08:30:00.000Z')
+  assert.equal(normalizeDraft({ amount: 10, date: 'today' }).date, null, 'today -> null biar form isi hari ini')
+  assert.equal(normalizeDraft({ amount: 10, date: '02/11/2026' }).date, null, 'format ambigu ditolak')
+  assert.equal(normalizeDraft({ amount: 10, date: '2026-13-40' }).date, null, 'tanggal tak valid ditolak')
+})
+
+test('resolve: category tak dikenal jadi null, bukan food', () => {
+  const d = resolveDraft(normalizeDraft({ amount: 100, category: 'jajan' }), { categories: ['food', 'transport'] })
+  assert.equal(d.category, null)
+  const ok = resolveDraft(normalizeDraft({ amount: 100, category: 'Food' }), { categories: ['food', 'transport'] })
+  assert.equal(ok.category, 'food')
+})
+
+test('resolve: currency null/rusak jatuh ke home currency', () => {
+  const d = resolveDraft(normalizeDraft({ amount: 100, category: 'food' }), { categories: ['food'], homeCurrency: 'MYR' })
+  assert.equal(d.currency, 'MYR')
+  const broken = resolveDraft({ ...d, currency: null }, { categories: ['food'], homeCurrency: 'MYR' })
+  assert.equal(broken.currency, 'MYR')
+  const weird = resolveDraft({ ...d, currency: 'XX' }, { categories: ['food'], homeCurrency: 'xx' })
+  assert.equal(weird.currency, 'IDR')
+})
+
+test('resolve: account_name cocok ke akun terdekat dua arah, selain itu null', () => {
+  const wallets = parseWallets(['BCA Utama (IDR)', { name: 'GoPay', currency: 'idr' }], 'IDR')
+  assert.deepEqual(wallets, [{ name: 'BCA Utama', currency: 'IDR' }, { name: 'GoPay', currency: 'IDR' }])
+  const byShort = resolveDraft(
+    normalizeDraft({ amount: 100, account_name: 'bca' }),
+    { categories: ['food'], accounts: wallets, homeCurrency: 'IDR' },
+  )
+  assert.equal(byShort.account_name, 'BCA Utama')
+  const byLong = resolveDraft(
+    normalizeDraft({ amount: 100, account_name: 'bayar pakai GoPay saya' }),
+    { categories: ['food'], accounts: wallets, homeCurrency: 'IDR' },
+  )
+  assert.equal(byLong.account_name, 'GoPay')
+  const missing = resolveDraft(
+    normalizeDraft({ amount: 100, account_name: 'Wise USD' }),
+    { categories: ['food'], accounts: wallets, homeCurrency: 'IDR' },
+  )
+  assert.equal(missing.account_name, null)
+})
+
+test('multi-blok: hanya blok pertama yang valid dipakai, semua blok dibuang dari teks', () => {
+  const reply = 'Catat dua ya.\n```arshif-tx\nnot json\n```\nLanjut.\n```arshif-tx\n{"type":"expense","amount":30000,"currency":"IDR","category":"transport"}\n```\n```arshif-tx\n{"type":"expense","amount":50000,"currency":"IDR","category":"food"}\n```\nSelesai.'
+  const { reply: text, draft } = extractDraft(reply)
+  assert.equal(draft.amount, 30000, 'blok pertama yang valid dipakai')
+  assert.equal(draft.category, 'transport')
+  assert.ok(!text.includes('arshif-tx'), 'semua blok dibuang dari teks')
+  assert.ok(!text.includes('30000') && !text.includes('50000'), 'isi JSON tidak bocor ke teks')
+})
+
+test('multi-blok semuanya rusak: draft null tapi teks bersih', () => {
+  const reply = 'Halo.\n```arshif-tx\n{"amount":0}\n```\n```arshif-tx\nbukan json\n```'
+  const { reply: text, draft } = extractDraft(reply)
+  assert.equal(draft, null)
+  assert.equal(text, 'Halo.')
 })

@@ -9,7 +9,7 @@ import { encodeCoachContext } from '@/lib/coach-context'
 // Satu-satunya daftar kategori voice: server, bukan client. Client yang lama
 // masih mengirim categories akan diabaikan (lihat handleParse).
 const VOICE_CATEGORIES = ['salary', 'food', 'groceries', 'transport', 'bills', 'shopping', 'entertainment', 'health', 'travel', 'education', 'business', 'other']
-import { extractDraft } from '@/lib/coach-draft'
+import { extractDraft, parseWallets, readCategories, resolveDraft } from '@/lib/coach-draft'
 import { json, err, MAX_AUDIO_BYTES, MAX_IMAGE_BYTES, MAX_PDF_BYTES, AUDIO_MIME_TYPES, IMAGE_MIME_TYPES, base64ByteLength } from './http'
 
 // Voice-to-text transcription.
@@ -353,6 +353,15 @@ async function handleCoach(request, quota = null) {
     if (!ctx || typeof ctx !== 'object' || Array.isArray(ctx)) ctx = {}
     const homeCurrency = ctx?.homeCurrency || 'IDR'
 
+    // Kategori dan akun user jadi acuan model saat mencetak blok transaksi.
+    // Client mengirim daftar singkatnya; kosong jatuh ke VOICE_CATEGORIES.
+    const validCategories = readCategories(body?.categories, VOICE_CATEGORIES)
+    const wallets = parseWallets(body?.wallets ?? body?.accounts, homeCurrency)
+    const walletListStr = wallets.length
+      ? wallets.map((w) => `${w.name} (${w.currency})`).join('; ')
+      : '(tidak ada)'
+    const categoryListStr = validCategories.join(', ')
+
     // Bahasa jawaban mengikuti bahasa pesan terakhir user (fallback: bahasa UI).
     const langNames = { id: 'Bahasa Indonesia', ms: 'Bahasa Melayu', tr: 'Türkçe', en: 'English' }
     const fallbackLang = langNames[body?.language] || 'Bahasa Indonesia'
@@ -375,8 +384,11 @@ MENCATAT TRANSAKSI DARI CHAT:
 \`\`\`arshif-tx
 {"type":"expense","amount":25000,"currency":"IDR","category":"food","note":"Kopi Kenangan","date":"2026-11-02T08:30:00.000Z"}
 \`\`\`
-- Aturan blok: type salah satu expense|income|transfer, amount angka tanpa pemisah ribuan, currency 3 huruf kapital, category pakai id kategori Arshif (food, transport, bills, shopping, entertainment, health, education, travel, housing, groceries, salary, freelance, business, other). date opsional, pakai ISO bila user menyebut waktu.
-- Blok ini akan diubah jadi draft form oleh aplikasi; user tetap yang menyimpan.
+- Aturan blok: type salah satu expense|income|transfer, amount angka tanpa pemisah ribuan, currency 3 huruf kapital, category wajib dari daftar kategori valid di bawah, account_name dari daftar akun user di bawah. date opsional.
+- category pakai salah satu id ini (huruf kecil): ${categoryListStr}. category tak dikenal/null jadi null di draft (bukan "food").
+- currency 3 huruf kapital; null/rusak jatuh ke ${homeCurrency}.
+- date: "YYYY-MM-DD" bila user menyebut tanggal, atau ISO "YYYY-MM-DDTHH:mm:ss" bila menyebut jam. kosongkan bila tidak disebut.
+- account_name pakai persis nama dari daftar akun berikut: ${walletListStr}. null bila tidak yakin.
 
 STRUKTUR KONTEKS (mata uang ${homeCurrency}):
 - monthIncome/monthSpending: total pemasukan & pengeluaran bulan ini
@@ -406,12 +418,16 @@ ${contextText.slice(0, 4000)}`
     )
 
     // Blok transaksi dipisah dari teks jawaban: UI hanya menampilkan kalimat,
-    // draft-nya dipakai untuk membuka form transaksi.
+    // draft-nya dipakai untuk membuka form transaksi. Draft divalidasi ulang
+    // terhadap kategori & akun user (bukan sekadar yang dikirim model).
     const { reply: visibleReply, draft } = extractDraft(reply || '')
+    const draftForForm = draft
+      ? resolveDraft(draft, { categories: validCategories, accounts: wallets, homeCurrency })
+      : null
 
     return json({
       reply: visibleReply || (reply || '').trim(),
-      draft,
+      draft: draftForForm,
       model,
       remaining: quota?.remaining,
       total: quota?.total,
