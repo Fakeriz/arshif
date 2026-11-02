@@ -95,6 +95,14 @@ export default function BillsTrackerSheet({ open, onClose }) {
 
   const rows = useMemo(() => {
     return (bills || [])
+      // Jadwal tagihan hanya berlaku di dalam rentang starts_from..ends_after.
+      .filter((b) => {
+        const from = typeof b?.starts_from === 'string' ? b.starts_from.slice(0, 7) : ''
+        const until = typeof b?.ends_after === 'string' ? b.ends_after.slice(0, 7) : ''
+        if (from && mKey < from) return false
+        if (until && mKey > until) return false
+        return true
+      })
       .map((b) => ({ ...b, paid: !!(b?.paid_months || {})[mKey] }))
       .sort((a, b) => (Number(a?.due_day) || 0) - (Number(b?.due_day) || 0))
   }, [bills, mKey])
@@ -131,138 +139,142 @@ export default function BillsTrackerSheet({ open, onClose }) {
   const handleTogglePaid = async (b) => {
     if (!b?.id) return
     const isNowPaid = !b.paid
-    const pm = { ...(b?.paid_months || {}) }
-    const activeMonthKey = mKey // e.g. "2026-09"
+    const activeMonthKey = mKey
+    const previousPm = { ...(b?.paid_months || {}) }
+    const pm = { ...previousPm }
 
-    if (isNowPaid) {
-      pm[activeMonthKey] = true
-    } else {
-      delete pm[activeMonthKey]
-    }
+    if (isNowPaid) pm[activeMonthKey] = true
+    else delete pm[activeMonthKey]
 
     // Optimistic UI update
     setBills((list) => (list || []).map((x) => (x.id === b.id ? { ...x, paid_months: pm } : x)))
 
+    // Kembalikan centang ke kondisi sebelumnya, baik di server maupun di layar.
+    const revertPaidFlag = async () => {
+      try { await store.updateBill(b.id, { paid_months: previousPm }) } catch {}
+      setBills((list) => (list || []).map((x) => (x.id === b.id ? { ...x, paid_months: previousPm } : x)))
+    }
+
+    const billAmount = Math.abs(Number(b.amount) || 0)
+    // Sakelar auto_log_expense hanya dimatikan kalau user benar-benar mematikannya.
+    const autoLog = b.auto_log_expense !== false
+
+    // Nilai kurs dihitung sebelum flag lunas disimpan: kalau kurs tidak tersedia,
+    // jangan pernah menandai lunas tanpa transaksi.
+    let rate = null
+    let homeAmount = 0
+    let txCurrency = b.currency || home
+    if (isNowPaid && billAmount > 0 && autoLog) {
+      try {
+        txCurrency = b.currency || home || 'IDR'
+        rate = getRate(txCurrency, home, rates)
+        homeAmount = roundMoney(convert(billAmount, txCurrency, home, rates), home)
+        if (!Number.isFinite(homeAmount)) throw new Error('invalid_home_amount')
+      } catch (rateError) {
+        console.error('Bill payment rate failed:', rateError?.message || rateError)
+        toast.error(t('bill_paid_failed'))
+        return
+      }
+    }
+
     try {
       await store.updateBill(b.id, { paid_months: pm })
 
-      if (isNowPaid) {
-        const billAmount = Math.abs(Number(b.amount) || 0)
+      if (isNowPaid && billAmount > 0 && autoLog) {
+        const targetAccountId = b.account_id || accounts[0]?.id || null
+        const cleanCategory = (b.category || 'bills').replace(/^cat_/, '')
 
-        if (billAmount > 0) {
-          const targetAccountId = b.account_id || accounts[0]?.id || null
-          const cleanCategory = (b.category || 'bills').replace(/^cat_/, '')
+        const isDuplicate = (transactions || []).some((tx) => {
+          if (tx.bill_id && tx.bill_id === b.id && tx.billing_month === activeMonthKey) return true
+          if (tx.note && (tx.note.includes(b.id) || tx.note.includes(b.title || b.name)) && tx.note.includes(activeMonthKey)) return true
+          return false
+        })
 
-          // Cek duplikasi: berikan penanda agar bisa dilacak & mencegah duplikasi pada bulan aktif
-          const isDuplicate = (transactions || []).some((tx) => {
-            if (tx.bill_id && tx.bill_id === b.id && tx.billing_month === activeMonthKey) {
-              return true
-            }
-            if (tx.note && (tx.note.includes(b.id) || tx.note.includes(b.title || b.name)) && tx.note.includes(activeMonthKey)) {
-              return true
-            }
-            return false
-          })
+        if (!isDuplicate) {
+          const billTitle = b.name || b.title || t('bills')
+          const currentIso = new Date().toISOString()
 
-          if (!isDuplicate) {
-            const billTitle = b.name || b.title || t('bills')
-            const currentIso = new Date().toISOString()
-            const txCurrency = b.currency || home || 'USD'
-            const rate = getRate(txCurrency, home, rates)
-            const homeAmount = roundMoney(convert(billAmount, txCurrency, home, rates), home)
+          const newTransaction = {
+            user_id: user?.id || session?.user?.id || null,
+            account_id: targetAccountId,
+            amount: billAmount,
+            type: 'expense',
+            currency: txCurrency,
+            home_currency: home,
+            home_currency_amount: homeAmount,
+            rate: rate,
+            category: cleanCategory,
+            payment_method: b.payment_method || 'bank',
+            description: `${t('bill_payment_prefix')}: ${billTitle}`,
+            merchant: billTitle,
+            transaction_date: currentIso,
+            bill_id: b.id,
+            billing_month: activeMonthKey,
+            note: `${t('bill_payment_prefix')}: ${billTitle}`,
+            date: currentIso,
+          }
 
-            const newTransaction = {
-              user_id: user?.id || session?.user?.id || null,
-              account_id: targetAccountId,
-              amount: billAmount,
-              type: 'expense',
-              currency: txCurrency,
-              home_currency: home,
-              home_currency_amount: homeAmount,
-              rate: rate,
-              category: cleanCategory,
-              payment_method: b.payment_method || 'bank',
-              description: `${t('bill_payment_prefix')}: ${billTitle}`,
-              merchant: billTitle,
-              transaction_date: currentIso,
-              bill_id: b.id,
-              billing_month: activeMonthKey,
-              note: `${t('bill_payment_prefix')}: ${billTitle}`,
-              date: currentIso,
-            }
-
-            try {
-              if (typeof addTransaction === 'function') {
-                await addTransaction(newTransaction)
-              } else if (store?.createTransaction) {
-                const created = await store.createTransaction(newTransaction)
-                if (targetAccountId) {
-                  try {
-                    await applyTxToBalances(store, accounts, newTransaction, 1, rates)
-                  } catch {
-                    // Balance write failed: remove the created transaction and
-                    // restore the bill to unpaid so the ledger stays consistent.
-                    try { await store.deleteTransaction(created?.id || newTransaction.id) } catch {}
-                    try {
-                      const revertedPm = { ...(b.paid_months || {}) }
-                      delete revertedPm[activeMonthKey]
-                      await store.updateBill(b.id, { paid_months: revertedPm })
-                    } catch {}
-                    setBills((list) => (list || []).map((x) => (x.id === b.id ? { ...x, paid_months: revertedPm } : x)))
-                    toast.error(t('bill_paid_failed'))
-                    return
-                  }
+          try {
+            if (typeof addTransaction === 'function') {
+              await addTransaction(newTransaction)
+            } else if (store?.createTransaction) {
+              const created = await store.createTransaction(newTransaction)
+              if (targetAccountId) {
+                try {
+                  await applyTxToBalances(store, accounts, created?.id ? created : newTransaction, 1, rates)
+                } catch {
+                  try { await store.deleteTransaction(created?.id || newTransaction.id) } catch {}
+                  await revertPaidFlag()
+                  toast.error(t('bill_paid_failed'))
+                  return
                 }
-                if (typeof refresh === 'function') await refresh()
               }
-              toast.success(t('bill_paid_logged'))
-            } catch {
-              // Marking paid failed at the transaction level: undo the paid flag
-              // so the tracker does not show a payment that was never recorded.
-              try {
-                const revertedPm = { ...(b.paid_months || {}) }
-                delete revertedPm[activeMonthKey]
-                await store.updateBill(b.id, { paid_months: revertedPm })
-                setBills((list) => (list || []).map((x) => (x.id === b.id ? { ...x, paid_months: revertedPm } : x)))
-              } catch {
-                toast.error(t('bill_paid_failed'))
-              }
-              toast.error(t('bill_paid_failed'))
-              return
             }
+            if (typeof refresh === 'function') await refresh()
+          } catch (txError) {
+            console.error('Bill payment transaction failed:', txError?.message || txError)
+            await revertPaidFlag()
+            toast.error(t('bill_paid_failed'))
+            return
           }
         }
-      } else {
-        // Ketika di-uncheck (status berubah dari paid -> unpaid), cari dan revert transaksi & saldo terkait
-        const linkedTx = (transactions || []).find((tx) =>
-          (tx.bill_id && tx.bill_id === b.id && tx.billing_month === activeMonthKey) ||
-          (tx.note && (tx.note.includes(b.id) || tx.note.includes(b.title || b.name)) && tx.note.includes(activeMonthKey))
-        )
-        if (linkedTx) {
-          try {
-            if (typeof deleteTransaction === 'function') {
-              await deleteTransaction(linkedTx)
-            } else if (store?.deleteTransaction) {
-              await store.deleteTransaction(linkedTx.id)
-              if (linkedTx.account_id) {
-                try {
-                  await applyTxToBalances(store, accounts, linkedTx, -1, rates)
-                } catch {
-                  toast.error(t('bill_unpaid_failed'))
-                }
-              }
-              if (typeof refresh === 'function') await refresh()
-            }
-          } catch {
-            toast.error(t('bill_unpaid_failed'))
+        toast.success(t('bill_paid_logged'))
+      } else if (isNowPaid) {
+        toast.success(t('bill_paid_logged'))
+      }
+    } catch (e) {
+      console.error('Bill paid flag failed:', e?.message || e)
+      await revertPaidFlag()
+      toast.error(t('bill_paid_failed'))
+      return
+    }
+
+    if (!isNowPaid) {
+      // Uncheck: hapus transaksi pasangannya. Kalau gagal, centang dikembalikan
+      // supaya tagihan tidak tampil "belum bayar" padahal saldo sudah terpotong.
+      const linkedTx = (transactions || []).find((tx) =>
+        (tx.bill_id && tx.bill_id === b.id && tx.billing_month === activeMonthKey) ||
+        (tx.note && (tx.note.includes(b.id) || tx.note.includes(b.title || b.name)) && tx.note.includes(activeMonthKey))
+      )
+      if (linkedTx) {
+        try {
+          if (typeof deleteTransaction === 'function') {
+            await deleteTransaction(linkedTx)
+          } else if (store?.deleteTransaction) {
+            await store.deleteTransaction(linkedTx.id)
+            if (linkedTx.account_id) await applyTxToBalances(store, accounts, linkedTx, -1, rates)
+            if (typeof refresh === 'function') await refresh()
           }
+        } catch (unlinkError) {
+          console.error('Bill unlink failed:', unlinkError?.message || unlinkError)
+          await revertPaidFlag()
+          toast.error(t('bill_unpaid_failed'))
+          return
         }
       }
-      await load()
-    } catch (e) {
-      toast.error(e?.message || t('error'))
-      load()
     }
+
+    await load()
   }
 
   const toggleBill = handleTogglePaid
