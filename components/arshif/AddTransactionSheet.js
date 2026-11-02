@@ -8,7 +8,7 @@ import CurrencySheet from './CurrencySheet'
 import { CATEGORIES, PAYMENT_METHODS } from '@/lib/categories'
 import { getCurrency, roundMoney } from '@/lib/currencies'
 import { convert, getRate, formatRate } from '@/lib/rates'
-import { applyTxToBalances, evaluateExpression, toLocalDatetimeValue, fileToDataUrl } from '@/lib/ledger'
+import { applyTxToBalances, applyTransactionReplacement, evaluateExpression, toLocalDatetimeValue, fileToDataUrl } from '@/lib/ledger'
 import { cn } from '@/lib/utils'
 import { sanitizeAmount } from '@/lib/amount'
 import { useHaptic } from '@/hooks/useHaptic'
@@ -179,17 +179,26 @@ export default function AddTransactionSheet({ open, isOpen: propIsOpen, onClose,
 
       if (saveTransaction) {
         await saveTransaction(tx, editId)
-      } else {
-        if (editId) {
-          const old = transactions.find((x) => x.id === editId)
-          if (old) await applyTxToBalances(store, accounts, old, -1, rates)
-          await store.updateTransaction(editId, tx)
-        } else {
-          await store.createTransaction(tx)
-        }
-        await applyTxToBalances(store, accounts, tx, 1, rates)
-        if (refresh) await refresh()
+        return
       }
+
+      // Fallback hanya jalan kalau context tidak menyediakan saveTransaction
+      // (komponen dipakai terisolasi). Urutan wajib berurutan:
+      // applyTxToBalances membaca saldo dari array yang diterima, jadi memakai
+      // `accounts` basi untuk apply baru membuat saldo meleset sebesar delta
+      // lama. applyTransactionReplacement menangani revert-then-apply plus
+      // kompensasi bila salah satu langkah gagal.
+      if (editId) {
+        const old = transactions.find((x) => x.id === editId)
+        const replaced = await applyTransactionReplacement(store, accounts, { oldTx: old, newTx: tx, rates })
+        await store.updateTransaction(editId, tx)
+        if (refresh) await refresh()
+        return replaced
+      }
+
+      await store.createTransaction(tx)
+      await applyTxToBalances(store, accounts, tx, 1, rates)
+      if (refresh) await refresh()
     } catch (e) {
       toast.error(e?.missingTable ? t('db_missing') : e?.message || t('error'))
     } finally {
