@@ -69,10 +69,11 @@ test('computeSplitTotals membagi baris diskon struk-level ke semua peserta', () 
   // Hanya item a di-assign ke p1; b belum di-assign; promo dibagi rata
   const assign = { 0: ['p1'] }
   const { totals, unassigned } = computeSplitTotals(items, assign, people)
-  // Bulatkan 3 desimal: hasil split 318.35/2 = 159.175 punya 3 desimal,
-  // round 2 desimal salah arah karena floating point (-159.17500000000001).
-  assert.equal(Math.round(totals.p1 * 1000) / 1000, Math.round((259.9 - 159.175) * 1000) / 1000)
-  assert.equal(Math.round(totals.p2 * 1000) / 1000, -159.175)
+  // Pembagian dibulatkan ke sen dan sisanya masuk peserta terakhir, jadi jumlah
+  // bagian selalu sama dengan nilai baris (318.35 -> 159.17 + 159.18).
+  assert.equal(totals.p1, Math.round((259.9 - 159.18) * 100) / 100)
+  assert.equal(totals.p2, -159.17)
+  assert.equal(Math.round((totals.p1 + totals.p2) * 100) / 100, Math.round((259.9 - 318.35) * 100) / 100)
   assert.equal(Math.round(unassigned * 1000) / 1000, 358.9)
 })
 

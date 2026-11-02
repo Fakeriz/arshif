@@ -80,7 +80,11 @@ export default function App() {
 
   const t = useCallback((key, vars, fallback) => translate(lang, key, vars, fallback), [lang])
   const fmt = useCallback((amount, code) => formatMoney(amount, code, { locale: LOCALE_MAP[lang] || 'en-US' }), [lang])
-  const convertToHome = useCallback((amount, code) => safeConvert(amount, code, home, rates) ?? 0, [home, rates])
+  // Kurs tidak dikenal: pakai nominal aslinya, jangan 0 (utang/aset bisa hilang dari total).
+  const convertToHome = useCallback((amount, code) => {
+    const v = safeConvert(amount, code, home, rates)
+    return typeof v === 'number' && Number.isFinite(v) ? v : Number(amount) || 0
+  }, [home, rates])
 
   useEffect(() => {
     try {
