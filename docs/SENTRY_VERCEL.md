@@ -17,6 +17,14 @@ menyuntik `window.__SENTRY_DSN__` bila env ada).
 3. Redeploy (**Deployments → Redeploy**) agar env terbaca saat build —
    `app/layout.js` membaca env ini di server saat render.
 
+## Cakupan
+
+- Client: `app/providers.js` (lazy init, hanya bila DSN ada).
+- Server: `instrumentation.js` — `register()` untuk route handler/server
+  component dan `onRequestError()` untuk error yang lolos dari error boundary.
+  Keduanya membaca `SENTRY_DSN` (atau `NEXT_PUBLIC_SENTRY_DSN` sebagai
+  fallback) dan langsung berhenti bila tidak diset.
+
 ## Mematikan kembali
 
 Hapus variable di atas lalu redeploy. Tanpa DSN tidak ada request keluar
