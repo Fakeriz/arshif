@@ -67,6 +67,18 @@ function env(name) {
   return v
 }
 
+// Nilai placeholder dari .env.example/.env.local repo harus ketahuan sebelum
+// backup "sukses" dengan 0 baris - itu kegagalan paling mahal karena baru
+// disadari saat restore.
+const PLACEHOLDER_RE = /^(localhost|127\.0\.0\.1|https?:\/\/localhost)|placeholder|server-only|^ci-|^xxx+$/i
+function envCredential(name) {
+  const v = env(name)
+  if (PLACEHOLDER_RE.test(v)) {
+    throw new Error(`${name} masih nilai placeholder (${v.slice(0, 24)}...). Isi kredensial asli di file env backup.`)
+  }
+  return v
+}
+
 function stamp(d = new Date()) {
   const p = (n) => String(n).padStart(2, '0')
   return `${d.getFullYear()}${p(d.getMonth() + 1)}${p(d.getDate())}-${p(d.getHours())}${p(d.getMinutes())}`
@@ -129,13 +141,13 @@ async function main() {
   fs.mkdirSync(dir, { recursive: true })
 
   if (mode === 'pg') {
-    const url = env('DATABASE_URL')
+    const url = envCredential('DATABASE_URL')
     await dumpViaPg(url, path.join(dir, 'dump.sql'))
     fs.writeFileSync(path.join(dir, 'manifest.json'), JSON.stringify({ mode, at: new Date().toISOString(), tables: ['*'] }, null, 2))
     console.log(`OK pg_dump: ${dir}/dump.sql`)
   } else {
-    const baseUrl = (env('NEXT_PUBLIC_SUPABASE_URL') || env('SUPABASE_URL')).replace(/\/$/, '')
-    const serviceKey = env('SUPABASE_SERVICE_ROLE_KEY')
+    const baseUrl = envCredential('NEXT_PUBLIC_SUPABASE_URL').replace(/\/$/, '')
+    const serviceKey = envCredential('SUPABASE_SERVICE_ROLE_KEY')
     const counts = await dumpViaRest(baseUrl, serviceKey, dir)
     fs.writeFileSync(path.join(dir, 'manifest.json'), JSON.stringify({ mode, at: new Date().toISOString(), counts }, null, 2))
     const total = Object.values(counts).reduce((a, b) => a + b, 0)
@@ -155,4 +167,4 @@ if (invokedDirectly) {
   })
 }
 
-export { prune, stamp, TABLES }
+export { prune, stamp, TABLES, envCredential }

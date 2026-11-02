@@ -5,7 +5,7 @@ import os from 'node:os'
 import path from 'node:path'
 
 process.env.BACKUP_RETENTION_DAYS = '7'
-const { prune, stamp, TABLES } = await import('../scripts/db-backup-cron.js')
+const { prune, stamp, TABLES, envCredential } = await import('../scripts/db-backup-cron.js')
 
 test('stamp menghasilkan nama folder backup-YYYYMMDD-HHMM', () => {
   assert.match(stamp(new Date('2026-11-02T03:04:00Z')), /^\d{8}-\d{4}$/)
@@ -50,4 +50,13 @@ test('tabel operasional tidak ikut dibackup', () => {
 
 test('tidak ada nama tabel ganda', () => {
   assert.equal(new Set(TABLES).size, TABLES.length)
+})
+
+test('kredensial placeholder ditolak, bukan backup 0 baris', () => {
+  process.env.MOCK_URL = 'http://localhost:9999'
+  assert.throws(() => envCredential('MOCK_URL'), /placeholder/)
+  process.env.MOCK_URL = 'https://rwfruvzficwinguyuqds.supabase.co'
+  assert.equal(envCredential('MOCK_URL'), 'https://rwfruvzficwinguyuqds.supabase.co')
+  delete process.env.MOCK_URL
+  assert.throws(() => envCredential('MOCK_URL'), /belum diset/)
 })
