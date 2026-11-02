@@ -57,6 +57,23 @@ Alternatif lebih lengkap (schema + fungsi, bukan hanya data): set
 Verifikasi diulang dengan mock Supabase lokal (`scripts/mock-supabase.mjs`),
 bukan data prod, supaya tidak perlu kredensial asli untuk menguji jalur ini.
 
+## Build di server ini
+
+Repo butuh `NEXT_PUBLIC_SUPABASE_URL` + `NEXT_PUBLIC_SUPABASE_ANON_KEY` untuk
+`next build` (nilai placeholder cukup, sama seperti CI). Tanpa itu build berhenti
+di `collect page data` dengan error yang sulit dibaca; sekarang pesannya
+menyebut di mana env harus diisi.
+
+```bash
+cd /srv/arshif
+printf 'NEXT_PUBLIC_SUPABASE_URL=https://ci-placeholder.supabase.co\nNEXT_PUBLIC_SUPABASE_ANON_KEY=ci-placeholder-anon-key\n' > .env.local
+npm test && npm run build
+```
+
+`.env.local` di sini hanya untuk build/verifikasi, bukan kredensial sungguhan.
+Terakhir diverifikasi: 205/205 test lolos, build sukses, TZ server
+`Asia/Kuala_Lumpur`.
+
 ## Catatan
 
 - Script memakai REST `select=*` per tabel; kolom JSON besar (mis. `items`,

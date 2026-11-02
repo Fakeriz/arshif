@@ -347,10 +347,14 @@ export default function App() {
         // Transfer fees are split into a separate expense so they stay visible in the ledger.
         const [transferTx, feeTx] = buildTransferWithFeeTransactions(txData)
         saved = await store.createTransaction(transferTx)
+        // Snapshot akun di-thread berurutan: applyTxToBalances membaca saldo dari
+        // array yang diterima, jadi memakai prevAccList untuk fee setelah transfer
+        // akan menimpa debit transfer (saldo balik sebesar nominal transfer).
+        let workingAccounts = prevAccList
         try {
           // Pakai baris hasil insert (punya id) supaya jalur RPC atomik dan
           // penanda idempotensinya aktif sejak create.
-          await applyTxToBalances(store, prevAccList, saved?.id ? saved : transferTx, 1, rates)
+          workingAccounts = await applyTxToBalances(store, prevAccList, saved?.id ? saved : transferTx, 1, rates)
         } catch (balanceError) {
           if (saved?.id) {
             try { await store.deleteTransaction(saved.id) } catch {}
@@ -360,7 +364,7 @@ export default function App() {
         if (feeTx) {
           try {
             const savedFee = await store.createTransaction(feeTx)
-            await applyTxToBalances(store, prevAccList, savedFee?.id ? savedFee : feeTx, 1, rates)
+            workingAccounts = await applyTxToBalances(store, workingAccounts, savedFee?.id ? savedFee : feeTx, 1, rates)
           } catch (feeError) {
             console.warn('Transfer fee transaction failed:', feeError?.message || feeError)
           }
