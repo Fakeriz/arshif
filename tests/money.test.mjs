@@ -101,3 +101,23 @@ test('calculator applies unary minus with correct precedence', () => {
   assert.equal(evaluateExpression('2--3'), 5)
   assert.equal(evaluateExpression('2---3'), -1)
 })
+
+// Regresi audit: format ribuan Indonesia tidak boleh dibaca sebagai desimal.
+test('evaluateExpression membaca ribuan Indonesia', async () => {
+  const { evaluateExpression } = await import('../lib/ledger.js')
+  assert.equal(evaluateExpression('10.000'), 10000)
+  assert.equal(evaluateExpression('1.234.567'), 1234567)
+  assert.equal(evaluateExpression('1.234,56'), 1234.56)
+  assert.equal(evaluateExpression('10.000*2'), 20000)
+  assert.equal(evaluateExpression('2*-3'), -6)
+})
+
+test('sanitizeAmount membiarkan titik ribuan dan parseAmount ikut benar', async () => {
+  const { sanitizeAmount, parseAmount } = await import('../lib/amount.js')
+  assert.equal(sanitizeAmount('10.000'), '10.000')
+  assert.equal(sanitizeAmount('1.234.567'), '1.234.567')
+  assert.equal(sanitizeAmount('12.345,67'), '12345.67')
+  assert.equal(sanitizeAmount('1,234.56'), '1234.56')
+  assert.equal(parseAmount('10.000'), 10000)
+  assert.equal(parseAmount('1.234.567'), 1234567)
+})

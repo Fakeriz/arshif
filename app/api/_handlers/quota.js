@@ -1,11 +1,26 @@
 // Auth + kuota AI (verify & consume), dan endpoint GET ai/usage.
 // Helper auth diimpor dari lib/api-auth.js (sumber tunggal, tidak diduplikasi).
 import { readBearerToken, getServerSupabase } from '@/lib/api-auth'
+import { safeSecretEqual } from '@/lib/secret-compare'
 import { json, err } from './http'
 
-// Token dev tidak boleh aktif di production agar tidak membuka bypass auth.
-if (process.env.NODE_ENV === 'production' && process.env.ARSHIF_DEV_ADMIN_TOKEN) {
-  console.warn('ARSHIF_DEV_ADMIN_TOKEN diset saat production, bypass dev nonaktif')
+// Token dev hanya untuk pengembangan lokal. Di production nilainya diabaikan
+// sepenuhnya, bukan cuma diberi peringatan di log.
+const DEV_ADMIN_TOKEN = process.env.NODE_ENV === 'production' ? null : process.env.ARSHIF_DEV_ADMIN_TOKEN
+
+function isDevAdminToken(token) {
+  if (!DEV_ADMIN_TOKEN) return false
+  return safeSecretEqual(token, DEV_ADMIN_TOKEN)
+}
+
+const AI_PREMIUM_REQUIRED = {
+  error: 'Fitur AI eksklusif untuk pengguna Premium atau Admin.',
+  code: 'AI_PREMIUM_REQUIRED',
+}
+
+const SESSION_INVALID = {
+  error: 'Sesi pengguna tidak valid atau telah berakhir.',
+  code: 'SESSION_INVALID',
 }
 
 // Access check + konsumsi kuota via RPC. Fail closed kalau service kuota down.
@@ -13,20 +28,11 @@ async function verifyAndConsumeAiAccess(request) {
   const token = readBearerToken(request)
 
   if (!token) {
-    return {
-      allowed: false,
-      response: json(
-        { error: 'Fitur AI eksklusif untuk pengguna Premium atau Admin.', code: 'AI_PREMIUM_REQUIRED' },
-        403
-      ),
-    }
+    return { allowed: false, response: json(SESSION_INVALID, 401) }
   }
 
-
-  // Developer/internal test token, hanya dari env server, TIDAK pernah hardcode di source.
-  // tidak ada bypass auth yang ter-commit; yang mengikat = server.
-  const devAdminToken = process.env.ARSHIF_DEV_ADMIN_TOKEN
-  if (devAdminToken && token === devAdminToken) {
+  // Developer/internal test token, hanya dari env server, dan hanya di luar production.
+  if (isDevAdminToken(token)) {
     return {
       allowed: true,
       user: { id: 'admin-dev', email: process.env.ARSHIF_DEV_ADMIN_EMAIL || 'dev-admin@localhost' },
@@ -39,41 +45,37 @@ async function verifyAndConsumeAiAccess(request) {
   const user = authData?.user
 
   if (authError || !user) {
-    return {
-      allowed: false,
-      response: json(
-        { error: 'Fitur AI eksklusif untuk pengguna Premium atau Admin.', code: 'AI_PREMIUM_REQUIRED' },
-        403
-      ),
-    }
+    return { allowed: false, response: json(SESSION_INVALID, 401) }
   }
 
   // Entitlement hanya berasal dari profiles yang dibaca server, bukan metadata client.
   let planTier = 'free'
   let role = 'authenticated'
 
-  try {
-    const { data: profile } = await supabaseClient
-      .from('profiles')
-      .select('plan_tier, role')
-      .eq('id', user.id)
-      .maybeSingle()
-    if (profile?.plan_tier) planTier = profile.plan_tier
-    if (profile?.role) role = profile.role
-  } catch (e) {
-    console.warn('Error reading profiles table:', e?.message)
+  const { data: profile, error: profileErr } = await supabaseClient
+    .from('profiles')
+    .select('plan_tier, role')
+    .eq('id', user.id)
+    .maybeSingle()
+
+  if (profileErr) {
+    console.error('Gagal membaca profiles untuk entitlement:', profileErr.message)
+    return {
+      allowed: false,
+      response: json(
+        { error: 'Status langganan tidak dapat diperiksa. Coba lagi nanti.', code: 'AI_ENTITLEMENT_UNAVAILABLE' },
+        503
+      ),
+    }
   }
+
+  if (profile?.plan_tier) planTier = profile.plan_tier
+  if (profile?.role) role = profile.role
 
   const isPremiumOrAdmin = planTier === 'premium' || planTier === 'admin' || role === 'admin'
 
   if (!isPremiumOrAdmin) {
-    return {
-      allowed: false,
-      response: json(
-        { error: 'Fitur AI eksklusif untuk pengguna Premium atau Admin.', code: 'AI_PREMIUM_REQUIRED' },
-        403
-      ),
-    }
+    return { allowed: false, response: json(AI_PREMIUM_REQUIRED, 403) }
   }
 
   // Check & consume quota via RPC. Fail closed if the quota service is unavailable.
@@ -132,8 +134,7 @@ async function handleAiUsage(request) {
     return err('Autentikasi token Bearer diperlukan.', 401)
   }
 
-  const devAdminToken = process.env.ARSHIF_DEV_ADMIN_TOKEN
-  if (devAdminToken && token === devAdminToken) {
+  if (isDevAdminToken(token)) {
     return json({ remaining: 999, total: 999, is_unlimited: true }, 200)
   }
 
@@ -148,17 +149,19 @@ async function handleAiUsage(request) {
   // Entitlement hanya berasal dari profiles server-side.
   let planTier = 'free'
   let role = 'authenticated'
-  try {
-    const { data: profile } = await supabaseClient
-      .from('profiles')
-      .select('plan_tier, role')
-      .eq('id', user.id)
-      .maybeSingle()
-    if (profile?.plan_tier) planTier = profile.plan_tier
-    if (profile?.role) role = profile.role
-  } catch (e) {
-    console.warn('Profile read in usage:', e?.message)
+  const { data: profile, error: profileErr } = await supabaseClient
+    .from('profiles')
+    .select('plan_tier, role')
+    .eq('id', user.id)
+    .maybeSingle()
+
+  if (profileErr) {
+    console.error('Gagal membaca profiles di usage:', profileErr.message)
+    return err('Status langganan tidak dapat diperiksa. Coba lagi nanti.', 503)
   }
+
+  if (profile?.plan_tier) planTier = profile.plan_tier
+  if (profile?.role) role = profile.role
 
   const isPremiumOrAdmin = planTier === 'premium' || planTier === 'admin' || role === 'admin'
 
