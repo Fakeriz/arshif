@@ -8,11 +8,7 @@ import { SUPABASE_URL } from '@/lib/supabase'
 import { safeSecretEqual } from '@/lib/secret-compare'
 import { deriveNotifications } from '@/lib/notifications'
 import { translate, LOCALE_MAP } from '@/lib/i18n'
-import {
-  initWebPush,
-  isExpiredOrInvalidSubscription,
-  formatPushError,
-} from '@/lib/push-server'
+import { initWebPush, summarizePushResults } from '@/lib/push-server'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -176,20 +172,17 @@ export async function POST(request) {
         )
 
         // Hapus subscription yang expired atau tidak valid dari database
-        let delivered = 0
-        for (let i = 0; i < results.length; i++) {
-          const r = results[i]
-          if (r.status === 'fulfilled') { delivered++; continue }
-          if (isExpiredOrInvalidSubscription(r.reason)) {
-            await sb.from('push_subscriptions').delete().eq('endpoint', subs[i].endpoint)
-            continue
-          }
-          // Kegagalan sementara (500/429/timeout): jangan tandai terkirim supaya
-          // pengingat ini dicoba lagi pada cron berikutnya.
-          errors.push({ userId, notificationId: n.id, error: formatPushError(r.reason) })
+        const summary = summarizePushResults(results, subs)
+        for (const endpoint of summary.expired) {
+          await sb.from('push_subscriptions').delete().eq('endpoint', endpoint)
+        }
+        // Kegagalan sementara (500/429/timeout): jangan tandai terkirim supaya
+        // pengingat ini dicoba lagi pada cron berikutnya.
+        for (const failure of summary.retryable) {
+          errors.push({ userId, notificationId: n.id, error: failure.error })
         }
 
-        if (delivered === 0) continue
+        if (summary.delivered === 0) continue
 
         // Catat sebagai terkirim (dedup)
         const { error: markErr } = await sb.from('push_sent').upsert(

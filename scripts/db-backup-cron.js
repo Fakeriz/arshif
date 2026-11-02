@@ -115,7 +115,13 @@ async function main() {
   console.log(`OK rotasi: ${removed} folder lama dihapus (retensi ${RETENTION_DAYS} hari)`)
 }
 
-main().catch((e) => {
-  console.error(`FAIL backup: ${e.message}`)
-  process.exit(1)
-})
+// Dieksekusi hanya saat dijalankan langsung, supaya fungsi di atas bisa diuji.
+const invokedDirectly = process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)
+if (invokedDirectly) {
+  main().catch((e) => {
+    console.error(`FAIL backup: ${e.message}`)
+    process.exit(1)
+  })
+}
+
+export { prune, stamp, TABLES }
