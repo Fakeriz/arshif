@@ -9,7 +9,14 @@ const manrope = Manrope({
 })
 
 export const metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'),
+  // Urutan fallback: env eksplisit, domain produksi Vercel, lalu domain utama.
+  // Tanpa ini OG/share link menunjuk localhost saat env belum diisi.
+  metadataBase: new URL(
+    process.env.NEXT_PUBLIC_SITE_URL
+      || (process.env.VERCEL_PROJECT_PRODUCTION_URL ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}` : '')
+      || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : '')
+      || 'https://arshif.biz.id'
+  ),
   title: 'Arshif - Personal & Business Finance',
   description: 'Multi-currency personal and business finance tracker with AI receipt scanning, voice log, debts, and bills tracking.',
   manifest: '/manifest.json',
@@ -47,7 +54,7 @@ export const viewport = {
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="en" suppressHydrationWarning className={manrope.variable}>
+    <html lang="id" suppressHydrationWarning className={manrope.variable}>
       <head>
         <script dangerouslySetInnerHTML={{__html:'window.addEventListener("error",function(e){if(e.error instanceof DOMException&&e.error.name==="DataCloneError"&&e.message&&e.message.includes("PerformanceServerTiming")){e.stopImmediatePropagation();e.preventDefault()}},true);'}} />
         {process.env.NEXT_PUBLIC_SENTRY_DSN ? (
