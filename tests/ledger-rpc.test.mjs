@@ -162,3 +162,41 @@ test('transaksi tanpa id tidak memakai RPC (tidak ada kunci idempotensi)', async
   assert.equal(rpcCalled, false)
   assert.deepEqual(writes, [{ id: 'a', balance: 950 }])
 })
+
+// Regresi audit: urutan create -> edit -> hapus tidak boleh meninggalkan saldo
+// lebih tinggi. Fake RPC ini meniru idempotensi (tx_id, sign) di schema.sql.
+test('urutan edit lalu hapus mengembalikan saldo penuh', async () => {
+  const markers = new Map()
+  let balance = 1000
+  const rpcCalls = []
+  setBalanceRpcClient({
+    rpc: async (name, args) => {
+      rpcCalls.push({ txId: args.p_tx_id, sign: args.p_sign })
+      const prev = markers.get(args.p_tx_id)
+      if (prev === args.p_sign) return { data: { ok: true, applied: false, idempotent: true }, error: null }
+      markers.set(args.p_tx_id, args.p_sign)
+      for (const d of args.p_account_deltas) balance += d.delta * args.p_sign
+      return { data: { ok: true, applied: true }, error: null }
+    },
+  })
+
+  const store = makeStore([])
+  const accounts = () => [{ id: 'a', currency: 'USD', balance }]
+
+  const created = { id: 'tx-1', type: 'expense', amount: 50, currency: 'USD', account_id: 'a' }
+  await applyTxToBalances(store, accounts(), created, 1, { USD: 1 })
+  assert.equal(balance, 950, 'create memotong saldo')
+
+  // Edit: revert lama (-1) lalu apply baru (+1), newTx dari form belum punya id.
+  const { applyTransactionReplacement } = await import('../lib/ledger.js')
+  await applyTransactionReplacement(store, accounts(), {
+    oldTx: created,
+    newTx: { type: 'expense', amount: 80, currency: 'USD', account_id: 'a' },
+    rates: { USD: 1 },
+  })
+  assert.equal(balance, 920, 'edit menyesuaikan saldo ke nominal baru')
+
+  // Hapus setelah edit harus benar-benar mengembalikan saldo.
+  await applyTxToBalances(store, accounts(), { ...created, amount: 80 }, -1, { USD: 1 })
+  assert.equal(balance, 1000, 'hapus mengembalikan saldo penuh')
+})

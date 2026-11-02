@@ -344,7 +344,9 @@ export default function App() {
         const [transferTx, feeTx] = buildTransferWithFeeTransactions(txData)
         saved = await store.createTransaction(transferTx)
         try {
-          await applyTxToBalances(store, prevAccList, transferTx, 1, rates)
+          // Pakai baris hasil insert (punya id) supaya jalur RPC atomik dan
+          // penanda idempotensinya aktif sejak create.
+          await applyTxToBalances(store, prevAccList, saved?.id ? saved : transferTx, 1, rates)
         } catch (balanceError) {
           if (saved?.id) {
             try { await store.deleteTransaction(saved.id) } catch {}
@@ -353,8 +355,8 @@ export default function App() {
         }
         if (feeTx) {
           try {
-            await store.createTransaction(feeTx)
-            await applyTxToBalances(store, prevAccList, feeTx, 1, rates)
+            const savedFee = await store.createTransaction(feeTx)
+            await applyTxToBalances(store, prevAccList, savedFee?.id ? savedFee : feeTx, 1, rates)
           } catch (feeError) {
             console.warn('Transfer fee transaction failed:', feeError?.message || feeError)
           }
