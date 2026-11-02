@@ -65,6 +65,15 @@ regresi saat pola lama muncul kembali.
 Test lain yang menutup jalur uang: `tx-save`, `rates-keep`, `edit-revert-order`,
 `expression`, `import-summary`, `coach-save`, `db-backup`.
 
+## Batasan yang diketahui
+
+**Fee transfer tidak punya tautan ke induknya.** Fee disimpan sebagai baris
+`expense` terpisah (supaya terlihat di ledger), tetapi tabel `transactions` tidak
+punya kolom yang menunjuk balik ke transfer induknya. Akibatnya menghapus transfer
+berbiaya meninggalkan baris fee yatim, dan mengubah fee saat edit tidak
+tersinkron dengan baris fee lama. Perbaikan yang benar butuh kolom
+`fee_of uuid references transactions(id)`, bukan pencocokan pola di kode.
+
 ## Belum diaudit
 
 - **Floating point pada agregasi besar.** Penjumlahan memakai float mentah dan
