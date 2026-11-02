@@ -185,13 +185,13 @@ export default function CoachSheet({ open, onClose }) {
   // Saran pertanyaan: kontekstual dari data user - pakai key i18n + var
   const starters = useMemo(() => {
     const list = []
+    list.push({ key: 'coach_q_log_tx', vars: {} })
     const hot = context.budgets.find((b) => b.pct >= 80)
     if (hot) list.push({ key: 'coach_q_budget', vars: { category: hot.category, pct: hot.pct } })
     const behind = context.goals.find((g) => g.status === 'behind' || g.status === 'overdue')
     if (behind) list.push({ key: 'coach_q_goal', vars: { name: behind.name } })
     if (context.savingsRate !== null && context.savingsRate < 20) list.push({ key: 'coach_q_savings', vars: {} })
     list.push({ key: 'coach_q_analyze', vars: {} })
-    list.push({ key: 'coach_q_save', vars: {} })
     return list.slice(0, 4)
   }, [context])
 
