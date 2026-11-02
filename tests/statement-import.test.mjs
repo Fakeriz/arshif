@@ -59,9 +59,12 @@ test('parseAmount membaca minus di belakang dan minus unicode', async () => {
 })
 
 test('normalizeDate mengenali nama bulan Indonesia', async () => {
-  const { normalizeDate } = await import('../lib/statement-import.js')
-  assert.equal(normalizeDate('10 Okt 2026').toISOString().slice(0, 10), '2026-10-10')
-  assert.equal(normalizeDate('10 Agustus 2026').toISOString().slice(0, 10), '2026-08-10')
+  const { normalizeDate, fmtDateStr } = await import('../lib/statement-import.js')
+  // Tanggal adalah hari kalender lokal, bukan instant UTC: assert lewat
+  // fmtDateStr (getter lokal) supaya hasilnya sama di mesin UTC maupun +08.
+  // toISOString di sini akan bergeser sehari untuk TZ positif.
+  assert.equal(fmtDateStr(normalizeDate('10 Okt 2026')), '2026-10-10')
+  assert.equal(fmtDateStr(normalizeDate('10 Agustus 2026')), '2026-08-10')
   assert.equal(normalizeDate('31 Feb 2026'), null)
 })
 

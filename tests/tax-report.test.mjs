@@ -4,13 +4,18 @@ import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { buildTaxReport, taxReportRows } from '../lib/tax-report.js'
 
+// Tanggal pajak mengikuti kalender LOKAL. Literal ISO berakhiran Z akan
+// bergeser hari/tahun di mesin dengan offset non-nol, jadi transaksi uji
+// dibangun dari komponen lokal.
+const localIso = (y, m, d, h = 12, mi = 0) => new Date(y, m, d, h, mi).toISOString()
+
 const tx = (over = {}) => ({
   id: 'tx_x',
   type: 'expense',
   amount: 100,
   currency: 'USD',
   category: 'other',
-  date: '2026-03-15T10:00:00Z',
+  date: localIso(2026, 2, 15, 10),
   tax_deductible: false,
   ...over,
 })
@@ -29,9 +34,9 @@ test('buildTaxReport only includes tax_deductible transactions', () => {
 
 test('buildTaxReport filters by year', () => {
   const list = [
-    tx({ id: 'a', tax_deductible: true, amount: 100, date: '2026-01-10T00:00:00Z' }),
-    tx({ id: 'b', tax_deductible: true, amount: 200, date: '2025-06-10T00:00:00Z' }),
-    tx({ id: 'c', tax_deductible: true, amount: 300, date: '2026-12-31T23:59:00Z' }),
+    tx({ id: 'a', tax_deductible: true, amount: 100, date: localIso(2026, 0, 10) }),
+    tx({ id: 'b', tax_deductible: true, amount: 200, date: localIso(2025, 5, 10) }),
+    tx({ id: 'c', tax_deductible: true, amount: 300, date: localIso(2026, 11, 31, 23, 59) }),
   ]
   const r = buildTaxReport(list, { year: 2026, month: null })
   assert.equal(r.count, 2)
@@ -40,8 +45,8 @@ test('buildTaxReport filters by year', () => {
 
 test('buildTaxReport filters by month (null month = full year)', () => {
   const list = [
-    tx({ id: 'a', tax_deductible: true, amount: 10, date: '2026-03-05T00:00:00Z' }),
-    tx({ id: 'b', tax_deductible: true, amount: 20, date: '2026-04-05T00:00:00Z' }),
+    tx({ id: 'a', tax_deductible: true, amount: 10, date: localIso(2026, 2, 5) }),
+    tx({ id: 'b', tax_deductible: true, amount: 20, date: localIso(2026, 3, 5) }),
   ]
   const rMonth = buildTaxReport(list, { year: 2026, month: 2 }) // Maret
   assert.equal(rMonth.count, 1)
@@ -96,8 +101,8 @@ test('buildTaxReport ignores invalid/missing dates and non-array input', () => {
 
 test('buildTaxReport falls back to transaction_date then created_at', () => {
   const r = buildTaxReport([
-    tx({ id: 'a', tax_deductible: true, date: undefined, transaction_date: '2026-02-01T00:00:00Z' }),
-    tx({ id: 'b', tax_deductible: true, date: undefined, transaction_date: undefined, created_at: '2026-02-20T00:00:00Z' }),
+    tx({ id: 'a', tax_deductible: true, date: undefined, transaction_date: localIso(2026, 1, 1) }),
+    tx({ id: 'b', tax_deductible: true, date: undefined, transaction_date: undefined, created_at: localIso(2026, 1, 20) }),
   ], { year: 2026, month: 1 })
   assert.equal(r.count, 2)
 })

@@ -33,6 +33,16 @@ jobs:
       - name: Run tests
         run: npm test
 
+      # Suite harus lulus di semua zona waktu: logika tanggal memakai kalender
+      # lokal, dan literal ISO berakhiran Z bergeser hari untuk offset non-nol.
+      # Tanpa matrix ini regresi TZ hanya muncul di mesin kontributor.
+      - name: Run tests across timezones
+        run: |
+          for tz in Asia/Kuala_Lumpur America/New_York Pacific/Kiritimati; do
+            echo "== $tz"
+            TZ=$tz npm test
+          done
+
       # next build mengevaluasi route API saat mengumpulkan page data, dan
       # lib/supabase.js menolak jalan tanpa env. Nilai di bawah hanya placeholder
       # untuk build: tidak ada koneksi Supabase sungguhan yang terjadi.
