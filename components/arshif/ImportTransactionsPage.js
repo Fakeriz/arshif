@@ -1,7 +1,7 @@
 'use client'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { motion } from 'framer-motion'
-import { UploadCloud, FileSpreadsheet, FileText, Sparkles, CheckCircle2, ChevronLeft, ChevronRight, ChevronDown, Plus, AlertTriangle, Undo2, Check, Search, X, Lock } from 'lucide-react'
+import { UploadCloud, FileSpreadsheet, FileText, Sparkles, CheckCircle2, ChevronLeft, ChevronRight, ChevronDown, Plus, AlertTriangle, Undo2, ArrowLeftRight, Check, Search, X, Lock } from 'lucide-react'
 import { toast } from 'sonner'
 import { useApp } from './context'
 import { Sheet, Field, Segmented, CategoryBadge, SectionLabel, TextInput, EmptyState } from './ui'
@@ -58,6 +58,7 @@ export default function ImportTransactionsPage({ onClose }) {
   // Id transaksi hasil impor sesi ini: dipakai undo kalau kolom import_batch_id
   // belum ada di DB (migrasi SQL belum dijalankan).
   const createdIdsRef = useRef([])
+  const [createdCount, setCreatedCount] = useState(0)
   const [batchRecId, setBatchRecId] = useState(null)
   const [netDelta, setNetDelta] = useState(0)
   const [showDupes, setShowDupes] = useState(false)
@@ -390,10 +391,38 @@ export default function ImportTransactionsPage({ onClose }) {
         try { await store.updateAccount(walletId, { balance: roundMoney((Number(w.balance) || 0) + net, walletCur) }) } catch {}
       }
       setNetDelta(net)
+      setCreatedCount(createdIdsRef.current.length)
       if (recId) await store.updateImportBatch(recId, { imported_count: ok, skipped_count: rows.length - ok, failed_count: failed, status: 'completed' })
       if (refresh) await refresh()
       setResult({ ok, skipped: rows.length - ok, failed })
       setStep(3)
+    } catch {
+      toast.error(t('error'))
+    } finally { setBusy(false) }
+  }
+
+  // Pindahkan transaksi hasil impor ke dompet lain: id transaksi yang dibuat
+  // dicatat per sesi, jadi tidak perlu query ulang berdasarkan batch.
+  const moveToWallet = async (targetId) => {
+    setPickWallet(false)
+    if (!targetId || targetId === walletId || !createdIdsRef.current.length || busy) return
+    const target = (accounts || []).find((a) => a.id === targetId)
+    if (!target) return
+    setBusy(true)
+    try {
+      for (const id of createdIdsRef.current) {
+        try { await store.updateTransaction(id, { account_id: targetId }) } catch {}
+      }
+      const from = (accounts || []).find((a) => a.id === walletId)
+      if (from && netDelta !== 0) {
+        try {
+          await store.updateAccount(walletId, { balance: roundMoney((Number(from.balance) || 0) - netDelta, walletCur) })
+          await store.updateAccount(targetId, { balance: roundMoney((Number(target.balance) || 0) + netDelta, target.currency || walletCur) })
+        } catch {}
+      }
+      setWalletId(targetId)
+      if (refresh) await refresh()
+      toast.success(t('import_moved_wallet'))
     } catch {
       toast.error(t('error'))
     } finally { setBusy(false) }
@@ -978,7 +1007,7 @@ export default function ImportTransactionsPage({ onClose }) {
                 </div>
               </div>
 
-              {caps.columns && batchId && (
+              {(createdCount > 0 || (caps.columns && batchId)) && (
                 <button
                   type="button"
                   onClick={undoImport}
@@ -986,6 +1015,17 @@ export default function ImportTransactionsPage({ onClose }) {
                   className="w-full mt-4 rounded-2xl border border-zinc-200/70 dark:border-white/10 py-3.5 text-sm font-semibold flex items-center justify-center gap-2 disabled:opacity-40"
                 >
                   <Undo2 size={16} /> {t('import_undo')}
+                </button>
+              )}
+
+              {createdCount > 0 && (accounts || []).length > 1 && (
+                <button
+                  type="button"
+                  onClick={() => setPickWallet(true)}
+                  disabled={busy}
+                  className="w-full mt-2 rounded-2xl border border-zinc-200/70 dark:border-white/10 py-3.5 text-sm font-semibold flex items-center justify-center gap-2 disabled:opacity-40"
+                >
+                  <ArrowLeftRight size={16} /> {t('import_move_wallet')}
                 </button>
               )}
             </div>
@@ -1013,7 +1053,7 @@ export default function ImportTransactionsPage({ onClose }) {
               <button
                 key={a.id}
                 type="button"
-                onClick={() => changeWallet(a.id)}
+                onClick={() => (step === 3 ? moveToWallet(a.id) : changeWallet(a.id))}
                 className={cn(card, 'w-full p-4 flex items-center gap-3 text-left', active && 'border-foreground/40')}
               >
                 <div className={cn(tile, 'h-11 w-11 rounded-2xl text-[14px] font-bold')}>{walletInitials(a.name)}</div>
