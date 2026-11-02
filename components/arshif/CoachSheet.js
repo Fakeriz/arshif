@@ -8,6 +8,7 @@ import CoachMarkdown from './CoachMarkdown'
 import { safeConvert } from '@/lib/rates'
 import { signedAccountBalance } from '@/lib/ledger'
 import { cn } from '@/lib/utils'
+import { encodeCoachContext } from '@/lib/coach-context'
 
 const GREETINGS = {
   id: 'Halo! Saya AI Financial Coach Arshif kamu. Tanya apa saja soal keuanganmu - aku sudah membaca saldo, anggaran, dan targetmu.',
@@ -230,7 +231,13 @@ export default function CoachSheet({ open, onClose }) {
       const res = await fetch('/api/ai/coach', {
         method: 'POST',
         headers,
-        body: JSON.stringify({ messages: next, language: lang, context }),
+        body: JSON.stringify({
+          messages: next,
+          language: lang,
+          // TOON hemat token; server masih menerima JSON fallback.
+          contextToon: encodeCoachContext(context),
+          context,
+        }),
       })
       const data = await res.json()
       if (!res.ok) {

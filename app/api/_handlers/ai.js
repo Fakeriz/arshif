@@ -5,6 +5,7 @@ import { parseMoneyOrZero } from '@/lib/money-parse'
 import { sanitizeCurrency, sanitizeMerchant, stripActionPrefix } from '@/lib/ai-parse-sanitize'
 import { validateReceiptTotals } from '@/lib/split-bill'
 import { callGemini, extractJson } from './gemini'
+import { encodeCoachContext } from '@/lib/coach-context'
 import { json, err, MAX_AUDIO_BYTES, MAX_IMAGE_BYTES, MAX_PDF_BYTES, AUDIO_MIME_TYPES, IMAGE_MIME_TYPES, base64ByteLength } from './http'
 
 // Voice-to-text transcription.
@@ -324,7 +325,17 @@ async function handleCoach(request, quota = null) {
     const rawMessages = Array.isArray(body?.messages) ? body.messages.filter((m) => m?.role && m?.content) : []
     if (!rawMessages.length) return err('messages are required', 400)
 
-    const ctx = body?.context || {}
+    // Client mengirim contextToon (hemat token); server tetap menerima JSON.
+    let ctx = body?.context || {}
+    let contextText = null
+    if (typeof body?.contextToon === 'string' && body.contextToon.trim()) {
+      contextText = body.contextToon
+    } else if (ctx && Object.keys(ctx).length) {
+      contextText = encodeCoachContext(ctx) || JSON.stringify(ctx)
+    } else {
+      contextText = JSON.stringify(ctx)
+    }
+    if (!ctx || typeof ctx !== 'object' || Array.isArray(ctx)) ctx = {}
     const homeCurrency = ctx?.homeCurrency || 'IDR'
 
     // Bahasa jawaban mengikuti bahasa pesan terakhir user (fallback: bahasa UI).
@@ -341,7 +352,7 @@ CARA MENJAWAB:
 - Akhiri dengan 1-2 tindakan konkret yang bisa dilakukan bulan ini.
 - Jangan mengarang data yang tidak ada di konteks.
 
-STRUKTUR KONTEKS (JSON, mata uang ${homeCurrency}):
+STRUKTUR KONTEKS (mata uang ${homeCurrency}):
 - monthIncome/monthSpending: total pemasukan & pengeluaran bulan ini
 - savingsRate: persentase tabungan bulan ini (bisa null)
 - totalBalance: total saldo semua akun
@@ -353,8 +364,9 @@ STRUKTUR KONTEKS (JSON, mata uang ${homeCurrency}):
 - subscriptions: {count, monthlyTotal} biaya langganan per bulan
 - goals: target tabungan {name, saved, target, deadline, monthsLeft, requiredMonthly, status: on_track|behind|overdue|completed|no_deadline}
 
-Konteks keuangan user:
-${JSON.stringify(ctx).slice(0, 4000)}`
+Konteks keuangan user (format TOON: baris berawalan dua spasi adalah isi data,
+nama kolom ada di header, "null" berarti kosong):
+${contextText.slice(0, 4000)}`
 
     const contents = rawMessages.slice(-10).map((m) => ({
       role: m.role === 'assistant' || m.role === 'model' ? 'model' : 'user',
