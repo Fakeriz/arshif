@@ -23,18 +23,6 @@ const CYCLES = [
 ]
 // Labels localized via t() at render time: cycle_weekly, cycle_monthly, cycle_3months, cycle_6months, cycle_yearly
 
-function formatDisplayDate(dateStr) {
-  if (!dateStr) return t('sub_select_date') || 'Select date'
-  try {
-    const parts = dateStr.split('-').map(Number)
-    if (parts.length === 3 && parts[0] && parts[1] && parts[2]) {
-      const d = new Date(parts[0], parts[1] - 1, parts[2])
-      return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
-    }
-  } catch {}
-  return dateStr
-}
-
 function getTodayIsoDate() {
   const today = new Date()
   const y = today.getFullYear()
@@ -214,7 +202,7 @@ export default function SubscriptionSheet({
         open={open}
         onClose={onClose}
         zIndex={70}
-        title={isEditing ? 'Edit Subscription' : 'New Subscription'}
+        title={isEditing ? t('edit_subscription') || 'Edit Subscription' : t('new_subscription')}
         right={
           <button
             type="button"
@@ -237,8 +225,8 @@ export default function SubscriptionSheet({
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder={t('sub_name_placeholder')}
-                    className="w-full bg-muted/40 rounded-2xl p-4 text-base font-medium text-foreground outline-none border border-border/20 focus:border-foreground/30 transition-colors"
-                  />
+              className="w-full bg-muted/40 rounded-2xl p-4 text-base font-medium text-foreground outline-none border border-border/20 focus:border-foreground/30 transition-colors"
+            />
                 </div>
 
                 {/* Field 2 - Amount & Mata Uang */}
@@ -331,19 +319,19 @@ export default function SubscriptionSheet({
                   <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider block">
                     {t('billing_cycle')}
                   </span>
-                  <div className="flex bg-muted/40 p-1 rounded-2xl border border-border/20 overflow-x-auto no-scrollbar gap-1">
+                  <div className="flex bg-muted/70 dark:bg-[#121214] p-1 rounded-2xl border border-border/50 overflow-x-auto no-scrollbar gap-1">
                     {CYCLES.map((opt) => {
                       const active = cycle === opt.id
                       return (
                         <button
                           key={opt.id}
                           type="button"
-                          onClick={() => setCycle(opt.id)}
+                          onClick={() => { triggerHaptic('light'); setCycle(opt.id) }}
                           className={cn(
-                            'flex-1 min-w-[70px] text-center whitespace-nowrap py-2 px-3 text-xs transition-all cursor-pointer select-none',
+                            'flex-1 min-w-[70px] text-center whitespace-nowrap py-2 px-3 text-xs rounded-xl transition-all cursor-pointer select-none',
                             active
-                              ? 'bg-card text-foreground shadow-sm font-semibold rounded-xl'
-                              : 'text-muted-foreground hover:text-foreground font-medium'
+                              ? 'bg-[#0c0c0e] text-white dark:bg-white dark:text-[#0c0c0e] shadow-xs font-bold'
+                              : 'text-muted-foreground hover:text-foreground font-semibold'
                           )}
                         >
                           {opt.i18n ? t(opt.i18n) || opt.label : opt.label}
@@ -401,9 +389,9 @@ export default function SubscriptionSheet({
                           type="button"
                           onClick={() => setAccountId(a.id)}
                           className={cn(
-                            'shrink-0 text-xs px-4 py-2 rounded-full transition-all cursor-pointer whitespace-nowrap',
+                            'shrink-0 text-xs px-4 py-2 rounded-xl transition-all cursor-pointer whitespace-nowrap',
                             active
-                              ? 'bg-foreground text-background font-semibold shadow-xs'
+                              ? 'bg-foreground text-background font-bold shadow-xs'
                               : 'bg-muted/40 text-muted-foreground hover:text-foreground font-medium border border-border/30'
                           )}
                         >
@@ -415,9 +403,9 @@ export default function SubscriptionSheet({
                       type="button"
                       onClick={() => setAccountId(null)}
                       className={cn(
-                        'shrink-0 text-xs px-4 py-2 rounded-full transition-all cursor-pointer whitespace-nowrap',
+                        'shrink-0 text-xs px-4 py-2 rounded-xl transition-all cursor-pointer whitespace-nowrap',
                         !accountId
-                          ? 'bg-foreground text-background font-semibold shadow-xs'
+                          ? 'bg-foreground text-background font-bold shadow-xs'
                           : 'bg-muted/40 text-muted-foreground hover:text-foreground font-medium border border-border/30'
                       )}
                     >
@@ -441,9 +429,9 @@ export default function SubscriptionSheet({
                           type="button"
                           onClick={() => setPaymentMethod(m.id)}
                           className={cn(
-                            'shrink-0 text-xs px-4 py-2 rounded-full flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap',
+                            'shrink-0 text-xs px-4 py-2 rounded-xl flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap',
                             active
-                              ? 'bg-foreground text-background font-semibold shadow-xs'
+                              ? 'bg-foreground text-background font-bold shadow-xs'
                               : 'bg-muted/40 text-muted-foreground hover:text-foreground font-medium border border-border/30'
                           )}
                         >
@@ -520,7 +508,7 @@ export default function SubscriptionSheet({
                     aria-busy={saving}
                     className="w-full bg-foreground text-background font-bold py-4 rounded-2xl shadow-lg hover:opacity-95 active:scale-[0.99] transition-all text-sm cursor-pointer disabled:opacity-50 flex items-center justify-center min-h-[52px]"
                   >
-                    {saving ? <DotsButtonLoader /> : 'Save changes'}
+                    {saving ? <DotsButtonLoader /> : t('save_changes')}
                   </button>
 
                   {isEditing && (

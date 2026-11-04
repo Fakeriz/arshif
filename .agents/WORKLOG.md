@@ -95,3 +95,15 @@ Temuan:
 4. UI: peserta tanpa nama di mode equally/uneven tampil tanda penghubung (–) bukan 0, karena 0 menyesatkan (mereka tidak dihitung).
 next build sukses, npm test 115 pass.
 Commit: 34297b9
+
+## [2026-11-04 15:10] Hermes (crew solo) — audit + fix langganan page (SubscriptionSheet)
+Status: done
+Baca: components/arshif/SubscriptionSheet.js (seluruh 568 baris), components/arshif/ui.js (Segmented + Pill), lib/i18n.js (4 blok), lib/store/index.js (createSubscription/updateSubscription)
+Temuan:
+1. Segmented billing cycle tidak konsisten: wrapper `bg-muted/40 border-border/20`, active `bg-card` (putih) + `shadow-sm` + `font-semibold`. Segmented global pakai `bg-muted/70 border-border/50`, active `bg-[#0c0c0e] text-white` + `shadow-xs` + `font-bold`. Fix: disamakan penuh dengan konsep global + tambah triggerHaptic.
+2. Account pills & payment method pills pakai `rounded-full` (pill bulat), beda dari kekangan R-11 (radius seragam = slop). Fix: `rounded-xl` konsisten dengan Pill/Segmented global, font-semibold -> font-bold saat aktif.
+3. `formatDisplayDate()` dead code yang juga BUG: memanggil `t()` di module scope (tidak ada di scope) -> kalau suatu saat dipakai akan ReferenceError. Tidak pernah dipanggil di JSX. Fix: dihapus.
+4. Title sheet hardcode EN `'Edit Subscription'` / `'New Subscription'`. Fix: `t('edit_subscription')` + `t('new_subscription')`, key `edit_subscription` baru ditambah ke 4 blok i18n (en/id/ms/tr).
+5. Tombol simpan hardcode `'Save changes'`. Fix: `t('save_changes')` (key sudah ada 4 bahasa).
+6. Indentasi JS rusak di Field 1 (Name): `className` dan `/>` menjorok 19/18 spasi, tidak konsisten dengan blok lain. Fix: dirapikan.
+Verifikasi: npm test 216 pass, next build sukses, git diff --check bersih.
