@@ -318,6 +318,11 @@ create table if not exists public.transactions (
   tax_deductible boolean default false,  -- Apakah dapat dipotong pajak
   is_tax_deductible boolean default false,-- Alias tax_deductible
   fee numeric default 0,                 -- Biaya admin transaksi
+  fee_of uuid references public.transactions(id) on delete cascade,
+                                         -- Baris fee hasil pecahan transfer:
+                                         -- menunjuk baris transfer induknya.
+                                         -- on delete cascade: fee ikut terhapus
+                                         -- bersama transfernya (migrasi 009).
 
   date timestamptz default now(),
   transaction_date timestamptz default now(),

@@ -41,6 +41,7 @@ dulu membuat dua test gagal hanya di server.
 | 7 | `ImportTransactionsPage` | delta saldo dihitung setelah baris dibuat | `convert()` melempar = transaksi ada tapi delta tidak masuk `net` |
 | 8 | `NewAccountSheet` | konversi saldo awal setelah `createAccount` | akun terbuat tanpa jejak ledger bila kurs gagal |
 | 9 | `lib/store/supabase-store.js` | `findTransactionsInRange` tanpa loop halaman | dedup impor bocor pada akun > 2000 baris |
+| 10 | `app/page.js` + `lib/ledger.js` | fee transfer tanpa tautan ke induk | hapus transfer meninggalkan baris fee yatim; edit fee membuat baris kedua atau menghapus fee diam-diam |
 
 ## Yang diverifikasi benar (tidak diubah)
 
@@ -67,12 +68,15 @@ Test lain yang menutup jalur uang: `tx-save`, `rates-keep`, `edit-revert-order`,
 
 ## Batasan yang diketahui
 
-**Fee transfer tidak punya tautan ke induknya.** Fee disimpan sebagai baris
-`expense` terpisah (supaya terlihat di ledger), tetapi tabel `transactions` tidak
-punya kolom yang menunjuk balik ke transfer induknya. Akibatnya menghapus transfer
-berbiaya meninggalkan baris fee yatim, dan mengubah fee saat edit tidak
-tersinkron dengan baris fee lama. Perbaikan yang benar butuh kolom
-`fee_of uuid references transactions(id)`, bukan pencocokan pola di kode.
+**Baris fee lama tidak punya `fee_of`.** Migrasi 009 menambah kolom
+`transactions.fee_of` (uuid → `transactions.id`, `on delete cascade`), dan baris
+fee baru selalu diisi kolom itu. Baris yang dibuat sebelum migrasi tetap
+`null`, sehingga hapus transfer lama masih bisa meninggalkan fee yatim untuk
+data historis. Tautan tidak boleh ditebak dari catatan atau nominal (note
+bisa diedit user, nominal bisa kebetulan sama), jadi pembersihannya harus
+manual: cocokkan baris `expense` berkategori `transfer` yang catatannya
+berakhiran ` fee` dengan transfer tanpa baris fee, lalu periksa satu per satu.
+Aplikasi tidak melakukan pencocokan pola itu secara otomatis.
 
 ## Belum diaudit
 

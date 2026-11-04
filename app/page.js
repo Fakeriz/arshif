@@ -8,7 +8,7 @@ import { createStore, DEFAULT_PROFILE } from '@/lib/store'
 import { translate, LOCALE_MAP } from '@/lib/i18n'
 import { formatMoney } from '@/lib/currencies'
 import { convertOrKeep, FALLBACK_RATES } from '@/lib/rates'
-import { applyTransactionReplacement, applyTxToBalances, buildTransferWithFeeTransactions, computeBalanceDelta, fileToDataUrl, signedAccountBalance } from '@/lib/ledger'
+import { buildTransferWithFeeTransactions, computeBalanceDelta, createTransferWithFee, deleteTransferWithFee, feeRowsFor, fileToDataUrl, replaceTransferWithFee, signedAccountBalance, txWithChildFee } from '@/lib/ledger'
 import { initSyncListener } from '@/lib/sync'
 import { AppContext } from '@/components/arshif/context'
 
@@ -308,17 +308,24 @@ export default function App() {
 
     // Optimistic update dulu, revert bila persist gagal
     let nextAccounts = accounts
+    const oldFeeRow = editId ? (feeRowsFor(editId, transactions)[0] || null) : null
+    // Fee punya baris sendiri: induk disimpan dengan fee 0 supaya saldo tidak
+    // menghitung fee dua kali.
+    const parentTxData = { ...txData, fee: 0 }
     if (editId) {
       const old = transactions.find((x) => x.id === editId)
       if (old) {
         nextAccounts = computeBalanceDelta(nextAccounts, old, -1, rates)
       }
+      if (oldFeeRow) nextAccounts = computeBalanceDelta(nextAccounts, oldFeeRow, -1, rates)
     }
-    nextAccounts = computeBalanceDelta(nextAccounts, txData, 1, rates)
+    nextAccounts = computeBalanceDelta(nextAccounts, parentTxData, 1, rates)
+    const [, optimisticFee] = buildTransferWithFeeTransactions({ ...parentTxData, id: editId || undefined })
+    if (optimisticFee) nextAccounts = computeBalanceDelta(nextAccounts, optimisticFee, 1, rates)
     setAccounts(nextAccounts)
 
     const tempId = editId || txData.id || `tx_${Date.now()}`
-    const optimisticTx = { ...txData, id: tempId, created_at: txData.created_at || new Date().toISOString() }
+    const optimisticTx = { ...parentTxData, id: tempId, created_at: txData.created_at || new Date().toISOString() }
 
     if (editId) {
       setTransactions((prev) => prev.map((t) => (t.id === editId ? { ...t, ...optimisticTx } : t)))
@@ -330,45 +337,27 @@ export default function App() {
       let saved
       if (editId) {
         const old = prevTxList.find((x) => x.id === editId)
-        // Update the transaction only after the balance replacement succeeds.
-        // If the transaction write fails, the helper already restored balances.
-        const replacedAccounts = await applyTransactionReplacement(store, prevAccList, { oldTx: old, newTx: txData, rates })
+        // Induk + baris fee disinkronkan dalam satu helper: fee yang berubah
+        // di-update di baris yang sama, fee yang dihapus ikut menghapus baris
+        // anaknya. Helper sudah mengembalikan saldo ke snapshot lama bila gagal.
         try {
-          saved = await store.updateTransaction(editId, txData)
+          await replaceTransferWithFee(store, prevAccList, {
+            oldTx: old,
+            oldFee: oldFeeRow,
+            newData: { ...parentTxData, id: editId },
+            rates,
+          })
+          saved = { ...parentTxData, id: editId }
         } catch (transactionError) {
-          try {
-            await applyTransactionReplacement(store, replacedAccounts, { oldTx: txData, newTx: old, rates })
-          } catch {}
           try { await store.updateTransaction(editId, old) } catch {}
           throw transactionError
         }
       } else {
         // Persist first, then update balances; a failed balance write removes the transaction.
-        // Transfer fees are split into a separate expense so they stay visible in the ledger.
-        const [transferTx, feeTx] = buildTransferWithFeeTransactions(txData)
-        saved = await store.createTransaction(transferTx)
-        // Snapshot akun di-thread berurutan: applyTxToBalances membaca saldo dari
-        // array yang diterima, jadi memakai prevAccList untuk fee setelah transfer
-        // akan menimpa debit transfer (saldo balik sebesar nominal transfer).
-        let workingAccounts = prevAccList
-        try {
-          // Pakai baris hasil insert (punya id) supaya jalur RPC atomik dan
-          // penanda idempotensinya aktif sejak create.
-          workingAccounts = await applyTxToBalances(store, prevAccList, saved?.id ? saved : transferTx, 1, rates)
-        } catch (balanceError) {
-          if (saved?.id) {
-            try { await store.deleteTransaction(saved.id) } catch {}
-          }
-          throw balanceError
-        }
-        if (feeTx) {
-          try {
-            const savedFee = await store.createTransaction(feeTx)
-            workingAccounts = await applyTxToBalances(store, workingAccounts, savedFee?.id ? savedFee : feeTx, 1, rates)
-          } catch (feeError) {
-            console.warn('Transfer fee transaction failed:', feeError?.message || feeError)
-          }
-        }
+        // Transfer fees are split into a separate expense so they stay visible in the ledger,
+        // dan baris fee itu menunjuk induknya lewat fee_of.
+        const result = await createTransferWithFee(store, prevAccList, txData, rates)
+        saved = result.saved
         // If created has real ID, swap it in transactions
         if (saved?.id && saved.id !== tempId) {
           setTransactions((prev) => prev.map((t) => (t.id === tempId ? { ...t, id: saved.id } : t)))
@@ -390,25 +379,26 @@ export default function App() {
     const txId = tx.id
     const prevTxList = transactions
     const prevAccList = accounts
+    const childFees = feeRowsFor(txId, transactions)
 
     // Optimistic update dulu, revert bila persist gagal
-    setTransactions((prev) => prev.filter((item) => item.id !== txId))
-    const deltaAccounts = computeBalanceDelta(accounts, tx, -1, rates)
+    const removedIds = new Set([txId, ...childFees.map((f) => f.id)])
+    setTransactions((prev) => prev.filter((item) => !removedIds.has(item.id)))
+    let deltaAccounts = accounts
+    for (const feeRow of childFees) deltaAccounts = computeBalanceDelta(deltaAccounts, feeRow, -1, rates)
+    deltaAccounts = computeBalanceDelta(deltaAccounts, tx, -1, rates)
     if (deltaAccounts) {
       setAccounts(deltaAccounts)
     }
 
     try {
-      // Work on a defensive snapshot. applyTxToBalances never mutates the
-      // caller-owned array, so React rollback remains a true pre-delete state.
-      const persistedAccounts = prevAccList.map((account) => ({ ...account }))
-      await applyTxToBalances(store, persistedAccounts, tx, -1, rates)
-      try {
-        await store.deleteTransaction(txId)
-      } catch (deleteError) {
-        try { await applyTxToBalances(store, prevAccList.map((account) => ({ ...account })), tx, 1, rates) } catch {}
-        throw deleteError
-      }
+      // Helper bekerja pada snapshot defensif dan mengembalikan saldo sendiri
+      // bila salah satu tulisan gagal, jadi rollback React tetap akurat.
+      await deleteTransferWithFee(store, prevAccList.map((account) => ({ ...account })), {
+        tx,
+        fees: childFees,
+        rates,
+      })
       refresh()
       return true
     } catch (err) {
@@ -433,8 +423,11 @@ export default function App() {
 
   const editTx = useCallback((tx) => {
     close('txDetail')
-    setTimeout(() => open('addTx', { ...tx, editId: tx.id }), 150)
-  }, [close, open])
+    // Fee transfer tinggal di baris anak (fee_of), jadi tempelkan nominalnya
+    // ke induk sebelum sheet dibuka: tanpa ini form edit selalu melihat fee 0.
+    const editable = txWithChildFee(tx, transactions)
+    setTimeout(() => open('addTx', { ...editable, editId: tx.id }), 150)
+  }, [close, open, transactions])
 
   const handleQuickAction = useCallback((action) => {
     close('quickActions')

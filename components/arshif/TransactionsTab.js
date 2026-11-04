@@ -6,7 +6,7 @@ import { toast } from 'sonner'
 import { useApp } from './context'
 import { Segmented, Card, EmptyState, ErrorBoundary } from './ui'
 import SwipeTransactionRow from './SwipeTransactionRow'
-import { applyTxToBalances } from '@/lib/ledger'
+import { applyTxToBalances, txWithChildFee } from '@/lib/ledger'
 
 const LOCALE_BY_LANG = { en: 'en-GB', tr: 'tr-TR', ms: 'ms-MY', id: 'id-ID' }
 
@@ -42,7 +42,8 @@ function TransactionsContent() {
   const [deletingTx, setDeletingTx] = useState(null)
 
   const handleEdit = (tx) => {
-    open?.('addTx', { ...tx, editId: tx?.id })
+    // Fee transfer disimpan di baris anak (fee_of); bawa nominalnya ke form.
+    open?.('addTx', { ...txWithChildFee(tx, transactions), editId: tx?.id })
   }
 
   const handleDelete = (tx) => {
