@@ -204,3 +204,12 @@ test('app/page.js memakai helper fee, bukan urutan tulis tangan', async () => {
   const store = await readFile(new URL('../lib/store/supabase-store.js', import.meta.url), 'utf8')
   assert.match(store, /fee_of: t\.fee_of/, 'store harus mengirim kolom fee_of agar tautan induk tersimpan')
 })
+
+// Regression test: updateTransaction harus mengizinkan field fee_of supaya
+// replaceTransferWithFee bisa mempertahankan tautan baris fee ke transfer induk
+// saat edit transfer. Tanpa ini, kolom fee_of akan di-drop diam-diam.
+test('updateTransaction mengizinkan fee_of di payload', async () => {
+  const { readFile } = await import('node:fs/promises')
+  const allowedFromCode = await readFile(new URL('../lib/store/supabase-store.js', import.meta.url), 'utf8')
+  assert.match(allowedFromCode, /'fee_of'/, 'fee_of harus ada di daftar allowed updateTransaction')
+})
