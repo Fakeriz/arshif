@@ -12,6 +12,7 @@ const home: Messages['home'] = {
   sampleData: 'Data contoh',
   accountLimitA11y: 'Had 4 akaun dicapai. Buka Premium untuk menambah akaun',
   accountLimitReason: 'Pakej Free dihadkan kepada 4 akaun dan dompet. Premium tanpa had.',
+  cardPosition: 'Kad {n} daripada {total}',
   accountLimitTitle: 'Had 4 akaun dicapai',
   accountLimitSub: 'Premium untuk menambah akaun',
   recapTitle: 'Rekap mingguan anda sudah sedia',

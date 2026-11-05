@@ -54,6 +54,20 @@ await step('Home: kartu batas 4 akun membuka sheet Premium', async () => {
   const p = await open('/'); await p.getByRole('button', { name: /Batas 4 akun tercapai/ }).click(); await expectText(p, 'Buka batas dengan Premium');
   await btn(p, 'Lihat paket Premium').click(); await expectText(p, 'Pembelian belum aktif');
 });
+await step('Home: geser kartu akun -> snap ke kartu berikut, titik pindah, akun aktif jadi default Catat manual', async () => {
+  const p = await open('/');
+  await p.getByLabel('Kartu 1 dari 5').waitFor();
+  const card = await p.getByRole('button', { name: /^BCA Tabungan/ }).first().boundingBox();
+  await p.evaluate((y) => {
+    const list = [...document.querySelectorAll('div')].find((d) => /auto|scroll/.test(getComputedStyle(d).overflowX) && d.scrollWidth > d.clientWidth && d.getBoundingClientRect().top <= y && d.getBoundingClientRect().bottom >= y);
+    list.scrollBy({ left: list.clientWidth, behavior: 'instant' });
+  }, card.y + card.height / 2);
+  await p.getByLabel('Kartu 2 dari 5').waitFor({ timeout: 3000 });
+  await btn(p, 'Catat transaksi').click(); await p.getByText('Catat Manual').first().click();
+  const chip = p.getByRole('checkbox', { name: /^Jago Kantong Utama/ }).first(); await chip.waitFor();
+  const checked = await chip.getAttribute('aria-checked');
+  if (checked !== 'true') throw new Error('akun default bukan Jago: ' + checked);
+});
 await step('Transaksi: cari "kopi" -> 2 hasil, hapus filter pulih', async () => {
   const p = await open('/transaksi'); await p.getByLabel('Cari transaksi').fill('kopi'); await p.waitForTimeout(300);
   await expectText(p, '2 dari 28 transaksi');

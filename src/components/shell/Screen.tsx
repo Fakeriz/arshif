@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import { createContext, useContext, useState, type ReactNode } from 'react';
 import { RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -6,8 +6,23 @@ import { AmbientGlow } from '@/components/ui';
 import { useTheme } from '@/theme/ThemeProvider';
 import { layout, space } from '@/theme/tokens';
 
-/** Ruang bawah agar konten tidak tertutup pill nav mengambang. */
+/** Ruang bawah minimum agar konten tidak tertutup pill nav mengambang (sebelum pill terukur). */
 export const NAV_SPACE = 112;
+
+/**
+ * Tinggi pill sebenarnya bisa lebih besar dari perkiraan (mis. ukuran font sistem dibesarkan di MIUI),
+ * jadi pill melaporkan ruang yang ia pakai dan layar tab memakai nilai itu sebagai padding bawah.
+ */
+const NavFootprintContext = createContext<{ footprint: number; setFootprint: (px: number) => void }>({ footprint: 0, setFootprint: () => undefined });
+
+export function NavFootprintProvider({ children }: { children: ReactNode }) {
+  const [footprint, setFootprint] = useState(0);
+  return <NavFootprintContext.Provider value={{ footprint, setFootprint }}>{children}</NavFootprintContext.Provider>;
+}
+
+export function useNavFootprint() {
+  return useContext(NavFootprintContext);
+}
 
 export type ScreenProps = {
   children: ReactNode;
@@ -22,6 +37,8 @@ export type ScreenProps = {
 export function Screen({ children, tabs, glow = true, onRefresh, refreshing }: ScreenProps) {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
+  const { footprint } = useNavFootprint();
+  const tabSpace = Math.max(NAV_SPACE + insets.bottom, footprint + space.xl);
   return (
     <View style={[styles.root, { backgroundColor: colors.bg }]}>
       {glow && <AmbientGlow />}
@@ -31,7 +48,7 @@ export function Screen({ children, tabs, glow = true, onRefresh, refreshing }: S
         refreshControl={onRefresh ? <RefreshControl refreshing={!!refreshing} onRefresh={onRefresh} tintColor={colors.accentText} /> : undefined}
         contentContainerStyle={[
           styles.content,
-          { paddingTop: insets.top + space.md, paddingBottom: (tabs ? NAV_SPACE : space.x4) + insets.bottom },
+          { paddingTop: insets.top + space.md, paddingBottom: tabs ? tabSpace : space.x4 + insets.bottom },
         ]}
       >
         <View style={styles.column}>{children}</View>

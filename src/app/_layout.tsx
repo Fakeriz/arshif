@@ -11,9 +11,10 @@ import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import * as SystemUI from 'expo-system-ui';
 import { useEffect } from 'react';
+import { StyleSheet } from 'react-native';
 
 import { PaywallProvider } from '@/components/shell/Paywall';
-import { ToastProvider } from '@/components/ui';
+import { BlurTargetArea, BlurTargetScope, ToastProvider } from '@/components/ui';
 import { I18nProvider } from '@/i18n';
 import { AppStoreProvider } from '@/state/AppStore';
 import { ThemeProvider, useTheme } from '@/theme/ThemeProvider';
@@ -54,12 +55,19 @@ function ThemedStack() {
 
   return (
     <AppStoreProvider>
-      <ToastProvider>
-        <PaywallProvider>
-          <StatusBar style={scheme === 'dark' ? 'light' : 'dark'} />
-          <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.bg }, animation: 'slide_from_right' }} />
-        </PaywallProvider>
-      </ToastProvider>
+      {/* Android: konten Stack = sumber blur untuk toast (di luar area) serta sheet/dialog (Modal). */}
+      <BlurTargetScope>
+        <ToastProvider>
+          <PaywallProvider>
+            <StatusBar style={scheme === 'dark' ? 'light' : 'dark'} />
+            <BlurTargetArea style={styles.fill}>
+              <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.bg }, animation: 'slide_from_right' }} />
+            </BlurTargetArea>
+          </PaywallProvider>
+        </ToastProvider>
+      </BlurTargetScope>
     </AppStoreProvider>
   );
 }
+
+const styles = StyleSheet.create({ fill: { flex: 1 } });

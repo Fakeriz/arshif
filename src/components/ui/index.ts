@@ -18,7 +18,7 @@ export { Dialog } from './Dialog';
 export { DonutChart, type DonutSegment } from './DonutChart';
 export { EmptyState } from './EmptyState';
 export { HealthGauge } from './HealthGauge';
-export { BlurTargetProvider, GlassView, useGlassEnabled } from './GlassView';
+export { BlurTarget, BlurTargetArea, BlurTargetProvider, BlurTargetScope, GlassView, ModalGlassBoundary, useGlassEnabled } from './GlassView';
 export { GlassTabBar, type TabBarItem } from './GlassTabBar';
 export { Icon } from './Icon';
 export { Input } from './Input';

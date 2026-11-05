@@ -6,6 +6,7 @@ import { GlassTabBar } from '@/components/ui';
 import { useT } from '@/i18n';
 
 import { CaptureSheet } from './CaptureSheet';
+import { useNavFootprint } from './Screen';
 
 type TabKey = 'home' | 'transaksi' | 'anggaran' | 'coach';
 
@@ -28,6 +29,7 @@ export function AppTabBar() {
   const pathname = usePathname();
   const [capture, setCapture] = useState(false);
   const t = useT();
+  const { setFootprint } = useNavFootprint();
 
   return (
     <>
@@ -35,6 +37,7 @@ export function AppTabBar() {
         value={activeTab(pathname)}
         onChange={(key) => router.navigate(ROUTES[key])}
         onPressAdd={() => setCapture(true)}
+        onFootprint={setFootprint}
         items={[
           { key: 'home', label: t('shell.tab.home'), icon: House },
           { key: 'transaksi', label: t('shell.tab.transactions'), icon: ListOrdered },

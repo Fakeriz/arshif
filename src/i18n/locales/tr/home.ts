@@ -12,6 +12,7 @@ const home: Messages['home'] = {
   sampleData: 'Örnek veri',
   accountLimitA11y: '4 hesap sınırına ulaşıldı. Hesap eklemek için Premium’u aç',
   accountLimitReason: 'Free paket 4 hesap ve cüzdanla sınırlı. Premium’da sınır yok.',
+  cardPosition: 'Kart {n} / {total}',
   accountLimitTitle: '4 hesap sınırına ulaşıldı',
   accountLimitSub: 'Hesap eklemek için Premium',
   recapTitle: 'Haftalık özetin hazır',

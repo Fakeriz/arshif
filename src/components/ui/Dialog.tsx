@@ -10,7 +10,7 @@ import { layout, motion, radius, space } from '@/theme/tokens';
 
 import { AppText } from './AppText';
 import { Button } from './Button';
-import { GlassView } from './GlassView';
+import { GlassView, ModalGlassBoundary } from './GlassView';
 import { Icon } from './Icon';
 
 export type DialogTone = 'info' | 'warning' | 'danger';
@@ -66,6 +66,7 @@ export function Dialog({
 
   return (
     <Modal transparent visible={mounted} onRequestClose={onCancel} animationType="none" statusBarTranslucent>
+      <ModalGlassBoundary>
       <Animated.View style={[StyleSheet.absoluteFill, { backgroundColor: colors.overlay }, backdrop]}>
         <Pressable style={StyleSheet.absoluteFill} onPress={onCancel} accessibilityRole="button" accessibilityLabel={tr('common.close')} />
       </Animated.View>
@@ -101,6 +102,7 @@ export function Dialog({
           </GlassView>
         </Animated.View>
       </View>
+      </ModalGlassBoundary>
     </Modal>
   );
 }

@@ -8,7 +8,7 @@ import { sampleScan } from '@/data/seed';
 import type { ReceiptItem, Transaction } from '@/data/types';
 import { formatMoney } from '@/lib/money';
 import { isLowConfidence, itemsTotal, subtotalMismatch } from '@/lib/receipt';
-import type { AccountWithBalance } from '@/state/AppStore';
+import { useActiveAccountId, type AccountWithBalance } from '@/state/AppStore';
 import { useTheme } from '@/theme/ThemeProvider';
 import { radius, space } from '@/theme/tokens';
 
@@ -26,7 +26,8 @@ export function ScanReview({ accounts, onSave, onRetake }: { accounts: AccountWi
   const [date, setDate] = useState(s.date.value);
   const [total, setTotal] = useState<number | null>(s.total.value);
   const [category, setCategory] = useState<string | null>(s.category.value);
-  const [accountId, setAccountId] = useState<string | null>(accounts[0]?.id ?? null);
+  const activeId = useActiveAccountId();
+  const [accountId, setAccountId] = useState<string | null>(activeId ?? accounts[0]?.id ?? null);
   const [items, setItems] = useState<ReceiptItem[]>(s.items);
   const [tried, setTried] = useState(false);
 

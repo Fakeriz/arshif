@@ -1,5 +1,5 @@
-import { BlurView } from 'expo-blur';
-import { createContext, useContext, useEffect, useState, type ComponentRef, type ReactNode, type RefObject } from 'react';
+import { BlurTargetView, BlurView } from 'expo-blur';
+import { createContext, useContext, useEffect, useRef, useState, type ComponentRef, type ReactNode, type RefObject } from 'react';
 import { AccessibilityInfo, Platform, StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 import { useReducedMotion } from 'react-native-reanimated';
 
@@ -14,9 +14,55 @@ import { layout, radius as radii } from '@/theme/tokens';
  */
 export type GlassLevel = 'panel' | 'floating';
 
-/** Android: blur butuh BlurTargetView (konten di belakang kaca). Disediakan layar di Fase 1. */
-const BlurTargetContext = createContext<RefObject<ComponentRef<typeof View> | null> | null>(null);
+/**
+ * Android: blur (dimezis, API 31+) butuh BlurTargetView = konten di belakang kaca.
+ * Hanya lapisan `floating` (nav pill, sheet, dialog, toast) yang memakai target, dan hanya bila elemen
+ * itu TIDAK berada di dalam target yang sama (sibling atau Modal). Panel konten selalu di dalam target,
+ * jadi di Android panel memakai latar translusen solid.
+ */
+type TargetRef = RefObject<ComponentRef<typeof View> | null>;
+/** Target terdekat yang boleh di-blur. */
+const BlurTargetContext = createContext<TargetRef | null>(null);
+/** Target yang secara native MEMUAT elemen ini (jangan di-blur: umpan balik ke diri sendiri). */
+const InsideTargetContext = createContext<TargetRef | null>(null);
 export const BlurTargetProvider = BlurTargetContext.Provider;
+
+const ANDROID_BLUR_MIN_API = 31;
+const androidBlurSupported = Platform.OS === 'android' && Number(Platform.Version) >= ANDROID_BLUR_MIN_API;
+
+/** Membuat ref target. Pasang di atas elemen mengambang yang ada di luar area (mis. ToastProvider). */
+export function BlurTargetScope({ children }: { children: ReactNode }) {
+  const ref = useRef<ComponentRef<typeof View>>(null);
+  return <BlurTargetProvider value={ref}>{children}</BlurTargetProvider>;
+}
+
+/** Area konten yang di-blur oleh kaca mengambang di luarnya. */
+export function BlurTargetArea({ children, style }: { children: ReactNode; style?: StyleProp<ViewStyle> }) {
+  const ref = useContext(BlurTargetContext);
+  const Target = androidBlurSupported ? BlurTargetView : View;
+  return (
+    <InsideTargetContext.Provider value={ref}>
+      <Target ref={ref ?? undefined} style={style}>
+        {children}
+      </Target>
+    </InsideTargetContext.Provider>
+  );
+}
+
+/** Scope + area sekaligus; `floating` dirender di luar area (mis. nav pill). */
+export function BlurTarget({ children, floating, style }: { children: ReactNode; floating?: ReactNode; style?: StyleProp<ViewStyle> }) {
+  return (
+    <BlurTargetScope>
+      <BlurTargetArea style={style}>{children}</BlurTargetArea>
+      {floating}
+    </BlurTargetScope>
+  );
+}
+
+/** Isi Modal berada di jendela native terpisah, jadi tidak lagi "di dalam" target mana pun. */
+export function ModalGlassBoundary({ children }: { children: ReactNode }) {
+  return <InsideTargetContext.Provider value={null}>{children}</InsideTargetContext.Provider>;
+}
 
 /** true = pakai blur; false = latar translusen solid (low-end, reduced motion, reduce transparency). */
 export function useGlassEnabled(): boolean {
@@ -42,10 +88,12 @@ export type GlassViewProps = {
 export function GlassView({ children, level = 'panel', radius = radii.lg, style, accessibilityLabel }: GlassViewProps) {
   const { colors, scheme } = useTheme();
   const blurTarget = useContext(BlurTargetContext);
+  const inside = useContext(InsideTargetContext);
   const enabled = useGlassEnabled();
   const floating = level === 'floating';
-  const androidWithoutTarget = Platform.OS === 'android' && !blurTarget;
-  const blur = enabled && !androidWithoutTarget;
+  // Android: hanya lapisan mengambang dengan target, di API 31+. Selain itu fallback translusen solid.
+  const androidBlur = androidBlurSupported && floating && !!blurTarget && blurTarget !== inside;
+  const blur = enabled && (Platform.OS !== 'android' || androidBlur);
 
   const shell: ViewStyle = {
     borderRadius: radius,
@@ -67,7 +115,7 @@ export function GlassView({ children, level = 'panel', radius = radii.lg, style,
           intensity={floating ? layout.blur.floating : layout.blur.panel}
           tint={scheme === 'dark' ? 'dark' : 'light'}
           blurMethod="dimezisBlurViewSdk31Plus"
-          blurTarget={blurTarget ?? undefined}
+          blurTarget={androidBlur ? (blurTarget ?? undefined) : undefined}
           style={styles.blur}
         />
       )}

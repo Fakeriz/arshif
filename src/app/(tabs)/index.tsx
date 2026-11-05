@@ -25,7 +25,7 @@ export default function HomeScreen() {
   const retry = useRetry();
   const paywall = usePaywall();
   const limits = useLimits();
-  const { state } = useStore();
+  const { state, dispatch } = useStore();
   const ledger = useLedger();
   const budget = useBudget();
   const health = useHealth();
@@ -58,6 +58,8 @@ export default function HomeScreen() {
         accounts={ledger.accounts}
         hidden={state.hideBalance}
         limitReached={limits.accounts && demo !== 'empty'}
+        activeId={state.activeAccountId}
+        onActiveChange={(id) => dispatch({ type: 'account/setActive', id })}
         onPressAccount={(id) => router.navigate({ pathname: '/transaksi', params: { akun: id } })}
       />
       <QuickActions

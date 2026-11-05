@@ -31,3 +31,10 @@ export function useAccounts(): AccountWithBalance[] {
     [state.accounts, state.transactions],
   );
 }
+
+/** Akun default untuk pencatatan: kartu aktif di Beranda, atau akun pertama. */
+export function useActiveAccountId(): string | null {
+  const { state } = useStore();
+  const active = state.accounts.find((a) => a.id === state.activeAccountId);
+  return (active ?? state.accounts[0])?.id ?? null;
+}

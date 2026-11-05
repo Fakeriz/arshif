@@ -9,7 +9,7 @@ import { useTheme } from '@/theme/ThemeProvider';
 import { layout, motion, radius, space } from '@/theme/tokens';
 
 import { AppText } from './AppText';
-import { GlassView } from './GlassView';
+import { GlassView, ModalGlassBoundary } from './GlassView';
 
 export type BottomSheetProps = {
   visible: boolean;
@@ -69,6 +69,7 @@ export function BottomSheet({ visible, onClose, title, subtitle, children }: Bot
 
   return (
     <Modal transparent visible={mounted} onShow={onShow} onRequestClose={onClose} animationType="none" statusBarTranslucent>
+      <ModalGlassBoundary>
       <Animated.View style={[StyleSheet.absoluteFill, { backgroundColor: colors.overlay }, backdrop]}>
         <Pressable style={StyleSheet.absoluteFill} onPress={onClose} accessibilityRole="button" accessibilityLabel={tr('common.close')} />
       </Animated.View>
@@ -100,6 +101,7 @@ export function BottomSheet({ visible, onClose, title, subtitle, children }: Bot
           </GlassView>
         </Animated.View>
       </View>
+      </ModalGlassBoundary>
     </Modal>
   );
 }

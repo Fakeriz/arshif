@@ -8,7 +8,7 @@ import { sampleVoice } from '@/data/seed';
 import type { Transaction } from '@/data/types';
 import { DEMO_TODAY } from '@/lib/dates';
 import { formatMoney } from '@/lib/money';
-import type { AccountWithBalance } from '@/state/AppStore';
+import { useActiveAccountId, type AccountWithBalance } from '@/state/AppStore';
 import { space } from '@/theme/tokens';
 
 import { AccountPicker, categoriesFor } from '../transactions/pickers';
@@ -18,7 +18,8 @@ type Draft = { id: string; merchant: string; categoryKey: string; amount: number
 /** Review Voice Log (FR-VOICE-3): satu kartu per transaksi, bisa diedit atau dibuang sebelum "Simpan semua". */
 export function VoiceReview({ accounts, onSave }: { accounts: AccountWithBalance[]; onSave: (txs: Transaction[]) => void }) {
   const t = useT();
-  const fallback = accounts[0];
+  const activeId = useActiveAccountId();
+  const fallback = accounts.find((a) => a.id === activeId) ?? accounts[0];
   const [drafts, setDrafts] = useState<Draft[]>(() =>
     sampleVoice.items.map((i) => ({
       id: i.id, merchant: i.merchant, categoryKey: i.categoryKey, amount: i.amount,

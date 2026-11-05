@@ -8,7 +8,7 @@ import type { Transaction, TxType } from '@/data/types';
 import { DEMO_TODAY, addDays } from '@/lib/dates';
 import { convert } from '@/lib/fx';
 import { validateTx } from '@/lib/validate';
-import type { AccountWithBalance } from '@/state/AppStore';
+import { useActiveAccountId, type AccountWithBalance } from '@/state/AppStore';
 import { space } from '@/theme/tokens';
 
 import { AccountPicker, CategoryPicker, categoriesFor } from './pickers';
@@ -28,7 +28,8 @@ export type TransactionFormProps = {
 /** Form catat manual (FR-TRX-1): pengeluaran, pemasukan, dan transfer antar-akun. */
 export function TransactionForm({ accounts, initial, onSubmit }: TransactionFormProps) {
   const t = useT();
-  const first = accounts[0];
+  const activeId = useActiveAccountId();
+  const first = accounts.find((a) => a.id === activeId) ?? accounts[0];
   const [type, setType] = useState<TxType>(initial?.type ?? 'expense');
   const [amount, setAmount] = useState<number | null>(initial?.amount ?? null);
   const [currency, setCurrency] = useState(initial?.currency ?? first?.currency ?? 'IDR');

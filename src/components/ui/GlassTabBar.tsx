@@ -21,10 +21,12 @@ export type GlassTabBarProps<K extends string> = {
   onPressAdd: () => void;
   /** false = ikut alur layout (Lembar Desain); true = mengambang di bawah layar. */
   floating?: boolean;
+  /** Ruang vertikal yang dipakai pill dari tepi bawah layar (tinggi + jarak), untuk padding konten. */
+  onFootprint?: (px: number) => void;
 };
 
 /** Bottom nav: pill kaca mengambang, ikon tab aktif memakai warna aksen. */
-export function GlassTabBar<K extends string>({ items, value, onChange, onPressAdd, floating = true }: GlassTabBarProps<K>) {
+export function GlassTabBar<K extends string>({ items, value, onChange, onPressAdd, floating = true, onFootprint }: GlassTabBarProps<K>) {
   const { colors } = useTheme();
   const t = useT();
   const insets = useSafeAreaInsets();
@@ -52,6 +54,7 @@ export function GlassTabBar<K extends string>({ items, value, onChange, onPressA
   return (
     <View
       pointerEvents="box-none"
+      onLayout={floating && onFootprint ? (e) => onFootprint(e.nativeEvent.layout.height + Math.max(insets.bottom, space.md)) : undefined}
       style={floating ? [styles.anchor, { bottom: Math.max(insets.bottom, space.md) }] : styles.inline}
     >
       <GlassView level="floating" radius={radius.full} style={styles.pill}>

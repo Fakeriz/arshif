@@ -12,6 +12,7 @@ const home: Messages['home'] = {
   sampleData: 'Sample data',
   accountLimitA11y: '4-account limit reached. Open Premium to add accounts',
   accountLimitReason: 'The Free plan allows 4 accounts and wallets. Premium has no limit.',
+  cardPosition: 'Card {n} of {total}',
   accountLimitTitle: '4-account limit reached',
   accountLimitSub: 'Go Premium to add accounts',
   recapTitle: 'Your weekly recap is ready',

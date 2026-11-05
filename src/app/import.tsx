@@ -11,6 +11,7 @@ import { AppText, Button, Card, EmptyState, Icon, Input, PressableScale } from '
 import { sampleStatement } from '@/data/seed';
 import { ProcessingView } from '@/features/capture/ProcessingView';
 import { AccountPicker } from '@/features/transactions/pickers';
+import { useActiveAccountId } from '@/state/AppStore';
 import { useDemoState } from '@/state/demo';
 import { useLedger } from '@/state/derived';
 import { useLimits } from '@/state/limits';
@@ -28,7 +29,8 @@ export default function ImportScreen() {
   const paywall = usePaywall();
   const { accounts } = useLedger();
   const [phase, setPhase] = useState<Phase>(demo === 'loading' ? 'processing' : 'form');
-  const [accountId, setAccountId] = useState<string | null>(accounts[0]?.id ?? null);
+  const activeId = useActiveAccountId();
+  const [accountId, setAccountId] = useState<string | null>(activeId ?? accounts[0]?.id ?? null);
   const [picked, setPicked] = useState(false);
   const [password, setPassword] = useState('');
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);

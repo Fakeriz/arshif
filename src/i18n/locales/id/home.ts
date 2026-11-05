@@ -11,6 +11,7 @@ const home = {
   sampleData: 'Data contoh',
   accountLimitA11y: 'Batas 4 akun tercapai. Buka Premium untuk menambah akun',
   accountLimitReason: 'Paket Free dibatasi 4 akun dan dompet. Premium tanpa batas.',
+  cardPosition: 'Kartu {n} dari {total}',
   accountLimitTitle: 'Batas 4 akun tercapai',
   accountLimitSub: 'Premium untuk menambah akun',
   recapTitle: 'Recap mingguanmu sudah siap',

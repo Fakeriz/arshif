@@ -17,6 +17,8 @@ export type AppState = {
   split: Split;
   payday: number;
   notifPrefs: NotifPrefs;
+  /** Kartu aktif di Beranda = akun default untuk Catat, Scan, Voice, Import. null = akun pertama. */
+  activeAccountId: string | null;
 };
 
 export type Action =
@@ -30,7 +32,8 @@ export type Action =
   | { type: 'prefs/mainCurrency'; code: string }
   | { type: 'prefs/notif'; key: keyof NotifPrefs; value: boolean }
   | { type: 'budget/split'; split: Split }
-  | { type: 'account/setBank'; id: string; bank: string };
+  | { type: 'account/setBank'; id: string; bank: string }
+  | { type: 'account/setActive'; id: string };
 
 export function initialState(): AppState {
   return {
@@ -45,6 +48,7 @@ export function initialState(): AppState {
     split: DEFAULT_SPLIT,
     payday: DEMO_PAYDAY,
     notifPrefs: { bill_due: true, budget_alert: true, weekly_recap: true, quota_warning: true },
+    activeAccountId: null,
   };
 }
 
@@ -72,6 +76,8 @@ export function reducer(state: AppState, action: Action): AppState {
       return { ...state, notifPrefs: { ...state.notifPrefs, [action.key]: action.value } };
     case 'account/setBank':
       return { ...state, accounts: state.accounts.map((a) => (a.id === action.id ? { ...a, bank: action.bank } : a)) };
+    case 'account/setActive':
+      return state.accounts.some((a) => a.id === action.id) ? { ...state, activeAccountId: action.id } : state;
     case 'budget/split':
       return splitIsValid(action.split) ? { ...state, split: action.split } : state;
   }
