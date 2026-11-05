@@ -17,6 +17,9 @@ const home = {
   accountLimitSub: 'Premium untuk menambah akun',
   recapTitle: 'Recap mingguanmu sudah siap',
   recapMessage: 'Lihat ke mana uangmu pergi minggu lalu.',
+  quick: { scan: 'Struk OCR', coach: 'Coach', more: 'Lainnya' },
+  more: { title: 'Lainnya', subtitle: 'Import rekening koran atau catat manual' },
+  deck: { stripA11y: '{name}, kartu akun aktif', openHint: 'Buka kartu akun' },
   budget: {
     title: 'Anggaran periode ini',
     a11y: 'Anggaran periode ini, {pace}. Aman dibelanjakan {amount} per hari. Buka Anggaran',

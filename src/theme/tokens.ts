@@ -150,6 +150,9 @@ export const overBudgetForRedAccent: Record<ColorScheme, { negative: string; neg
   light: { negative: '#A8410A', negativeSoft: 'rgba(168, 65, 10, 0.10)' },
 };
 
+/** Opasitas tinta aksen di tepi kiri strip akun Home (nama akun + chevron di atasnya). */
+export const stripTint: Record<ColorScheme, number> = { dark: 0.14, light: 0.14 };
+
 export function buildPalette(scheme: ColorScheme, accent: AccentKey): Palette {
   const base = palettes[scheme];
   const over = accent === 'merah' ? overBudgetForRedAccent[scheme] : {};

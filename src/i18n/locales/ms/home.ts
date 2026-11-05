@@ -18,6 +18,9 @@ const home: Messages['home'] = {
   accountLimitSub: 'Premium untuk menambah akaun',
   recapTitle: 'Rekap mingguan anda sudah sedia',
   recapMessage: 'Lihat ke mana wang anda pergi minggu lepas.',
+  quick: { scan: 'Resit OCR', coach: 'Coach', more: 'Lagi' },
+  more: { title: 'Lagi', subtitle: 'Import penyata bank atau rekod secara manual' },
+  deck: { stripA11y: '{name}, kad akaun aktif', openHint: 'Buka kad akaun' },
   budget: {
     title: 'Belanjawan tempoh ini',
     a11y: 'Belanjawan tempoh ini, {pace}. Selamat dibelanjakan {amount} sehari. Buka Belanjawan',

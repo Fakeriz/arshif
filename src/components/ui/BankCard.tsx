@@ -19,20 +19,24 @@ export type BankCardProps = {
   currency: string;
   hidden?: boolean;
   onPress?: () => void;
+  /** Lebar kartu; tinggi mengikuti rasio kartu. Bawaan 280 (pratinjau pemilih bank). */
+  width?: number;
 };
+
+export const BANK_CARD_RATIO = 280 / 168;
 
 /**
  * Kartu akun per bank (FR-ACC-2): warna khas bank, nama bank sebagai teks (bukan logo).
  * Kaca hanya di tepi (border) agar warna bank tetap jadi identitas kartu.
  */
-export function BankCard({ bank, accountType, last4, balance, currency, hidden, onPress }: BankCardProps) {
+export function BankCard({ bank, accountType, last4, balance, currency, hidden, onPress, width }: BankCardProps) {
   const { colors } = useTheme();
   const t = useT();
   const b = getBank(bank);
   const name = bankName(t, bank);
   const amount = hidden ? '••••••' : formatMoney(balance, currency);
   const a11y = t(last4 ? 'common.bankCardA11yLast4' : 'common.bankCardA11y', { bank: name, type: accountType, last4: last4 ?? '', amount: hidden ? t('common.balanceHidden') : amount });
-  const cardStyle = [styles.card, { backgroundColor: b.color, borderColor: colors.glassBorder }];
+  const cardStyle = [styles.card, { backgroundColor: b.color, borderColor: colors.glassBorder }, width ? { width, height: width / BANK_CARD_RATIO } : null];
   const content = (
     <>
       <View style={styles.head}>

@@ -1,10 +1,10 @@
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
-import { CategoryKey } from '../../../supabase/functions/_shared/contracts';
+import { CategoryKey } from '../../supabase/functions/_shared/contracts';
 import { Screen } from '@/components/shell/Screen';
-import { TabHeader } from '@/components/shell/TabHeader';
-import { EmptyState, Skeleton, Tabs } from '@/components/ui';
+import { ScreenHeader } from '@/components/shell/ScreenHeader';
+import { AppText, EmptyState, Skeleton, Tabs } from '@/components/ui';
 import { AskTab } from '@/features/coach/AskTab';
 import { RecapTab } from '@/features/coach/RecapTab';
 import { ScoreTab } from '@/features/coach/ScoreTab';
@@ -68,8 +68,11 @@ export default function CoachScreen() {
   }
 
   return (
-    <Screen tabs onRefresh={retry} refreshing={refreshing}>
-      <TabHeader title={t('coach.title')} subtitle={t('coach.subtitle')} />
+    <Screen onRefresh={retry} refreshing={refreshing}>
+      <ScreenHeader title={t('coach.title')} />
+      <AppText variant="caption" tone="secondary" align="center">
+        {t('coach.subtitle')}
+      </AppText>
       <Tabs
         variant="underline"
         accessibilityLabel={t('coach.sections')}

@@ -1,11 +1,13 @@
-import { Sparkles } from 'lucide-react-native';
+import { Activity, LayoutGrid, Sparkles } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
+import { useState } from 'react';
 
+import { CaptureSheet } from '@/components/shell/CaptureSheet';
 import { captureOptions } from '@/components/shell/captureOptions';
 import { usePaywall } from '@/components/shell/Paywall';
 import { Screen } from '@/components/shell/Screen';
 import { EmptyState, PromoCard, QuickActions } from '@/components/ui';
-import { AccountsRail } from '@/features/home/AccountsRail';
+import { AccountDeck } from '@/features/home/AccountDeck';
 import { BalanceBlock } from '@/features/home/BalanceBlock';
 import { BudgetGlance } from '@/features/home/BudgetGlance';
 import { HealthGlance } from '@/features/home/HealthGlance';
@@ -31,7 +33,11 @@ export default function HomeScreen() {
   const budget = useBudget();
   const health = useHealth();
   const t = useT();
-  const options = captureOptions(limits, t);
+  const [more, setMore] = useState(false);
+  const capture = captureOptions(limits, t);
+  const scan = capture.find((o) => o.key === 'scan')!;
+  const voice = capture.find((o) => o.key === 'voice')!;
+  const openCapture = (o: typeof scan) => (o.limited ? paywall(o.reason) : router.push(o.href));
 
   if (demo === 'error') {
     return (
@@ -55,25 +61,24 @@ export default function HomeScreen() {
     <Screen tabs onRefresh={retry} refreshing={refreshing}>
       <HomeHeader />
       <BalanceBlock amount={ledger.netWorth} currency={ledger.mainCurrency} accountCount={ledger.accounts.length} />
-      <AccountsRail
+      <AccountDeck
         accounts={ledger.accounts}
         hidden={state.hideBalance}
         limitReached={limits.accounts}
         activeId={state.activeAccountId}
         onActiveChange={(id) => dispatch({ type: 'account/setActive', id })}
-        onPressAccount={(id) => router.navigate({ pathname: '/transaksi', params: { akun: id } })}
       />
       <QuickActions
-        actions={options.map((o, i) => ({
-          key: o.key,
-          label: o.short,
-          icon: o.icon,
-          primary: i === 0,
-          onPress: () => (o.limited ? paywall(o.reason) : router.push(o.href)),
-        }))}
+        actions={[
+          { key: 'scan', label: t('home.quick.scan'), icon: scan.icon, primary: true, onPress: () => openCapture(scan) },
+          { key: 'voice', label: voice.short, icon: voice.icon, onPress: () => openCapture(voice) },
+          { key: 'coach', label: t('home.quick.coach'), icon: Activity, onPress: () => router.push('/coach') },
+          { key: 'more', label: t('home.quick.more'), icon: LayoutGrid, onPress: () => setMore(true) },
+        ]}
       />
+      <CaptureSheet visible={more} onClose={() => setMore(false)} keys={['pdf', 'manual']} title={t('home.more.title')} subtitle={t('home.more.subtitle')} />
       {state.notifPrefs.weekly_recap && ledger.transactions.length > 0 && (
-        <PromoCard icon={Sparkles} title={t('home.recapTitle')} message={t('home.recapMessage')} onPress={() => router.navigate('/coach')} />
+        <PromoCard icon={Sparkles} title={t('home.recapTitle')} message={t('home.recapMessage')} onPress={() => router.push('/coach')} />
       )}
       {ledger.transactions.length > 0 && (
         <BudgetGlance
@@ -86,7 +91,7 @@ export default function HomeScreen() {
           onPress={() => router.navigate('/anggaran')}
         />
       )}
-      {ledger.transactions.length > 0 && <HealthGlance score={health.score} delta={health.delta} onPress={() => router.navigate('/coach')} />}
+      {ledger.transactions.length > 0 && <HealthGlance score={health.score} delta={health.delta} onPress={() => router.push('/coach')} />}
       <RecentTransactions transactions={ledger.transactions} accounts={ledger.accounts} mainCurrency={ledger.mainCurrency} />
     </Screen>
   );

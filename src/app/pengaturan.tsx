@@ -14,6 +14,7 @@ import { LANGS, useI18n } from '@/i18n';
 import { currencyMeta } from '@/lib/money';
 import { useStore } from '@/state/AppStore';
 import { supabase } from '@/lib/supabase';
+import { HAPTIC_LEVELS, haptic, useHapticLevel } from '@/theme/motion';
 import { useTheme, type ThemeMode } from '@/theme/ThemeProvider';
 import { radius, space } from '@/theme/tokens';
 import type { NotifPrefs } from '@/state/reducer';
@@ -27,6 +28,7 @@ export default function PengaturanScreen() {
   const { t, lang } = useI18n();
   const [currencyOpen, setCurrencyOpen] = useState(false);
   const [langOpen, setLangOpen] = useState(false);
+  const [hapticLevel, setHapticLevel] = useHapticLevel();
   const name = state.displayName?.trim() || state.email.split('@')[0];
   const initials = name.split(/[\s._-]+/).filter(Boolean).map((p) => p[0]!.toUpperCase()).slice(0, 2).join('');
 
@@ -68,6 +70,24 @@ export default function PengaturanScreen() {
             {t('common.accentColor')}
           </AppText>
           <AccentPicker />
+        </View>
+        <View style={styles.block}>
+          <AppText variant="caption" tone="secondary">
+            {t('settings.haptics')}
+          </AppText>
+          <Tabs
+            items={HAPTIC_LEVELS.map((key) => ({ key, label: t(`settings.hapticLevel.${key}`) }))}
+            value={hapticLevel}
+            onChange={(level) => {
+              setHapticLevel(level);
+              // Contoh langsung dari intensitas yang baru dipilih.
+              haptic('selection');
+            }}
+            accessibilityLabel={t('settings.haptics')}
+          />
+          <AppText variant="caption" tone="muted">
+            {t('settings.hapticsSub')}
+          </AppText>
         </View>
       </Card>
 

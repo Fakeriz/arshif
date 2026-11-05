@@ -3,6 +3,8 @@
  * Animasi langsung lompat ke nilai akhir agar render deterministik.
  * Jika komponen memakai API Reanimated baru, tambahkan di sini.
  */
+jest.mock('@react-native-async-storage/async-storage', () => require('@react-native-async-storage/async-storage/jest/async-storage-mock'));
+
 jest.mock('react-native-reanimated', () => {
   const { View } = require('react-native');
   const identity = (to: unknown) => to;

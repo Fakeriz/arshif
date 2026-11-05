@@ -18,6 +18,9 @@ const home: Messages['home'] = {
   accountLimitSub: 'Hesap eklemek için Premium',
   recapTitle: 'Haftalık özetin hazır',
   recapMessage: 'Geçen hafta paranın nereye gittiğine bak.',
+  quick: { scan: 'Fiş OCR', coach: 'Coach', more: 'Diğer' },
+  more: { title: 'Diğer', subtitle: 'Banka ekstresini içe aktar ya da elle kaydet' },
+  deck: { stripA11y: '{name}, etkin hesap kartı', openHint: 'Hesap kartlarını açar' },
   budget: {
     title: 'Bu dönemin bütçesi',
     a11y: 'Bu dönemin bütçesi, {pace}. Günde {amount} güvenle harcayabilirsin. Bütçeyi aç',

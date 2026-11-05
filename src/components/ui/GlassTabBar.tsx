@@ -14,7 +14,7 @@ import { PressableScale } from './PressableScale';
 export type TabBarItem<K extends string> = { key: K; label: string; icon: LucideIcon };
 
 export type GlassTabBarProps<K extends string> = {
-  /** Empat tab Arshif (Home, Transaksi, Planning, Coach); tombol "+ Catat" di tengah. */
+  /** Empat tab Arshif (Home, Transaksi, Anggaran, Aset); tombol "+ Catat" di tengah. */
   items: [TabBarItem<K>, TabBarItem<K>, TabBarItem<K>, TabBarItem<K>];
   value: K;
   onChange: (key: K) => void;

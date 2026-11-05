@@ -1,7 +1,8 @@
 import type { Messages } from '../id';
 
 const shell: Messages['shell'] = {
-  tab: { home: 'Ana Sayfa', transactions: 'İşlemler', budget: 'Bütçe', coach: 'Coach' },
+  tab: { home: 'Ana Sayfa', transactions: 'İşlemler', budget: 'Bütçe', coach: 'Coach', assets: 'Varlıklar' },
+  assets: { title: 'Varlıklar', subtitle: 'Hisse senetleri ve diğer varlıklar', soonTitle: 'Yakında', soonMessage: 'Hisse senedi ve diğer varlık özelliklerini hazırlıyoruz. Şimdilik hesap bakiyelerin Ana Sayfa\'da.' },
   capture: {
     title: 'İşlem ekle',
     subtitle: 'Senin için en hızlı yolu seç',

@@ -14,7 +14,7 @@ export function HomeSkeleton() {
         <Skeleton width={260} height={44} />
         <Skeleton width={200} height={12} />
       </View>
-      <Skeleton height={168} radius={radius.lg} width={280} />
+      <Skeleton height={52} radius={radius.lg} />
       <Skeleton height={112} radius={radius.lg} />
       <Skeleton height={168} radius={radius.lg} />
       <Card padding="md">

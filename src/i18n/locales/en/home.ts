@@ -18,6 +18,9 @@ const home: Messages['home'] = {
   accountLimitSub: 'Go Premium to add accounts',
   recapTitle: 'Your weekly recap is ready',
   recapMessage: 'See where your money went last week.',
+  quick: { scan: 'Receipt OCR', coach: 'Coach', more: 'More' },
+  more: { title: 'More', subtitle: 'Import a bank statement or add one by hand' },
+  deck: { stripA11y: '{name}, active account card', openHint: 'Opens your account cards' },
   budget: {
     title: 'This period’s budget',
     a11y: 'This period’s budget, {pace}. Safe to spend {amount} per day. Open Budget',

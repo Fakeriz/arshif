@@ -4,6 +4,7 @@ import {
   buildPalette,
   categoryHues,
   palettes,
+  stripTint,
   type AccentKey,
   type ColorScheme,
 } from '@/theme/tokens';
@@ -64,6 +65,18 @@ describe.each(schemes)('kontras tema %s', (scheme) => {
       ['accentText', p.accentText],
     ])('%s di atas puncak glow >= 4.5:1', (_, fg) => {
       expect(contrastRatio(fg, glowBg)).toBeGreaterThanOrEqual(AA_TEXT);
+    });
+
+    it.each([
+      ['text', p.text],
+      ['textSecondary', p.textSecondary],
+    ])('%s di atas strip akun Home (tinta aksen terpekat) >= 4.5:1', (_, fg) => {
+      const [r, g, b] = [1, 3, 5].map((i) => parseInt(p.accent.slice(i, i + 2), 16));
+      // Strip memakai kaca modal (glassStrong) di atas glow; fallback lebih pekat.
+      for (const base of [backdrops(scheme, accent).glassStrongOnGlow, backdrops(scheme, accent).fallbackOnGlow]) {
+        const strip = composite(`rgba(${r}, ${g}, ${b}, ${stripTint[scheme]})`, base);
+        expect(contrastRatio(fg, strip)).toBeGreaterThanOrEqual(AA_TEXT);
+      }
     });
 
     it('teks aksen di atas tinta aksen (kartu promo) >= 4.5:1', () => {

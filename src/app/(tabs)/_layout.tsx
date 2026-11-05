@@ -8,6 +8,7 @@ import { BlurTarget } from '@/components/ui';
 /**
  * Tab headless: TabTrigger mendaftarkan rute, pill kaca (AppTabBar) jadi satu-satunya nav yang terlihat.
  * "Anggaran" memakai slot tab "Planning" di PRD selama hub Planning belum dibangun.
+ * Coach bukan tab: layar stack yang dibuka dari aksi cepat Home.
  */
 export default function TabsLayout() {
   return (
@@ -21,7 +22,7 @@ export default function TabsLayout() {
           <TabTrigger name="index" href="/" />
           <TabTrigger name="transaksi" href="/transaksi" />
           <TabTrigger name="anggaran" href="/anggaran" />
-          <TabTrigger name="coach" href="/coach" />
+          <TabTrigger name="aset" href="/aset" />
         </TabList>
       </Tabs>
     </NavFootprintProvider>

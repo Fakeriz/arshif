@@ -7,19 +7,28 @@ import { useLimits } from '@/state/limits';
 import { useTheme } from '@/theme/ThemeProvider';
 import { radius } from '@/theme/tokens';
 
-import { captureOptions } from './captureOptions';
+import { captureOptions, type CaptureKey } from './captureOptions';
 import { usePaywall } from './Paywall';
 
+type CaptureSheetProps = {
+  visible: boolean;
+  onClose: () => void;
+  /** Subset cara mencatat (sheet "Lainnya" di Home). Bawaan: keempatnya. */
+  keys?: CaptureKey[];
+  title?: string;
+  subtitle?: string;
+};
+
 /** Sheet "+ Catat": empat cara mencatat. Fitur yang kuotanya habis membuka Premium, bukan error mentah. */
-export function CaptureSheet({ visible, onClose }: { visible: boolean; onClose: () => void }) {
+export function CaptureSheet({ visible, onClose, keys, title, subtitle }: CaptureSheetProps) {
   const router = useRouter();
   const paywall = usePaywall();
   const t = useT();
-  const options = captureOptions(useLimits(), t);
+  const options = captureOptions(useLimits(), t).filter((o) => !keys || keys.includes(o.key));
   const { colors } = useTheme();
 
   return (
-    <BottomSheet visible={visible} onClose={onClose} title={t('shell.capture.title')} subtitle={t('shell.capture.subtitle')}>
+    <BottomSheet visible={visible} onClose={onClose} title={title ?? t('shell.capture.title')} subtitle={subtitle ?? t('shell.capture.subtitle')}>
       {options.map((o, i) => (
         <ListItem
           key={o.key}

@@ -17,8 +17,9 @@ export type GlassLevel = 'panel' | 'floating';
 /**
  * Android: blur (dimezis, API 31+) butuh BlurTargetView = konten di belakang kaca.
  * Hanya lapisan `floating` (nav pill, sheet, dialog, toast) yang memakai target, dan hanya bila elemen
- * itu TIDAK berada di dalam target yang sama (sibling atau Modal). Panel konten selalu di dalam target,
- * jadi di Android panel memakai latar translusen solid.
+ * itu TIDAK berada di dalam target yang sama (sibling atau Modal). Panel konten selalu di dalam target
+ * itu, jadi panel hanya bisa blur bila layar punya Backdrop: latar yang dirender sebagai target terpisah,
+ * sibling dari konten yang di-scroll (lihat BackdropSurface). Tanpa Backdrop, panel memakai fallback.
  */
 type TargetRef = RefObject<ComponentRef<typeof View> | null>;
 /** Target terdekat yang boleh di-blur. */
@@ -26,6 +27,8 @@ const BlurTargetContext = createContext<TargetRef | null>(null);
 /** Target yang secara native MEMUAT elemen ini (jangan di-blur: umpan balik ke diri sendiri). */
 const InsideTargetContext = createContext<TargetRef | null>(null);
 export const BlurTargetProvider = BlurTargetContext.Provider;
+/** Latar layar (target terpisah) yang di-blur panel konten, dengan kaca yang sama seperti modal. */
+const BackdropContext = createContext<TargetRef | null>(null);
 
 const ANDROID_BLUR_MIN_API = 31;
 const androidBlurSupported = Platform.OS === 'android' && Number(Platform.Version) >= ANDROID_BLUR_MIN_API;
@@ -59,9 +62,30 @@ export function BlurTarget({ children, floating, style }: { children: ReactNode;
   );
 }
 
+/**
+ * `background` jadi target blur tersendiri; `children` (konten scroll) dirender di luarnya, sehingga
+ * panel di dalam konten bisa mem-blur latar tanpa mem-blur dirinya sendiri.
+ */
+export function BackdropSurface({ background, children }: { background: ReactNode; children: ReactNode }) {
+  const ref = useRef<ComponentRef<typeof View>>(null);
+  const Target = androidBlurSupported ? BlurTargetView : View;
+  return (
+    <BackdropContext.Provider value={ref}>
+      <Target ref={ref} pointerEvents="none" style={StyleSheet.absoluteFill}>
+        {background}
+      </Target>
+      {children}
+    </BackdropContext.Provider>
+  );
+}
+
 /** Isi Modal berada di jendela native terpisah, jadi tidak lagi "di dalam" target mana pun. */
 export function ModalGlassBoundary({ children }: { children: ReactNode }) {
-  return <InsideTargetContext.Provider value={null}>{children}</InsideTargetContext.Provider>;
+  return (
+    <InsideTargetContext.Provider value={null}>
+      <BackdropContext.Provider value={null}>{children}</BackdropContext.Provider>
+    </InsideTargetContext.Provider>
+  );
 }
 
 /** true = pakai blur; false = latar translusen solid (low-end, reduced motion, reduce transparency). */
@@ -89,10 +113,13 @@ export function GlassView({ children, level = 'panel', radius = radii.lg, style,
   const { colors, scheme } = useTheme();
   const blurTarget = useContext(BlurTargetContext);
   const inside = useContext(InsideTargetContext);
+  const backdrop = useContext(BackdropContext);
   const enabled = useGlassEnabled();
-  const floating = level === 'floating';
-  // Android: hanya lapisan mengambang dengan target, di API 31+. Selain itu fallback translusen solid.
-  const androidBlur = androidBlurSupported && floating && !!blurTarget && blurTarget !== inside;
+  // Panel di atas Backdrop memakai kaca lapisan mengambang (sama dengan modal) dan mem-blur Backdrop.
+  const floating = level === 'floating' || backdrop !== null;
+  const target = level === 'floating' ? (blurTarget !== inside ? blurTarget : null) : backdrop;
+  // Android API 31+ butuh target di luar elemen ini. Selain itu fallback translusen solid.
+  const androidBlur = androidBlurSupported && !!target;
   const blur = enabled && (Platform.OS !== 'android' || androidBlur);
 
   const shell: ViewStyle = {
@@ -115,7 +142,7 @@ export function GlassView({ children, level = 'panel', radius = radii.lg, style,
           intensity={floating ? layout.blur.floating : layout.blur.panel}
           tint={scheme === 'dark' ? 'dark' : 'light'}
           blurMethod="dimezisBlurViewSdk31Plus"
-          blurTarget={androidBlur ? (blurTarget ?? undefined) : undefined}
+          blurTarget={androidBlur ? (target ?? undefined) : undefined}
           style={styles.blur}
         />
       )}

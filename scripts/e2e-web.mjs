@@ -51,12 +51,20 @@ const btn = (p, name) => p.getByRole('button', { name, exact: true }).first();
 const expectText = async (p, t, timeout = 4000) => p.getByText(t, { exact: false }).locator('visible=true').first().waitFor({ timeout });
 const url = (p) => new URL(p.url()).pathname;
 
-await step('Home: nav pill pindah tab Transaksi/Anggaran/Coach/Home', async () => {
+await step('Home: nav pill pindah tab Transaksi/Anggaran/Aset/Home, Aset = Segera hadir', async () => {
   const p = await open('/');
-  for (const [tab, path_] of [['Transaksi', '/transaksi'], ['Anggaran', '/anggaran'], ['Coach', '/coach'], ['Home', '/']]) {
+  for (const [tab, path_] of [['Transaksi', '/transaksi'], ['Anggaran', '/anggaran'], ['Aset', '/aset'], ['Home', '/']]) {
     await p.getByRole('tab', { name: tab, exact: true }).click(); await p.waitForTimeout(300);
     if (url(p) !== path_) throw new Error(`${tab} -> ${url(p)}`);
+    if (tab === 'Aset') await expectText(p, 'Segera hadir');
   }
+});
+await step('Home: aksi cepat Lainnya = Import PDF + Catat Manual, Coach membuka layar Coach', async () => {
+  const p = await open('/'); await btn(p, 'Lainnya').click();
+  for (const t of ['Import Rekening Koran', 'Catat Manual']) await expectText(p, t);
+  await p.keyboard.press('Escape'); await p.waitForTimeout(400);
+  await btn(p, 'Coach').click(); await p.waitForTimeout(500);
+  if (url(p) !== '/coach') throw new Error(url(p));
 });
 await step('Home: tombol + membuka sheet Catat dengan 4 pilihan', async () => {
   const p = await open('/'); await btn(p, 'Catat transaksi').click();
@@ -72,24 +80,29 @@ await step('Home: lonceng membuka notifikasi, ketuk recap menuju Coach', async (
   await p.getByRole('button', { name: /Recap mingguanmu sudah siap.*Belum dibaca/ }).click(); await p.waitForTimeout(500);
   if (url(p) !== '/coach') throw new Error(url(p));
 });
-await step('Home: kartu akun BCA membuka Transaksi terfilter akun', async () => {
-  const p = await open('/'); await p.getByRole('button', { name: /^BCA Tabungan, akhiran 2153/ }).click(); await p.waitForTimeout(500);
-  if (url(p) !== '/transaksi') throw new Error(url(p));
-  await expectText(p, 'BCA Tabungan');
-  if (await p.getByText('Kopi Kenangan').locator('visible=true').count()) throw new Error('filter akun tidak berlaku');
+// Deck: strip ramping -> ketuk -> FlatList paging; geser = scroll horizontal native.
+const openDeck = async (p) => { await p.getByRole('button', { name: /kartu akun aktif$/ }).click(); await p.waitForTimeout(800); };
+const pageDeck = async (p, pages) => {
+  const card = await p.getByRole('button', { name: /^BCA Tabungan, akhiran 2153/ }).first().boundingBox();
+  await p.evaluate(([y, n]) => {
+    const list = [...document.querySelectorAll('div')].find((d) => /auto|scroll/.test(getComputedStyle(d).overflowX) && d.scrollWidth > d.clientWidth && d.getBoundingClientRect().top <= y && d.getBoundingClientRect().bottom >= y);
+    list.scrollBy({ left: list.clientWidth * n, behavior: 'instant' });
+  }, [card.y + card.height / 2, pages]);
+};
+await step('Home: strip akun membuka deck, ketuk kartu menutup kembali ke strip', async () => {
+  const p = await open('/'); await openDeck(p);
+  await p.getByRole('button', { name: /^BCA Tabungan, akhiran 2153/ }).click(); await p.waitForTimeout(800);
+  await p.getByRole('button', { name: 'BCA Tabungan, kartu akun aktif' }).click({ trial: true });
 });
 await step('Home: kartu batas 4 akun membuka sheet Premium', async () => {
-  const p = await open('/'); await p.getByRole('button', { name: /Batas 4 akun tercapai/ }).click(); await expectText(p, 'Buka batas dengan Premium');
+  const p = await open('/'); await openDeck(p); await pageDeck(p, 4); await p.waitForTimeout(600);
+  await p.getByRole('button', { name: /Batas 4 akun tercapai/ }).click(); await expectText(p, 'Buka batas dengan Premium');
   await btn(p, 'Lihat paket Premium').click(); await expectText(p, 'Pembelian belum aktif');
 });
 await step('Home: geser kartu akun -> snap ke kartu berikut, titik pindah, akun aktif jadi default Catat manual', async () => {
   const p = await open('/');
-  await p.getByLabel('Kartu 1 dari 5').waitFor();
-  const card = await p.getByRole('button', { name: /^BCA Tabungan/ }).first().boundingBox();
-  await p.evaluate((y) => {
-    const list = [...document.querySelectorAll('div')].find((d) => /auto|scroll/.test(getComputedStyle(d).overflowX) && d.scrollWidth > d.clientWidth && d.getBoundingClientRect().top <= y && d.getBoundingClientRect().bottom >= y);
-    list.scrollBy({ left: list.clientWidth, behavior: 'instant' });
-  }, card.y + card.height / 2);
+  await openDeck(p); await p.getByLabel('Kartu 1 dari 5').waitFor();
+  await pageDeck(p, 1);
   await p.getByLabel('Kartu 2 dari 5').waitFor({ timeout: 3000 });
   await btn(p, 'Catat transaksi').click(); await p.getByText('Catat Manual').first().click();
   const chip = p.getByRole('checkbox', { name: /^Jago Kantong Utama/ }).first(); await chip.waitFor();

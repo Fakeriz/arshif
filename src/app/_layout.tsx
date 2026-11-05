@@ -19,9 +19,11 @@ import { BlurTargetArea, BlurTargetScope, ToastProvider } from '@/components/ui'
 import { I18nProvider } from '@/i18n';
 import { AppStoreProvider, useStore } from '@/state/AppStore';
 import { SessionProvider, useSession } from '@/state/session';
+import { loadHapticLevel } from '@/theme/motion';
 import { ThemeProvider, useTheme } from '@/theme/ThemeProvider';
 
 SplashScreen.preventAutoHideAsync().catch(() => undefined);
+void loadHapticLevel();
 
 export default function RootLayout() {
   const [loaded, error] = useFonts({
@@ -104,6 +106,7 @@ function Routes() {
       <Stack.Protected guard={onboarded}>
         <Stack.Screen name="(tabs)" />
         <Stack.Screen name="pengaturan" />
+        <Stack.Screen name="coach" />
         <Stack.Screen name="tambah" />
         <Stack.Screen name="trx/[id]" />
         <Stack.Screen name="scan" />
