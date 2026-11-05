@@ -1,0 +1,60 @@
+import { ScrollView, StyleSheet, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+
+import { AppText, Badge, Tabs } from '@/components/ui';
+import { ButtonSection, BadgeChipSection, InputSection, TabsSection } from '@/features/design-sheet/ControlSections';
+import { CashflowSection, DonutSection, GaugeSection } from '@/features/design-sheet/ChartSections';
+import { ListSection, MoneySection, ProgressSection } from '@/features/design-sheet/DataSections';
+import { OverlaySection, StateSection } from '@/features/design-sheet/FeedbackSections';
+import { ColorSection, ShapeSection, TypeSection } from '@/features/design-sheet/FoundationSections';
+import { useTheme, type ThemeMode } from '@/theme/ThemeProvider';
+import { layout, space } from '@/theme/tokens';
+
+const MODES: { key: ThemeMode; label: string }[] = [
+  { key: 'system', label: 'Sistem' },
+  { key: 'dark', label: 'Gelap' },
+  { key: 'light', label: 'Terang' },
+];
+
+/** Lembar Desain Fase 0 — pembanding visual check untuk Fase 1. */
+export default function DesignSheet() {
+  const { colors, mode, setMode } = useTheme();
+  return (
+    <SafeAreaView style={[styles.safe, { backgroundColor: colors.bg }]} edges={['top', 'left', 'right']}>
+      <ScrollView contentContainerStyle={styles.scroll}>
+        <View style={styles.column}>
+          <View style={styles.hero}>
+            <Badge label="Fase 0 · Fondasi" tone="accent" />
+            <AppText variant="display">Arshif</AppText>
+            <AppText variant="body" tone="secondary">
+              Lembar desain: token, komponen, dan semua state-nya. Setujui ini dulu — layar Fase 1 dibandingkan dengan lembar ini.
+            </AppText>
+            <Tabs items={MODES} value={mode} onChange={setMode} accessibilityLabel="Tema" />
+          </View>
+          <ColorSection />
+          <TypeSection />
+          <ShapeSection />
+          <ButtonSection />
+          <InputSection />
+          <BadgeChipSection />
+          <TabsSection />
+          <MoneySection />
+          <ProgressSection />
+          <ListSection />
+          <DonutSection />
+          <GaugeSection />
+          <CashflowSection />
+          <StateSection />
+          <OverlaySection />
+        </View>
+      </ScrollView>
+    </SafeAreaView>
+  );
+}
+
+const styles = StyleSheet.create({
+  safe: { flex: 1 },
+  scroll: { paddingHorizontal: space.xl, paddingBottom: space.x5 * 2, alignItems: 'center' },
+  column: { width: '100%', maxWidth: layout.maxContentWidth, gap: space.x3 },
+  hero: { gap: space.md, paddingTop: space.xxl },
+});
