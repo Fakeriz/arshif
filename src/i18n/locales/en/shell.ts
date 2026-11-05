@@ -6,7 +6,6 @@ const shell: Messages['shell'] = {
   capture: {
     title: 'Add transaction',
     subtitle: 'Pick the fastest way for you',
-    limitBadge: 'Limit',
     scan: {
       title: 'Scan Receipt',
       short: 'Scan',
@@ -53,8 +52,6 @@ const shell: Messages['shell'] = {
     benefitTax: 'Full tax tools and PDF export',
     cta: 'See Premium plans',
     later: 'Not now',
-    inactiveTitle: 'Purchases not active yet',
-    inactiveMessage: 'Plans and prices appear once RevenueCat is connected in Phase 3.',
   },
 };
 

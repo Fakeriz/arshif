@@ -79,6 +79,13 @@ const domain = {
     automation: 'Automation & Voice Log',
     importPdf: 'Import PDF',
     invoice: 'Invoice',
+    goals: 'Savings Goals aktif',
+    billsDebts: 'Tagihan + utang',
+    subscriptions: 'Langganan',
+    coachAsk: 'Tanya Coach',
+    coachMonthly: 'Recap bulanan Coach',
+    taxFull: 'Alat pajak lengkap',
+    pdfExport: 'Ekspor PDF',
   },
   validation: {
     amount: 'Isi nominal lebih dari nol.',
@@ -100,6 +107,9 @@ const domain = {
     billMessage: '{amount}. Tandai lunas setelah dibayar.',
     quotaTitle: 'Kuota scan struk tersisa {left}',
     quotaMessage: '{used} dari {limit} scan terpakai. Reset 1 Desember.',
+    premiumTitle: 'Premium aktif',
+    premiumMessage: 'Semua batas Free sudah terbuka. Masa aktif tercatat di Pengaturan.',
+    premiumMessageStore: 'Langganan Premium aktif. Kelola perpanjangan di App Store atau Google Play.',
   },
   date: {
     today: 'Hari ini',

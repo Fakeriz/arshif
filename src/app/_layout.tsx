@@ -18,6 +18,7 @@ import { BootScreen } from '@/components/shell/BootScreen';
 import { BlurTargetArea, BlurTargetScope, ToastProvider } from '@/components/ui';
 import { I18nProvider } from '@/i18n';
 import { AppStoreProvider, useStore } from '@/state/AppStore';
+import { PurchasesBridge } from '@/state/billing';
 import { SessionProvider, useSession } from '@/state/session';
 import { loadHapticLevel } from '@/theme/motion';
 import { ThemeProvider, useTheme } from '@/theme/ThemeProvider';
@@ -60,6 +61,7 @@ function Shell() {
       <ToastProvider>
         <AppStoreProvider>
           <PaywallProvider>
+            <PurchasesBridge />
             <StatusBar style={scheme === 'dark' ? 'light' : 'dark'} />
             {/* Android: konten Stack = sumber blur untuk toast (di luar area) serta sheet/dialog (Modal). */}
             <BlurTargetArea style={styles.fill}>
@@ -96,6 +98,8 @@ function Routes() {
     <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.bg }, animation: 'slide_from_right' }}>
       {/* Layar auth didaftarkan satu per satu (tanpa layout grup) supaya redirect guard jatuh ke "masuk"
           dan "/" tetap milik (tabs)/index. */}
+      {/* Pricing publik: bisa dibuka dengan atau tanpa login. */}
+      <Stack.Screen name="harga" />
       <Stack.Protected guard={!signedIn}>
         <Stack.Screen name="(auth)/masuk" />
         <Stack.Screen name="(auth)/verifikasi" />
@@ -115,6 +119,10 @@ function Routes() {
         <Stack.Screen name="voice-review" />
         <Stack.Screen name="import" />
         <Stack.Screen name="import-review" />
+        <Stack.Screen name="premium/index" />
+        <Stack.Screen name="premium/order/[id]" />
+        <Stack.Screen name="premium/sukses" />
+        <Stack.Screen name="admin" />
       </Stack.Protected>
     </Stack>
   );

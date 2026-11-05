@@ -447,3 +447,29 @@ import_map = "./functions/import_map.json"
 [functions.delete-account]
 verify_jwt = false
 import_map = "./functions/import_map.json"
+
+# Fase 3: pembayaran. Webhook diverifikasi di kode (token/tanda tangan penyedia), bukan JWT.
+
+[functions.checkout-create]
+verify_jwt = false
+import_map = "./functions/import_map.json"
+
+[functions.entitlement-sync]
+verify_jwt = false
+import_map = "./functions/import_map.json"
+
+[functions.admin-grant]
+verify_jwt = false
+import_map = "./functions/import_map.json"
+
+[functions.xendit-webhook]
+verify_jwt = false
+import_map = "./functions/import_map.json"
+
+[functions.paddle-webhook]
+verify_jwt = false
+import_map = "./functions/import_map.json"
+
+[functions.revenuecat-webhook]
+verify_jwt = false
+import_map = "./functions/import_map.json"

@@ -1,6 +1,6 @@
 import type { Account, AppNotification, NotificationType, Plan, Transaction } from '@/data/types';
 import { DEFAULT_SPLIT, splitIsValid, type Split } from '@/lib/budget';
-import type { QuotaKey, Usage } from '@/lib/quota';
+import { EMPTY_USAGE, type QuotaKey, type Usage } from '@/lib/quota';
 
 export type NotifPrefs = Record<Exclude<NotificationType, 'system' | 'monthly_recap' | 'goal_reached' | 'subscription_renewal'>, boolean>;
 
@@ -16,6 +16,10 @@ export type AppState = {
   transactions: Transaction[];
   notifications: AppNotification[];
   plan: Plan;
+  /** Akhir masa Premium menurut RevenueCat (null = Free, atau Premium tanpa tanggal akhir). */
+  premiumUntil: string | null;
+  /** Asal Premium: store (App Store/Google Play), web (Xendit/Paddle), manual (admin). */
+  premiumSource: 'store' | 'web' | 'manual' | null;
   usage: Usage;
   hideBalance: boolean;
   mainCurrency: string;
@@ -38,6 +42,7 @@ export type Action =
   | { type: 'load/error' }
   | { type: 'reset' }
   | { type: 'usage/set'; usage: Usage }
+  | { type: 'plan/set'; plan: Plan; premiumUntil: string | null; premiumSource?: AppState['premiumSource'] }
   | { type: 'profile/set'; patch: Partial<Pick<AppState, 'displayName' | 'onboarded' | 'income' | 'payday' | 'mainCurrency'>> }
   | { type: 'account/add'; account: Account }
   | { type: 'notif/add'; notification: AppNotification }
@@ -54,7 +59,6 @@ export type Action =
   | { type: 'account/setBank'; id: string; bank: string }
   | { type: 'account/setActive'; id: string };
 
-export const EMPTY_USAGE: Usage = { accounts: 0, scan: 0, automation: 0, importPdf: 0, invoice: 0 };
 
 /** State sebelum login / sebelum data datang. Tidak ada data contoh di aplikasi (Fase 2). */
 export function initialState(): AppState {
@@ -67,6 +71,8 @@ export function initialState(): AppState {
     transactions: [],
     notifications: [],
     plan: 'free',
+    premiumUntil: null,
+    premiumSource: null,
     usage: EMPTY_USAGE,
     hideBalance: false,
     mainCurrency: 'IDR',
@@ -93,6 +99,8 @@ export function reducer(state: AppState, action: Action): AppState {
       return initialState();
     case 'usage/set':
       return { ...state, usage: action.usage };
+    case 'plan/set':
+      return { ...state, plan: action.plan, premiumUntil: action.premiumUntil, premiumSource: action.premiumSource ?? state.premiumSource };
     case 'profile/set':
       return { ...state, ...action.patch };
     case 'account/add':

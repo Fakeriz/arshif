@@ -7,6 +7,7 @@ const auth: Messages['auth'] = {
     emailLabel: 'E-mel',
     emailHint: 'Kami akan hantar kod 6 digit ke e-mel ini. Tanpa kata laluan.',
     submit: 'Hantar kod',
+    pricing: 'Lihat harga Premium',
     errorInvalid: 'Format e-mel belum betul. Contoh: nama@email.com',
     errorRate: 'Terlalu banyak permintaan kod. Tunggu beberapa minit dan cuba lagi.',
     errorNetwork: 'Tidak dapat bersambung. Semak sambungan internet anda dan cuba lagi.',

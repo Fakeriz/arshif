@@ -1,6 +1,7 @@
-import { LogOut } from 'lucide-react-native';
-import { StyleSheet, View } from 'react-native';
-import { useState } from 'react';
+import { LogOut, ShieldCheck } from 'lucide-react-native';
+import { useRouter } from 'expo-router';
+import { Platform, StyleSheet, View } from 'react-native';
+import { useEffect, useState } from 'react';
 
 import { CurrencySheet } from '@/components/shell/CurrencySheet';
 import { Screen } from '@/components/shell/Screen';
@@ -11,6 +12,7 @@ import { DataCard } from '@/features/settings/DataCard';
 import { LanguageSheet } from '@/features/settings/LanguageSheet';
 import { UsageCard } from '@/features/settings/UsageCard';
 import { LANGS, useI18n } from '@/i18n';
+import { isAdmin } from '@/data/remote/api';
 import { currencyMeta } from '@/lib/money';
 import { useStore } from '@/state/AppStore';
 import { supabase } from '@/lib/supabase';
@@ -29,6 +31,12 @@ export default function PengaturanScreen() {
   const [currencyOpen, setCurrencyOpen] = useState(false);
   const [langOpen, setLangOpen] = useState(false);
   const [hapticLevel, setHapticLevel] = useHapticLevel();
+  const router = useRouter();
+  const [admin, setAdmin] = useState(false);
+  // Panel admin hanya web; tombolnya hanya muncul untuk akun admin (server tetap memeriksa ulang).
+  useEffect(() => {
+    if (Platform.OS === 'web') isAdmin().then(setAdmin).catch(() => undefined);
+  }, []);
   const name = state.displayName?.trim() || state.email.split('@')[0];
   const initials = name.split(/[\s._-]+/).filter(Boolean).map((p) => p[0]!.toUpperCase()).slice(0, 2).join('');
 
@@ -135,6 +143,7 @@ export default function PengaturanScreen() {
       </Card>
 
       <DataCard />
+      {admin && <Button label={t('billing.admin.title')} icon={ShieldCheck} variant="secondary" fullWidth onPress={() => router.push('/admin')} />}
       {/* Keluar: sesi dihapus dari perangkat, gerbang rute kembali ke layar masuk. */}
       <Button label={t('settings.signOut')} icon={LogOut} variant="secondary" fullWidth onPress={() => void supabase.auth.signOut()} />
       <LanguageSheet visible={langOpen} onClose={() => setLangOpen(false)} />

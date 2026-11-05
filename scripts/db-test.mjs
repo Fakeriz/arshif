@@ -193,9 +193,135 @@ await test('storage: hanya folder sendiri', async () => {
   eq(await as(A, `select count(*)::int as n from storage.objects where bucket_id = 'statements'`), [{ n: 0 }], 'rekening koran tidak bisa dibaca balik');
 });
 
+// ------------------------------------------------------------------ Fase 3: monetisasi
+await test('my_usage: semua batas PRD dengan jenisnya (bulanan, harian, total, fitur)', async () => {
+  const rows = await as(A, `select key, used, monthly_limit, "window" from public.my_usage() order by key`);
+  const byKey = Object.fromEntries(rows.map((r) => [r.key, [r.monthly_limit, r.window]]));
+  eq(byKey.goals, [3, 'total']);
+  eq(byKey.billsDebts, [3, 'total']);
+  eq(byKey.subscriptions, [5, 'total']);
+  eq(byKey.coachAsk, [0, 'day']);
+  eq(byKey.taxFull, [0, 'feature']);
+  eq(byKey.invoice, [5, 'month']);
+  eq(byKey.automation, [30, 'month']);
+});
+
+await test('Tanya Coach: Free terkunci, Premium 20/hari dengan periode harian', async () => {
+  eq((await sys(`select public.quota_try_consume($1, 'coachAsk') as ok`, [A]))[0].ok, false);
+  for (let i = 0; i < 20; i++) eq((await sys(`select public.quota_try_consume($1, 'coachAsk') as ok`, [B]))[0].ok, true, `ke-${i + 1}`);
+  eq((await sys(`select public.quota_try_consume($1, 'coachAsk') as ok`, [B]))[0].ok, false, 'ke-21');
+  eq((await sys(`select period from public.usage_counters where user_id = $1 and key = 'coachAsk'`, [B]))[0].period.length, 10);
+  await sys(`select public.quota_refund($1, 'coachAsk')`, [B]);
+  eq((await sys(`select public.quota_try_consume($1, 'coachAsk') as ok`, [B]))[0].ok, true, 'gagal dikembalikan');
+});
+
+await test('fitur Premium saja: plan_allows', async () => {
+  eq((await sys(`select public.plan_allows($1, 'taxFull') as ok`, [A]))[0].ok, false);
+  eq((await sys(`select public.plan_allows($1, 'pdfExport') as ok`, [B]))[0].ok, true);
+  await rejects(as(A, `select public.plan_allows($1, 'taxFull')`, [A]), /permission denied/);
+});
+
+await test('batas total generik: goals 3, tagihan + utang gabungan 3 (Free), Premium tanpa batas', async () => {
+  for (const t of ['goals', 'bills', 'debts']) {
+    await sys(`create table public.${t} (id uuid primary key default gen_random_uuid(), user_id uuid not null default auth.uid())`);
+    await sys(`grant select, insert on public.${t} to authenticated`);
+  }
+  await sys(`create trigger goals_limit before insert on public.goals for each row execute function public.enforce_total_limit('goals')`);
+  await sys(`create trigger bills_limit before insert on public.bills for each row execute function public.enforce_total_limit('billsDebts')`);
+  await sys(`create trigger debts_limit before insert on public.debts for each row execute function public.enforce_total_limit('billsDebts')`);
+  for (let i = 0; i < 3; i++) await as(A, 'insert into public.goals default values');
+  await rejects(as(A, 'insert into public.goals default values'), /quota_goals/);
+  await as(A, 'insert into public.bills default values');
+  await as(A, 'insert into public.bills default values');
+  await as(A, 'insert into public.debts default values');
+  await rejects(as(A, 'insert into public.debts default values'), /quota_billsDebts/);
+  eq((await as(A, `select used from public.my_usage() where key = 'billsDebts'`))[0].used, 3);
+  for (let i = 0; i < 6; i++) await as(B, 'insert into public.goals default values');
+});
+
+await test('kuota bulanan per baris generik: invoice 5/bulan (Free)', async () => {
+  await sys(`create table public.invoices (id uuid primary key default gen_random_uuid(), user_id uuid not null default auth.uid())`);
+  await sys(`grant insert on public.invoices to authenticated`);
+  await sys(`create trigger invoices_quota before insert on public.invoices for each row execute function public.enforce_counter_quota('invoice')`);
+  for (let i = 0; i < 5; i++) await as(A, 'insert into public.invoices default values');
+  await rejects(as(A, 'insert into public.invoices default values'), /quota_invoice/);
+  for (const t of ['goals', 'bills', 'debts', 'invoices']) await sys(`drop table public.${t}`);
+});
+
+await test('harga: publik bisa dibaca (anon), tidak bisa ditulis', async () => {
+  await db.exec(`set role anon`);
+  try {
+    const rows = (await db.query(`select period, currency, amount::int from public.prices order by currency, period`)).rows;
+    eq(rows.find((r) => r.currency === 'IDR' && r.period === 'monthly').amount, 25000);
+    eq(rows.find((r) => r.currency === 'MYR' && r.period === 'yearly').amount, 6900);
+    eq(rows.find((r) => r.currency === 'USD' && r.period === 'monthly').amount, 150);
+  } finally {
+    await db.exec('reset role');
+  }
+  await rejects(as(A, `update public.prices set amount = 1`), /permission denied/);
+});
+
+await test('pesanan: hanya dibaca pemiliknya, semua penulisan lewat server', async () => {
+  await sys(`insert into public.orders (user_id, provider, period, currency, amount, method) values ($1, 'xendit', 'monthly', 'IDR', 25000, 'qris'), ($2, 'paddle', 'yearly', 'USD', 1500, 'card')`, [A, B]);
+  eq(await as(A, 'select provider from public.orders'), [{ provider: 'xendit' }]);
+  await rejects(as(A, `insert into public.orders (user_id, provider, period, currency, amount) values ($1, 'xendit', 'monthly', 'IDR', 1)`, [A]), /permission denied/);
+  await rejects(as(A, `update public.orders set status = 'paid'`), /permission denied/);
+  await rejects(as(A, 'select * from public.webhook_events'), /permission denied/);
+  await rejects(as(A, 'select * from public.admin_users'), /permission denied/);
+});
+
+await test('pesanan: klien tidak bisa membaca granted_by dan grant_error', async () => {
+  await rejects(as(A, 'select grant_error from public.orders'), /permission denied/);
+  await rejects(as(A, 'select granted_by from public.orders'), /permission denied/);
+  eq((await as(A, 'select status from public.orders'))[0].status, 'pending');
+});
+
+await test('reserve_grant: dua pesanan lunas bertumpuk, percobaan ulang memakai target yang sama', async () => {
+  await sys(`delete from public.orders`);
+  const [{ id: o1 }] = await sys(`insert into public.orders (user_id, provider, period, currency, amount, status) values ($1, 'xendit', 'monthly', 'IDR', 25000, 'paid') returning id`, [A]);
+  const [{ id: o2 }] = await sys(`insert into public.orders (user_id, provider, period, currency, amount, status) values ($1, 'xendit', 'yearly', 'IDR', 250000, 'paid') returning id`, [A]);
+  const [g1] = await sys(`select * from public.reserve_grant($1, null)`, [o1]);
+  const [g2] = await sys(`select * from public.reserve_grant($1, null)`, [o2]);
+  eq(new Date(g2.granted_from).getTime(), new Date(g1.granted_until).getTime(), 'tahunan mulai saat bulanan berakhir');
+  const [again] = await sys(`select * from public.reserve_grant($1, now() + interval '5 years')`, [o1]);
+  eq(new Date(again.granted_until).getTime(), new Date(g1.granted_until).getTime(), 'retry tidak memperpanjang lagi');
+  const [{ id: o3 }] = await sys(`insert into public.orders (user_id, provider, period, currency, amount) values ($1, 'xendit', 'monthly', 'IDR', 25000) returning id`, [A]);
+  await rejects(sys(`select * from public.reserve_grant($1, null)`, [o3]), /order_not_paid/);
+  await rejects(as(A, `select * from public.reserve_grant($1, null)`, [o1]), /permission denied/);
+});
+
+await test('refund_shift: hanya durasi pesanan yang di-refund yang hilang, sekali saja', async () => {
+  const [o1, o2] = (await sys(`select id, granted_from, granted_until from public.orders where user_id = $1 and status = 'paid' and granted_until is not null order by granted_from`, [A]));
+  const len1 = new Date(o1.granted_until).getTime() - new Date(o1.granted_from).getTime();
+  await sys(`update public.orders set status = 'refunded' where id = $1`, [o1.id]);
+  const [{ end }] = await sys(`select public.refund_shift($1) as "end"`, [o1.id]);
+  eq(new Date(end).getTime(), new Date(o2.granted_until).getTime() - len1, 'tahunan bergeser maju sebesar 1 bulan');
+  const [{ end: end2 }] = await sys(`select public.refund_shift($1) as "end"`, [o1.id]);
+  eq(new Date(end2).getTime(), new Date(end).getTime(), 'pengiriman ulang tidak menggeser dua kali');
+  await sys(`delete from public.orders`);
+  await sys(`insert into public.orders (user_id, provider, period, currency, amount, method) values ($1, 'xendit', 'monthly', 'IDR', 25000, 'qris'), ($2, 'paddle', 'yearly', 'USD', 1500, 'card')`, [A, B]);
+});
+
+await test('paket dan masa Premium tidak bisa diubah klien', async () => {
+  await rejects(as(A, `update public.profiles set plan = 'premium'`), /permission denied/);
+  await rejects(as(A, `update public.profiles set premium_until = now() + interval '1 year'`), /permission denied/);
+});
+
+await test('admin: RPC ditolak untuk non-admin, terbuka untuk admin', async () => {
+  await rejects(as(A, 'select * from public.admin_orders()'), /not_admin/);
+  await rejects(as(A, `select * from public.admin_find_user('b@example.com')`), /not_admin/);
+  eq((await as(A, 'select public.is_admin() as a'))[0].a, false);
+  await sys(`insert into public.admin_users (user_id) values ($1)`, [B]);
+  eq((await as(B, 'select count(*)::int as n from public.admin_orders()'))[0].n, 2);
+  eq((await as(B, `select plan from public.admin_find_user(' A@Example.com ')`))[0].plan, 'free');
+  await sys(`insert into public.ai_jobs (user_id, kind, status, latency_ms) values ($1, 'scan', 'ok', 1000), ($1, 'scan', 'failed', 3000), ($1, 'scan', 'limited', null)`, [A]);
+  const [scan] = await as(B, `select * from public.admin_ai_usage(30) where kind = 'scan'`);
+  eq([scan.total, scan.failed, scan.limited, Number(scan.fail_ratio), scan.avg_latency_ms], [3, 1, 1, 0.5, 2000]);
+});
+
 await test('hapus pengguna: semua data ikut terhapus (cascade)', async () => {
   await sys(`delete from auth.users where id = $1`, [A]);
-  for (const t of ['profiles', 'accounts', 'transactions', 'transaction_items', 'notifications', 'usage_counters']) {
+  for (const t of ['profiles', 'accounts', 'transactions', 'transaction_items', 'notifications', 'usage_counters', 'orders']) {
     const col = t === 'profiles' ? 'id' : 'user_id';
     eq((await sys(`select count(*)::int as n from public.${t} where ${col} = $1`, [A]))[0].n, 0, t);
   }

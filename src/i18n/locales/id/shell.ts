@@ -5,7 +5,6 @@ const shell = {
   capture: {
     title: 'Catat transaksi',
     subtitle: 'Pilih cara tercepat untukmu',
-    limitBadge: 'Batas',
     scan: {
       title: 'Scan Struk',
       short: 'Scan Struk',
@@ -52,8 +51,6 @@ const shell = {
     benefitTax: 'Alat pajak lengkap dan ekspor PDF',
     cta: 'Lihat paket Premium',
     later: 'Nanti saja',
-    inactiveTitle: 'Pembelian belum aktif',
-    inactiveMessage: 'Pilihan paket dan harga muncul setelah RevenueCat terhubung di Fase 3.',
   },
 };
 

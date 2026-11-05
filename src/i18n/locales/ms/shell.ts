@@ -6,7 +6,6 @@ const shell: Messages['shell'] = {
   capture: {
     title: 'Rekod transaksi',
     subtitle: 'Pilih cara paling pantas untuk anda',
-    limitBadge: 'Had',
     scan: {
       title: 'Imbas Resit',
       short: 'Imbas Resit',
@@ -53,8 +52,6 @@ const shell: Messages['shell'] = {
     benefitTax: 'Alat cukai lengkap dan eksport PDF',
     cta: 'Lihat pakej Premium',
     later: 'Nanti dulu',
-    inactiveTitle: 'Pembelian belum aktif',
-    inactiveMessage: 'Pilihan pakej dan harga muncul selepas RevenueCat disambungkan dalam Fasa 3.',
   },
 };
 

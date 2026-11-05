@@ -74,6 +74,7 @@ export default function MasukScreen() {
           <Button label={t('auth.signIn.submit')} onPress={submit} loading={sending} disabled={sending || email.trim() === ''} fullWidth />
         </View>
       </Card>
+      <Button label={t('auth.signIn.pricing')} variant="ghost" fullWidth onPress={() => router.push('/harga')} />
     </Screen>
   );
 }

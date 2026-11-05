@@ -7,6 +7,7 @@ const auth: Messages['auth'] = {
     emailLabel: 'E-posta',
     emailHint: 'Bu e-postaya 6 haneli bir kod göndereceğiz. Şifre gerekmez.',
     submit: 'Kod gönder',
+    pricing: 'Premium fiyatlarını gör',
     errorInvalid: 'E-posta biçimi doğru değil. Örnek: ad@email.com',
     errorRate: 'Çok fazla kod istendi. Birkaç dakika bekleyip tekrar dene.',
     errorNetwork: 'Bağlanılamıyor. İnternet bağlantını kontrol edip tekrar dene.',

@@ -171,8 +171,20 @@ EXPO_PUBLIC_DESIGN_SHEET=1 npm run web  # buka Lembar Desain di /design
 - Notifikasi otomatis (budget 80/100%, recap Senin 07.00) belum dijadwalkan; tabel + Realtime sudah siap.
 - Transaksi hasil import memakai jam 00:00.
 
-## Untuk Fase 3
+## Fase 3: monetisasi (dibangun lokal, BELUM di-deploy)
 
-- RevenueCat (in-app) + Xendit (IDR/MYR) + Paddle (web global); webhook mengubah `profiles.plan` (hanya server). Stripe dilarang.
+Detail, daftar kunci, dan checklist dashboard: `docs/fase3-pembayaran.md`.
+
+- **Server**: migrasi `20261106000005_monetization.sql` memperluas sistem kuota Fase 2 (jenis batas month/day/total/feature, trigger batas generik, `my_usage` dengan jenis), tabel `prices`, `orders`, `webhook_events`, `admin_users`, RPC admin. Cron: pesanan kedaluwarsa + sinkron entitlement.
+- **Edge Functions**: `checkout-create`, `xendit-webhook`, `paddle-webhook`, `revenuecat-webhook`, `entitlement-sync`, `admin-grant`. RevenueCat = sumber kebenaran; paid web -> grant entitlement promosi (REST v2) sesuai durasi -> cermin di profil -> notifikasi in-app.
+- **Aplikasi**: `react-native-purchases` (Expo Go = Preview API Mode, pembelian sungguhan butuh dev build), halaman Premium, status pesanan (Realtime + polling), Sukses, Pricing publik `/harga`, Admin `/admin` (web, role admin). Sheet paywall membuka halaman Premium dengan alasannya. Badge PRO pada fitur terkunci.
+- **Feature flag**: link checkout web di iOS/Android hanya untuk wilayah `EXPO_PUBLIC_WEB_CHECKOUT_*_REGIONS` (bawaan kosong).
+- **Uji**: `billing.test.ts` (HMAC Paddle, token, transisi status, perpanjangan masa), `plan-mirror.test.ts` (kuota + harga klien = seed server), 9 uji DB baru. Beli sandbox ujung ke ujung belum bisa: menunggu kunci.
+
+## Sisa sebelum rilis
+
+- Kunci RevenueCat/Xendit/Paddle + produk dashboard (lihat dokumen Fase 3), lalu uji beli bulanan + tahunan sampai lunas, webhook, grant, pulihkan.
+- Fitur Goals/Tagihan/Utang/Langganan/Invoice/Alat Pajak/Tanya Coach/recap bulanan belum dibangun; batasnya sudah ada di server, tinggal pasang trigger saat tabelnya dibuat.
 - Selesaikan keputusan email OTP; login Google (FR-AUTH-1).
 - Hardening: cabut token akses Supabase dan kunci Gemini yang pernah ditempel di percakapan, buat ulang.
+- Host web (untuk `/harga`, checkout web, `/admin`) dan `APP_URL` belum ditentukan.

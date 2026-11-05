@@ -7,6 +7,7 @@ const auth: Messages['auth'] = {
     emailLabel: 'Email',
     emailHint: 'We will send a 6-digit code to this email. No password needed.',
     submit: 'Send code',
+    pricing: 'See Premium pricing',
     errorInvalid: 'That email does not look right. Example: name@email.com',
     errorRate: 'Too many code requests. Wait a few minutes and try again.',
     errorNetwork: 'Cannot connect. Check your internet connection and try again.',

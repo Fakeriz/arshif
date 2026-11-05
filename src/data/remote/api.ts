@@ -1,7 +1,7 @@
 import type { Account, AppNotification, Plan, Transaction } from '@/data/types';
 import type { Lang } from '@/i18n/types';
 import type { Split } from '@/lib/budget';
-import type { QuotaKey, Usage } from '@/lib/quota';
+import { EMPTY_USAGE, isQuotaKey, type Usage } from '@/lib/quota';
 import { supabase } from '@/lib/supabase';
 import type { AccentKey } from '@/theme/tokens';
 import type { ThemeMode } from '@/theme/ThemeProvider';
@@ -41,6 +41,8 @@ export type Profile = {
   notifPrefs: Record<'bill_due' | 'budget_alert' | 'weekly_recap' | 'quota_warning', boolean>;
   activeAccountId: string | null;
   plan: Plan;
+  premiumUntil: string | null;
+  premiumSource: 'store' | 'web' | 'manual' | null;
   onboarded: boolean;
 };
 
@@ -48,6 +50,7 @@ type ProfileRow = {
   display_name: string | null; main_currency: string; lang: Lang; accent: AccentKey; theme_mode: ThemeMode; hide_balance: boolean;
   payday: number; monthly_income: number; split_needs: number; split_wants: number; split_savings: number;
   notif_prefs: Profile['notifPrefs']; active_account_id: string | null; plan: Plan; onboarded_at: string | null;
+  premium_until: string | null; premium_source: 'store' | 'web' | 'manual' | null;
 };
 
 export async function loadProfile(userId: string, email: string): Promise<Profile> {
@@ -66,6 +69,8 @@ export async function loadProfile(userId: string, email: string): Promise<Profil
     notifPrefs: r.notif_prefs,
     activeAccountId: r.active_account_id,
     plan: r.plan,
+    premiumUntil: r.premium_until,
+    premiumSource: r.premium_source,
     onboarded: r.onboarded_at !== null,
   };
 }
@@ -113,9 +118,9 @@ export async function loadNotifications(): Promise<AppNotification[]> {
 }
 
 export async function loadUsage(): Promise<Usage> {
-  const rows = must(await supabase.rpc('my_usage')) as unknown as { key: QuotaKey; used: number }[];
-  const usage: Usage = { accounts: 0, scan: 0, automation: 0, importPdf: 0, invoice: 0 };
-  for (const r of rows) usage[r.key] = r.used;
+  const rows = must(await supabase.rpc('my_usage')) as unknown as { key: string; used: number }[];
+  const usage: Usage = { ...EMPTY_USAGE };
+  for (const r of rows) if (isQuotaKey(r.key)) usage[r.key] = r.used;
   return usage;
 }
 
@@ -189,4 +194,63 @@ export async function markNotificationsRead(ids: string[]): Promise<void> {
 export async function receiptUrl(path: string): Promise<string> {
   const data = must(await supabase.storage.from('receipts').createSignedUrl(path, 600));
   return data.signedUrl;
+}
+
+// ------------------------------------------------------------------ billing (Fase 3)
+export type OrderStatus = 'pending' | 'paid' | 'expired' | 'failed' | 'refunded';
+export type Order = {
+  id: string;
+  provider: 'xendit' | 'paddle' | 'manual';
+  period: 'monthly' | 'yearly' | 'custom';
+  currency: string;
+  amount: number;
+  method: string | null;
+  status: OrderStatus;
+  checkoutUrl: string | null;
+  /** ID di penyedia: invoice Xendit atau transaksi Paddle (untuk membuka ulang checkout Paddle). */
+  providerRef: string | null;
+  expiresAt: string;
+  paidAt: string | null;
+  grantedUntil: string | null;
+  createdAt: string;
+};
+
+type OrderRow = {
+  id: string; provider: Order['provider']; period: Order['period']; currency: string; amount: number | string; method: string | null;
+  status: OrderStatus; checkout_url: string | null; provider_ref: string | null; expires_at: string; paid_at: string | null; granted_until: string | null; created_at: string;
+};
+
+export function mapOrder(r: OrderRow): Order {
+  return {
+    id: r.id, provider: r.provider, period: r.period, currency: r.currency, amount: Number(r.amount), method: r.method, status: r.status,
+    checkoutUrl: r.checkout_url, providerRef: r.provider_ref, expiresAt: r.expires_at, paidAt: r.paid_at, grantedUntil: r.granted_until, createdAt: r.created_at,
+  };
+}
+
+export async function loadOrder(id: string): Promise<Order | null> {
+  // Kolom eksplisit: klien hanya punya hak baca pada kolom ini (bukan granted_by/grant_error).
+  const r = must(await supabase.from('orders').select('id, provider, period, currency, amount, method, status, checkout_url, provider_ref, expires_at, paid_at, granted_until, created_at').eq('id', id).maybeSingle<OrderRow>());
+  return r ? mapOrder(r) : null;
+}
+
+export async function isAdmin(): Promise<boolean> {
+  return Boolean(must(await supabase.rpc('is_admin')));
+}
+
+export type AdminOrder = {
+  id: string; user_id: string; email: string; provider: string; period: string; currency: string; amount: number; method: string | null;
+  status: OrderStatus; created_at: string; paid_at: string | null; granted_until: string | null; grant_error: string | null;
+};
+export async function adminOrders(status: OrderStatus | null): Promise<AdminOrder[]> {
+  return must(await supabase.rpc('admin_orders', { p_status: status, p_limit: 200 })) as AdminOrder[];
+}
+
+export type AiUsageRow = { kind: string; total: number; ok: number; failed: number; limited: number; fail_ratio: number | null; avg_latency_ms: number | null; p95_latency_ms: number | null };
+export async function adminAiUsage(days: number): Promise<AiUsageRow[]> {
+  return must(await supabase.rpc('admin_ai_usage', { p_days: days })) as AiUsageRow[];
+}
+
+export type AiFailure = { created_at: string; kind: string; email: string; error: string | null; latency_ms: number | null };
+export async function adminAiFailures(): Promise<AiFailure[]> {
+  return must(await supabase.rpc('admin_ai_failures', { p_limit: 50 })) as AiFailure[];
 }

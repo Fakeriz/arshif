@@ -6,7 +6,6 @@ const shell: Messages['shell'] = {
   capture: {
     title: 'İşlem ekle',
     subtitle: 'Senin için en hızlı yolu seç',
-    limitBadge: 'Limit',
     scan: {
       title: 'Fiş Tara',
       short: 'Fiş Tara',
@@ -53,8 +52,6 @@ const shell: Messages['shell'] = {
     benefitTax: 'Tam vergi araçları ve PDF dışa aktarma',
     cta: 'Premium paketleri gör',
     later: 'Şimdi değil',
-    inactiveTitle: 'Satın alma henüz aktif değil',
-    inactiveMessage: 'Paketler ve fiyatlar, RevenueCat 3. Aşamada bağlandığında görünür.',
   },
 };
 

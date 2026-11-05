@@ -2,7 +2,7 @@ import { useRouter } from 'expo-router';
 import { StyleSheet, View } from 'react-native';
 
 import { useT } from '@/i18n';
-import { Badge, BottomSheet, Icon, ListItem } from '@/components/ui';
+import { BottomSheet, Icon, ListItem, ProBadge } from '@/components/ui';
 import { useLimits } from '@/state/limits';
 import { useTheme } from '@/theme/ThemeProvider';
 import { radius } from '@/theme/tokens';
@@ -39,7 +39,7 @@ export function CaptureSheet({ visible, onClose, keys, title, subtitle }: Captur
           }
           title={o.title}
           subtitle={o.sub}
-          trailing={o.limited ? <Badge label={t('shell.capture.limitBadge')} tone="warning" /> : undefined}
+          trailing={o.limited ? <ProBadge size="sm" /> : undefined}
           chevron={!o.limited}
           divider={i < options.length - 1}
           onPress={() => {

@@ -81,7 +81,7 @@ export function AppStoreProvider({ children, preset }: { children: ReactNode; pr
         type: 'load/done',
         data: {
           email: profile.email, displayName: profile.displayName, onboarded: profile.onboarded, accounts, transactions, notifications,
-          plan: profile.plan, usage, hideBalance: profile.hideBalance, mainCurrency: profile.mainCurrency, income: profile.income,
+          plan: profile.plan, premiumUntil: profile.premiumUntil, premiumSource: profile.premiumSource, usage, hideBalance: profile.hideBalance, mainCurrency: profile.mainCurrency, income: profile.income,
           split: profile.split, payday: profile.payday, notifPrefs: profile.notifPrefs, activeAccountId: profile.activeAccountId, ratesDate: rates.date,
         },
       });

@@ -1,8 +1,9 @@
 import { Check, Crown } from 'lucide-react-native';
+import { router } from 'expo-router';
 import { createContext, useCallback, useContext, useState, type ReactNode } from 'react';
 import { StyleSheet, View } from 'react-native';
 
-import { AppText, BottomSheet, Button, Icon, useToast } from '@/components/ui';
+import { AppText, BottomSheet, Button, Icon } from '@/components/ui';
 import { useT, type TFunction } from '@/i18n';
 import { QUOTAS } from '@/lib/quota';
 import { useTheme } from '@/theme/ThemeProvider';
@@ -31,7 +32,6 @@ function benefits(t: TFunction): string[] {
 export function PaywallProvider({ children }: { children: ReactNode }) {
   const [reason, setReason] = useState<string | null>(null);
   const open = useCallback((r: string) => setReason(r), []);
-  const { show } = useToast();
   const { colors } = useTheme();
   const t = useT();
 
@@ -54,8 +54,9 @@ export function PaywallProvider({ children }: { children: ReactNode }) {
           icon={Crown}
           fullWidth
           onPress={() => {
+            const alasan = reason ?? undefined;
             setReason(null);
-            show({ tone: 'info', title: t('shell.paywall.inactiveTitle'), message: t('shell.paywall.inactiveMessage') });
+            router.push({ pathname: '/premium', params: alasan ? { alasan } : {} });
           }}
         />
         <Button label={t('shell.paywall.later')} variant="ghost" fullWidth onPress={() => setReason(null)} />

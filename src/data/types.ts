@@ -62,7 +62,7 @@ export type AppNotification = {
   time: string;
   read: boolean;
   /** Rute tujuan bila ada. */
-  href?: '/coach' | '/anggaran' | '/pengaturan';
+  href?: '/coach' | '/anggaran' | '/pengaturan' | '/premium';
 };
 
 export type Plan = 'free' | 'premium';

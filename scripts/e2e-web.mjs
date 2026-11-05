@@ -97,7 +97,9 @@ await step('Home: strip akun membuka deck, ketuk kartu menutup kembali ke strip'
 await step('Home: kartu batas 4 akun membuka sheet Premium', async () => {
   const p = await open('/'); await openDeck(p); await pageDeck(p, 4); await p.waitForTimeout(600);
   await p.getByRole('button', { name: /Batas 4 akun tercapai/ }).click(); await expectText(p, 'Buka batas dengan Premium');
-  await btn(p, 'Lihat paket Premium').click(); await expectText(p, 'Pembelian belum aktif');
+  await btn(p, 'Lihat paket Premium').click(); await p.waitForTimeout(600);
+  if (url(p) !== '/premium') throw new Error(url(p));
+  await expectText(p, 'Paket Free dibatasi 4 akun'); await expectText(p, 'Free dan Premium');
 });
 await step('Home: geser kartu akun -> snap ke kartu berikut, titik pindah, akun aktif jadi default Catat manual', async () => {
   const p = await open('/');
@@ -147,6 +149,24 @@ await step('Anggaran: sheet persentase menolak total != 100, menerima 60/20/20',
   await expectText(p, 'Total 105%'); if (!(await btn(p, 'Simpan persentase').isDisabled())) throw new Error('tombol tidak disabled');
   await btn(p, 'Kurangi Keinginan').click(); await btn(p, 'Kurangi Tabungan & Utang').click(); await btn(p, 'Tambah Kebutuhan').click();
   await expectText(p, 'Total 100%'); await btn(p, 'Simpan persentase').click(); await expectText(p, '60% dari penghasilan');
+});
+await step('Pricing publik tanpa login: harga terkunci, ganti mata uang, tombol masuk', async () => {
+  const p = await open('/harga'); await expectText(p, 'Rp 25.000'); await expectText(p, 'Rp 250.000');
+  await p.getByText('MYR', { exact: true }).click(); await expectText(p, 'RM 6.90'); await expectText(p, 'RM 69.00');
+  await p.getByText('USD', { exact: true }).click(); await expectText(p, '$1.50');
+  await btn(p, 'Masuk untuk mulai').click(); await p.waitForTimeout(500);
+  if (url(p) !== '/masuk') throw new Error(url(p));
+}, { signedIn: false });
+await step('Premium web: pilih paket + metode, checkout dibuat (mode test) atau pesan "belum aktif"', async () => {
+  const p = await open('/premium'); await p.getByRole('radio', { name: /^Bulanan/ }).click();
+  await btn(p, 'Bayar Rp 25.000').click(); await p.waitForTimeout(4000);
+  // Tanpa kunci Xendit: pesan jelas, bukan error mentah. Dengan kunci test: diarahkan ke halaman invoice Xendit.
+  if (!/xendit\.co/.test(p.url())) await expectText(p, 'belum aktif');
+});
+await step('Pengguna Free tidak bisa memberi diri sendiri Premium (RPC admin ditolak, tombol Admin tidak tampil)', async () => {
+  const p = await open('/pengaturan'); await expectText(p, 'Pengaturan');
+  if (await p.getByRole('button', { name: 'Admin' }).count()) throw new Error('tombol admin tampil');
+  const p2 = await open('/admin'); await expectText(p2, 'Halaman ini khusus admin.');
 });
 await step('Coach: tab Recap, Tanya Coach (batas) -> Premium', async () => {
   const p = await open('/coach'); await p.getByRole('tab', { name: 'Recap' }).click(); await expectText(p, 'Minggu lalu kamu belanja');

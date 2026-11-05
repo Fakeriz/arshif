@@ -3,7 +3,7 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import { HttpError } from './http.ts';
 
 export type AiKind = 'scan' | 'voice' | 'import' | 'coach';
-export type QuotaKey = 'scan' | 'automation' | 'importPdf';
+export type QuotaKey = 'scan' | 'automation' | 'importPdf' | 'coachAsk';
 
 const RATE_LIMIT_PER_MIN = 10; // PRD Bab 9
 

@@ -5,6 +5,7 @@ const auth = {
     emailLabel: 'Email',
     emailHint: 'Kami kirim kode 6 digit ke email ini. Tanpa kata sandi.',
     submit: 'Kirim kode',
+    pricing: 'Lihat harga Premium',
     errorInvalid: 'Format email belum benar. Contoh: nama@email.com',
     errorRate: 'Terlalu banyak permintaan kode. Tunggu beberapa menit lalu coba lagi.',
     errorNetwork: 'Tidak bisa terhubung. Periksa koneksi internetmu lalu coba lagi.',

@@ -1,5 +1,5 @@
 import { usePaywall } from '@/components/shell/Paywall';
-import { AppText, Card, EmptyState } from '@/components/ui';
+import { AppText, Card, EmptyState, ProBadge } from '@/components/ui';
 import { View } from 'react-native';
 
 import { useT } from '@/i18n';
@@ -13,6 +13,9 @@ export function AskTab() {
   const t = useT();
   return (
     <View style={{ gap: space.lg }}>
+      <View style={{ alignItems: 'center' }}>
+        <ProBadge />
+      </View>
       <EmptyState
         kind="limit"
         title={t('coach.ask.title')}

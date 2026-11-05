@@ -1,19 +1,30 @@
 import { Crown } from 'lucide-react-native';
-import { StyleSheet, View } from 'react-native';
+import { useRouter } from 'expo-router';
+import { Platform, StyleSheet, View } from 'react-native';
 
-import { usePaywall } from '@/components/shell/Paywall';
 import { AppText, Badge, Button, Card, ProgressBar } from '@/components/ui';
-import { useT } from '@/i18n';
+import { useI18n } from '@/i18n';
+import { isoDateLabel } from '@/lib/dates';
 import { quotaFor, type QuotaKey, type Usage } from '@/lib/quota';
 import type { Plan } from '@/data/types';
+import { useStore } from '@/state/AppStore';
 import { space } from '@/theme/tokens';
 
 const KEYS: QuotaKey[] = ['scan', 'automation', 'importPdf', 'accounts'];
 
 /** Pemakaian kuota bulan ini. Batas yang sudah penuh ditandai dan mengarah ke Premium. */
 export function UsageCard({ plan, usage, accountCount }: { plan: Plan; usage: Usage; accountCount: number }) {
-  const paywall = usePaywall();
-  const t = useT();
+  const router = useRouter();
+  const { t, lang } = useI18n();
+  const { state } = useStore();
+  const source =
+    state.premiumSource === 'store'
+      ? t('billing.settings.viaStore', { store: t(`billing.store.${Platform.OS === 'ios' ? 'ios' : 'android'}`) })
+      : state.premiumSource === 'web'
+        ? t('billing.settings.viaWeb')
+        : state.premiumSource === 'manual'
+          ? t('billing.settings.viaManual')
+          : null;
   return (
     <Card>
       <View style={styles.head}>
@@ -22,6 +33,20 @@ export function UsageCard({ plan, usage, accountCount }: { plan: Plan; usage: Us
         </AppText>
         <Badge label={t(plan === 'free' ? 'settings.usage.planFree' : 'settings.usage.planPremium')} tone={plan === 'free' ? 'neutral' : 'accent'} />
       </View>
+      {plan === 'premium' && (
+        <View style={styles.premium}>
+          {state.premiumUntil && (
+            <AppText variant="body" tone="secondary">
+              {t('billing.settings.until', { date: isoDateLabel(state.premiumUntil, lang) })}
+            </AppText>
+          )}
+          {source && (
+            <AppText variant="caption" tone="muted">
+              {source}
+            </AppText>
+          )}
+        </View>
+      )}
       <View style={styles.list}>
         {KEYS.map((k) => {
           const limit = quotaFor(plan, k);
@@ -46,7 +71,14 @@ export function UsageCard({ plan, usage, accountCount }: { plan: Plan; usage: Us
       <AppText variant="caption" tone="muted" style={styles.reset}>
         {t('settings.usage.reset')}
       </AppText>
-      {plan === 'free' && <Button label={t('settings.usage.unlock')} icon={Crown} variant="secondary" size="md" fullWidth onPress={() => paywall(t('settings.usage.unlockReason'))} />}
+      <Button
+        label={plan === 'free' ? t('settings.usage.unlock') : t('billing.settings.manage')}
+        icon={Crown}
+        variant="secondary"
+        size="md"
+        fullWidth
+        onPress={() => router.push(plan === 'free' ? { pathname: '/premium', params: { alasan: t('settings.usage.unlockReason') } } : '/premium')}
+      />
     </Card>
   );
 }
@@ -58,4 +90,5 @@ const styles = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'baseline', gap: space.sm },
   flex: { flex: 1 },
   reset: { marginBottom: space.lg },
+  premium: { gap: space.xxs, marginTop: space.sm },
 });

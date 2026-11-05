@@ -26,6 +26,7 @@ const StoragePath = z.string().regex(/^[0-9a-f-]{36}\/[A-Za-z0-9._-]{1,80}$/);
 /** Kode error yang dipahami klien. HTTP status dipilih server, klien membaca `error`. */
 export const ErrorCode = z.enum([
   'unauthorized', 'bad_request', 'rate_limited', 'quota', 'unreadable', 'encrypted_pdf', 'too_large', 'ai_failed', 'not_found', 'server',
+  'forbidden', 'not_configured', 'provider_error',
 ]);
 export type ErrorCode = z.infer<typeof ErrorCode>;
 export const ErrorBody = z.object({ error: ErrorCode, quotaKey: z.string().optional(), message: z.string().optional() });
@@ -109,6 +110,34 @@ export type CoachResult = z.infer<typeof CoachResult>;
 // ------------------------------------------------------------------ delete-account (FR-SET-3)
 export const DeleteAccountRequest = z.object({ confirm: z.literal('DELETE') });
 
+// ------------------------------------------------------------------ billing (FR-PAY-1..5)
+export const PERIODS = ['monthly', 'yearly'] as const;
+export const Period = z.enum(PERIODS);
+/** Mata uang web checkout. IDR/MYR lewat Xendit; USD lewat Paddle (Paddle melokalkan ke TRY dan lainnya). */
+export const CHECKOUT_CURRENCIES = ['IDR', 'MYR', 'USD'] as const;
+export const CheckoutCurrency = z.enum(CHECKOUT_CURRENCIES);
+export const PAY_METHODS = ['va', 'qris', 'ewallet', 'fpx', 'card'] as const;
+export const PayMethod = z.enum(PAY_METHODS);
+export const ORDER_STATUSES = ['pending', 'paid', 'expired', 'failed', 'refunded'] as const;
+export const OrderStatus = z.enum(ORDER_STATUSES);
+
+export const CheckoutRequest = z.object({ period: Period, currency: CheckoutCurrency, method: PayMethod });
+export const CheckoutResponse = z.object({
+  orderId: Uuid,
+  provider: z.enum(['xendit', 'paddle']),
+  /** Xendit: halaman invoice. Paddle: null, checkout dibuka lewat Paddle.js dengan transactionId. */
+  checkoutUrl: z.string().url().nullable(),
+  transactionId: z.string().nullable(),
+});
+export type CheckoutResponse = z.infer<typeof CheckoutResponse>;
+
+/** Cocokkan paket dengan RevenueCat (setelah beli/pulihkan di aplikasi, atau saat membuka halaman status). */
+export const SyncResponse = z.object({ plan: z.enum(['free', 'premium']), premiumUntil: z.string().nullable() });
+export type SyncResponse = z.infer<typeof SyncResponse>;
+
+export const AdminGrantRequest = z.object({ email: z.string().email().max(254), days: z.number().int().min(1).max(3660) });
+export const AdminGrantResponse = z.object({ orderId: Uuid, premiumUntil: z.string() });
+
 /** Nama function = path di /functions/v1/<nama>. */
 export const FUNCTIONS = {
   scan: 'scan-receipt',
@@ -117,4 +146,7 @@ export const FUNCTIONS = {
   coach: 'coach',
   fxSync: 'fx-sync',
   deleteAccount: 'delete-account',
+  checkout: 'checkout-create',
+  entitlementSync: 'entitlement-sync',
+  adminGrant: 'admin-grant',
 } as const;

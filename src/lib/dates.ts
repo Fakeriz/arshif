@@ -89,3 +89,15 @@ export function greetingKey(hour: number): 'morning' | 'afternoon' | 'evening' |
   if (hour < 19) return 'evening';
   return 'night';
 }
+
+/** Timestamp ISO -> "6 Des 2026" di zona waktu perangkat (masa aktif Premium, tanggal pesanan). */
+export function isoDateLabel(iso: string, lang: Lang): string {
+  const d = new Date(iso);
+  return `${d.getDate()} ${CALENDARS[lang].monthsShort[d.getMonth()]} ${d.getFullYear()}`;
+}
+
+/** Timestamp ISO -> "6 Des 2026, 14.05" (24 jam, titik sebagai pemisah jam seperti dayLabel). */
+export function isoDateTimeLabel(iso: string, lang: Lang): string {
+  const d = new Date(iso);
+  return `${isoDateLabel(iso, lang)}, ${pad2(d.getHours())}.${pad2(d.getMinutes())}`;
+}

@@ -1,3 +1,4 @@
+import { EMPTY_USAGE } from '@/lib/quota';
 import { convert } from '@/lib/fx';
 
 import type { Account, AppNotification, ReceiptItem, Transaction, TxSource, TxType } from './types';
@@ -139,4 +140,4 @@ export const DEMO_CATEGORY_LIMITS: Record<string, number> = {
 export const DEMO_BILLS = { due: 6, onTime: 5 };
 export const DEMO_PREVIOUS_SCORE = 72;
 
-export const seedUsage = { accounts: 4, scan: 14, automation: 12, importPdf: 0, invoice: 0 };
+export const seedUsage = { ...EMPTY_USAGE, accounts: 4, scan: 14, automation: 12 };

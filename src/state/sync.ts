@@ -69,6 +69,6 @@ export async function syncAction(action: Action, state: AppState, userId: string
       await api.updateProfile(userId, { active_account_id: action.id });
       return [];
     default:
-      return []; // aksi lokal saja (load/*, usage/set, notif/add, account/add, profile/set)
+      return []; // aksi lokal saja (load/*, usage/set, plan/set, notif/add, account/add, profile/set)
   }
 }
