@@ -1,4 +1,4 @@
-import { Pencil, ScanText, Trash2 } from 'lucide-react-native';
+import { Pencil, ScanText, Split, Trash2 } from 'lucide-react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
@@ -99,6 +99,15 @@ export default function TransactionDetail() {
       )}
       {tx.receipt && <ReceiptDetailsCard receipt={tx.receipt} />}
       {tx.receiptPath && <ReceiptPhoto path={tx.receiptPath} merchant={tx.merchant} />}
+      {tx.type === 'expense' && (
+        <Button
+          label={t('plan.split.fromReceipt')}
+          icon={Split}
+          variant="secondary"
+          fullWidth
+          onPress={() => router.push({ pathname: '/rencana/split/[id]', params: { id: 'baru', tx: tx.id } })}
+        />
+      )}
       {tx.receiptPath && tx.type === 'expense' && (
         <Button label={t('tx.receipt.reread')} icon={ScanText} variant="secondary" fullWidth loading={rereading} disabled={rereading} onPress={() => void reread(tx.receiptPath!, tx.id)} />
       )}

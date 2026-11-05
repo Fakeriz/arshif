@@ -6,6 +6,7 @@ import { Screen } from '@/components/shell/Screen';
 import { TabHeader } from '@/components/shell/TabHeader';
 import { AppText, Badge, Button, Card, CurrencyText, DonutChart, EmptyState, Skeleton } from '@/components/ui';
 import { BucketSection } from '@/features/budget/BucketSection';
+import { PlanningEntries } from '@/features/planning/PlanningEntries';
 import { SplitSheet } from '@/features/budget/SplitSheet';
 import { useI18n } from '@/i18n';
 import { BUCKETS } from '@/lib/budget';
@@ -107,6 +108,7 @@ export default function AnggaranScreen() {
           categorySpent={b.categorySpent}
         />
       ))}
+      <PlanningEntries />
       <SplitSheet visible={sheet} onClose={() => setSheet(false)} split={state.split} onSave={(split) => dispatch({ type: 'budget/split', split })} />
     </Screen>
   );

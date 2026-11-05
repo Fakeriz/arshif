@@ -18,6 +18,7 @@ import { BootScreen } from '@/components/shell/BootScreen';
 import { BlurTargetArea, BlurTargetScope, ToastProvider } from '@/components/ui';
 import { I18nProvider } from '@/i18n';
 import { AppStoreProvider, useStore } from '@/state/AppStore';
+import { PlanningProvider } from '@/state/planning';
 import { PurchasesBridge } from '@/state/billing';
 import { SessionProvider, useSession } from '@/state/session';
 import { loadHapticLevel } from '@/theme/motion';
@@ -60,14 +61,16 @@ function Shell() {
     <BlurTargetScope>
       <ToastProvider>
         <AppStoreProvider>
-          <PaywallProvider>
-            <PurchasesBridge />
-            <StatusBar style={scheme === 'dark' ? 'light' : 'dark'} />
-            {/* Android: konten Stack = sumber blur untuk toast (di luar area) serta sheet/dialog (Modal). */}
-            <BlurTargetArea style={styles.fill}>
-              <Routes />
-            </BlurTargetArea>
-          </PaywallProvider>
+          <PlanningProvider>
+            <PaywallProvider>
+              <PurchasesBridge />
+              <StatusBar style={scheme === 'dark' ? 'light' : 'dark'} />
+              {/* Android: konten Stack = sumber blur untuk toast (di luar area) serta sheet/dialog (Modal). */}
+              <BlurTargetArea style={styles.fill}>
+                <Routes />
+              </BlurTargetArea>
+            </PaywallProvider>
+          </PlanningProvider>
         </AppStoreProvider>
       </ToastProvider>
     </BlurTargetScope>
@@ -119,6 +122,15 @@ function Routes() {
         <Stack.Screen name="voice-review" />
         <Stack.Screen name="import" />
         <Stack.Screen name="import-review" />
+        <Stack.Screen name="rencana/goals/index" />
+        <Stack.Screen name="rencana/goals/[id]" />
+        <Stack.Screen name="rencana/tagihan" />
+        <Stack.Screen name="rencana/utang/index" />
+        <Stack.Screen name="rencana/utang/[id]" />
+        <Stack.Screen name="rencana/simulator" />
+        <Stack.Screen name="rencana/langganan" />
+        <Stack.Screen name="rencana/split/index" />
+        <Stack.Screen name="rencana/split/[id]" />
         <Stack.Screen name="premium/index" />
         <Stack.Screen name="premium/order/[id]" />
         <Stack.Screen name="premium/sukses" />

@@ -3,7 +3,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useReducer,
 import { useToast } from '@/components/ui';
 import * as api from '@/data/remote/api';
 import { toNotification, type NotificationRow } from '@/data/remote/mappers';
-import type { Account } from '@/data/types';
+import type { Account, Transaction } from '@/data/types';
 import { useI18n } from '@/i18n';
 import { setUsdRates } from '@/lib/fx';
 import { supabase } from '@/lib/supabase';
@@ -21,6 +21,11 @@ type StoreValue = {
   reload: () => Promise<void>;
   /** Ambil ulang pemakaian kuota dari server (setelah pekerjaan AI). */
   refreshUsage: () => void;
+  /**
+   * Tambah transaksi dan TUNGGU sampai tersimpan (Planning: transaksi harus ada sebelum tagihan/utang/goal
+   * merujuknya). Gagal = transaksi lokal dibatalkan dan error dilempar ke pemanggil.
+   */
+  commitTx: (tx: Transaction) => Promise<Transaction>;
   /** Sedang memuat ulang data yang sudah ada (tarik untuk muat ulang). */
   refreshing: boolean;
   userId: string | null;
@@ -150,7 +155,27 @@ export function AppStoreProvider({ children, preset }: { children: ReactNode; pr
     api.loadUsage().then((usage) => localDispatch({ type: 'usage/set', usage })).catch(() => undefined);
   }, [userId]);
 
-  const value = useMemo(() => ({ state, dispatch, reload, refreshUsage, refreshing, userId }), [state, dispatch, reload, refreshUsage, refreshing, userId]);
+  const commitTx = useCallback(
+    async (tx: Transaction): Promise<Transaction> => {
+      const before = stateRef.current;
+      localDispatch({ type: 'tx/add', tx });
+      if (!userId) return tx;
+      try {
+        const [rated] = await syncAction({ type: 'tx/add', tx }, before, userId);
+        localDispatch({ type: 'tx/update', tx: rated });
+        return rated;
+      } catch (e) {
+        localDispatch({ type: 'tx/delete', id: tx.id });
+        throw e;
+      }
+    },
+    [userId],
+  );
+
+  const value = useMemo(
+    () => ({ state, dispatch, reload, refreshUsage, commitTx, refreshing, userId }),
+    [state, dispatch, reload, refreshUsage, commitTx, refreshing, userId],
+  );
   return <StoreContext.Provider value={value}>{children}</StoreContext.Provider>;
 }
 

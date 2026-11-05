@@ -67,7 +67,7 @@ export type Transaction = {
   receipt?: ReceiptDetails;
 };
 
-export type NotificationType = 'bill_due' | 'budget_alert' | 'weekly_recap' | 'quota_warning' | 'system';
+export type NotificationType = 'bill_due' | 'budget_alert' | 'weekly_recap' | 'quota_warning' | 'goal_reached' | 'subscription_renewal' | 'system';
 
 export type AppNotification = {
   id: string;
@@ -83,7 +83,7 @@ export type AppNotification = {
   time: string;
   read: boolean;
   /** Rute tujuan bila ada. */
-  href?: '/coach' | '/anggaran' | '/pengaturan' | '/premium';
+  href?: '/coach' | '/anggaran' | '/pengaturan' | '/premium' | '/rencana/goals' | '/rencana/tagihan' | '/rencana/utang' | '/rencana/langganan' | '/rencana/split';
 };
 
 export type Plan = 'free' | 'premium';

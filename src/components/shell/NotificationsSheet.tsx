@@ -1,11 +1,13 @@
 import { useRouter } from 'expo-router';
-import { Bell, CalendarClock, ChartPie, Gauge, Sparkles, type LucideIcon } from 'lucide-react-native';
+import { Bell, CalendarClock, ChartPie, Gauge, PiggyBank, Repeat, Sparkles, type LucideIcon } from 'lucide-react-native';
 import { StyleSheet, View } from 'react-native';
 
 import { AppText, BottomSheet, Button, EmptyState, Icon, PressableScale } from '@/components/ui';
 import type { NotificationType } from '@/data/types';
 import { useI18n } from '@/i18n';
-import { dayLabel } from '@/lib/dates';
+import type { Lang } from '@/i18n/types';
+import { dayLabel, shortDate } from '@/lib/dates';
+import { formatMoney } from '@/lib/money';
 import { useStore } from '@/state/AppStore';
 import { useTheme } from '@/theme/ThemeProvider';
 import { radius, space } from '@/theme/tokens';
@@ -15,8 +17,19 @@ const ICONS: Record<NotificationType, LucideIcon> = {
   budget_alert: ChartPie,
   bill_due: CalendarClock,
   quota_warning: Gauge,
+  goal_reached: PiggyBank,
+  subscription_renewal: Repeat,
   system: Bell,
 };
+
+/** Notifikasi dari server membawa nominal mentah (unit terkecil + mata uang) dan tanggal ISO: format di sini. */
+function displayVars(vars: Record<string, string | number> | undefined, lang: Lang): Record<string, string | number> | undefined {
+  if (!vars) return vars;
+  const out = { ...vars };
+  if (typeof vars.amount === 'number' && typeof vars.currency === 'string') out.amount = formatMoney(vars.amount, vars.currency);
+  if (typeof vars.date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(vars.date)) out.date = shortDate(vars.date, lang);
+  return out;
+}
 
 export function NotificationsSheet({ visible, onClose }: { visible: boolean; onClose: () => void }) {
   const { state, dispatch } = useStore();
@@ -32,8 +45,9 @@ export function NotificationsSheet({ visible, onClose }: { visible: boolean; onC
       ) : (
         <View style={styles.list}>
           {state.notifications.map((n) => {
-            const title = t(n.titleKey, n.vars);
-            const message = t(n.messageKey, n.vars);
+            const vars = displayVars(n.vars, lang);
+            const title = t(n.titleKey, vars);
+            const message = t(n.messageKey, vars);
             return (
               <PressableScale
                 key={n.id}

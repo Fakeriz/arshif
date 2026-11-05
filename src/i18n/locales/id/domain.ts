@@ -109,6 +109,13 @@ const domain = {
     quotaMessage: '{used} dari {limit} scan terpakai. Reset 1 Desember.',
     premiumTitle: 'Premium aktif',
     premiumMessage: 'Semua batas Free sudah terbuka. Masa aktif tercatat di Pengaturan.',
+    billTodayTitle: 'Tagihan {biller} jatuh tempo hari ini',
+    billSoonTitle: 'Tagihan {biller} jatuh tempo {days} hari lagi',
+    billDueMessage: '{amount} pada {date}. Tandai lunas setelah dibayar.',
+    subTitle: '{name} diperpanjang 2 hari lagi',
+    subMessage: '{amount} pada {date}. Hentikan sebelum itu kalau sudah tidak dipakai.',
+    goalTitle: 'Goal {name} tercapai',
+    goalMessage: 'Target {amount} sudah terkumpul penuh.',
     premiumMessageStore: 'Langganan Premium aktif. Kelola perpanjangan di App Store atau Google Play.',
   },
   date: {

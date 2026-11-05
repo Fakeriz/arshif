@@ -238,22 +238,101 @@ await test('fitur Premium saja: plan_allows', async () => {
   await rejects(as(A, `select public.plan_allows($1, 'taxFull')`, [A]), /permission denied/);
 });
 
-await test('batas total generik: goals 3, tagihan + utang gabungan 3 (Free), Premium tanpa batas', async () => {
-  for (const t of ['goals', 'bills', 'debts']) {
-    await sys(`create table public.${t} (id uuid primary key default gen_random_uuid(), user_id uuid not null default auth.uid())`);
-    await sys(`grant select, insert on public.${t} to authenticated`);
-  }
-  await sys(`create trigger goals_limit before insert on public.goals for each row execute function public.enforce_total_limit('goals')`);
-  await sys(`create trigger bills_limit before insert on public.bills for each row execute function public.enforce_total_limit('billsDebts')`);
-  await sys(`create trigger debts_limit before insert on public.debts for each row execute function public.enforce_total_limit('billsDebts')`);
-  for (let i = 0; i < 3; i++) await as(A, 'insert into public.goals default values');
-  await rejects(as(A, 'insert into public.goals default values'), /quota_goals/);
-  await as(A, 'insert into public.bills default values');
-  await as(A, 'insert into public.bills default values');
-  await as(A, 'insert into public.debts default values');
-  await rejects(as(A, 'insert into public.debts default values'), /quota_billsDebts/);
-  eq((await as(A, `select used from public.my_usage() where key = 'billsDebts'`))[0].used, 3);
-  for (let i = 0; i < 6; i++) await as(B, 'insert into public.goals default values');
+await test('planning: batas Free dihitung dari yang aktif (goals 3, tagihan + utang 3, langganan 5)', async () => {
+  const goal = (n) => as(A, `insert into public.goals (name, target, currency) values ($1, 100000, 'IDR') returning id`, [n]);
+  const [{ id: g1 }] = await goal('Dana darurat');
+  await goal('Laptop');
+  await goal('Liburan');
+  await rejects(goal('Keempat'), /quota_goals/);
+  await as(A, `insert into public.goal_deposits (goal_id, amount, date) values ($1, 100000, '2026-11-08')`, [g1]);
+  await goal('Keempat');
+  eq((await as(A, `select used from public.my_usage() where key = 'goals'`))[0].used, 3);
+
+  const bill = (n) => as(A, `insert into public.bills (name, amount, currency, frequency, due_date, anchor_day) values ($1, 50000, 'IDR', 'monthly', '2026-11-20', 20) returning id`, [n]);
+  const debt = (n) => as(A, `insert into public.debts (kind, counterparty, principal, currency) values ('debt', $1, 300000, 'IDR') returning id, balance`, [n]);
+  await bill('Listrik');
+  await bill('Internet');
+  const [{ id: d1 }] = await debt('Budi');
+  await rejects(bill('Air'), /quota_billsDebts/);
+  await rejects(debt('Sari'), /quota_billsDebts/);
+  await as(A, `insert into public.debt_payments (debt_id, amount, date) values ($1, 300000, '2026-11-08')`, [d1]);
+  await debt('Sari');
+
+  const sub = (n) => as(A, `insert into public.subscriptions (name, amount, currency, cycle, next_renewal, anchor_day) values ($1, 54000, 'IDR', 'monthly', '2026-11-10', 10) returning id`, [n]);
+  const subs = [];
+  for (const n of ['Netflix', 'Spotify', 'YouTube', 'iCloud', 'ChatGPT']) subs.push((await sub(n))[0].id);
+  await rejects(sub('Disney'), /quota_subscriptions/);
+  await as(A, `update public.subscriptions set status = 'cancelled' where id = $1`, [subs[0]]);
+  await sub('Disney');
+  await rejects(as(A, `update public.subscriptions set status = 'active' where id = $1`, [subs[0]]), /quota_subscriptions/);
+
+  for (let i = 0; i < 5; i++) await as(B, `insert into public.goals (name, target, currency) values ('g', 1, 'IDR')`);
+});
+
+await test('planning: setoran goal menambah terkumpul; tercapai -> completed + notifikasi', async () => {
+  const [{ id: g }] = await as(B, `insert into public.goals (name, target, currency) values ('Motor', 1000000, 'IDR') returning id`);
+  await as(B, `insert into public.goal_deposits (goal_id, amount, date) values ($1, 400000, '2026-11-01')`, [g]);
+  eq(await as(B, 'select collected::int, status from public.goals where id = $1', [g]), [{ collected: 400000, status: 'active' }]);
+  await as(B, `insert into public.goal_deposits (goal_id, amount, date) values ($1, 600000, '2026-11-08')`, [g]);
+  eq(await as(B, 'select collected::int, status from public.goals where id = $1', [g]), [{ collected: 1000000, status: 'completed' }]);
+  eq(await as(B, `select type, href, vars->>'name' as name from public.notifications where type = 'goal_reached'`), [{ type: 'goal_reached', href: '/rencana/goals', name: 'Motor' }]);
+  await rejects(as(B, 'update public.goals set collected = 5 where id = $1', [g]), /permission denied/);
+});
+
+await test('planning: referensi ke akun/goal orang lain ditolak', async () => {
+  await rejects(as(B, `insert into public.goals (name, target, currency, account_id) values ('x', 1, 'IDR', $1)`, [bca]), /account_not_owned/);
+  const [{ id: g }] = await as(A, `select id from public.goals limit 1`);
+  await rejects(as(B, `insert into public.goal_deposits (goal_id, amount, date) values ($1, 1, '2026-11-08')`, [g]), /goal_not_owned|row-level security/);
+});
+
+await test('planning: tandai lunas tagihan memajukan jatuh tempo (hari jangkar 31), idempoten', async () => {
+  const [{ id: b }] = await as(B, `insert into public.bills (name, amount, currency, frequency, due_date, anchor_day) values ('Sewa', 2500000, 'IDR', 'monthly', '2026-01-31', 31) returning id`);
+  const [{ id: acc }] = await as(B, `insert into public.accounts (bank, name, type, currency) values ('cash', 'Dompet', 'cash', 'IDR') returning id`);
+  const tx = async () => (await as(B, `insert into public.transactions (type, merchant, category_key, account_id, date, amount, currency) values ('expense', 'Sewa', 'bills', $1, '2026-01-31', 2500000, 'IDR') returning id`, [acc]))[0].id;
+  const t1 = await tx();
+  eq(await as(B, 'select due_date::text, paid_periods::text from public.bill_mark_paid($1, $2)', [b, t1]), [{ due_date: '2026-02-28', paid_periods: '{2026-01-31}' }]);
+  eq(await as(B, 'select due_date::text from public.bill_mark_paid($1, $2)', [b, t1]), [{ due_date: '2026-02-28' }]);
+  eq(await as(B, 'select due_date::text, paid_periods::text from public.bill_mark_paid($1, $2)', [b, await tx()]), [{ due_date: '2026-03-31', paid_periods: '{2026-01-31,2026-02-28}' }]);
+  await rejects(as(B, `update public.bills set paid_periods = '{}' where id = $1`, [b]), /permission denied/);
+  const [{ id: other }] = await as(A, `select id from public.transactions limit 1`);
+  await rejects(as(B, 'select * from public.bill_mark_paid($1, $2)', [b, other]), /transaction_not_owned/);
+  await rejects(as(A, 'select * from public.bill_mark_paid($1, $2)', [b, other]), /bill_not_found/);
+  eq(await sys(`select public.next_due('2026-11-30', 'quarterly', 30)::text a, public.next_due('2024-02-29', 'yearly', 29)::text b, public.next_due('2026-11-28', 'weekly', 28)::text c`), [{ a: '2027-02-28', b: '2025-02-28', c: '2026-12-05' }]);
+});
+
+await test('planning: pembayaran utang mengurangi saldo, tidak boleh melebihi, lunas = paid', async () => {
+  const [{ id: d, balance: bal }] = await as(B, `insert into public.debts (kind, counterparty, principal, apr_bp, min_payment, currency) values ('debt', 'Kartu kredit', 1000000, 2400, 100000, 'IDR') returning id, balance`);
+  eq(Number(bal), 1000000);
+  await as(B, `insert into public.debt_payments (debt_id, amount, date) values ($1, 400000, '2026-11-08')`, [d]);
+  await rejects(as(B, `insert into public.debt_payments (debt_id, amount, date) values ($1, 700000, '2026-11-08')`, [d]), /payment_exceeds_balance/);
+  await as(B, `insert into public.debt_payments (debt_id, amount, date) values ($1, 600000, '2026-11-09')`, [d]);
+  eq(await as(B, 'select balance::int, status from public.debts where id = $1', [d]), [{ balance: 0, status: 'paid' }]);
+  await rejects(as(B, `update public.debts set balance = 5 where id = $1`, [d]), /permission denied/);
+});
+
+await test('planning: split bill milik sendiri; piutang hanya boleh merujuk split sendiri', async () => {
+  const parts = JSON.stringify([{ id: 'me', name: 'Rani', owner: true, share: 300000 }, { id: 'x', name: 'Ani', owner: false, share: 200000 }]);
+  const [{ id: s }] = await as(B, `insert into public.split_bills (title, currency, total, mode, date, participants) values ('Makan', 'IDR', 500000, 'equal', '2026-11-08', $1::jsonb) returning id`, [parts]);
+  await as(B, `insert into public.debts (kind, counterparty, principal, currency, split_bill_id) values ('receivable', 'Ani', 200000, 'IDR', $1)`, [s]);
+  eq((await as(A, 'select count(*)::int n from public.split_bills'))[0].n, 0);
+  await rejects(as(A, `insert into public.debts (kind, counterparty, principal, currency, split_bill_id) values ('receivable', 'x', 1, 'IDR', $1)`, [s]), /split_bill_not_owned|quota_billsDebts/);
+  await rejects(as(B, `insert into public.split_bills (title, currency, total, mode, date, participants) values ('x', 'IDR', 1, 'equal', '2026-11-08', '[]'::jsonb)`), /check constraint/);
+});
+
+await test('planning: pengingat tagihan H-3/H dan langganan H-2 sekali saja, mulai 07.00 lokal', async () => {
+  await sys(`update public.profiles set timezone = 'Asia/Jakarta' where id = $1`, [B]);
+  await sys(`update public.profiles set timezone = 'Mars/Olympus' where id = $1`, [A]);
+  eq((await sys('select timezone from public.profiles where id = $1', [A]))[0].timezone, 'Asia/Jakarta');
+  await as(B, `insert into public.bills (name, amount, currency, frequency, due_date, anchor_day) values ('PLN', 350000, 'IDR', 'monthly', '2026-11-10', 10), ('Wifi', 300000, 'IDR', 'monthly', '2026-11-07', 7)`);
+  await as(B, `insert into public.subscriptions (name, amount, currency, cycle, next_renewal, anchor_day) values ('Netflix', 54000, 'IDR', 'monthly', '2026-11-09', 9), ('Lama', 1000, 'IDR', 'monthly', '2026-10-01', 1)`);
+  const before = async () => Number((await sys(`select count(*) from public.notifications where user_id = $1 and type in ('bill_due', 'subscription_renewal')`, [B]))[0].count);
+  // 06.00 WIB: belum waktunya.
+  eq((await sys(`select public.planning_reminders('2026-11-07 06:00+07') n`))[0].n, 0);
+  eq((await sys(`select public.planning_reminders('2026-11-07 07:30+07') n`))[0].n, 3);
+  eq((await sys(`select public.planning_reminders('2026-11-07 09:30+07') n`))[0].n, 0);
+  eq(await before(), 3);
+  eq((await as(B, `select title_key from public.notifications where type = 'bill_due' order by title_key`)).map((r) => r.title_key), ['domain.notif.billSoonTitle', 'domain.notif.billTodayTitle']);
+  eq((await as(B, `select next_renewal::text from public.subscriptions where name = 'Lama'`))[0].next_renewal, '2026-12-01');
 });
 
 await test('kuota bulanan per baris generik: invoice 5/bulan (Free)', async () => {
@@ -262,7 +341,7 @@ await test('kuota bulanan per baris generik: invoice 5/bulan (Free)', async () =
   await sys(`create trigger invoices_quota before insert on public.invoices for each row execute function public.enforce_counter_quota('invoice')`);
   for (let i = 0; i < 5; i++) await as(A, 'insert into public.invoices default values');
   await rejects(as(A, 'insert into public.invoices default values'), /quota_invoice/);
-  for (const t of ['goals', 'bills', 'debts', 'invoices']) await sys(`drop table public.${t}`);
+  await sys('drop table public.invoices');
 });
 
 await test('harga: publik bisa dibaca (anon), tidak bisa ditulis', async () => {
