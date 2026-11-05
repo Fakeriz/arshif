@@ -27,7 +27,7 @@ export function Chip({ label, selected, onPress, icon, count, disabled }: ChipPr
       onPress={onPress}
       disabled={disabled}
       accessibilityRole="checkbox"
-      accessibilityState={{ checked: !!selected, disabled: !!disabled }}
+      aria-checked={!!selected} aria-disabled={!!disabled}
       accessibilityLabel={count != null ? `${label}, ${count}` : label}
       focusRadius={radius.full}
       style={[

@@ -1,3 +1,4 @@
+import { Redirect } from 'expo-router';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -18,7 +19,13 @@ const MODES: { key: ThemeMode; label: string }[] = [
 ];
 
 /** Lembar Desain Fase 0: pembanding visual check untuk Fase 1. */
-export default function DesignSheet() {
+export default function DesignSheetRoute() {
+  // Lembar Desain hanya untuk pengembangan. Rilis menyembunyikannya kecuali EXPO_PUBLIC_DESIGN_SHEET=1.
+  if (!__DEV__ && process.env.EXPO_PUBLIC_DESIGN_SHEET !== '1') return <Redirect href="/" />;
+  return <DesignSheet />;
+}
+
+function DesignSheet() {
   const { colors, mode, setMode } = useTheme();
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.bg }]} edges={['top', 'left', 'right']}>

@@ -49,7 +49,7 @@ export function SkeletonText({ lines = 3, lineHeight = 12 }: { lines?: number; l
       style={styles.lines}
       accessible
       accessibilityLabel="Memuat"
-      accessibilityState={{ busy: true }}
+      aria-busy
     >
       {Array.from({ length: lines }, (_, i) => (
         <Skeleton key={i} height={lineHeight} width={i === lines - 1 && lines > 1 ? '60%' : '100%'} />

@@ -72,7 +72,7 @@ export function BottomSheet({ visible, onClose, title, subtitle, children }: Bot
       </Animated.View>
       <View style={styles.anchor} pointerEvents="box-none">
         <Animated.View
-          accessibilityViewIsModal
+          aria-modal
           onLayout={(e) => {
             sheetHeight.current = e.nativeEvent.layout.height;
           }}

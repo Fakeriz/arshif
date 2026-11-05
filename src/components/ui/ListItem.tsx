@@ -13,6 +13,8 @@ import { Skeleton } from './Skeleton';
 export type ListItemProps = {
   title: string;
   subtitle?: string;
+  /** Baris maksimal subtitle (bawaan 1; pakai 2 untuk keterangan pengaturan). */
+  subtitleLines?: number;
   leading?: ReactNode;
   /** Teks atau elemen di kanan (mis. <CurrencyText/>). */
   trailing?: ReactNode;
@@ -26,6 +28,7 @@ export type ListItemProps = {
 export function ListItem({
   title,
   subtitle,
+  subtitleLines = 1,
   leading,
   trailing,
   trailingCaption,
@@ -43,7 +46,7 @@ export function ListItem({
           {title}
         </AppText>
         {subtitle && (
-          <AppText variant="caption" tone="muted" numberOfLines={1}>
+          <AppText variant="caption" tone="muted" numberOfLines={subtitleLines}>
             {subtitle}
           </AppText>
         )}

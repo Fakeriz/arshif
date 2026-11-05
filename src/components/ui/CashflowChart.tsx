@@ -82,7 +82,7 @@ export function CashflowChart({ data, currency, height = 180, loading }: Cashflo
                   key={d.label}
                   accessibilityRole="button"
                   accessibilityLabel={`${d.label}: pemasukan ${formatCompact(d.income, currency)}, pengeluaran ${formatCompact(d.expense, currency)}`}
-                  accessibilityState={{ selected: i === selected }}
+                  aria-selected={i === selected}
                   onPress={() => {
                     haptic('tap');
                     setSelected(i);

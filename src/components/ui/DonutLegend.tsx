@@ -29,7 +29,7 @@ export function DonutLegend({ segments, total, currency, selected, onToggle }: D
             key={seg.key}
             onPress={() => onToggle(seg.key)}
             accessibilityRole="button"
-            accessibilityState={{ selected: active }}
+            aria-selected={active}
             accessibilityLabel={`${seg.label}, ${pct} persen`}
             focusRadius={radius.sm}
             scaleTo={0.985}

@@ -53,7 +53,7 @@ export function Button({
       hapticOnPress={variant === 'primary'}
       accessibilityLabel={label}
       accessibilityHint={accessibilityHint}
-      accessibilityState={{ disabled: !!(disabled || loading), busy: !!loading }}
+      aria-disabled={!!(disabled || loading)} aria-busy={!!loading}
       focusRadius={radius.md}
       style={[
         styles.base,

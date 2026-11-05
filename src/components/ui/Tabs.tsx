@@ -70,7 +70,7 @@ export function Tabs<K extends string>({
           <PressableScale
             key={item.key}
             accessibilityRole="tab"
-            accessibilityState={{ selected: active }}
+            aria-selected={active}
             accessibilityLabel={item.label}
             onPress={() => onChange(item.key)}
             focusRadius={radius.sm}

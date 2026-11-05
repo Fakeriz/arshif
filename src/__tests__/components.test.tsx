@@ -76,7 +76,7 @@ describe('ProgressBar', () => {
 
   it('melaporkan persen ke pembaca layar', async () => {
     await wrap(<ProgressBar value={1.13} accessibilityLabel="Nongkrong" />);
-    expect(screen.getByLabelText('Nongkrong').props.accessibilityValue.now).toBe(113);
+    expect(screen.getByLabelText('Nongkrong').props['aria-valuenow']).toBe(113);
   });
 });
 

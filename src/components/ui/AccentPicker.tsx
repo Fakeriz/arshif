@@ -20,7 +20,7 @@ export function AccentPicker() {
           <PressableScale
             key={o.key}
             accessibilityRole="radio"
-            accessibilityState={{ checked: selected }}
+            aria-checked={selected}
             accessibilityLabel={o.label}
             onPress={() => setAccent(o.key)}
             containerStyle={styles.slot}

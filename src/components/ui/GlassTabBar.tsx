@@ -32,7 +32,7 @@ export function GlassTabBar<K extends string>({ items, value, onChange, onPressA
       <PressableScale
         key={item.key}
         accessibilityRole="tab"
-        accessibilityState={{ selected: active }}
+        aria-selected={active}
         accessibilityLabel={item.label}
         onPress={() => onChange(item.key)}
         containerStyle={styles.slot}

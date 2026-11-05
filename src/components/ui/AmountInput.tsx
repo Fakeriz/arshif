@@ -92,7 +92,7 @@ export function AmountInput({
         />
       </View>
       {error && (
-        <AppText variant="caption" tone="negative" align="center" accessibilityLiveRegion="polite">
+        <AppText variant="caption" tone="negative" align="center" aria-live="polite">
           {error}
         </AppText>
       )}

@@ -1,10 +1,20 @@
 import { useState, type ReactNode } from 'react';
-import { Pressable, type PressableProps, type StyleProp, type ViewStyle } from 'react-native';
+import { Platform, Pressable, type PressableProps, type StyleProp, type ViewStyle } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue } from 'react-native-reanimated';
 
 import { haptic, useMotion } from '@/theme/motion';
 import { useTheme } from '@/theme/ThemeProvider';
 import { motion } from '@/theme/tokens';
+
+/**
+ * Ring fokus hanya untuk navigasi keyboard (setara :focus-visible): klik mouse/sentuh tidak
+ * memunculkannya, tapi pengguna keyboard tetap melihat fokus (WCAG 2.4.7).
+ */
+let keyboardMode = false;
+if (Platform.OS === 'web' && typeof document !== 'undefined') {
+  document.addEventListener('keydown', () => { keyboardMode = true; }, true);
+  document.addEventListener('pointerdown', () => { keyboardMode = false; }, true);
+}
 
 export type PressableScaleProps = Omit<PressableProps, 'style' | 'children'> & {
   children: ReactNode;
@@ -42,7 +52,7 @@ export function PressableScale({
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityState={{ disabled: !!disabled }}
+      aria-disabled={!!disabled}
       disabled={disabled}
       style={containerStyle}
       onPressIn={(e) => {
@@ -58,7 +68,7 @@ export function PressableScale({
         onPress?.(e);
       }}
       onFocus={(e) => {
-        setFocused(true);
+        setFocused(keyboardMode);
         onFocus?.(e);
       }}
       onBlur={(e) => {

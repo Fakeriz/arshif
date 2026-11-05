@@ -37,6 +37,7 @@
     "@types/react": "~19.3.0",
     "jest": "^30.5.2",
     "jest-expo": "^58.0.14",
+    "playwright": "^1.64.1",
     "typescript": "~6.0.3"
   },
   "scripts": {
@@ -49,7 +50,8 @@
     "lint": "expo lint",
     "export:web": "expo export -p web",
     "doctor": "expo-doctor",
-    "verify": "npm run typecheck && npm test -- --ci && expo export -p web && expo export -p android --output-dir dist-android --no-bytecode && expo export -p ios --output-dir dist-ios --no-bytecode"
+    "verify": "npm run typecheck && npm test -- --ci && expo export -p web && expo export -p android --output-dir dist-android --no-bytecode && expo export -p ios --output-dir dist-ios --no-bytecode",
+    "e2e:web": "node scripts/e2e-web.mjs dist"
   },
   "private": true,
   "jest": {

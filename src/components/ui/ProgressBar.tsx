@@ -57,7 +57,9 @@ export function ProgressBar({
     <View
       accessibilityRole="progressbar"
       accessibilityLabel={accessibilityLabel}
-      accessibilityValue={{ min: 0, max: 100, now: Math.round(Math.max(0, value) * 100) }}
+      aria-valuemin={0}
+      aria-valuemax={100}
+      aria-valuenow={Math.round(Math.max(0, value) * 100)}
       style={[styles.track, { height, backgroundColor: colors.track }]}
     >
       <Animated.View style={[styles.fill, { backgroundColor: color }, fill]} />

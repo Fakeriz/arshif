@@ -69,7 +69,7 @@ export function Dialog({
       </Animated.View>
       <View style={styles.center} pointerEvents="box-none">
         <Animated.View
-          accessibilityViewIsModal
+          aria-modal
           accessibilityRole="alert"
           style={[styles.cardWrap, card]}
         >

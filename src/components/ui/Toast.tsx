@@ -72,7 +72,7 @@ function ToastView({ item, onDone }: { item: ToastItem; onDone: () => void }) {
     <View style={[styles.anchor, { top: insets.top + space.sm }]} pointerEvents="box-none">
       <Animated.View
         accessibilityRole={tone === 'error' ? 'alert' : 'text'}
-        accessibilityLiveRegion="polite"
+        aria-live="polite"
         style={[styles.toastWrap, style]}
       >
         <GlassView level="floating" radius={radius.md} style={styles.toast}>

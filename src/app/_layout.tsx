@@ -12,7 +12,9 @@ import { StatusBar } from 'expo-status-bar';
 import * as SystemUI from 'expo-system-ui';
 import { useEffect } from 'react';
 
+import { PaywallProvider } from '@/components/shell/Paywall';
 import { ToastProvider } from '@/components/ui';
+import { AppStoreProvider } from '@/state/AppStore';
 import { ThemeProvider, useTheme } from '@/theme/ThemeProvider';
 
 SplashScreen.preventAutoHideAsync().catch(() => undefined);
@@ -48,9 +50,13 @@ function ThemedStack() {
   }, [colors.bg]);
 
   return (
-    <ToastProvider>
-      <StatusBar style={scheme === 'dark' ? 'light' : 'dark'} />
-      <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.bg } }} />
-    </ToastProvider>
+    <AppStoreProvider>
+      <ToastProvider>
+        <PaywallProvider>
+          <StatusBar style={scheme === 'dark' ? 'light' : 'dark'} />
+          <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.bg }, animation: 'slide_from_right' }} />
+        </PaywallProvider>
+      </ToastProvider>
+    </AppStoreProvider>
   );
 }

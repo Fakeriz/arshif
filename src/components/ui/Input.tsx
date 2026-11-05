@@ -1,4 +1,4 @@
-import { CircleAlert, Eye, EyeOff, type LucideIcon } from 'lucide-react-native';
+import { CircleAlert, Eye, EyeOff, TriangleAlert, type LucideIcon } from 'lucide-react-native';
 import { useState, type ReactNode } from 'react';
 import { Pressable, StyleSheet, TextInput, View, type TextInputProps } from 'react-native';
 
@@ -11,6 +11,8 @@ import { Icon } from './Icon';
 export type InputProps = Omit<TextInputProps, 'style' | 'editable'> & {
   label: string;
   error?: string;
+  /** Peringatan non-blokir, mis. keyakinan OCR rendah. Border dan teks kuning. */
+  warning?: string;
   hint?: string;
   icon?: LucideIcon;
   trailing?: ReactNode;
@@ -20,6 +22,7 @@ export type InputProps = Omit<TextInputProps, 'style' | 'editable'> & {
 export function Input({
   label,
   error,
+  warning,
   hint,
   icon,
   trailing,
@@ -32,7 +35,7 @@ export function Input({
   const { colors } = useTheme();
   const [focused, setFocused] = useState(false);
   const [hidden, setHidden] = useState(true);
-  const borderColor = error ? colors.negative : focused ? colors.accent : colors.border;
+  const borderColor = error ? colors.negative : warning ? colors.warning : focused ? colors.accent : colors.border;
 
   return (
     <View style={[styles.wrap, disabled && styles.disabled]}>
@@ -49,7 +52,7 @@ export function Input({
         {icon && <Icon icon={icon} color={colors.textMuted} />}
         <TextInput
           accessibilityLabel={label}
-          accessibilityHint={error ?? hint}
+          accessibilityHint={error ?? warning ?? hint}
           editable={!disabled}
           placeholderTextColor={colors.textMuted}
           selectionColor={colors.accent}
@@ -78,10 +81,17 @@ export function Input({
         {trailing}
       </View>
       {error ? (
-        <View style={styles.message} accessibilityLiveRegion="polite">
+        <View style={styles.message} aria-live="polite">
           <Icon icon={CircleAlert} color={colors.negative} size={layout.iconSize.sm} />
           <AppText variant="caption" tone="negative" style={styles.flex}>
             {error}
+          </AppText>
+        </View>
+      ) : warning ? (
+        <View style={styles.message}>
+          <Icon icon={TriangleAlert} color={colors.warning} size={layout.iconSize.sm} />
+          <AppText variant="caption" tone="warning" style={styles.flex}>
+            {warning}
           </AppText>
         </View>
       ) : hint ? (
