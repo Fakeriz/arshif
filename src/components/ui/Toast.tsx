@@ -10,11 +10,14 @@ import { useTheme } from '@/theme/ThemeProvider';
 import { layout, motion, radius, space } from '@/theme/tokens';
 
 import { AppText } from './AppText';
+import { Button } from './Button';
 import { GlassView } from './GlassView';
 import { Icon } from './Icon';
 
 export type ToastTone = 'success' | 'error' | 'warning' | 'info';
-export type ToastInput = { title: string; message?: string; tone?: ToastTone; durationMs?: number };
+export type ToastAction = { label: string; onPress: () => void };
+/** actions: maksimal dua tombol (mis. Batalkan + Ubah). Toast dengan tombol tampil lebih lama. */
+export type ToastInput = { title: string; message?: string; tone?: ToastTone; durationMs?: number; actions?: ToastAction[] };
 type ToastItem = ToastInput & { id: number };
 
 const ToastContext = createContext<((t: ToastInput) => void) | null>(null);
@@ -55,11 +58,12 @@ function ToastView({ item, onDone }: { item: ToastItem; onDone: () => void }) {
     setTimeout(onDone, motion.fast);
   }, [onDone, t, timing]);
 
+  const duration = item.durationMs ?? (item.actions?.length ? 7000 : 3500);
   useEffect(() => {
     t.value = spring(1);
-    const id = setTimeout(dismiss, item.durationMs ?? 3500);
+    const id = setTimeout(dismiss, duration);
     return () => clearTimeout(id);
-  }, [dismiss, item.durationMs, spring, t]);
+  }, [dismiss, duration, spring, t]);
 
   const style = useAnimatedStyle(() => ({ opacity: t.value, transform: [{ translateY: (1 - t.value) * -16 }] }));
   const tone = item.tone ?? 'info';
@@ -88,6 +92,22 @@ function ToastView({ item, onDone }: { item: ToastItem; onDone: () => void }) {
               {item.message}
             </AppText>
           )}
+          {!!item.actions?.length && (
+            <View style={styles.actions}>
+              {item.actions.slice(0, 2).map((a) => (
+                <Button
+                  key={a.label}
+                  label={a.label}
+                  size="md"
+                  variant="secondary"
+                  onPress={() => {
+                    a.onPress();
+                    dismiss();
+                  }}
+                />
+              ))}
+            </View>
+          )}
         </View>
         <Pressable onPress={dismiss} hitSlop={12} accessibilityRole="button" accessibilityLabel={tr('common.closeNotification')}>
           <Icon icon={X} color={colors.textMuted} size={layout.iconSize.sm} />
@@ -103,4 +123,5 @@ const styles = StyleSheet.create({
   toastWrap: { width: '100%', maxWidth: layout.maxContentWidth },
   toast: { flexDirection: 'row', alignItems: 'flex-start', gap: space.md, padding: space.lg },
   text: { flex: 1, gap: space.xxs },
+  actions: { flexDirection: 'row', flexWrap: 'wrap', gap: space.sm, marginTop: space.sm },
 });

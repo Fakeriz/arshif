@@ -117,6 +117,8 @@ const domain = {
     goalTitle: 'Goal {name} tercapai',
     goalMessage: 'Target {amount} sudah terkumpul penuh.',
     premiumMessageStore: 'Langganan Premium aktif. Kelola perpanjangan di App Store atau Google Play.',
+    smartlogQuotaTitle: 'Kuota Smart Log habis',
+    smartlogQuotaMessage: 'Notifikasi bank tidak diproses otomatis sampai kuota automation pulih tanggal 1. Premium tanpa batas.',
   },
   date: {
     today: 'Hari ini',

@@ -83,7 +83,7 @@ export type AppNotification = {
   time: string;
   read: boolean;
   /** Rute tujuan bila ada. */
-  href?: '/coach' | '/anggaran' | '/pengaturan' | '/premium' | '/rencana/goals' | '/rencana/tagihan' | '/rencana/utang' | '/rencana/langganan' | '/rencana/split';
+  href?: '/coach' | '/anggaran' | '/pengaturan' | '/premium' | '/rencana/goals' | '/rencana/tagihan' | '/rencana/utang' | '/rencana/langganan' | '/rencana/split' | '/otomasi' | '/otomasi/tinjau';
 };
 
 export type Plan = 'free' | 'premium';

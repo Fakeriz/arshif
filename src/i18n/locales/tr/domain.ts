@@ -99,6 +99,8 @@ const domain: Messages['domain'] = {
     goalTitle: 'Hedefe ulaşıldı: {name}',
     goalMessage: '{amount} hedefin tamamen biriktirildi.',
     premiumMessageStore: 'Premium aboneliğin etkin. Yenilemeyi App Store veya Google Play\'den yönet.',
+    smartlogQuotaTitle: 'Smart Log kotası doldu',
+    smartlogQuotaMessage: 'Otomasyon kotası ayın 1\'inde yenilenene kadar banka bildirimleri otomatik işlenmez. Premium\'da sınır yok.',
   },
   date: { today: 'Bugün', yesterday: 'Dün', datePlaceholder: 'YYYY-AA-GG' },
   greeting: { morning: 'Günaydın', afternoon: 'İyi günler', evening: 'İyi akşamlar', night: 'İyi akşamlar' },

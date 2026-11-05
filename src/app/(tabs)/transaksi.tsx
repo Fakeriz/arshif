@@ -7,6 +7,7 @@ import { categoryLabel, useT, type MsgKey } from '@/i18n';
 import { Screen } from '@/components/shell/Screen';
 import { TabHeader } from '@/components/shell/TabHeader';
 import { AppText, Chip, CurrencyText, EmptyState, Input } from '@/components/ui';
+import { ReviewBanner } from '@/features/smartlog/ReviewBanner';
 import { FilterSheet } from '@/features/transactions/FilterSheet';
 import { TransactionList } from '@/features/transactions/TransactionList';
 import { TransactionListSkeleton } from '@/features/transactions/TransactionListSkeleton';
@@ -63,6 +64,7 @@ export default function TransaksiScreen() {
   return (
     <Screen tabs>
       <TabHeader title={t('tx.title')} subtitle={ready ? t('tx.count', { shown: shown.length, total: ledger.transactions.length }) : undefined} />
+      <ReviewBanner />
       {ready && (
         <>
           <Input

@@ -11,6 +11,7 @@ import domain from './domain';
 import home from './home';
 import settings from './settings';
 import shell from './shell';
+import slog from './slog';
 import tx from './tx';
 
-export const ms: Messages = { auth, billing, common, domain, shell, home, tx, capture, budget, plan, coach, settings };
+export const ms: Messages = { auth, billing, common, domain, shell, home, tx, capture, budget, plan, coach, settings, slog };

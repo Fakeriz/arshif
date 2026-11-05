@@ -99,6 +99,8 @@ const domain: Messages['domain'] = {
     goalTitle: 'Goal {name} reached',
     goalMessage: 'The {amount} target is fully funded.',
     premiumMessageStore: 'Your Premium subscription is active. Manage renewal in the App Store or Google Play.',
+    smartlogQuotaTitle: 'Smart Log quota used up',
+    smartlogQuotaMessage: 'Bank notifications are not processed automatically until the automation quota resets on the 1st. Premium has no limit.',
   },
   date: { today: 'Today', yesterday: 'Yesterday', datePlaceholder: 'YYYY-MM-DD' },
   greeting: { morning: 'Good morning', afternoon: 'Good afternoon', evening: 'Good evening', night: 'Good evening' },

@@ -99,6 +99,8 @@ const domain: Messages['domain'] = {
     goalTitle: 'Matlamat {name} tercapai',
     goalMessage: 'Sasaran {amount} sudah terkumpul sepenuhnya.',
     premiumMessageStore: 'Langganan Premium aktif. Urus pembaharuan di App Store atau Google Play.',
+    smartlogQuotaTitle: 'Kuota Smart Log sudah habis',
+    smartlogQuotaMessage: 'Pemberitahuan bank tidak diproses secara automatik sehingga kuota automasi pulih pada 1 haribulan. Premium tanpa had.',
   },
   date: { today: 'Hari ini', yesterday: 'Semalam', datePlaceholder: 'TTTT-BB-HH' },
   greeting: { morning: 'Selamat pagi', afternoon: 'Selamat tengah hari', evening: 'Selamat petang', night: 'Selamat malam' },

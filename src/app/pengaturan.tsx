@@ -65,6 +65,16 @@ export default function PengaturanScreen() {
 
       <AccountsCard />
 
+      <Card padding="md">
+        <ListItem
+          title={t('slog.automation.entry')}
+          subtitle={t('slog.automation.entrySub')}
+          subtitleLines={2}
+          chevron
+          onPress={() => router.push('/otomasi')}
+        />
+      </Card>
+
       <Card>
         <AppText variant="h3">{t('settings.appearance')}</AppText>
         <View style={styles.block}>

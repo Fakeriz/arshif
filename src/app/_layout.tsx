@@ -20,6 +20,7 @@ import { I18nProvider } from '@/i18n';
 import { AppStoreProvider, useStore } from '@/state/AppStore';
 import { PlanningProvider } from '@/state/planning';
 import { PurchasesBridge } from '@/state/billing';
+import { SmartLogProvider } from '@/state/smartlog';
 import { SessionProvider, useSession } from '@/state/session';
 import { loadHapticLevel } from '@/theme/motion';
 import { ThemeProvider, useTheme } from '@/theme/ThemeProvider';
@@ -63,12 +64,14 @@ function Shell() {
         <AppStoreProvider>
           <PlanningProvider>
             <PaywallProvider>
-              <PurchasesBridge />
-              <StatusBar style={scheme === 'dark' ? 'light' : 'dark'} />
-              {/* Android: konten Stack = sumber blur untuk toast (di luar area) serta sheet/dialog (Modal). */}
-              <BlurTargetArea style={styles.fill}>
-                <Routes />
-              </BlurTargetArea>
+              <SmartLogProvider>
+                <PurchasesBridge />
+                <StatusBar style={scheme === 'dark' ? 'light' : 'dark'} />
+                {/* Android: konten Stack = sumber blur untuk toast (di luar area) serta sheet/dialog (Modal). */}
+                <BlurTargetArea style={styles.fill}>
+                  <Routes />
+                </BlurTargetArea>
+              </SmartLogProvider>
             </PaywallProvider>
           </PlanningProvider>
         </AppStoreProvider>
@@ -131,6 +134,9 @@ function Routes() {
         <Stack.Screen name="rencana/langganan" />
         <Stack.Screen name="rencana/split/index" />
         <Stack.Screen name="rencana/split/[id]" />
+        <Stack.Screen name="otomasi/index" />
+        <Stack.Screen name="otomasi/tinjau" />
+        <Stack.Screen name="otomasi/catat" />
         <Stack.Screen name="premium/index" />
         <Stack.Screen name="premium/order/[id]" />
         <Stack.Screen name="premium/sukses" />

@@ -415,9 +415,124 @@ await test('admin: RPC ditolak untuk non-admin, terbuka untuk admin', async () =
   eq([scan.total, scan.failed, scan.limited, Number(scan.fail_ratio), scan.avg_latency_ms], [3, 1, 1, 0.5, 2000]);
 });
 
+// ---------------------------------------------------------------- Smart Log (Fase 5)
+const C = '00000000-0000-4000-8000-00000000000c';
+await sys(`insert into auth.users (id, email) values ('${C}', 'c@example.com')`);
+let cBca, cUsd;
+let seq = 0;
+const ingest = async (user, o = {}) => {
+  seq++;
+  const v = {
+    key: `cap-${seq}`, pkg: 'com.bca.mybca.omni.android', bank: 'bca', date: '2026-11-05', time: '12:00', type: 'expense',
+    amount: 45000, currency: 'IDR', merchant: 'KOPI SENJA', excerpt: 'Pembayaran QRIS Rp 45.000 di KOPI SENJA', fp: `fp-${seq}`, doubts: [], ...o,
+  };
+  const [{ r }] = await as(user, `select public.smartlog_ingest($1, $2, $3, now(), $4, $5, $6, $7, $8, $9, $10, $11, $12) as r`,
+    [v.key, v.pkg, v.bank, v.date, v.time, v.type, v.amount, v.currency, v.merchant, v.excerpt, v.fp, v.doubts]);
+  return r;
+};
+const automationUsed = async (user) => (await as(user, `select used from public.my_usage() where key = 'automation'`))[0].used;
+
+await test('smartlog: automation OFF = tidak diproses, kuota tidak terpakai', async () => {
+  [{ id: cBca }] = await as(C, `insert into public.accounts (bank, name, type, currency, opening_balance) values ('bca', 'BCA', 'tabungan', 'IDR', 1000000) returning id`);
+  [{ id: cUsd }] = await as(C, `insert into public.accounts (bank, name, type, currency) values ('jenius', 'Jenius USD', 'tabungan', 'USD') returning id`);
+  eq((await ingest(C)).status, 'disabled');
+  eq(await automationUsed(C), 0);
+});
+
+await test('smartlog: tautan package hanya ke akun sendiri; pengguna lain tidak melihat', async () => {
+  await as(C, `update public.profiles set smartlog_enabled = true`);
+  await as(C, `insert into public.smartlog_links (package, account_id) values ('com.bca.mybca.omni.android', $1), ('com.btpn.dc', $2)`, [cBca, cUsd]);
+  await rejects(as(C, `insert into public.smartlog_links (package, account_id) values ('id.dana', $1)`, [bca]), /account_not_owned/);
+  await rejects(as(C, `insert into public.smartlog_links (package, account_id) values ('bukan package', $1)`, [cBca]), /check/);
+  eq(await as(B, 'select count(*)::int as n from public.smartlog_links'), [{ n: 0 }]);
+});
+
+let applied, appliedFp;
+await test('smartlog: kasus yakin (expense + IDR + tertaut + lolos cek) langsung tercatat', async () => {
+  applied = await ingest(C);
+  appliedFp = `fp-${seq}`;
+  eq([applied.status, applied.reasons], ['applied', []]);
+  const tx = await as(C, `select source, amount, merchant, category_key, date::text, time::text from public.transactions where id = $1`, [applied.id]);
+  eq(tx, [{ source: 'smartlog', amount: 45000, merchant: 'KOPI SENJA', category_key: 'other', date: '2026-11-05', time: '12:00:00' }]);
+  eq(await balance(cBca), 955000);
+  eq((await as(C, `select excerpt from public.smartlog_items where id = $1`, [applied.id]))[0].excerpt, null, 'teks tidak disimpan');
+  eq(await automationUsed(C), 1);
+});
+
+await test('smartlog: kirim ulang notifikasi yang sama (capture_key) idempoten', async () => {
+  const again = await as(C, `select public.smartlog_ingest($1, 'com.bca.mybca.omni.android', 'bca', now(), '2026-11-05', '12:00', 'expense', 45000, 'IDR', 'KOPI SENJA', '', $2, '{}') as r`, [`cap-${seq}`, `fp-${seq}`]);
+  eq([again[0].r.status, again[0].r.id, again[0].r.repeat], ['applied', applied.id, true]);
+  eq((await as(C, `select count(*)::int as n from public.transactions`))[0].n, 1);
+  eq(await automationUsed(C), 1);
+});
+
+await test('smartlog: notifikasi sama masuk dua kali -> To Review, tidak tercatat dua kali', async () => {
+  const dup = await ingest(C, { fp: appliedFp });
+  eq([dup.status, dup.reasons], ['review', ['duplicate']]);
+  // Nominal dan waktu sama dengan transaksi yang sudah ada (mis. dicatat manual) juga dianggap duplikat.
+  const near = await ingest(C, { time: '12:07' });
+  eq([near.status, near.reasons], ['review', ['duplicate']]);
+  eq((await as(C, `select count(*)::int as n from public.transactions`))[0].n, 1);
+  eq((await ingest(C, { time: '12:20' })).status, 'applied', 'selisih > 10 menit bukan duplikat');
+});
+
+await test('smartlog: yang meragukan masuk To Review dengan alasannya', async () => {
+  eq((await ingest(C, { pkg: 'id.dana', bank: 'dana', time: '13:00' })).reasons, ['no_link']);
+  eq((await ingest(C, { type: 'income', time: '13:01' })).reasons, ['not_expense']);
+  eq((await ingest(C, { pkg: 'com.btpn.dc', bank: 'jenius', currency: 'USD', amount: 1250, time: '13:02' })).reasons, ['not_idr']);
+  eq((await ingest(C, { pkg: 'com.btpn.dc', bank: 'jenius', time: '13:03' })).reasons, ['account_currency']);
+  eq((await ingest(C, { doubts: ['multiple_amounts', 'karangan'], time: '13:04' })).reasons, ['multiple_amounts']);
+  const rows = await as(C, `select count(*)::int as n from public.smartlog_items where status = 'review' and excerpt is not null`);
+  eq(rows[0].n, 7);
+});
+
+await test('smartlog: konfirmasi dari To Review mencatat transaksi sekali saja', async () => {
+  const item = await ingest(C, { pkg: 'id.dana', bank: 'dana', amount: 30000, time: '14:00' });
+  await rejects(as(C, `select public.smartlog_confirm($1)`, [item.id]), /transaction_missing/);
+  await as(C, `insert into public.transactions (id, type, merchant, category_key, account_id, date, time, amount, currency, source)
+               values ($1, 'expense', 'Warteg', 'food', $2, '2026-11-05', '14:00', 30000, 'IDR', 'smartlog')`, [item.id, cBca]);
+  await as(C, `select public.smartlog_confirm($1)`, [item.id]);
+  eq((await as(C, `select status, excerpt, transaction_id = id as linked from public.smartlog_items where id = $1`, [item.id])), [{ status: 'confirmed', excerpt: null, linked: true }]);
+  await rejects(as(C, `select public.smartlog_confirm($1)`, [item.id]), /not_in_review/);
+  await rejects(as(C, `insert into public.transactions (id, type, category_key, account_id, date, amount, currency) values ($1, 'expense', 'food', $2, '2026-11-05', 30000, 'IDR')`, [item.id, cBca]), /duplicate key|unique/);
+});
+
+await test('smartlog: abaikan dari To Review; undo menghapus transaksi auto-apply', async () => {
+  const item = await ingest(C, { pkg: 'id.dana', bank: 'dana', time: '15:00' });
+  await as(C, `select public.smartlog_dismiss($1)`, [item.id]);
+  eq((await as(C, `select status from public.smartlog_items where id = $1`, [item.id]))[0].status, 'dismissed');
+  const before = await balance(cBca);
+  const auto = await ingest(C, { amount: 20000, time: '16:00' });
+  eq(await balance(cBca), before - 20000);
+  await as(C, `select public.smartlog_undo($1)`, [auto.id]);
+  eq(await balance(cBca), before);
+  eq((await as(C, `select count(*)::int as n from public.transactions where id = $1`, [auto.id]))[0].n, 0);
+  await rejects(as(C, `select public.smartlog_undo($1)`, [auto.id]), /not_applied/);
+  await rejects(as(B, `select public.smartlog_dismiss($1)`, [item.id]), /not_in_review/);
+});
+
+await test('smartlog: baris hanya ditulis lewat RPC; pengguna lain tidak melihat', async () => {
+  await rejects(as(C, `insert into public.smartlog_items (user_id, capture_key, package, bank, posted_at, date, time, type, amount, currency, status, fingerprint)
+                       values ($1, 'x', 'id.dana', 'dana', now(), '2026-11-05', '10:00', 'expense', 1, 'IDR', 'applied', 'x')`, [C]), /permission denied/);
+  await rejects(as(C, `update public.smartlog_items set status = 'confirmed'`), /permission denied/);
+  eq(await as(B, 'select count(*)::int as n from public.smartlog_items'), [{ n: 0 }]);
+});
+
+await test('smartlog: kuota automation Free 30/bulan; habis = tidak diproses + diberi tahu sekali', async () => {
+  const used = await automationUsed(C);
+  for (let i = used; i < 30; i++) await sys(`select public.quota_try_consume($1, 'automation')`, [C]);
+  const before = (await as(C, 'select count(*)::int as n from public.smartlog_items'))[0].n;
+  eq((await ingest(C, { time: '18:00' })).status, 'quota');
+  eq((await ingest(C, { time: '18:30' })).status, 'quota');
+  eq((await as(C, 'select count(*)::int as n from public.smartlog_items'))[0].n, before, 'tidak ada baris baru');
+  eq((await as(C, `select count(*)::int as n from public.notifications where type = 'quota_warning'`))[0].n, 1);
+  await sys(`update public.profiles set plan = 'premium' where id = $1`, [C]);
+  eq((await ingest(C, { time: '19:00' })).status, 'applied', 'Premium tanpa batas');
+});
+
 await test('hapus pengguna: semua data ikut terhapus (cascade)', async () => {
   await sys(`delete from auth.users where id = $1`, [A]);
-  for (const t of ['profiles', 'accounts', 'transactions', 'transaction_items', 'notifications', 'usage_counters', 'orders']) {
+  for (const t of ['profiles', 'accounts', 'transactions', 'transaction_items', 'notifications', 'usage_counters', 'orders', 'smartlog_links', 'smartlog_items']) {
     const col = t === 'profiles' ? 'id' : 'user_id';
     eq((await sys(`select count(*)::int as n from public.${t} where ${col} = $1`, [A]))[0].n, 0, t);
   }

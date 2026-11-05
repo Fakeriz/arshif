@@ -9,9 +9,10 @@ import domain from './domain';
 import home from './home';
 import settings from './settings';
 import shell from './shell';
+import slog from './slog';
 import tx from './tx';
 
 /** Katalog sumber (Indonesia). Bahasa lain wajib berbentuk sama persis: dicek TypeScript. */
-export const id = { auth, billing, common, domain, shell, home, tx, capture, budget, plan, coach, settings };
+export const id = { auth, billing, common, domain, shell, home, tx, capture, budget, plan, coach, settings, slog };
 
 export type Messages = typeof id;

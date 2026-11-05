@@ -26,6 +26,8 @@ type StoreValue = {
    * merujuknya). Gagal = transaksi lokal dibatalkan dan error dilempar ke pemanggil.
    */
   commitTx: (tx: Transaction) => Promise<Transaction>;
+  /** Ubah state lokal saja: datanya sudah ditulis server (mis. transaksi auto-apply Smart Log). */
+  applyLocal: (action: Action) => void;
   /** Sedang memuat ulang data yang sudah ada (tarik untuk muat ulang). */
   refreshing: boolean;
   userId: string | null;
@@ -173,7 +175,7 @@ export function AppStoreProvider({ children, preset }: { children: ReactNode; pr
   );
 
   const value = useMemo(
-    () => ({ state, dispatch, reload, refreshUsage, commitTx, refreshing, userId }),
+    () => ({ state, dispatch, reload, refreshUsage, commitTx, applyLocal: localDispatch, refreshing, userId }),
     [state, dispatch, reload, refreshUsage, commitTx, refreshing, userId],
   );
   return <StoreContext.Provider value={value}>{children}</StoreContext.Provider>;

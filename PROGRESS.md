@@ -29,6 +29,7 @@ R-10 membatasi glassmorphism ke 1–2 elemen. Ahmad memutuskan **kaca tetap di s
 - [x] **Fase 1 — UI layar inti dengan data contoh** (2026-11-05), dilengkapi i18n ID/MS/TR/EN + pemilih desain kartu bank
 - [ ] **Fase 2 — Backend Supabase, LIVE** (2026-11-05): scan dan kurs sungguhan lolos; login sungguhan lolos di level Auth/API, tapi **login dari aplikasi oleh pengguna nyata masih terblokir** keputusan email OTP (lihat "Keputusan terbuka"). Fase 2 belum dinyatakan selesai.
 - [ ] Fase 3 — Monetisasi (RevenueCat + Xendit + Paddle) & rilis
+- [ ] Fase 5 — Smart Log (2026-11-05): dibangun + diuji lokal, belum deploy; development build menunggu login EAS pemilik. Detail: `docs/fase5-smartlog.md`
 
 ## Fase 0 — yang sudah ada
 
@@ -188,3 +189,24 @@ Detail, daftar kunci, dan checklist dashboard: `docs/fase3-pembayaran.md`.
 - Selesaikan keputusan email OTP; login Google (FR-AUTH-1).
 - Hardening: cabut token akses Supabase dan kunci Gemini yang pernah ditempel di percakapan, buat ulang.
 - Host web (untuk `/harga`, checkout web, `/admin`) dan `APP_URL` belum ditentukan.
+
+## Fase 5: Smart Log (dibangun lokal, BELUM di-deploy)
+
+Detail lengkap, langkah development build, pemasangan di Xiaomi, dan Metro: `docs/fase5-smartlog.md`.
+
+- **Native**: module lokal `modules/smart-log` (Kotlin, Expo Modules API): `SmartLogListenerService` + antrean
+  SharedPreferences; manifest service digabung otomatis. Tidak jalan di Expo Go (`SmartLogNative` = null di Expo Go,
+  iOS, web; layar menampilkan penjelasan). `expo-dev-client` + `eas.json` profil `development` (APK).
+- **Parser** `src/lib/smartlog/parser.ts` (di HP, murni) + daftar 20 package `src/lib/smartlog/apps.ts`
+  (package id dicek ke Google Play 2026-11-05). Pemrosesan `src/lib/smartlog/process.ts`, provider `src/state/smartlog.tsx`.
+- **Server**: migrasi 10 (`smartlog_links`, `smartlog_items`, RPC ingest/confirm/dismiss/undo, kuota automation di
+  dalam RPC), migrasi 11 (cron bersih 60 hari).
+- **Layar**: Pengaturan -> Automation (`/otomasi`), To Review (`/otomasi/tinjau`), Ubah dulu (`/otomasi/catat`),
+  banner di tab Transaksi. Toast mendapat tombol aksi.
+- **Uji**: `npm run test:smartlog` (alur penuh di PGlite), `test:db` +10 skenario, jest parser + layar. `verify` ikut
+  menjalankan `test:smartlog`. Skrip memuat TS aplikasi langsung lewat type stripping Node 22 (`scripts/ts-hooks.mjs`).
+- **Temuan samping (belum diubah)**: teks `textMuted`/`textSecondary` di atas lapisan `track` di dalam kartu kaca
+  turun ke 3,35 sampai 4,47:1 di tema gelap. Layar Smart Log tidak memakai `track` di belakang teks; komponen lama
+  yang memakainya (mis. chip tidak terpilih) perlu dicek.
+- **Kotlin belum pernah dikompilasi** (mesin ini aarch64 tanpa Android SDK). Build EAS pertama = cek kompilasi.
+
