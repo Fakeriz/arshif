@@ -3,6 +3,7 @@ import {
   currencyMeta,
   formatCompact,
   formatMoney,
+  formatMoneyParts,
   formatNumber,
   formatTypedAmount,
   parseAmountInput,
@@ -128,5 +129,24 @@ describe('formatTypedAmount — tampilan saat mengetik', () => {
     expect(parseAmountInput(formatTypedAmount('1234,5', 'MYR', false), 'MYR')).toBe(1234500);
     expect(parseAmountInput(formatTypedAmount('1234.5', 'MYR', false), 'MYR')).toBe(123450);
     expect(parseAmountInput(formatTypedAmount('1234', 'TRY', false), 'TRY')).toBe(123400);
+  });
+});
+
+describe('formatMoneyParts — saldo dengan pecahan redup', () => {
+  it('memisahkan bagian bulat dan pecahan', () => {
+    expect(formatMoneyParts(201709, 'USD')).toEqual({ sign: '', symbol: '$', whole: '2,017', fraction: '.09', gap: '' });
+    expect(formatMoneyParts(482154000, 'MYR')).toEqual({ sign: '', symbol: 'RM', whole: '4,821,540', fraction: '.00', gap: ' ' });
+    expect(formatMoneyParts(35000, 'TRY').fraction).toBe(',00');
+  });
+
+  it('IDR tanpa pecahan', () => {
+    expect(formatMoneyParts(48215400, 'IDR')).toEqual({ sign: '', symbol: 'Rp', whole: '48.215.400', fraction: '', gap: ' ' });
+  });
+
+  it('gabungan bagian sama dengan formatMoney', () => {
+    for (const [minor, code] of [[-201709, 'USD'], [48215400, 'IDR'], [1250, 'MYR']] as const) {
+      const p = formatMoneyParts(minor, code);
+      expect(`${p.sign}${p.symbol}${p.gap}${p.whole}${p.fraction}`).toBe(formatMoney(minor, code));
+    }
   });
 });

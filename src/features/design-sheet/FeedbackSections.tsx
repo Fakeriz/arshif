@@ -19,9 +19,9 @@ import { Row, Section } from './Section';
 
 export function StateSection() {
   return (
-    <Section index="14 · State" title="Kosong, error, limit, offline" note="Setiap layar Fase 1 memakai empat state ini — tidak ada layar kosong tanpa penjelasan.">
+    <Section index="State" title="Kosong, error, limit, offline" note="Setiap layar Fase 1 memakai empat state ini. Tidak ada layar kosong tanpa penjelasan.">
       <Card>
-        <EmptyState title="Belum ada transaksi" message="Foto struk atau ucapkan pengeluaranmu — tercatat dalam 10 detik." actionLabel="Catat sekarang" onAction={() => undefined} compact />
+        <EmptyState title="Belum ada transaksi" message="Foto struk atau ucapkan pengeluaranmu, tercatat dalam 10 detik." actionLabel="Catat sekarang" onAction={() => undefined} compact />
       </Card>
       <Card>
         <EmptyState kind="error" title="Gagal memuat transaksi" message="Periksa koneksi lalu coba lagi. Datamu aman." actionLabel="Coba lagi" onAction={() => undefined} compact />
@@ -50,7 +50,7 @@ export function OverlaySection() {
   const [dialog, setDialog] = useState(false);
 
   return (
-    <Section index="15 · Overlay" title="BottomSheet, Dialog, Toast">
+    <Section index="Overlay" title="BottomSheet, Dialog, Toast">
       <Row>
         <Button label="Buka “+ Catat”" size="md" onPress={() => setSheet(true)} />
         <Button label="Dialog hapus" size="md" variant="secondary" onPress={() => setDialog(true)} />

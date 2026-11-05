@@ -8,6 +8,7 @@ import { useTheme } from '@/theme/ThemeProvider';
 import { layout, motion, radius, space } from '@/theme/tokens';
 
 import { AppText } from './AppText';
+import { GlassView } from './GlassView';
 
 export type BottomSheetProps = {
   visible: boolean;
@@ -75,28 +76,26 @@ export function BottomSheet({ visible, onClose, title, subtitle, children }: Bot
           onLayout={(e) => {
             sheetHeight.current = e.nativeEvent.layout.height;
           }}
-          style={[
-            styles.sheet,
-            { backgroundColor: colors.surfaceRaised, borderColor: colors.border, paddingBottom: insets.bottom + space.xl },
-            sheet,
-          ]}
+          style={[styles.sheetWrap, sheet]}
         >
-          <View {...pan.panHandlers} style={styles.handleArea}>
-            <View style={[styles.handle, { backgroundColor: colors.borderStrong }]} />
-          </View>
-          {title && (
-            <View style={styles.header}>
-              <AppText variant="h3" accessibilityRole="header">
-                {title}
-              </AppText>
-              {subtitle && (
-                <AppText variant="caption" tone="muted">
-                  {subtitle}
-                </AppText>
-              )}
+          <GlassView level="floating" radius={0} style={[styles.sheet, { paddingBottom: insets.bottom + space.xl }]}>
+            <View {...pan.panHandlers} style={styles.handleArea}>
+              <View style={[styles.handle, { backgroundColor: colors.borderStrong }]} />
             </View>
-          )}
-          {children}
+            {title && (
+              <View style={styles.header}>
+                <AppText variant="h3" accessibilityRole="header">
+                  {title}
+                </AppText>
+                {subtitle && (
+                  <AppText variant="caption" tone="muted">
+                    {subtitle}
+                  </AppText>
+                )}
+              </View>
+            )}
+            {children}
+          </GlassView>
         </Animated.View>
       </View>
     </Modal>
@@ -105,13 +104,10 @@ export function BottomSheet({ visible, onClose, title, subtitle, children }: Bot
 
 const styles = StyleSheet.create({
   anchor: { flex: 1, justifyContent: 'flex-end', alignItems: 'center' },
+  sheetWrap: { width: '100%', maxWidth: layout.maxContentWidth + 80, maxHeight: '90%' },
   sheet: {
-    width: '100%',
-    maxWidth: layout.maxContentWidth + 80,
-    maxHeight: '90%',
     borderTopLeftRadius: radius.xl,
     borderTopRightRadius: radius.xl,
-    borderWidth: layout.hairline,
     borderBottomWidth: 0,
     paddingHorizontal: space.xl,
   },

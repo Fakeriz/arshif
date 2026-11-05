@@ -56,13 +56,13 @@ export function AmountInput({
             onPress={onPressCurrency}
             accessibilityLabel={`Mata uang ${m.name}. Ketuk untuk mengganti`}
             focusRadius={radius.full}
-            style={[styles.currency, { backgroundColor: colors.surfaceRaised, borderColor: colors.border }]}
+            style={[styles.currency, { backgroundColor: colors.track, borderColor: colors.glassBorder }]}
           >
             <AppText variant="bodyStrong">{m.code}</AppText>
             <Icon icon={ChevronDown} color={colors.textSecondary} size={layout.iconSize.sm} />
           </PressableScale>
         ) : (
-          <View accessibilityLabel={`Mata uang ${m.name}`} style={[styles.currency, { backgroundColor: colors.surfaceRaised, borderColor: colors.border }]}>
+          <View accessibilityLabel={`Mata uang ${m.name}`} style={[styles.currency, { backgroundColor: colors.track, borderColor: colors.glassBorder }]}>
             <AppText variant="bodyStrong">{m.code}</AppText>
           </View>
         )}

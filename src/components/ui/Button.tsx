@@ -37,7 +37,7 @@ export function Button({
   const { colors } = useTheme();
   const looks: Record<ButtonVariant, { bg: string; border: string; fg: string; tone: TextTone }> = {
     primary: { bg: colors.accent, border: colors.accent, fg: colors.onAccent, tone: 'onAccent' },
-    secondary: { bg: colors.surfaceRaised, border: colors.borderStrong, fg: colors.text, tone: 'primary' },
+    secondary: { bg: colors.track, border: colors.glassBorder, fg: colors.text, tone: 'primary' },
     ghost: { bg: 'transparent', border: 'transparent', fg: colors.accentText, tone: 'accent' },
     danger: { bg: colors.negativeSoft, border: 'transparent', fg: colors.negative, tone: 'negative' },
   };

@@ -18,7 +18,7 @@ export type BadgeProps = {
 export function Badge({ label, tone = 'neutral', icon }: BadgeProps) {
   const { colors } = useTheme();
   const looks: Record<BadgeTone, { bg: string; fg: string; text: TextTone }> = {
-    neutral: { bg: colors.surfaceRaised, fg: colors.textSecondary, text: 'secondary' },
+    neutral: { bg: colors.track, fg: colors.textSecondary, text: 'secondary' },
     accent: { bg: colors.accentSoft, fg: colors.accentText, text: 'accent' },
     positive: { bg: colors.positiveSoft, fg: colors.positive, text: 'positive' },
     negative: { bg: colors.negativeSoft, fg: colors.negative, text: 'negative' },

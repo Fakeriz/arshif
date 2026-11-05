@@ -49,7 +49,7 @@ export function Tabs<K extends string>({
       style={[
         styles.wrap,
         segmented
-          ? { backgroundColor: colors.surfaceSunken, borderColor: colors.border, padding: pad, borderRadius: radius.md, borderWidth: layout.hairline }
+          ? { backgroundColor: colors.track, borderColor: colors.glassBorder, padding: pad, borderRadius: radius.md, borderWidth: layout.hairline }
           : { borderBottomWidth: layout.hairline, borderBottomColor: colors.border },
       ]}
     >

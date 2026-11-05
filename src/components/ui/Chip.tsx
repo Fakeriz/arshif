@@ -33,7 +33,7 @@ export function Chip({ label, selected, onPress, icon, count, disabled }: ChipPr
       style={[
         styles.chip,
         {
-          backgroundColor: selected ? colors.accentSoft : colors.surface,
+          backgroundColor: selected ? colors.accentSoft : colors.track,
           borderColor: selected ? colors.accent : colors.border,
         },
       ]}
@@ -44,7 +44,7 @@ export function Chip({ label, selected, onPress, icon, count, disabled }: ChipPr
           {label}
         </AppText>
         {count != null && (
-          <View style={[styles.count, { backgroundColor: selected ? colors.accent : colors.surfaceRaised }]}>
+          <View style={[styles.count, { backgroundColor: selected ? colors.accent : colors.track }]}>
             <AppText variant="overline" tone={selected ? 'onAccent' : 'muted'} numeric>
               {count}
             </AppText>

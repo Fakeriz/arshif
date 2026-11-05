@@ -4,6 +4,7 @@ import { Pressable, StyleSheet, View } from 'react-native';
 
 import {
   AppText,
+  BalanceText,
   Card,
   CategoryIcon,
   CurrencyText,
@@ -23,10 +24,10 @@ import { Row, Section, StateLabel } from './Section';
 export function MoneySection() {
   const { colors } = useTheme();
   const [hidden, setHidden] = useState(false);
-  const [worth, setWorth] = useState(48215400);
+  const [worth, setWorth] = useState(301709);
   return (
-    <Section index="08 · Nominal" title="CurrencyText" note="Pemasukan hijau dengan “+”, pengeluaran warna teks dengan “−”, merah hanya untuk over budget.">
-      <Card variant="raised" padding="xl">
+    <Section index="Nominal" title="CurrencyText" note="Pemasukan hijau dengan “+”, pengeluaran warna teks dengan “−”, over budget memakai warna khusus plus ikon.">
+      <Card padding="xl">
         <View style={styles.heroHead}>
           <AppText variant="caption" tone="secondary">
             Total kekayaan bersih
@@ -35,12 +36,12 @@ export function MoneySection() {
             <Icon icon={hidden ? EyeOff : Eye} color={colors.textSecondary} />
           </Pressable>
         </View>
-        <CurrencyText amount={worth} currency="IDR" variant="amountHero" countUp hidden={hidden} />
+        <BalanceText amount={worth} currency="USD" countUp hidden={hidden} size="large" align="left" />
         <View style={styles.heroFoot}>
           <AppText variant="caption" tone="muted">
-            4 akun · dikonversi ke IDR · kurs per 14.00
+            Pecahan desimal diredupkan agar bagian bulat jadi fokus
           </AppText>
-          <Pressable onPress={() => setWorth((w) => w + 1250000)} hitSlop={8} accessibilityRole="button" accessibilityLabel="Simulasikan perubahan saldo">
+          <Pressable onPress={() => setWorth((w) => w + 12550)} hitSlop={8} accessibilityRole="button" accessibilityLabel="Simulasikan perubahan saldo">
             <Icon icon={RefreshCw} color={colors.textMuted} size={16} />
           </Pressable>
         </View>
@@ -62,7 +63,7 @@ export function MoneySection() {
 
 export function ProgressSection() {
   return (
-    <Section index="09 · Progress" title="ProgressBar" note="< 80% kuningan · 80–100% peringatan · > 100% merah — sama dengan ambang notifikasi budget.">
+    <Section index="Progress" title="ProgressBar" note="Di bawah 80% hijau, 80–100% peringatan, di atas 100% over budget (warna + ikon). Sama dengan ambang notifikasi budget. Aksen tidak dipakai di sini.">
       {budgetRows.map((b) => {
         const ratio = b.used / b.limit;
         return (
@@ -87,7 +88,7 @@ export function ProgressSection() {
 
 export function ListSection() {
   return (
-    <Section index="10 · Daftar" title="ListItem & CategoryIcon">
+    <Section index="Daftar" title="ListItem & CategoryIcon">
       <Card padding="lg" style={styles.listCard}>
         {sampleTransactions.map((t, i) => (
           <ListItem

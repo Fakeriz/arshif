@@ -38,7 +38,7 @@ export function EmptyState({
 }: EmptyStateProps) {
   const { colors } = useTheme();
   const look = {
-    empty: { icon: Inbox, fg: colors.textSecondary, bg: colors.surfaceRaised },
+    empty: { icon: Inbox, fg: colors.textSecondary, bg: colors.track },
     error: { icon: CircleAlert, fg: colors.negative, bg: colors.negativeSoft },
     limit: { icon: Crown, fg: colors.accentText, bg: colors.accentSoft },
     offline: { icon: WifiOff, fg: colors.warning, bg: colors.warningSoft },

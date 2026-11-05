@@ -27,7 +27,7 @@ export function DonutSection() {
   const { state, tabs } = useChartState();
   const segments = bucketSegments(hues);
   return (
-    <Section index="11 · Grafik" title="DonutChart interaktif" note="Ketuk segmen atau baris legenda — nilainya muncul di tengah.">
+    <Section index="Grafik" title="DonutChart interaktif" note="Ketuk segmen atau baris legenda, nilainya muncul di tengah.">
       {tabs}
       <Card padding="xl">
         <DonutChart
@@ -44,7 +44,7 @@ export function DonutSection() {
 export function GaugeSection() {
   const { state, tabs } = useChartState();
   return (
-    <Section index="12 · Grafik" title="Gauge Health Score" note="Skor dihitung rumus deterministik (5 pilar); AI hanya menarasikan.">
+    <Section index="Grafik" title="Gauge Health Score" note="Skor dihitung rumus deterministik (5 pilar); AI hanya menarasikan.">
       {tabs}
       <Card padding="xl">
         <View style={{ paddingVertical: space.md }}>
@@ -58,7 +58,7 @@ export function GaugeSection() {
 export function CashflowSection() {
   const { state, tabs } = useChartState();
   return (
-    <Section index="13 · Grafik" title="Grafik arus kas" note="Pemasukan vs pengeluaran 6 bulan. Ketuk bulan untuk rinciannya.">
+    <Section index="Grafik" title="Grafik arus kas" note="Pemasukan vs pengeluaran 6 bulan. Ketuk bulan untuk rinciannya.">
       {tabs}
       <Card padding="lg">
         <CashflowChart

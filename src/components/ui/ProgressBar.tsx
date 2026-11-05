@@ -19,11 +19,14 @@ export type ProgressBarProps = {
   accessibilityLabel?: string;
 };
 
-/** auto: < 80% accent · 80–100% warning · > 100% negative (sesuai alert budget 80%/100%). */
+/**
+ * auto: < 80% positive · 80–100% warning · > 100% negative (sesuai alert budget 80%/100%).
+ * Aksen sengaja tidak dipakai: aksen Merah akan membuat budget aman terbaca bahaya.
+ */
 export function progressTone(value: number): Exclude<ProgressTone, 'auto'> {
   if (value > 1) return 'negative';
   if (value >= 0.8) return 'warning';
-  return 'accent';
+  return 'positive';
 }
 
 export function ProgressBar({

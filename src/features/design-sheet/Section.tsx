@@ -12,7 +12,7 @@ export function Section({ index, title, note, children }: SectionProps) {
   return (
     <View style={[styles.section, { borderTopColor: colors.border }]}>
       <View style={styles.header}>
-        <AppText variant="overline" tone="accent" uppercase>
+        <AppText variant="overline" tone="accent">
           {index}
         </AppText>
         <AppText variant="h1" accessibilityRole="header">
@@ -32,7 +32,7 @@ export function Section({ index, title, note, children }: SectionProps) {
 /** Label kecil di atas contoh state ("Loading", "Kosong", dst). */
 export function StateLabel({ children }: { children: string }) {
   return (
-    <AppText variant="overline" tone="muted" uppercase style={styles.stateLabel}>
+    <AppText variant="overline" tone="muted" style={styles.stateLabel}>
       {children}
     </AppText>
   );

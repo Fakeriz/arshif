@@ -167,6 +167,7 @@
 - **FR-SET-1:** Profil, mata uang utama, bahasa (ID/MS/TR/EN), keamanan (PIN/biometrik), preferensi notifikasi per tipe.
 - **FR-SET-2:** Kelola kategori kustom + bucket 50/30/20-nya.
 - **FR-SET-3:** Ekspor data (JSON/CSV) dan hapus akun (cascade delete + storage) — kepatuhan GDPR, UU PDP Indonesia, PDPA Malaysia, KVKK Turki.
+- **FR-SET-4 (DIKUNCI 2026-11-05, arah RedotPay):** Pilih warna aksen di Pengaturan — Merah (default), Kuningan, Zamrud, Biru, Ungu. Aksen tersimpan per pengguna dan diterapkan ke seluruh aplikasi lewat token tema (tombol primary, ikon nav aktif, tautan, glow latar, kartu promo). Semua pilihan aksen wajib lolos WCAG AA untuk teks. Aksen TIDAK mengubah arti warna lain: hijau tetap pemasukan/positif; merah tetap hanya over budget — saat aksen yang dipilih adalah Merah, merah over budget memakai rona yang dibedakan dari aksen + ikon peringatan sebagai pembeda.
 
 ### 4.22 Smart Log — Capture Notifikasi Bank (v1, adopsi Worthful; dikonfirmasi juga oleh Belanje)
 - **FR-SLOG-1:** Dengan izin Notification Listener dan automation ON, aplikasi menangkap notifikasi bank (Android; iOS via Shortcuts) dan mengubahnya menjadi transaksi. Tiap package bank ditautkan ke satu kartu.
@@ -234,7 +235,7 @@ Kuota direset tiap tanggal 1. Pekerjaan AI yang gagal tidak memotong kuota. Saat
 
 ## 10. Stack yang Direkomendasikan
 
-- **Aplikasi:** Expo SDK 52+ (Expo Router, TypeScript strict), NativeWind v4.
+- **Aplikasi:** Expo SDK 58 (Expo Router, TypeScript strict), StyleSheet + typed tokens. NativeWind TIDAK dipakai — v4 belum dukung Reanimated 4/SDK 58, v5 masih RC (keputusan Fase 0, 2026-11-05).
 - **Backend:** Supabase (Postgres + RLS + Auth + Storage + Edge Functions + Realtime + pg_cron).
 - **AI:** Gemini `gemini-2.5-flash`, HANYA dipanggil dari Edge Functions, tidak pernah dari klien.
 - **Kurs:** ExchangeRate-API (sync per jam).
@@ -242,26 +243,27 @@ Kuota direset tiap tanggal 1. Pekerjaan AI yang gagal tidak memotong kuota. Saat
 - **OTA updates:** Expo Updates (EAS Update) — update JS tanpa lewat store (pola Belanje).
 - **Catatan:** alternatif Next.js App Router + Drizzle pernah tercatat di AGENTS.md lama — TIDAK dipakai untuk rebuild ini kecuali Ahmad memutuskan lain (lihat Bab 12).
 
-## 11. Design System (Referensi Awal dari PRD Lama — BOLEH Diubah via Bab 12)
+## 11. Design System — "Kaca & Aksen" (DIKUNCI 2026-11-05, referensi RedotPay)
 
-- Dark mode saja (MVP). Warna: background `#0A0A0A`, card `#1A1A1A` (border putih 8% opacity), sheet/modal `#222222`, primary `#00C896` (emerald), aksen/CTA `#6366F1` (indigo), teks `#FFFFFF` / sekunder `#94A3B8` / redup `#64748B`, pengeluaran `#F43F5E`, warning `#F59E0B`, info `#38BDF8`.
-- Font Inter; saldo display 36 Bold tabular-nums; H1 28 / H2 22 / H3 17 SemiBold; body 15; caption 13.
-- Radius: card 16, button/input 12, chip/badge full, bottom sheet 24 (sudut atas). Button primary tinggi 52, teks 16 SemiBold, efek tekan scale 0.97.
-- Ikon: Lucide (line, stroke 1.75, ukuran 20/24). Kategori = ikon dalam lingkaran 40px dengan warna kategori opacity 15%.
-- Aturan angka: pemasukan hijau dengan prefix "+", pengeluaran putih dengan prefix "−"; merah hanya untuk overbudget.
-- Micro-animation: saldo count-up, progress bar mengisi perlahan, gelombang mic, garis scan bergerak; haptic saat transaksi tersimpan/scan berhasil/tombol utama.
-- Loading: skeleton shimmer gelap (bukan spinner polos). Empty state: ilustrasi line-icon besar + kalimat ramah + CTA. Fitur terkunci: badge "PRO" gradasi indigo-emerald.
-- **PERINGATAN:** identitas visual final WAJIB berasal dari jawaban arah desain di Bab 12, BUKAN default "seperti Revolut". Yang di bab ini hanya titik awal dari PRD lama.
+- **Arah:** dark-first dengan panel kaca (blur backdrop / frosted glass) + aksen yang bisa dipilih pengguna (FR-SET-4). Referensi visual: screenshot RedotPay (`docs/redotpay-reference.jpg` di repo).
+- **Kaca (blur backdrop):** panel kartu, panel aksi cepat, panel transaksi, bottom nav pill, sheet/modal memakai latar translusen + border putih ~8% + blur. Ambient glow: gradasi radial warna aksen di belakang konten (atas layar), mengikuti aksen yang dipilih. Di perangkat low-end atau saat reduced motion, blur boleh diganti latar translusen solid (tanpa blur) — tampilan tetap konsisten.
+- **Override pemilik atas antislop R-10 (DIKUNCI 2026-11-05):** aturan antislop membatasi glassmorphism ke 1–2 elemen; Ahmad memutuskan kaca tetap di SEMUA panel (kartu, aksi cepat, transaksi, nav pill, sheet/modal). Hierarki dijaga lewat dua lapisan opasitas: `glass` (panel konten, lebih bening) dan `glassStrong` (elemen mengambang, lebih pekat). Fallback blur → translusen solid tetap berlaku di perangkat low-end (Android < 12 / tanpa blur target), saat reduced motion, dan saat iOS "Reduce Transparency" aktif. **Visual check Fase 1 wajib memverifikasi hierarki dan keterbacaan tiap layar; kalau ada layar yang hierarkinya hilang, kaca di layar itu dikurangi (pengecualian per layar, bukan rollback global).**
+- **Aksen:** default Merah (seperti referensi); pilihan Kuningan, Zamrud, Biru, Ungu. Token tema: accent, accentSoft (tinta aksen), accentGlow. Semua pemakaian aksen lewat token, tidak ada hex aksen yang di-hardcode.
+- **Tema:** dua tema (gelap + terang). Gelap: latar tinta hangat #0D0C0A, kartu kaca gelap; terang: latar #F4F1EA, kartu kaca putih. Kuningan dari identitas lama ("Tinta & Kuningan") tetap tersedia sebagai salah satu pilihan aksen.
+- **Tipografi:** Plus Jakarta Sans untuk semua (judul, UI, angka tabular) — serif Fraunces DICABUT karena tidak cocok dengan arah kaca modern ini. Saldo display 36 Bold tabular-nums dengan pecahan desimal diredupkan (seperti "2,017.09" — ".09" redup); H1 28 / H2 22 / H3 17 SemiBold; body 15; caption 13.
+- **Bentuk:** bottom nav berupa pill kaca mengambang, ikon aktif berwarna aksen; tombol aksi cepat berbentuk lingkaran (aksi utama memakai aksen penuh, sisanya netral kaca); radius card 16, button/input 12, chip/badge full, bottom sheet 24 (sudut atas). Button primary tinggi 52, teks 16 SemiBold, efek tekan scale 0.97.
+- **Ikon:** Lucide (line, stroke 1.75, ukuran 20/24). Kategori = ikon dalam lingkaran 40px dengan warna kategori opacity 15%.
+- **Aturan angka:** pemasukan hijau dengan prefix "+", pengeluaran putih dengan prefix "−"; merah hanya untuk over budget (lihat FR-SET-4 untuk kasus aksen = Merah). Hijau = hal positif (pemasukan, skor baik, tabungan).
+- **Micro-animation:** saldo count-up, progress bar mengisi perlahan, gelombang mic, garis scan bergerak; haptic saat transaksi tersimpan/scan berhasil/tombol utama.
+- **Loading:** skeleton shimmer gelap (bukan spinner polos). Empty state: ilustrasi line-icon besar + kalimat ramah + CTA. Fitur terkunci: badge "PRO" memakai aksen.
+- **Riwayat:** identitas "Tinta & Kuningan" (Fraunces × Plus Jakarta Sans, aksen kuningan tetap) dibuat di Fase 0 dan DIGANTI sebelum Fase 1 atas keputusan Ahmad 2026-11-05 ~16:30 — alasannya: mau seperti RedotPay (blur backdrop + aksen pilih-pilih).
 
 ## 12. Keputusan Terbuka (Untuk Ahmad — JANGAN Ditebak)
 
-1. **Stack final:** Expo SDK 52+ + Supabase (direkomendasikan di Bab 10) atau Next.js + Drizzle? Konfirmasi satu.
-2. **Arah desain (4 jawaban):**
-   - Tone/rasa: [ mis. fintech bersih-serius / premium / playful / minimal ]
-   - Tema: [ dark saja / light saja / keduanya ]
-   - Referensi visual: [ lampirkan 2–3 screenshot/pin Pinterest + layar tujuannya + bagian mana yang wajib sama persis vs boleh adaptasi ]
-   - Cakupan layar v1: [ semua halaman Bab 5 / hanya Home, Transaksi, Tambah, Anggaran, Coach, Pengaturan ]
-3. **Cakupan layar v1 rebuild:** semua halaman Bab 5 ikut di v1, atau dipangkas ke inti dulu?
+1. **Stack final — DIKUNCI 2026-11-05 (Fase 0 sudah dibangun di atasnya):** Expo SDK 58 + Supabase. Alternatif Next.js + Drizzle ditolak.
+2. **Arah desain — DIKUNCI 2026-11-05 (revisi sebelum Fase 1):** kaca (blur backdrop) + aksen pilih-pilih, referensi RedotPay. Tone: fintech modern gelap dengan glow aksen. Tema: keduanya (gelap + terang). Referensi visual: screenshot RedotPay (`docs/redotpay-reference.jpg`) — yang wajib sama: panel kaca blur, glow aksen, saldo besar dengan desimal redup, bottom nav pill kaca; yang boleh adaptasi: isi konten (kartu promo cashback RedotPay diganti konten Arshif), struktur tab (tetap 5 tab Arshif + tombol tengah).
+   - Cakupan layar v1: [ semua halaman Bab 5 / hanya Home, Transaksi, Tambah, Anggaran, Coach, Pengaturan ] — **DIKUNCI 2026-11-05 ~15:34: inti dulu** (Home, Transaksi, Tambah/Capture, Anggaran, Coach, Pengaturan); sisanya (Planning hub, Invoices, Tools, Admin, Smart Log) menyusul dalam v1.
+3. **Cakupan layar v1 rebuild — DIKUNCI 2026-11-05 ~15:34:** inti dulu (Home, Transaksi, Tambah/Capture, Anggaran, Coach, Pengaturan); sisanya menyusul dalam v1, termasuk Smart Log.
 
 ## 13. Adopsi Fitur dari Worthful & Belanje (DIKUNCI 2026-11-05)
 
@@ -309,6 +311,8 @@ Harga live investasi untuk net worth, offline-first gratis, lifetime purchase un
 | Adopsi Worthful — pasca-MVP | Partner sharing | 2026-11-05 ~10:00 |
 | Adopsi Worthful — ditolak | Offline-first gratis; lifetime purchase unlimited; harga live investasi untuk net worth | 2026-11-05 ~10:00 |
 | Adopsi Worthful & Belanje | v1: Smart Log, budget pace, shared limit, annual fee, Paylater, kurs-per-hari, bills kalender, reimbursement, payday, ML Kit scanner, Weekly Replay, OTA. Pasca-MVP: partner sharing, rewards, aset, KPR, Trip, Item Prices, Excel, widgets. Ditolak tetap: harga live investasi, offline-first, lifetime. Detail di Bab 13 PRD. | 2026-11-05 ~15:30 |
+| Cakupan layar v1 rebuild | Inti dulu: Home, Transaksi, Tambah/Capture, Anggaran, Coach, Pengaturan; sisanya (Planning hub, Invoices, Tools, Admin, Smart Log) menyusul dalam v1. | 2026-11-05 ~15:34 |
+| Arah desain | Revisi Fase 0 → "Kaca & Aksen" (referensi RedotPay): blur backdrop di semua panel + nav pill, aksen bisa dipilih di Pengaturan (Merah default, Kuningan, Zamrud, Biru, Ungu); Fraunces dicabut, semua Plus Jakarta Sans. Detail di Bab 11 + FR-SET-4. | 2026-11-05 ~16:30 |
 | Pembayaran | Stripe DILARANG TOTAL (Ahmad tidak bisa daftar); RevenueCat + Xendit tetap | 2026-11-05 ~10:20 |
 | Pembayaran global | Paddle (Merchant of Record), web checkout saja, sandbox-first | 2026-11-05 ~10:21 |
 

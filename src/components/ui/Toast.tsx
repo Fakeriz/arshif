@@ -9,6 +9,7 @@ import { useTheme } from '@/theme/ThemeProvider';
 import { layout, motion, radius, space } from '@/theme/tokens';
 
 import { AppText } from './AppText';
+import { GlassView } from './GlassView';
 import { Icon } from './Icon';
 
 export type ToastTone = 'success' | 'error' | 'warning' | 'info';
@@ -72,8 +73,9 @@ function ToastView({ item, onDone }: { item: ToastItem; onDone: () => void }) {
       <Animated.View
         accessibilityRole={tone === 'error' ? 'alert' : 'text'}
         accessibilityLiveRegion="polite"
-        style={[styles.toast, { backgroundColor: colors.surfaceRaised, borderColor: colors.borderStrong }, style]}
+        style={[styles.toastWrap, style]}
       >
+        <GlassView level="floating" radius={radius.md} style={styles.toast}>
         <Icon icon={look.icon} color={look.fg} />
         <View style={styles.text}>
           <AppText variant="bodyStrong" numberOfLines={2}>
@@ -88,6 +90,7 @@ function ToastView({ item, onDone }: { item: ToastItem; onDone: () => void }) {
         <Pressable onPress={dismiss} hitSlop={12} accessibilityRole="button" accessibilityLabel="Tutup notifikasi">
           <Icon icon={X} color={colors.textMuted} size={layout.iconSize.sm} />
         </Pressable>
+        </GlassView>
       </Animated.View>
     </View>
   );
@@ -95,15 +98,7 @@ function ToastView({ item, onDone }: { item: ToastItem; onDone: () => void }) {
 
 const styles = StyleSheet.create({
   anchor: { position: 'absolute', left: space.lg, right: space.lg, alignItems: 'center' },
-  toast: {
-    width: '100%',
-    maxWidth: layout.maxContentWidth,
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: space.md,
-    padding: space.lg,
-    borderRadius: radius.md,
-    borderWidth: layout.hairline,
-  },
+  toastWrap: { width: '100%', maxWidth: layout.maxContentWidth },
+  toast: { flexDirection: 'row', alignItems: 'flex-start', gap: space.md, padding: space.lg },
   text: { flex: 1, gap: space.xxs },
 });

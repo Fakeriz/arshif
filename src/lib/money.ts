@@ -72,6 +72,31 @@ export function formatMoney(minor: number, code: string, sign: SignMode = 'auto'
   return sign === 'always' ? `+${body}` : body;
 }
 
+export type MoneyParts = {
+  sign: string;
+  symbol: string;
+  /** Bagian bulat dengan pemisah ribuan, tanpa simbol. */
+  whole: string;
+  /** Pemisah desimal + pecahan (mis. ".09"), kosong untuk mata uang tanpa desimal. */
+  fraction: string;
+  /** Spasi setelah simbol bila konvensi mata uangnya begitu. */
+  gap: string;
+};
+
+/** Pecah nominal untuk saldo besar: pecahan desimal ditampilkan redup (PRD Bab 11). */
+export function formatMoneyParts(minor: number, code: string, sign: SignMode = 'auto'): MoneyParts {
+  const m = currencyMeta(code);
+  const number = formatNumber(minor, code);
+  const cut = m.exponent > 0 ? number.lastIndexOf(m.decimal) : -1;
+  return {
+    sign: sign === 'never' || minor === 0 ? '' : minor < 0 ? MINUS : sign === 'always' ? '+' : '',
+    symbol: m.symbol,
+    whole: cut >= 0 ? number.slice(0, cut) : number,
+    fraction: cut >= 0 ? number.slice(cut) : '',
+    gap: m.spaceAfterSymbol ? ' ' : '',
+  };
+}
+
 /** Format ringkas untuk sumbu grafik: 1,2 jt · 450 rb · 12.5k. */
 export function formatCompact(minor: number, code: string): string {
   assertMinor(minor);

@@ -1,44 +1,56 @@
 import { StyleSheet, View } from 'react-native';
 
-import { AppText, Card } from '@/components/ui';
+import { AppText, Card, GlassView } from '@/components/ui';
 import { useTheme } from '@/theme/ThemeProvider';
-import { motion, radius, space, type as typeScale, type Palette, type TypeVariant } from '@/theme/tokens';
+import { ACCENT_OPTIONS, accents, motion, radius, space, type as typeScale, type Palette, type TypeVariant } from '@/theme/tokens';
 
 import { Section } from './Section';
 
 const SWATCHES: { key: keyof Palette; label: string }[] = [
   { key: 'bg', label: 'Latar' },
-  { key: 'surface', label: 'Kartu' },
-  { key: 'surfaceRaised', label: 'Sheet' },
   { key: 'text', label: 'Teks' },
   { key: 'textSecondary', label: 'Sekunder' },
   { key: 'textMuted', label: 'Redup' },
-  { key: 'accent', label: 'Kuningan' },
   { key: 'positive', label: 'Pemasukan' },
   { key: 'negative', label: 'Over budget' },
   { key: 'warning', label: 'Peringatan' },
   { key: 'info', label: 'Info' },
-  { key: 'track', label: 'Track' },
 ];
 
 export function ColorSection() {
-  const { colors, hues } = useTheme();
+  const { colors, scheme, hues } = useTheme();
   return (
-    <Section index="01 · Warna" title="Tinta & Kuningan" note="Latar tinta hangat, aksen kuningan. Hijau hanya untuk pemasukan, merah hanya untuk over budget.">
+    <Section index="Warna" title="Kaca & aksen" note="Netral tinta hangat, kaca translusen, satu aksen pilihan pengguna. Hijau selalu pemasukan; over budget punya warna sendiri dan selalu disertai ikon.">
+      <AppText variant="overline" tone="muted">Lima aksen (tema ini)</AppText>
+      <View style={styles.accentRow}>
+        {ACCENT_OPTIONS.map((o) => {
+          const t = accents[o.key][scheme];
+          return (
+            <View key={o.key} style={styles.accentItem}>
+              <View style={[styles.accentChip, { backgroundColor: t.accent }]}>
+                <AppText variant="caption" style={{ color: t.onAccent }}>Aa</AppText>
+              </View>
+              <AppText variant="caption">{o.label}</AppText>
+              <AppText variant="caption" tone="muted" numeric>{t.accent}</AppText>
+            </View>
+          );
+        })}
+      </View>
       <View style={styles.grid}>
         {SWATCHES.map((s) => (
           <View key={s.key} style={styles.swatch}>
             <View style={[styles.chipColor, { backgroundColor: colors[s.key], borderColor: colors.borderStrong }]} />
             <AppText variant="caption">{s.label}</AppText>
-            <AppText variant="caption" tone="muted" numeric>
-              {colors[s.key].toUpperCase()}
-            </AppText>
+            <AppText variant="caption" tone="muted" numeric>{colors[s.key].toUpperCase()}</AppText>
           </View>
         ))}
       </View>
-      <AppText variant="overline" tone="muted" uppercase>
-        Warna kategori
-      </AppText>
+      <AppText variant="overline" tone="muted">Lapisan kaca: panel (bening) dan mengambang (pekat)</AppText>
+      <View style={styles.glassRow}>
+        <GlassView style={styles.glassDemo}><AppText variant="caption">Panel</AppText></GlassView>
+        <GlassView level="floating" style={styles.glassDemo}><AppText variant="caption">Mengambang</AppText></GlassView>
+      </View>
+      <AppText variant="overline" tone="muted">Warna kategori</AppText>
       <View style={styles.hueRow}>
         {Object.entries(hues).map(([name, hex]) => (
           <View key={name} accessibilityLabel={name} style={[styles.hue, { backgroundColor: hex }]} />
@@ -55,21 +67,18 @@ const TYPE_SAMPLES: { variant: TypeVariant; text: string }[] = [
   { variant: 'h3', text: 'Transaksi terakhir' },
   { variant: 'body', text: 'Kamu sudah memakai 61% anggaran Kebutuhan. Masih aman sampai gajian.' },
   { variant: 'caption', text: 'Kurs per 5 Nov, 14.00 · sumber ExchangeRate-API' },
-  { variant: 'amountHero', text: 'Rp 48.215.400' },
 ];
 
 export function TypeSection() {
   return (
-    <Section index="02 · Tipografi" title="Fraunces × Plus Jakarta Sans" note="Fraunces untuk judul bernuansa editorial; Plus Jakarta Sans (foundry Jakarta) untuk UI dan angka tabular.">
+    <Section index="Tipografi" title="Plus Jakarta Sans" note="Satu keluarga untuk judul, UI, dan angka tabular. Dibuat foundry Jakarta, cocok untuk produk yang lahir di Indonesia.">
       <View style={styles.typeList}>
         {TYPE_SAMPLES.map((s) => (
           <View key={s.variant} style={styles.typeRow}>
-            <AppText variant="overline" tone="muted" uppercase>
+            <AppText variant="overline" tone="muted">
               {`${s.variant} · ${typeScale[s.variant].fontSize}/${typeScale[s.variant].lineHeight}`}
             </AppText>
-            <AppText variant={s.variant} numeric={s.variant === 'amountHero'}>
-              {s.text}
-            </AppText>
+            <AppText variant={s.variant}>{s.text}</AppText>
           </View>
         ))}
       </View>
@@ -81,11 +90,11 @@ export function ShapeSection() {
   const { colors } = useTheme();
   const radii = Object.entries(radius).filter(([k]) => k !== 'full');
   return (
-    <Section index="03 · Bentuk & gerak" title="Satu skala, satu ritme" note={`Gerak ${motion.fast}–${motion.slow}ms, hanya transform + opacity, spring lembut. Efek tekan scale ${motion.pressScale}. Semua instan saat reduced motion aktif.`}>
+    <Section index="Bentuk & gerak" title="Satu skala, satu ritme" note={`Kartu 16, tombol dan input 12, sheet 24. Gerak ${motion.fast}–${motion.slow}ms, hanya transform + opacity, efek tekan ${motion.pressScale}. Instan saat reduced motion aktif.`}>
       <View style={styles.radiusRow}>
         {radii.map(([k, v]) => (
           <View key={k} style={styles.radiusItem}>
-            <View style={[styles.radiusBox, { borderRadius: v, borderColor: colors.accent, backgroundColor: colors.accentSoft }]} />
+            <View style={[styles.radiusBox, { borderRadius: v, borderColor: colors.accentText, backgroundColor: colors.accentSoft }]} />
             <AppText variant="caption" tone="secondary" numeric>{`${k} ${v}`}</AppText>
           </View>
         ))}
@@ -100,9 +109,14 @@ export function ShapeSection() {
 }
 
 const styles = StyleSheet.create({
+  accentRow: { flexDirection: 'row', gap: space.sm },
+  accentItem: { flex: 1, gap: space.xxs },
+  accentChip: { height: 48, borderRadius: radius.md, alignItems: 'center', justifyContent: 'center', marginBottom: space.xs },
   grid: { flexDirection: 'row', flexWrap: 'wrap', rowGap: space.lg },
-  swatch: { width: '33.33%', gap: space.xxs, paddingRight: space.sm },
-  chipColor: { height: 48, borderRadius: radius.sm, borderWidth: 1, marginBottom: space.xs },
+  swatch: { width: '25%', gap: space.xxs, paddingRight: space.sm },
+  chipColor: { height: 40, borderRadius: radius.sm, borderWidth: 1, marginBottom: space.xs },
+  glassRow: { flexDirection: 'row', gap: space.md },
+  glassDemo: { flex: 1, height: 72, alignItems: 'center', justifyContent: 'center' },
   hueRow: { flexDirection: 'row', gap: space.sm, flexWrap: 'wrap' },
   hue: { width: 28, height: 28, borderRadius: radius.full },
   typeList: { gap: space.xl },

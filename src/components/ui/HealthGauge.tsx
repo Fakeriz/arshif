@@ -77,7 +77,7 @@ export function HealthGauge({ score, delta, size = 240, loading }: HealthGaugePr
       </Svg>
       <View style={[styles.center, { top: size * 0.2 }]} pointerEvents="none">
         <AppText variant="display" numeric style={{ fontSize: size * 0.22, lineHeight: size * 0.26 }}>
-          {score == null ? '—' : Math.round(score)}
+          {score == null ? '–' : Math.round(score)}
         </AppText>
         <AppText variant="caption" tone="muted">
           {score == null ? 'Butuh data 1 bulan' : `dari 100 · ${band?.label}`}

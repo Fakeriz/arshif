@@ -35,7 +35,7 @@ export function DonutLegend({ segments, total, currency, selected, onToggle }: D
             scaleTo={0.985}
             style={[
               styles.row,
-              { backgroundColor: active ? colors.surfaceRaised : 'transparent' },
+              { backgroundColor: active ? colors.track : 'transparent' },
               selected && !active && styles.dim,
             ]}
           >

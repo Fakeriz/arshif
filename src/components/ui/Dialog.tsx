@@ -9,6 +9,7 @@ import { layout, motion, radius, space } from '@/theme/tokens';
 
 import { AppText } from './AppText';
 import { Button } from './Button';
+import { GlassView } from './GlassView';
 import { Icon } from './Icon';
 
 export type DialogTone = 'info' | 'warning' | 'danger';
@@ -70,8 +71,9 @@ export function Dialog({
         <Animated.View
           accessibilityViewIsModal
           accessibilityRole="alert"
-          style={[styles.card, { backgroundColor: colors.surfaceRaised, borderColor: colors.border }, card]}
+          style={[styles.cardWrap, card]}
         >
+          <GlassView level="floating" radius={radius.lg} style={styles.card}>
           <View style={[styles.icon, { backgroundColor: look[tone].bg }]}>
             <Icon icon={look[tone].icon} color={look[tone].fg} size={22} />
           </View>
@@ -94,6 +96,7 @@ export function Dialog({
               fullWidth
             />
           </View>
+          </GlassView>
         </Animated.View>
       </View>
     </Modal>
@@ -102,14 +105,8 @@ export function Dialog({
 
 const styles = StyleSheet.create({
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: space.xxl },
-  card: {
-    width: '100%',
-    maxWidth: 400,
-    borderRadius: radius.lg,
-    borderWidth: layout.hairline,
-    padding: space.xxl,
-    gap: space.lg,
-  },
+  cardWrap: { width: '100%', maxWidth: 400 },
+  card: { padding: space.xxl, gap: space.lg },
   icon: { width: 44, height: 44, borderRadius: radius.full, alignItems: 'center', justifyContent: 'center' },
   text: { gap: space.xs + 2 },
   actions: { gap: space.sm },

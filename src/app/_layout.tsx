@@ -1,9 +1,9 @@
-import { Fraunces_600SemiBold } from '@expo-google-fonts/fraunces';
 import {
   PlusJakartaSans_400Regular,
   PlusJakartaSans_500Medium,
   PlusJakartaSans_600SemiBold,
   PlusJakartaSans_700Bold,
+  PlusJakartaSans_800ExtraBold,
 } from '@expo-google-fonts/plus-jakarta-sans';
 import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
@@ -19,11 +19,11 @@ SplashScreen.preventAutoHideAsync().catch(() => undefined);
 
 export default function RootLayout() {
   const [loaded, error] = useFonts({
-    Fraunces_600SemiBold,
     PlusJakartaSans_400Regular,
     PlusJakartaSans_500Medium,
     PlusJakartaSans_600SemiBold,
     PlusJakartaSans_700Bold,
+    PlusJakartaSans_800ExtraBold,
   });
 
   useEffect(() => {

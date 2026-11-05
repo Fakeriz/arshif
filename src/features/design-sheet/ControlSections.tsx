@@ -9,7 +9,7 @@ import { Row, Section, StateLabel } from './Section';
 
 export function ButtonSection() {
   return (
-    <Section index="04 · Tombol" title="Button" note="Tinggi 52 untuk aksi utama. Satu tombol primary per layar.">
+    <Section index="Tombol" title="Button" note="Tinggi 52 untuk aksi utama. Satu tombol primary per layar.">
       <Button label="Simpan transaksi" icon={Plus} fullWidth />
       <Button label="Scan struk" variant="secondary" icon={ScanLine} fullWidth />
       <Row>
@@ -32,13 +32,13 @@ export function InputSection() {
   const [amount, setAmount] = useState<number | null>(4500000);
   const [myr, setMyr] = useState<number | null>(null);
   return (
-    <Section index="05 · Input" title="Input & AmountInput" note="Nominal tersimpan sebagai integer unit terkecil; pemisah ribuan mengikuti mata uang.">
+    <Section index="Input" title="Input & AmountInput" note="Nominal tersimpan sebagai integer unit terkecil; pemisah ribuan mengikuti mata uang.">
       <Input label="Email" icon={Mail} value={email} onChangeText={setEmail} keyboardType="email-address" autoCapitalize="none" />
       <Input label="Kata sandi" placeholder="Minimal 8 karakter, huruf + angka" secureTextEntry />
       <Input label="Cari transaksi" icon={Search} placeholder="Merchant, catatan, kategori" />
       <StateLabel>Error · Disabled</StateLabel>
       <Input label="Kata sandi baru" value="arshif" secureTextEntry error="Minimal 8 karakter dan harus ada angka." onChangeText={() => undefined} />
-      <Input label="Mata uang utama" value="IDR — Rupiah Indonesia" disabled hint="Bisa diganti di Pengaturan." />
+      <Input label="Mata uang utama" value="IDR, Rupiah Indonesia" disabled hint="Bisa diganti di Pengaturan." />
       <View style={{ gap: space.xxl, paddingVertical: space.lg }}>
         <AmountInput value={amount} onChange={setAmount} currency="IDR" onPressCurrency={() => undefined} />
         <AmountInput value={myr} onChange={setMyr} currency="MYR" label="Nominal struk" error={myr === null ? undefined : myr > 500000 ? 'Melebihi limit kartu kredit' : undefined} />
@@ -51,7 +51,7 @@ export function BadgeChipSection() {
   const [filters, setFilters] = useState<string[]>(['expense']);
   const toggle = (k: string) => setFilters((f) => (f.includes(k) ? f.filter((x) => x !== k) : [...f, k]));
   return (
-    <Section index="06 · Badge & Chip" title="Penanda & filter">
+    <Section index="Badge & chip" title="Penanda & filter">
       <Row>
         <Badge label="Lunas" tone="positive" />
         <Badge label="Jatuh tempo besok" tone="warning" />
@@ -82,7 +82,7 @@ export function TabsSection() {
   const [period, setPeriod] = useState<'week' | 'month' | 'year'>('month');
   const [coach, setCoach] = useState<'score' | 'recap' | 'ask'>('score');
   return (
-    <Section index="07 · Tabs" title="Segmented & garis bawah">
+    <Section index="Tabs" title="Segmented & garis bawah">
       <Tabs
         accessibilityLabel="Periode"
         value={period}
