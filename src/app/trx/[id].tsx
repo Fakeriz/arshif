@@ -13,8 +13,7 @@ import { failureOf } from '@/features/capture/CaptureError';
 import { putHandoff } from '@/features/capture/handoff';
 import { ReceiptPhoto } from '@/features/capture/ReceiptPhoto';
 import { InfoRow } from '@/features/transactions/InfoRow';
-import { ReceiptItems } from '@/features/transactions/ReceiptItems';
-import { DiscountsCard, StoreCard, TaxCard } from '@/features/transactions/ReceiptSections';
+import { ReceiptCard, ReceiptDetailsCard } from '@/features/transactions/ReceiptSections';
 import { dayLong } from '@/lib/dates';
 import { currencyMeta, formatMoney } from '@/lib/money';
 import { useStore } from '@/state/AppStore';
@@ -95,10 +94,10 @@ export default function TransactionDetail() {
           <InfoRow label={t('tx.detail.rate')} value={`1 ${tx.currency} = ${effectiveRate(tx.amount, tx.currency, tx.accountAmount, account.currency)} ${account.currency}`} />
         </Card>
       )}
-      {tx.items && tx.items.length > 0 && <ReceiptItems items={tx.items} currency={tx.currency} receipt={tx.receipt} total={tx.amount} />}
-      {tx.receipt && <DiscountsCard discounts={tx.receipt.discounts} currency={tx.currency} />}
-      {tx.receipt && <TaxCard receipt={tx.receipt} items={tx.items ?? []} currency={tx.currency} />}
-      {tx.receipt && <StoreCard merchant={tx.merchant} receipt={tx.receipt} />}
+      {((tx.items && tx.items.length > 0) || tx.receipt) && (
+        <ReceiptCard title={t('tx.detail.receiptItems')} items={tx.items ?? []} currency={tx.currency} receipt={tx.receipt} total={tx.amount} />
+      )}
+      {tx.receipt && <ReceiptDetailsCard receipt={tx.receipt} />}
       {tx.receiptPath && <ReceiptPhoto path={tx.receiptPath} merchant={tx.merchant} />}
       {tx.receiptPath && tx.type === 'expense' && (
         <Button label={t('tx.receipt.reread')} icon={ScanText} variant="secondary" fullWidth loading={rereading} disabled={rereading} onPress={() => void reread(tx.receiptPath!, tx.id)} />

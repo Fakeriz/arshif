@@ -1,11 +1,10 @@
-import { render, screen } from '@testing-library/react-native';
+import { fireEvent, render, screen } from '@testing-library/react-native';
 import type { ReactElement } from 'react';
 
 import { toTransaction, fromTransaction, type TransactionRow } from '@/data/remote/mappers';
 import type { Transaction } from '@/data/types';
 import { receiptFromScan } from '@/features/capture/ScanReview';
-import { ReceiptItems } from '@/features/transactions/ReceiptItems';
-import { DiscountsCard, StoreCard, TaxCard } from '@/features/transactions/ReceiptSections';
+import { ReceiptCard, ReceiptDetailsCard } from '@/features/transactions/ReceiptSections';
 import { itemPaid, totalCheck } from '@/lib/receipt';
 import { ThemeProvider } from '@/theme/ThemeProvider';
 
@@ -190,37 +189,61 @@ describe('disimpan di transaksi dan dibaca kembali', () => {
     expect(Object.keys(fromTransaction({ ...manual, source: 'manual' }))).not.toContain('discounts');
   });
 
-  it('detail menampilkan diskon, hemat, KDV per tarif, lokasi, nomor struk, metode bayar', async () => {
-    await wrap(
-      <>
-        <ReceiptItems items={tx.items!} currency="TRY" receipt={tx.receipt} total={tx.amount} />
-        <DiscountsCard discounts={tx.receipt!.discounts} currency="TRY" />
-        <TaxCard receipt={tx.receipt!} items={tx.items!} currency="TRY" />
-        <StoreCard merchant={tx.merchant} receipt={tx.receipt!} />
-      </>,
-    );
-    const text = (s: string | RegExp) => screen.getAllByText(s).length;
-    expect(text(/Harga awal ₺259,90 · diskon −₺130,00/)).toBe(1);
-    expect(text('₺129,90')).toBe(1);
-    expect(text(/Harga awal ₺15,95 · diskon −₺3,45/)).toBe(1);
-    expect(text('₺12,50')).toBe(1);
-    for (const v of ['−₺3,45', '−₺104,95', '−₺130,00', '−₺79,95']) expect(text(v)).toBeGreaterThanOrEqual(1);
-    expect(text('₺318,35')).toBeGreaterThanOrEqual(1);
-    expect(text('₺71,84')).toBeGreaterThanOrEqual(1);
-    expect(text('₺41,03')).toBe(1);
-    expect(text('₺30,81')).toBe(1);
-    expect(text(/Total ₺451,35 termasuk pajak/)).toBe(1);
-    expect(text(/Total ₺184,85 termasuk pajak/)).toBe(1);
-    expect(text(/Cocok: subtotal dikurangi diskon sama dengan total ₺636,20/)).toBe(1);
-    expect(text(/WATSONS - CAROUSEL\s+H\.Z\. Uşakligil Cad\. Carousel AVM No:21/)).toBe(1);
-    expect(text('0039')).toBe(1);
-    expect(text('FinansBank')).toBe(1);
-    expect(text('Anadolu KR. VD. 2120370364')).toBe(1);
-    expect(screen.queryByText(/Hitungan struk/)).toBeNull();
+  const card = (receipt = tx.receipt!) => (
+    <>
+      <ReceiptCard title="Item belanja" items={tx.items!} currency="TRY" receipt={receipt} total={tx.amount} />
+      <ReceiptDetailsCard receipt={receipt} />
+    </>
+  );
+  const count = (s: string | RegExp) => screen.queryAllByText(s).length;
+
+  it('tiap angka tampil sekali: harga bayar, harga awal dicoret, badge diskon, promo', async () => {
+    await wrap(card());
+    // Harga bayar per item.
+    for (const v of ['₺129,90', '₺358,90', '₺54,95', '₺12,50', '₺79,95']) expect(count(v)).toBe(1);
+    // Harga awal dicoret (Marvis tanpa diskon: harga awal tidak diulang).
+    for (const v of ['₺259,90', '₺159,90', '₺15,95']) expect(count(v)).toBe(v === '₺159,90' ? 2 : 1);
+    for (const v of ['−₺3,45', '−₺104,95', '−₺130,00', '−₺79,95']) expect(count(v)).toBe(1);
+    for (const v of ['8.8 KAZANCI', 'AGUSTOS INSERT', 'KAZANC', '209.90 TL harcayana']) expect(count(v)).toBe(1);
+    expect(count('20%')).toBe(2);
+    expect(count('10%')).toBe(3);
+    expect(count('₺954,55')).toBe(1);
+    expect(count('−₺318,35')).toBe(1);
+    expect(count('₺71,84')).toBe(1);
+    expect(count('Pajak (termasuk)')).toBe(1);
+    expect(count(/Cocok: subtotal dikurangi diskon/)).toBe(1);
+    // Total tidak diulang di kartu (sudah di field Total / nominal detail); nama toko tidak diulang.
+    expect(count('₺636,20')).toBe(0);
+    expect(count(/WATSONS - CAROUSEL/)).toBe(0);
   });
 
-  it('total tidak cocok: peringatan kuning muncul', async () => {
-    await wrap(<ReceiptItems items={tx.items!} currency="TRY" receipt={{ ...tx.receipt!, discountTotal: 0 }} total={tx.amount} />);
-    expect(screen.getByText(/Hitungan struk ₺954,55 tidak sama dengan total ₺636,20 \(selisih ₺318,35\)/)).toBeTruthy();
+  it('rincian pajak per tarif dan detail struk tertutup sampai diketuk', async () => {
+    await wrap(card());
+    expect(count('₺41,03')).toBe(0);
+    expect(count('FinansBank')).toBe(0);
+    await fireEvent.press(screen.getByRole('button', { name: 'Pajak (termasuk)' }));
+    expect(count('₺41,03')).toBe(1);
+    expect(count('₺30,81')).toBe(1);
+    expect(count('10% dari ₺451,35')).toBe(1);
+    expect(count('20% dari ₺184,85')).toBe(1);
+    await fireEvent.press(screen.getByRole('button', { name: 'Detail struk' }));
+    expect(count(/Carousel AVM No:21/)).toBe(1);
+    expect(count('Anadolu KR. VD. 2120370364')).toBe(1);
+    expect(count('0039')).toBe(1);
+    expect(count('FinansBank')).toBe(1);
+  });
+
+  it('ketuk harga untuk ubah harga awal item', async () => {
+    const onChange = jest.fn();
+    await wrap(<ReceiptCard title="Item belanja" items={tx.items!} currency="TRY" receipt={tx.receipt} total={tx.amount} onChangeItemTotal={onChange} />);
+    await fireEvent.press(screen.getByRole('button', { name: /Ubah harga HEAD&SHOULDERS/ }));
+    await fireEvent.changeText(screen.getByDisplayValue('259,90'), '260,00');
+    expect(onChange).toHaveBeenLastCalledWith(0, 26000);
+  });
+
+  it('total tidak cocok: status kuning dengan selisih', async () => {
+    await wrap(card({ ...tx.receipt!, discountTotal: 0 }));
+    expect(screen.getByText(/Selisih ₺318,35 dengan total belanja/)).toBeTruthy();
+    expect(count(/Cocok:/)).toBe(0);
   });
 });

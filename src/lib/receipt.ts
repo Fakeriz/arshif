@@ -28,3 +28,13 @@ export function totalCheck(r: { subtotal: number; discount: number; tax?: number
   const diff = r.total - expected;
   return { expected, diff, ok: Math.abs(diff) <= 1 };
 }
+
+/** Kunci pencocokan nama item vs baris diskon (sama dengan server): tanpa diakritik, huruf besar, tanpa tanda baca. */
+export const nameKey = (s: string): string => s.normalize('NFD').replace(/\p{M}/gu, '').toUpperCase().replace(/[^\p{L}\p{N}]+/gu, ' ').trim();
+
+/** Nama promosi yang tercetak untuk diskon item ini (mis. "8.8 KAZANCI"), bila ada. */
+export function promoLabelFor(item: ReceiptItem, discounts: { itemName?: string; label?: string }[]): string | undefined {
+  const key = nameKey(item.name);
+  const labels = discounts.filter((d) => d.label && d.itemName && nameKey(d.itemName) === key).map((d) => d.label!.replace(/[\s,;:.]+$/, ''));
+  return labels.length ? labels.join(', ') : undefined;
+}
