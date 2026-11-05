@@ -92,8 +92,11 @@ function Routes() {
   const onboarded = signedIn && state.onboarded;
   return (
     <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.bg }, animation: 'slide_from_right' }}>
+      {/* Layar auth didaftarkan satu per satu (tanpa layout grup) supaya redirect guard jatuh ke "masuk"
+          dan "/" tetap milik (tabs)/index. */}
       <Stack.Protected guard={!signedIn}>
-        <Stack.Screen name="(auth)" />
+        <Stack.Screen name="(auth)/masuk" />
+        <Stack.Screen name="(auth)/verifikasi" />
       </Stack.Protected>
       <Stack.Protected guard={signedIn && !onboarded}>
         <Stack.Screen name="setup" />

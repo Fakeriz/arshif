@@ -46,8 +46,12 @@ export function AppStoreProvider({ children, preset }: { children: ReactNode; pr
   // Setter tema/bahasa berganti identitas saat nilainya berubah; lewat ref agar reload tidak ikut terpicu.
   const applyPrefs = useRef({ setLang, setAccent, setMode });
   applyPrefs.current = { setLang, setAccent, setMode };
+  const currentPrefs = useRef({ lang, accent, mode });
+  currentPrefs.current = { lang, accent, mode };
   // Nilai preferensi terakhir yang tersimpan di server, supaya perubahan dari server tidak ditulis balik.
   const synced = useRef<{ lang: string; accent: string; mode: string } | null>(null);
+  // true = nilai dari server baru dikirim ke Theme/I18n dan belum terlihat di render; jangan ditulis balik.
+  const applying = useRef(false);
 
   const reload = useCallback(async () => {
     if (!userId) return;
@@ -58,10 +62,21 @@ export function AppStoreProvider({ children, preset }: { children: ReactNode; pr
         api.loadProfile(userId, email), api.loadAccounts(), api.loadTransactions(), api.loadNotifications(), api.loadUsage(), api.loadLatestRates(),
       ]);
       setUsdRates(rates.table, rates.date);
-      synced.current = { lang: profile.lang, accent: profile.accent, mode: profile.themeMode };
-      applyPrefs.current.setLang(profile.lang);
-      applyPrefs.current.setAccent(profile.accent);
-      applyPrefs.current.setMode(profile.themeMode);
+      const cur = currentPrefs.current;
+      if (!profile.onboarded) {
+        // Pengguna baru: profil masih berisi default DB. Bahasa/aksen/tema perangkat yang dipakai dan disimpan.
+        synced.current = { ...cur };
+        applying.current = false;
+        api.updateProfile(userId, { lang: cur.lang, accent: cur.accent, theme_mode: cur.mode }).catch(() => undefined);
+      } else {
+        synced.current = { lang: profile.lang, accent: profile.accent, mode: profile.themeMode };
+        // Hanya "sedang menerapkan" bila nilai server memang berbeda dari yang tampil sekarang;
+        // kalau sama, efek di bawah tidak akan berjalan untuk melepas penanda ini.
+        applying.current = cur.lang !== profile.lang || cur.accent !== profile.accent || cur.mode !== profile.themeMode;
+        applyPrefs.current.setLang(profile.lang);
+        applyPrefs.current.setAccent(profile.accent);
+        applyPrefs.current.setMode(profile.themeMode);
+      }
       localDispatch({
         type: 'load/done',
         data: {
@@ -87,10 +102,16 @@ export function AppStoreProvider({ children, preset }: { children: ReactNode; pr
     }
   }, [userId, reload, preset]);
 
-  // Bahasa, aksen, dan tema disimpan per pengguna (FR-SET-1, FR-SET-4).
+  // Bahasa, aksen, dan tema disimpan per pengguna (FR-SET-1, FR-SET-4). Hanya perubahan dari pengguna
+  // yang ditulis: selama nilai server sedang diterapkan, nilai perangkat lama tidak boleh menimpa profil.
   useEffect(() => {
     const s = synced.current;
-    if (!userId || !s || (s.lang === lang && s.accent === accent && s.mode === mode)) return;
+    if (!userId || !s) return;
+    if (s.lang === lang && s.accent === accent && s.mode === mode) {
+      applying.current = false;
+      return;
+    }
+    if (applying.current) return;
     synced.current = { lang, accent, mode };
     api.updateProfile(userId, { lang, accent, theme_mode: mode }).catch(() => show({ tone: 'error', title: t('common.syncFailed'), message: t('common.syncFailedMessage') }));
   }, [userId, lang, accent, mode, show, t]);

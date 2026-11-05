@@ -1,6 +1,9 @@
-// Klik-tembus alur penting di build web (R-35). Pakai: npm run export:web && npm run e2e:web
-// Butuh Chromium: npx playwright install chromium. Mencetak PASS/FAIL per langkah + error console, exit 1 bila ada FAIL.
+// Klik-tembus LIVE di build web terhadap Supabase sungguhan (R-35). Pakai: npm run export:web && npm run e2e:web
+// Butuh SUPABASE_SECRET_KEY (pengguna uji dibuat ulang tiap langkah) + Chromium (npx playwright install chromium).
+// Mencetak PASS/FAIL per langkah + error console, exit 1 bila ada FAIL.
 import { chromium } from 'playwright';
+import { ids, resetUser, sessionFor, storageKey } from './e2e-live.mjs';
+import { receiptJpeg, statementPdf } from './e2e-fixtures.mjs';
 import http from 'node:http'; import fs from 'node:fs'; import path from 'node:path';
 const dist = path.resolve(process.argv[2] ?? 'dist');
 const types = { '.html': 'text/html', '.js': 'text/javascript', '.ttf': 'font/ttf', '.png': 'image/png', '.ico': 'image/x-icon', '.json': 'application/json' };
@@ -8,17 +11,42 @@ const server = http.createServer((req, res) => { let f = path.join(dist, decodeU
 await new Promise((r) => server.listen(8095, r));
 const b = await chromium.launch();
 const results = []; const errors = [];
-const step = async (name, fn) => { try { await fn(); results.push(`PASS ${name}`); } catch (e) { results.push(`FAIL ${name}: ${String(e.message).split('\n')[0]}`); } };
+// Tiap langkah mulai dari data contoh yang sama di server (reset = hapus pengguna uji + seed ulang).
+let session = null;
+let lastPage = null;
+// Halaman langkah sebelumnya ditutup sebelum reset: kalau tidak, request susulannya memakai pengguna yang
+// sudah dihapus dan muncul sebagai error konsol palsu (403/406).
+const contexts = [];
+const shotDir = process.env.E2E_SHOTS;
+const only = process.env.E2E_ONLY ? new RegExp(process.env.E2E_ONLY, 'i') : null;
+const step = async (name, fn, { seed = true, onboarded = true, signedIn = true } = {}) => {
+  if (only && !only.test(name)) return;
+  await Promise.all(contexts.splice(0).map((c) => c.close().catch(() => undefined)));
+  try {
+    await resetUser({ seed, onboarded });
+    session = signedIn ? await sessionFor() : null;
+    await fn();
+    results.push(`PASS ${name}`);
+  } catch (e) {
+    results.push(`FAIL ${name}: ${String(e.message).split('\n')[0]}`);
+    if (shotDir && lastPage) await lastPage.screenshot({ path: `${shotDir}/fail-${results.length}.png`, fullPage: true }).catch(() => undefined);
+  }
+};
 // Bahasa mengikuti perangkat (I18nProvider.detectLang), jadi locale dipaksa: default id-ID.
 const open = async (url, scheme = 'dark', locale = 'id-ID') => {
   const ctx = await b.newContext({ viewport: { width: 390, height: 844 }, colorScheme: scheme, locale });
+  contexts.push(ctx);
+  // Sesi login sungguhan disuntikkan ke penyimpanan supabase-js sebelum aplikasi dimuat.
+  if (session) await ctx.addInitScript(([k, v]) => localStorage.setItem(k, v), [storageKey(), JSON.stringify(session)]);
   const p = await ctx.newPage();
+  lastPage = p;
   p.on('console', (m) => m.type() === 'error' && errors.push(`${url}: ${m.text().slice(0, 160)}`));
-  p.on('pageerror', (e) => errors.push(`${url}: ${String(e).slice(0, 160)}`));
+  p.on('pageerror', (e) => errors.push(`${url}: ${String(process.env.E2E_STACK ? e.stack : e).slice(0, process.env.E2E_STACK ? 1500 : 160)}`));
   await p.goto(`http://localhost:8095${url}`, { waitUntil: 'networkidle' });
-  await p.evaluate(() => document.fonts.ready); await p.waitForTimeout(500);
+  await p.evaluate(() => document.fonts.ready); await p.waitForTimeout(1500);
   return p;
 };
+const reloadPage = async (p) => { await p.reload({ waitUntil: 'networkidle' }); await p.waitForTimeout(1500); };
 const btn = (p, name) => p.getByRole('button', { name, exact: true }).first();
 const expectText = async (p, t, timeout = 4000) => p.getByText(t, { exact: false }).locator('visible=true').first().waitFor({ timeout });
 const url = (p) => new URL(p.url()).pathname;
@@ -37,7 +65,7 @@ await step('Home: tombol + membuka sheet Catat dengan 4 pilihan', async () => {
 await step('Home: sembunyikan saldo menutup nominal, tampilkan lagi memulihkan', async () => {
   const p = await open('/'); await btn(p, 'Sembunyikan saldo').click();
   await p.getByLabel('Saldo disembunyikan').first().waitFor();
-  await btn(p, 'Tampilkan saldo').click(); await p.getByLabel(/^Rp 43\./).first().waitFor();
+  await btn(p, 'Tampilkan saldo').click(); await p.getByLabel(/^Rp \d/).first().waitFor();
 });
 await step('Home: lonceng membuka notifikasi, ketuk recap menuju Coach', async () => {
   const p = await open('/'); await p.getByRole('button', { name: 'Notifikasi, 2 belum dibaca' }).click();
@@ -86,7 +114,7 @@ await step('Detail: tampil item struk; hapus -> dialog -> transaksi hilang dari 
   await expectText(p, '27 dari 27 transaksi');
 });
 await step('Detail: transaksi mata uang asing menampilkan konversi + kurs', async () => {
-  const p = await open('/trx/t07'); await expectText(p, 'Konversi mata uang'); await expectText(p, '1 TRY = ');
+  const p = await open(`/trx/${ids.t07}`); await expectText(p, 'Konversi mata uang'); await expectText(p, '1 TRY = ');
 });
 await step('Form manual: kosong -> pesan error per field', async () => {
   const p = await open('/tambah'); await btn(p, 'Simpan transaksi').click();
@@ -125,11 +153,13 @@ await step('Pengaturan: ganti bahasa ke Türkçe -> seluruh UI ikut, nav dan tan
   await btn(p, 'Türkçe').click(); await expectText(p, 'Ayarlar'); await expectText(p, 'Görünüm');
   await btn(p, 'Geri').click(); await p.waitForTimeout(400); await p.getByRole('tab', { name: 'Ana Sayfa', exact: true }).waitFor({ timeout: 3000 });
 });
-await step('Bahasa perangkat: locale ms-MY dan en-US terdeteksi otomatis, locale lain jatuh ke Indonesia', async () => {
-  const ms = await open('/pengaturan', 'dark', 'ms-MY'); await expectText(ms, 'Tetapan');
-  const en = await open('/pengaturan', 'dark', 'en-US'); await expectText(en, 'Settings');
-  const fr = await open('/pengaturan', 'dark', 'fr-FR'); await expectText(fr, 'Pengaturan');
-});
+await step('Bahasa: sebelum login ikut perangkat (ms/en, lainnya Indonesia); setelah login ikut profil', async () => {
+  const ms = await open('/', 'dark', 'ms-MY'); await expectText(ms, 'Log masuk atau daftar');
+  const en = await open('/', 'dark', 'en-US'); await expectText(en, 'Sign in or sign up');
+  const fr = await open('/', 'dark', 'fr-FR'); await expectText(fr, 'Masuk atau daftar');
+  session = await sessionFor(); // profil tersimpan = Indonesia, walau perangkat berbahasa Inggris
+  const app = await open('/pengaturan', 'dark', 'en-US'); await expectText(app, 'Pengaturan');
+}, { signedIn: false });
 await step('Pengaturan: pilih desain kartu bank -> kartu di Beranda berganti warna dan nama', async () => {
   const p = await open('/pengaturan'); await p.getByRole('button', { name: /^GoPay/ }).first().click();
   await expectText(p, 'Desain kartu'); await p.getByRole('radio', { name: 'ShopeePay' }).click();
@@ -137,40 +167,6 @@ await step('Pengaturan: pilih desain kartu bank -> kartu di Beranda berganti war
   await p.keyboard.press('Escape'); await p.waitForTimeout(400);
   await p.getByRole('button', { name: /^Kembali$/ }).first().click(); await p.waitForTimeout(400);
   await p.getByLabel(/^ShopeePay E-Wallet/).first().waitFor({ timeout: 3000 });
-});
-await step('Scan: bidik -> baca -> review -> simpan -> masuk daftar, kuota 15', async () => {
-  const p = await open('/scan'); await btn(p, 'Ambil foto struk').click(); await expectText(p, 'Membaca struk'); await expectText(p, 'Cek hasil scan', 5000);
-  await expectText(p, 'Keyakinan 62%'); await expectText(p, 'berbeda Rp 3.000');
-  await p.getByLabel('2 × Rp 19.500').fill('39000'); await p.waitForTimeout(200);
-  if (await p.getByText('berbeda Rp').count()) throw new Error('peringatan selisih tidak hilang setelah item diperbaiki');
-  await btn(p, 'Simpan transaksi').click(); await expectText(p, 'Struk tersimpan'); await expectText(p, '29 dari 29 transaksi');
-});
-await step('Scan: state error -> struk tidak terbaca, foto ulang', async () => {
-  const p = await open('/scan?state=error'); await btn(p, 'Ambil foto struk').click(); await expectText(p, 'Struk tidak terbaca', 5000); await btn(p, 'Foto ulang').click(); await expectText(p, 'Posisikan struk');
-});
-await step('Voice: rekam -> selesai -> review -> simpan semua', async () => {
-  const p = await open('/voice'); await btn(p, 'Mulai merekam').click(); await p.waitForTimeout(1300); await expectText(p, '00:01');
-  await btn(p, 'Selesai merekam').click(); await expectText(p, 'Cek hasil Voice Log', 5000); await expectText(p, 'tidak ditemukan, memakai BCA Tabungan');
-  await btn(p, 'Simpan semua (2)').click(); await expectText(p, '2 transaksi tersimpan'); await expectText(p, '30 dari 30 transaksi');
-});
-await step('Import: pilih berkas -> baca -> 3 duplikat tidak dicentang -> import 3', async () => {
-  const p = await open('/import'); if (!(await btn(p, 'Baca rekening koran').isDisabled())) throw new Error('harus disabled tanpa berkas');
-  await btn(p, 'Pilih berkas PDF').click(); await btn(p, 'Baca rekening koran').click(); await expectText(p, 'Cek hasil import', 5000);
-  await expectText(p, '3 baris mirip'); await btn(p, 'Import 3 transaksi').click(); await expectText(p, '3 transaksi diimpor'); await expectText(p, '31 dari 31 transaksi');
-});
-await step('State limit: Scan/Voice/Import menampilkan batas + paywall', async () => {
-  for (const [path_, t] of [['/scan?state=limit', 'Kuota scan bulan ini habis'], ['/voice?state=limit', 'Kuota automation bulan ini habis'], ['/import?state=limit', 'Kuota import bulan ini habis']]) {
-    const p = await open(path_); await expectText(p, t); await btn(p, 'Lihat Premium').click(); await expectText(p, 'Buka batas dengan Premium');
-  }
-});
-await step('State loading/error/empty tampil di Home, Transaksi, Anggaran, Coach', async () => {
-  for (const path_ of ['/', '/transaksi', '/anggaran', '/coach']) {
-    const e = await open(`${path_}?state=error`); await expectText(e, 'gagal dimuat'); await btn(e, 'Coba lagi').click(); await e.waitForTimeout(500);
-    if (await e.getByText('gagal dimuat').count()) throw new Error(`${path_} retry tidak memulihkan`);
-    const l = await open(`${path_}?state=loading`); await l.getByLabel(/^Memuat/).first().waitFor({ timeout: 3000 });
-  }
-  const h = await open('/?state=empty'); await expectText(h, 'Belum ada transaksi');
-  const t = await open('/transaksi?state=empty'); await expectText(t, 'Belum ada transaksi'); await btn(t, 'Catat sekarang').click(); await expectText(t, 'Catat transaksi');
 });
 await step('Keyboard: Tab menunjukkan ring fokus, Enter mengaktifkan, mouse tidak memunculkan ring', async () => {
   const p = await open('/');
@@ -188,6 +184,52 @@ await step('Escape menutup sheet Catat', async () => {
   const p = await open('/'); await btn(p, 'Catat transaksi').click(); await expectText(p, 'Pilih cara tercepat untukmu');
   await p.keyboard.press('Escape'); await p.waitForTimeout(500);
   if (await p.getByText('Pilih cara tercepat untukmu').locator('visible=true').count()) throw new Error('sheet masih terbuka');
+});
+await step('Tanpa sesi: aplikasi membuka layar masuk, bukan layar kosong', async () => {
+  const p = await open('/'); if (url(p) !== '/masuk') throw new Error(url(p)); await expectText(p, 'Masuk atau daftar');
+  await p.getByLabel('Email').fill('bukan-email'); await btn(p, 'Kirim kode').click(); await expectText(p, 'Format email belum benar');
+}, { signedIn: false });
+await step('Setup 3 langkah pengguna baru -> akun pertama tersimpan di server -> Beranda', async () => {
+  const p = await open('/'); if (url(p) !== '/setup') throw new Error(url(p));
+  await expectText(p, 'Mata uang utama'); await btn(p, 'Lanjut').click();
+  await btn(p, 'Lanjut').click(); await expectText(p, 'Isi nama akun.');
+  await p.getByLabel('Nama akun').fill('BCA Gaji'); await btn(p, 'Lanjut').click();
+  await btn(p, 'Mulai pakai Arshif').click(); await expectText(p, 'Isi penghasilan bulanan');
+  await p.getByRole('textbox', { name: /Penghasilan bulanan/ }).fill('9000000'); await btn(p, 'Mulai pakai Arshif').click();
+  await p.getByLabel(/^BCA Tabungan|^BCA /).first().waitFor({ timeout: 8000 });
+  await reloadPage(p); if (url(p) !== '/') throw new Error('setelah muat ulang: ' + url(p));
+}, { seed: false, onboarded: false });
+await step('Pengguna baru: bahasa perangkat (Melayu) dipakai di setup dan tersimpan di profil', async () => {
+  const p = await open('/', 'dark', 'ms-MY'); await expectText(p, 'Langkah 1 daripada 3');
+  await p.waitForTimeout(1500); await reloadPage(p); await expectText(p, 'Langkah 1 daripada 3');
+}, { seed: false, onboarded: false });
+await step('Simpan manual bertahan setelah muat ulang (tersimpan di Supabase)', async () => {
+  const p = await open('/tambah'); await p.getByRole('textbox', { name: /Nominal/ }).fill('45000'); await p.getByLabel('Toko atau keterangan').fill('Es teh Solo');
+  await p.getByRole('checkbox', { name: 'Makan & Minum' }).click(); await btn(p, 'Simpan transaksi').click(); await expectText(p, 'Transaksi tersimpan');
+  await p.waitForTimeout(1500); await p.goto('http://localhost:8095/transaksi', { waitUntil: 'networkidle' }); await p.waitForTimeout(1500);
+  await expectText(p, 'Es teh Solo'); await expectText(p, '29 dari 29 transaksi');
+});
+await step('Preferensi bertahan setelah muat ulang: aksen, bahasa, desain kartu', async () => {
+  const p = await open('/pengaturan'); await p.getByRole('radio', { name: 'Biru' }).click();
+  await p.getByRole('button', { name: /^GoPay/ }).first().click(); await p.getByRole('radio', { name: 'ShopeePay' }).click(); await p.keyboard.press('Escape');
+  await p.getByRole('button', { name: /^Bahasa/ }).click(); await btn(p, 'English').click(); await expectText(p, 'Settings');
+  await p.waitForTimeout(1500); await reloadPage(p);
+  await expectText(p, 'Settings');
+  if ((await p.getByRole('radio', { name: 'Blue' }).getAttribute('aria-checked')) !== 'true') throw new Error('aksen tidak tersimpan');
+  await expectText(p, 'ShopeePay');
+});
+await step('Scan struk LIVE: pilih foto -> Gemini membaca -> review -> simpan', async () => {
+  const p = await open('/scan'); const chooser = p.waitForEvent('filechooser'); await btn(p, 'Pilih dari galeri').click();
+  await (await chooser).setFiles({ name: 'struk.jpg', mimeType: 'image/jpeg', buffer: await receiptJpeg() });
+  await expectText(p, 'Cek hasil scan', 30000); await expectText(p, 'INDOMIE GORENG');
+  if ((await p.getByRole('textbox', { name: /Total belanja/ }).inputValue()) !== '87.500') throw new Error('total salah');
+  await btn(p, 'Simpan transaksi').click(); await expectText(p, 'Struk tersimpan');
+});
+await step('Import PDF LIVE: pilih PDF -> Gemini membaca baris -> duplikat tidak dicentang -> import', async () => {
+  const p = await open('/import'); const chooser = p.waitForEvent('filechooser'); await btn(p, 'Pilih berkas PDF').click();
+  await (await chooser).setFiles({ name: 'rekening.pdf', mimeType: 'application/pdf', buffer: await statementPdf() });
+  await btn(p, 'Baca rekening koran').click(); await expectText(p, 'Cek hasil import', 45000);
+  await expectText(p, 'Kemungkinan duplikat'); await p.getByRole('button', { name: /^Import \d+ transaksi/ }).click(); await expectText(p, 'transaksi diimpor');
 });
 console.log(results.join('\n')); console.log('\nERROR CONSOLE:', errors.length ? [...new Set(errors)].join('\n') : 'tidak ada');
 await b.close(); server.close();

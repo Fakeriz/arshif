@@ -26,8 +26,8 @@ R-10 membatasi glassmorphism ke 1–2 elemen. Ahmad memutuskan **kaca tetap di s
 ## Status fase
 
 - [x] **Fase 0 — Fondasi** (2026-11-05), direvisi ke "Kaca & Aksen", disetujui Ahmad
-- [x] **Fase 1 — UI layar inti dengan data contoh** (2026-11-05), dilengkapi i18n ID/MS/TR/EN + pemilih desain kartu bank. Menunggu konfirmasi sebelum Fase 2
-- [ ] Fase 2 — Backend Supabase (LIVE: login, scan, kurs sungguhan)
+- [x] **Fase 1 — UI layar inti dengan data contoh** (2026-11-05), dilengkapi i18n ID/MS/TR/EN + pemilih desain kartu bank
+- [ ] **Fase 2 — Backend Supabase, LIVE** (2026-11-05): scan dan kurs sungguhan lolos; login sungguhan lolos di level Auth/API, tapi **login dari aplikasi oleh pengguna nyata masih terblokir** keputusan email OTP (lihat "Keputusan terbuka"). Fase 2 belum dinyatakan selesai.
 - [ ] Fase 3 — Monetisasi (RevenueCat + Xendit + Paddle) & rilis
 
 ## Fase 0 — yang sudah ada
@@ -100,11 +100,9 @@ Cek ulang i18n (10 layar × 4 bahasa, 390px, ditambah deteksi otomatis overflow 
 
 ### Belum terverifikasi / belum ada
 
-- **Perangkat nyata**: blur Android (sengaja fallback translusen sampai ada `BlurTargetView` + uji di dev build), haptic, safe area notch, keyboard numerik, gestur tarik sheet.
-- **Kamera, rekam suara, pemilih berkas PDF**: UI-nya ada, perangkatnya Fase 2 (label jujur di layar).
+- **Perangkat nyata**: blur Android (sudah dipasang `BlurTargetView`, belum diuji di Xiaomi), haptic, safe area notch, keyboard numerik, gestur tarik sheet, kamera/rekam suara/pemilih PDF native.
 - **Terjemahan MS/TR/EN** ditulis tanpa penutur asli; perlu dibaca penutur asli sebelum rilis.
-- **Belum dibangun (di luar cakupan inti)**: onboarding/login, Planning hub, Invoices, Tools, Admin, Smart Log, Split Bill dari struk, chat Tanya Coach (Premium), PIN/biometrik, kelola kategori.
-- Persistensi: tema/aksen/preferensi hilang saat aplikasi ditutup (Fase 2: simpan ke profil).
+- **Belum dibangun (di luar cakupan inti)**: carousel onboarding, login Google, Planning hub, Invoices, Tools, Admin, Smart Log, Split Bill dari struk, chat Tanya Coach (Premium), PIN/biometrik, kelola kategori.
 
 ## Cara menjalankan
 
@@ -112,8 +110,10 @@ Cek ulang i18n (10 layar × 4 bahasa, 390px, ditambah deteksi otomatis overflow 
 npm ci
 npm run web          # buka http://localhost:8081/design
 npm start            # Expo Go / dev build
-npm run verify       # typecheck + test + export web/android/ios
-npm run export:web && npm run e2e:web   # klik-tembus Chromium
+npm run verify       # typecheck app + functions, jest, uji DB (PGlite), export web/android/ios
+SUPABASE_ACCESS_TOKEN=... ./scripts/deploy-supabase.sh   # migrasi, secret cron, functions, auth, kurs
+SUPABASE_SECRET_KEY=... npm run test:live               # smoke test LIVE
+npm run export:web && SUPABASE_SECRET_KEY=... npm run e2e:web   # klik-tembus LIVE (Chromium)
 EXPO_PUBLIC_DESIGN_SHEET=1 npm run web  # buka Lembar Desain di /design
 ```
 
@@ -122,18 +122,57 @@ EXPO_PUBLIC_DESIGN_SHEET=1 npm run web  # buka Lembar Desain di /design
 - **Blur di web**: lapisan `BlurView` absolut menutupi `<svg>` yang static → GlassView membuat stacking context (`zIndex: 0`) dan blur di `zIndex: -1`. Jangan dihapus.
 - **Blur di Android**: `blurMethod="dimezisBlurViewSdk31Plus"` butuh `BlurTargetView`. Tanpa `BlurTargetProvider`, GlassView memakai fallback translusen. Fase 1: pasang `BlurTargetView` di layar untuk elemen mengambang (nav pill, sheet). Kaca TIDAK boleh berada di dalam target yang sama yang dia blur.
 - **Glow**: alpha puncak sudah disetel agar teks/label di atasnya ≥ 4.5:1. Mengubah `accentGlow` wajib lolos `contrast.test.ts`.
-- **Penyimpanan aksen**: Fase 0 hanya state; Fase 2 simpan ke profil Supabase lewat `onAccentChange`, muat lewat `initialAccent`.
+- **Preferensi per pengguna**: dimuat dari profil di `AppStore.reload`; pengguna baru (belum setup) menyimpan bahasa/aksen/tema perangkat. Penanda `applying` mencegah nilai perangkat menimpa profil saat muat.
+- **Rute auth**: JANGAN tambah `(auth)/index` atau layout grup `(auth)`: `/` jadi ambigu dan tab Home crash ("Tab trigger 'index' … must point to a route within the tabs layout").
+- **Konfigurasi publik klien** di `src/config/public.ts` (bukan `app.json` extra: tidak terbawa ke bundle web).
+- **Font di Chromium headless mesin ini**: tidak ada font sistem; fixture e2e memuat font lewat API `FontFace`, bukan `@font-face`.
 - **Warna bank** di `constants/banks.ts` perkiraan warna merek, tanpa logo; verifikasi ke panduan merek resmi sebelum rilis.
 - **Ikon Lucide**: ditetapkan pemilik di PRD Bab 11 (alasan R-04 tertulis di sana).
 - NativeWind tidak dipakai; TS 6 butuh `"types": ["jest"]`; mock Reanimated minimal di `jest.setup.ts`; RNTL v14 async; aarch64 → export native `--no-bytecode`; `expo-asset` + `query-string` eksplisit; `PressableScale` pakai `containerStyle` untuk flex; teks nominal web tidak auto-shrink.
 - Teks UI tanpa em dash (antislop R-02).
 - Bundle id sementara `app.arshif`; ikon aplikasi & splash masih aset default Expo (R-23: butuh arahan logo dari pemilik).
 
-## Untuk Fase 2
+## Fase 2 — yang sudah ada (proyek Supabase `gyxtdpmruuhhkprlhlrk`, ArshifLabs)
 
-- Ganti `src/state/` (store memori) dengan Supabase (Auth, RLS, query), bentuk hook `useLedger/useBudget/useHealth` dipertahankan. Hapus `useDemoState` dan paksaan `?state=`.
-- Edge Functions: OCR struk, Voice Log, Import PDF, Coach, sync kurs. Kuota ditegakkan di server.
-- Simpan aksen/tema/preferensi per pengguna (`ThemeProvider.onAccentChange`, `initialAccent`).
-- Pasang kamera (ML Kit scanner), rekam suara, pemilih PDF; uji blur Android di dev build.
-- Simpan bahasa per pengguna (`I18nProvider.onLangChange`); Coach/recap AI ditulis dalam bahasa pengguna (FR-COACH-4).
-- Checkpoint LIVE: login sungguhan, scan sungguhan, kurs sungguhan.
+**Database** (`supabase/migrations/`, diterapkan lewat `scripts/deploy-supabase.sh`):
+- Tabel: profiles, accounts, transactions, transaction_items, plan_limits, usage_counters, fx_rates, notifications, ai_jobs, coach_narrations. Nominal = `bigint` unit terkecil (bukan float).
+- Saldo akun dihitung trigger (`recompute_balance`); kolom `balance`, `plan`, `user_id` tidak bisa ditulis klien (hak kolom + trigger).
+- RLS di semua tabel; transaksi/item/foto struk hanya boleh merujuk akun/folder milik sendiri (trigger, bukan cuma FK).
+- Kuota Bab 7 ditegakkan di server: `quota_try_consume`/`quota_refund` (hanya service role), batas 4 akun Free lewat trigger, `my_usage()` untuk layar.
+- Storage privat `receipts` (8 MB) dan `statements` (15 MB), path `<user_id>/<berkas>`; signed URL 10 menit.
+- pg_cron: `fx-sync` 3x sehari lewat pg_net + secret Vault (`project_url`, `cron_secret`), bersih notifikasi > 90 hari, log AI > 180 hari.
+- Uji lokal tanpa Docker: `npm run test:db` (PGlite + stub Supabase, 22 skenario).
+
+**Edge Functions** (`supabase/functions/`, kontrak zod bersama `_shared/contracts.ts`): scan-receipt, voice-log, import-statement, coach, fx-sync, delete-account. `verify_jwt = false` (kunci format baru), token diverifikasi di kode. Rate limit 10 AI/menit/pengguna, kuota diambil atomik sebelum AI dan dikembalikan bila gagal, semua percobaan dicatat di `ai_jobs`.
+
+**Klien**: login email OTP (`(auth)/masuk`, `(auth)/verifikasi`), setup 3 langkah (`setup`), gerbang rute `Stack.Protected` di `_layout.tsx`, store dari Supabase dengan sinkron optimistik (`state/sync.ts`; gagal = toast + muat ulang), preferensi bahasa/aksen/tema per pengguna, lonceng Realtime, kurs harian asli ("kurs per tanggal"), kamera/galeri + kompres 1600 px, rekam suara (expo-audio), pemilih PDF, foto struk di detail, ekspor JSON/CSV, hapus akun, tambah akun, keluar. Data contoh (`data/seed.ts`, `sample-state.ts`) hanya untuk test dan Lembar Desain.
+
+### Checkpoint LIVE (2026-11-05)
+- `npm run test:live` 10/10: login lewat kode OTP Supabase Auth, RLS lintas pengguna, trigger saldo, plan/saldo tidak bisa ditulis, kurs ECB, 401/400/403 di function, **scan struk sungguhan** (INDOMARET, total 87.500, 4 item, kuota +1, ~4,5 detik), storage terisolasi, hapus akun cascade.
+- `npm run e2e:web` 30/30 tanpa error konsol, terhadap Supabase live: setup pengguna baru, simpan bertahan setelah muat ulang, preferensi tersimpan, **scan dari UI**, **import PDF dari UI** (5 baris, duplikat tidak dicentang), bahasa perangkat vs profil.
+- Kurs: 7.720 baris, 256 hari kerja, terbaru 2026-11-04 (IDR 18.129 / MYR 4,064 / TRY 50,022 per USD).
+- Voice Log diuji manual dengan rekaman TTS: transkrip benar, "kemarin" → tanggal absolut, akun GoPay cocok, ~6 detik.
+- Keduanya butuh `SUPABASE_SECRET_KEY` di env (pengguna uji dibuat lewat admin API, tanpa email). Jangan di-commit.
+
+### Keputusan terbuka (perlu jawaban Ahmad)
+- **Email OTP 6 digit**: paket Free Supabase dengan email bawaan tidak mengizinkan ubah templat, dan templat bawaan hanya berisi tautan (tanpa kode). Batas kirim juga 2 email/jam. Pilihan: (a) pasang SMTP sendiri (mis. Resend/Brevo, perlu domain pengirim) lalu templat berisi `{{ .Token }}` diterapkan oleh `deploy-supabase.sh`; atau (b) ganti alur ke magic link + deep link. Sampai diputuskan, pengguna sungguhan belum bisa login lewat aplikasi (login teruji lewat API).
+
+### Konflik dengan PRD (dicatat, bukan diam-diam)
+- **Model AI**: PRD Bab 10 `gemini-2.5-flash` sudah ditutup Google untuk pengguna baru. Dipakai `gemini-3.1-flash-lite` (utama, ~4,5 detik scan) + `gemini-3.5-flash` (cadangan), bisa diganti lewat secret `GEMINI_MODEL` / `GEMINI_FALLBACK_MODEL`.
+- **Kurs**: PRD = ExchangeRate-API per jam; dipakai Frankfurter/ECB harian (keputusan Ahmad 2026-11-05).
+- **Kuota scan** terpotong saat AI berhasil membaca, bukan saat Simpan (PRD FR-OCR-4), supaya kuota tidak bisa dipakai gratis dengan membaca tanpa menyimpan.
+- **PDF rekening koran** dihapus langsung setelah dibaca (PRD: 30 hari). PDF berkata sandi belum didukung (PRD: password opsional).
+- **Daftar transaksi** memuat semua transaksi saat start (per 1000 baris), belum paginasi kursor 50/halaman (NFR).
+- **Voice Log** ~6 detik (target NFR < 4 detik).
+
+### Belum ada di Fase 2
+- ML Kit document scanner (FR-OCR-6) butuh dev build; sekarang image picker.
+- Batas per kategori (FR-SET-2) belum bisa diatur → kepatuhan anggaran = penuh; pilar tagihan penuh (modul Tagihan belum ada); delta skor bulan lalu belum ada (riwayat skor).
+- Notifikasi otomatis (budget 80/100%, recap Senin 07.00) belum dijadwalkan; tabel + Realtime sudah siap.
+- Transaksi hasil import memakai jam 00:00.
+
+## Untuk Fase 3
+
+- RevenueCat (in-app) + Xendit (IDR/MYR) + Paddle (web global); webhook mengubah `profiles.plan` (hanya server). Stripe dilarang.
+- Selesaikan keputusan email OTP; login Google (FR-AUTH-1).
+- Hardening: cabut token akses Supabase dan kunci Gemini yang pernah ditempel di percakapan, buat ulang.

@@ -22,4 +22,10 @@ export function adminKey(): string {
 }
 
 export const GEMINI_API_KEY = (): string => required('GEMINI_API_KEY');
+/**
+ * Model utama + cadangan. PRD menulis gemini-2.5-flash, tapi model itu sudah ditutup Google untuk
+ * pengguna baru (2026-11). Bisa diganti tanpa deploy ulang lewat secret GEMINI_MODEL / GEMINI_FALLBACK_MODEL.
+ */
+export const GEMINI_MODELS = (): string[] =>
+  [Deno.env.get('GEMINI_MODEL') || 'gemini-3.1-flash-lite', Deno.env.get('GEMINI_FALLBACK_MODEL') || 'gemini-3.5-flash'].filter((m, i, a) => a.indexOf(m) === i);
 export const CRON_SECRET = (): string => required('CRON_SECRET');

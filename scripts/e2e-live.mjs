@@ -83,7 +83,9 @@ export async function resetUser({ seed = true, onboarded = true } = {}) {
   if (!onboarded) return user.id;
   must(await admin.from('profiles').update({ display_name: 'Rani Pratiwi', main_currency: 'IDR', payday: 25, monthly_income: 14_250_000, onboarded_at: new Date().toISOString() }).eq('id', user.id));
   if (!seed) return user.id;
-  must(await admin.from('accounts').insert(ACCOUNTS.map(([id, bank, name, type, currency, opening, last4]) => ({ id: ids[id], user_id: user.id, bank, name, type, currency, opening_balance: opening, last4 }))));
+  // created_at berurutan: urutan kartu di Beranda = urutan pembuatan akun.
+  const t0 = Date.now();
+  must(await admin.from('accounts').insert(ACCOUNTS.map(([id, bank, name, type, currency, opening, last4], i) => ({ id: ids[id], user_id: user.id, bank, name, type, currency, opening_balance: opening, last4, created_at: new Date(t0 + i * 1000).toISOString() }))));
   must(
     await admin.from('transactions').insert(
       TXS.map(([id, date, time, merchant, category_key, acc, amount, type = 'expense', source = 'manual', currency = 'IDR', accountAmount = null]) => ({

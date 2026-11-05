@@ -8,6 +8,7 @@ import type { Transaction, TxType } from '@/data/types';
 import { addDays, todayYmd } from '@/lib/dates';
 import { convert } from '@/lib/fx';
 import { validateTx } from '@/lib/validate';
+import { newId } from '@/lib/uuid';
 import { useActiveAccountId, type AccountWithBalance } from '@/state/AppStore';
 import { space } from '@/theme/tokens';
 
@@ -66,7 +67,7 @@ export function TransactionForm({ accounts, initial, onSubmit }: TransactionForm
     const accountAmount = account.currency !== currency ? convert(amount, currency, account.currency) : undefined;
     const sourceAmount = accountAmount ?? amount;
     onSubmit({
-      id: initial?.id ?? `n-${Date.now().toString(36)}`,
+      id: initial?.id ?? newId(),
       type,
       merchant: type === 'transfer' ? merchant.trim() || t('tx.form.transferTo', { account: to?.name ?? '' }).trim() : merchant.trim(),
       categoryKey: type === 'transfer' ? 'savings' : (categoryKey as string),

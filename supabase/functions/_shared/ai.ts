@@ -1,9 +1,11 @@
-import { GEMINI_API_KEY } from './env.ts';
+import { GEMINI_API_KEY, GEMINI_MODELS } from './env.ts';
 
 /** Gemini hanya dipanggil dari Edge Functions (PRD Bab 10). */
-const MODEL = 'gemini-2.5-flash';
-const ENDPOINT = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent`;
-const TIMEOUT_MS = 25_000;
+const endpoint = (model: string) => `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
+/** Per percobaan. Dua percobaan tetap jauh di bawah batas waktu Edge Function. */
+const TIMEOUT_MS = 15_000;
+/** Model penuh (503/429), tidak tersedia (404), menggantung (timeout), atau gangguan jaringan: coba model cadangan. */
+const RETRYABLE = (e: unknown) => e instanceof AiError && /^(http_(404|429|500|503)|timeout|network)$/.test(e.message);
 
 export type InlineData = { mimeType: string; base64: string };
 
@@ -19,12 +21,26 @@ export class AiError extends Error {}
 export async function generateJson(prompt: string, schema: GeminiSchema, inline?: InlineData): Promise<unknown> {
   const parts: Record<string, unknown>[] = [{ text: prompt }];
   if (inline) parts.push({ inline_data: { mime_type: inline.mimeType, data: inline.base64 } });
+  // Utama → cadangan → utama lagi (setelah jeda): beban Gemini sering melonjak sesaat.
+  const [primary, ...rest] = GEMINI_MODELS();
+  const models = [primary, ...rest, primary];
+  for (let i = 0; i < models.length; i++) {
+    try {
+      if (i === models.length - 1 && i > 0) await new Promise((r) => setTimeout(r, 1200));
+      return await callModel(models[i], parts, schema);
+    } catch (e) {
+      if (i === models.length - 1 || !RETRYABLE(e)) throw e;
+    }
+  }
+  throw new AiError('no_model');
+}
 
+async function callModel(model: string, parts: Record<string, unknown>[], schema: GeminiSchema): Promise<unknown> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
   let res: Response;
   try {
-    res = await fetch(ENDPOINT, {
+    res = await fetch(endpoint(model), {
       method: 'POST',
       signal: controller.signal,
       headers: { 'Content-Type': 'application/json', 'x-goog-api-key': GEMINI_API_KEY() },
