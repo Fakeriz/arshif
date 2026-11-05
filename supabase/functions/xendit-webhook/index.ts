@@ -5,7 +5,7 @@
  */
 import { adminClient } from '../_shared/auth.ts';
 import { minorToMajor, verifyStaticToken, xenditInvoiceStatus } from '../_shared/billing.ts';
-import { XENDIT_CALLBACK_TOKEN } from '../_shared/env.ts';
+import { configured, XENDIT_CALLBACK_TOKEN } from '../_shared/env.ts';
 import { claimEvent, grantOrder, refundOrder, releaseEvent, transitionOrder } from '../_shared/entitlement.ts';
 import { HttpError, json, readJson, serve } from '../_shared/http.ts';
 import { exponentOf } from '../_shared/money.ts';
@@ -14,6 +14,8 @@ type InvoiceCallback = { id: string; external_id: string; status: string; amount
 type RefundCallback = { event: string; data: { id: string; invoice_id?: string | null } };
 
 serve(async (req) => {
+  // Secret belum diisi: 503 not_configured (bukan 500), penyedia mengirim ulang setelah dikonfigurasi.
+  if (!configured('XENDIT_CALLBACK_TOKEN')) throw new HttpError('not_configured', 503);
   if (!verifyStaticToken(req.headers.get('x-callback-token'), XENDIT_CALLBACK_TOKEN())) throw new HttpError('unauthorized', 401);
   const body = (await readJson(req)) as Partial<InvoiceCallback> & Partial<RefundCallback>;
   const db = adminClient();

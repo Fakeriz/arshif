@@ -6,7 +6,7 @@
  */
 import { adminClient } from '../_shared/auth.ts';
 import { verifyPaddleSignature } from '../_shared/billing.ts';
-import { PADDLE_PRICE_ID, PADDLE_WEBHOOK_SECRET } from '../_shared/env.ts';
+import { configured, PADDLE_PRICE_ID, PADDLE_WEBHOOK_SECRET } from '../_shared/env.ts';
 import { claimEvent, grantOrder, refundOrder, releaseEvent, transitionOrder } from '../_shared/entitlement.ts';
 import { HttpError, json, serve } from '../_shared/http.ts';
 
@@ -26,6 +26,8 @@ type PaddleEvent = {
 };
 
 serve(async (req) => {
+  // Secret belum diisi: 503 not_configured (bukan 500), penyedia mengirim ulang setelah dikonfigurasi.
+  if (!configured('PADDLE_WEBHOOK_SECRET')) throw new HttpError('not_configured', 503);
   const raw = await req.text();
   const ok = await verifyPaddleSignature(raw, req.headers.get('paddle-signature'), PADDLE_WEBHOOK_SECRET(), Math.floor(Date.now() / 1000));
   if (!ok) throw new HttpError('unauthorized', 401);

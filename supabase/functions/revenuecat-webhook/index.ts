@@ -5,13 +5,15 @@
  */
 import { adminClient } from '../_shared/auth.ts';
 import { revenueCatUserIds, verifyStaticToken } from '../_shared/billing.ts';
-import { RC_WEBHOOK_AUTH } from '../_shared/env.ts';
+import { configured, RC_WEBHOOK_AUTH } from '../_shared/env.ts';
 import { claimEvent, releaseEvent, syncPlan } from '../_shared/entitlement.ts';
 import { HttpError, json, readJson, serve } from '../_shared/http.ts';
 
 const NOTIFY_ON = new Set(['INITIAL_PURCHASE', 'NON_RENEWING_PURCHASE', 'UNCANCELLATION']);
 
 serve(async (req) => {
+  // Secret belum diisi: 503 not_configured (bukan 500), penyedia mengirim ulang setelah dikonfigurasi.
+  if (!configured('RC_WEBHOOK_AUTH')) throw new HttpError('not_configured', 503);
   if (!verifyStaticToken(req.headers.get('authorization'), RC_WEBHOOK_AUTH())) throw new HttpError('unauthorized', 401);
   const body = (await readJson(req)) as { event?: Record<string, unknown> };
   const event = body.event;
