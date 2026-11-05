@@ -10,7 +10,7 @@ import { AppText, Chip, CurrencyText, EmptyState, Input } from '@/components/ui'
 import { FilterSheet } from '@/features/transactions/FilterSheet';
 import { TransactionList } from '@/features/transactions/TransactionList';
 import { TransactionListSkeleton } from '@/features/transactions/TransactionListSkeleton';
-import { useDemoState } from '@/state/demo';
+import { useLoadState } from '@/state/loadState';
 import { useLedger } from '@/state/derived';
 import { useRetry } from '@/state/useRetry';
 import { filterTransactions, isFilterActive, totals, type TxFilter } from '@/lib/transactions';
@@ -26,7 +26,7 @@ const TYPES: { key: NonNullable<TxFilter['type']>; label: MsgKey }[] = [
 export default function TransaksiScreen() {
   const router = useRouter();
   const t = useT();
-  const demo = useDemoState();
+  const demo = useLoadState();
   const retry = useRetry();
   const { akun } = useLocalSearchParams<{ akun?: string }>();
   const ledger = useLedger();

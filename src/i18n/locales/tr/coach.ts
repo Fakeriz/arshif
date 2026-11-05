@@ -15,12 +15,10 @@ const coach: Messages['coach'] = {
     formula: '5 temel ölçüte göre formülle hesaplanır, yapay zekâ tahmini değildir.',
     pillarA11y: '{label}, {max} üzerinden {points}',
     says: 'Coach diyor ki',
-    sample: 'Örnek anlatım',
-    narration:
-      'Finansal durumun oldukça sağlıklı. Birikimin yolunda ve taksitlerin hâlâ hafif. Bu ay en çok dikkat gereken konular: sağlık harcaması limiti aştı ve acil durum fonun henüz 6 aylık harcamaya ulaşmadı.',
-    action1: 'Birikim tutarını gelirinin %20’sine çıkar (Rp 2.850.000).',
-    action2: 'Sağlık kategorisindeki acil olmayan harcamaları bir sonraki döneme kadar ertele.',
-    action3: 'İstekler bütçesinden kalanı acil durum fonuna aktar.',
+    aiBadge: 'AI yazdı',
+    narrLoading: 'Coach yazıyor',
+    narrError: 'Coach notu yüklenemedi. Puanın yine doğru çünkü formülle hesaplanıyor.',
+    narrRateLimited: 'Bir dakikada çok fazla AI isteği. Biraz bekleyip tekrar dene.',
   },
   recap: {
     range: '{start} - {end}',

@@ -6,9 +6,15 @@ import type { Lang } from '@/i18n/types';
  * Tanggal transaksi disimpan sebagai teks "YYYY-MM-DD" (tanpa zona waktu) agar hasilnya
  * sama di semua perangkat. Fase 2: tanggal absolut dari server mengikuti zona waktu pengguna.
  */
+/** Tanggal tetap untuk test (data contoh). Aplikasi memakai todayYmd(). */
 export const DEMO_TODAY = '2026-11-05';
 
 const DAY_MS = 86_400_000;
+
+/** Hari ini menurut zona waktu perangkat, "YYYY-MM-DD". */
+export function todayYmd(now: Date = new Date()): string {
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+}
 
 export type YMD = { y: number; m: number; d: number };
 
@@ -53,7 +59,7 @@ export function monthName(m: number, lang: Lang): string {
 }
 
 /** "Hari ini", "Kemarin", atau "29 Okt" (+ tahun bila beda tahun). */
-export function dayLabel(s: string, lang: Lang, today: string = DEMO_TODAY): string {
+export function dayLabel(s: string, lang: Lang, today: string = todayYmd()): string {
   const diff = diffDays(today, s);
   if (diff === 0) return translate(lang, 'domain.date.today');
   if (diff === 1) return translate(lang, 'domain.date.yesterday');

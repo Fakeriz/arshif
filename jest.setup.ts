@@ -23,3 +23,8 @@ jest.mock('react-native-reanimated', () => {
     cancelAnimation: () => undefined,
   };
 });
+
+// Test memakai kurs contoh yang tetap (aplikasi memakai kurs live dari fx_rates).
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const fx = require('./src/lib/fx');
+fx.setUsdRates(fx.SAMPLE_USD_RATES, '2026-11-05');

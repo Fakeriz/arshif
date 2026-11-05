@@ -1,6 +1,7 @@
 import type { Transaction } from '@/data/types';
 import { accountBalance } from '@/lib/transactions';
-import { initialState, reducer } from '@/state/reducer';
+import { sampleState as initialState } from '@/data/sample-state';
+import { reducer } from '@/state/reducer';
 
 const tx: Transaction = { id: 'new1', type: 'expense', merchant: 'Bakso Solo', categoryKey: 'food', accountId: 'a-gopay', date: '2026-11-05', time: '12:00', amount: 30_000, currency: 'IDR', source: 'scan' };
 const gopay = (s: ReturnType<typeof initialState>) => accountBalance(s.accounts.find((a) => a.id === 'a-gopay')!, s.transactions);

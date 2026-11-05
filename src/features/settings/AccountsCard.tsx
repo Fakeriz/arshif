@@ -1,12 +1,15 @@
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
-import { AppText, Card, ListItem } from '@/components/ui';
+import { Plus } from 'lucide-react-native';
+
+import { AppText, Button, Card, ListItem } from '@/components/ui';
 import { getBank } from '@/constants/banks';
 import { bankName, useT } from '@/i18n';
 import { useAccounts, useStore } from '@/state/AppStore';
 import { radius, space } from '@/theme/tokens';
 
+import { AddAccountSheet } from './AddAccountSheet';
 import { BankPickerSheet } from './BankPickerSheet';
 
 /** Daftar akun dengan swatch warna bank; ketuk untuk memilih desain kartu (FR-ACC-2). Pratinjau di sheet langsung berubah, jadi tidak perlu toast. */
@@ -15,6 +18,7 @@ export function AccountsCard() {
   const { dispatch } = useStore();
   const accounts = useAccounts();
   const [editing, setEditing] = useState<string | null>(null);
+  const [adding, setAdding] = useState(false);
   const account = accounts.find((a) => a.id === editing) ?? null;
 
   return (
@@ -39,6 +43,8 @@ export function AccountsCard() {
           />
         );
       })}
+      <Button label={t('settings.accounts.addTitle')} icon={Plus} variant="ghost" size="md" fullWidth onPress={() => setAdding(true)} />
+      <AddAccountSheet visible={adding} onClose={() => setAdding(false)} />
       <BankPickerSheet
         account={account}
         balance={account?.balance ?? 0}

@@ -1,11 +1,17 @@
-import { DEMO_INCOME, DEMO_MAIN_CURRENCY, DEMO_PAYDAY, seedAccounts, seedNotifications, seedTransactions, seedUsage } from '@/data/seed';
 import type { Account, AppNotification, NotificationType, Plan, Transaction } from '@/data/types';
 import { DEFAULT_SPLIT, splitIsValid, type Split } from '@/lib/budget';
 import type { QuotaKey, Usage } from '@/lib/quota';
 
-export type NotifPrefs = Record<Exclude<NotificationType, 'system'>, boolean>;
+export type NotifPrefs = Record<Exclude<NotificationType, 'system' | 'monthly_recap' | 'goal_reached' | 'subscription_renewal'>, boolean>;
+
+/** idle = belum login, loading = memuat dari Supabase, ready = data siap, error = gagal memuat. */
+export type LoadStatus = 'idle' | 'loading' | 'ready' | 'error';
 
 export type AppState = {
+  status: LoadStatus;
+  email: string;
+  displayName: string | null;
+  onboarded: boolean;
   accounts: Account[];
   transactions: Transaction[];
   notifications: AppNotification[];
@@ -19,9 +25,22 @@ export type AppState = {
   notifPrefs: NotifPrefs;
   /** Kartu aktif di Beranda = akun default untuk Catat, Scan, Voice, Import. null = akun pertama. */
   activeAccountId: string | null;
+  /** Tanggal kurs yang dipakai untuk agregat ("Kurs per …"). */
+  ratesDate: string | null;
 };
 
+/** Data hasil muat penuh dari server. */
+export type Loaded = Omit<AppState, 'status'>;
+
 export type Action =
+  | { type: 'load/start' }
+  | { type: 'load/done'; data: Loaded }
+  | { type: 'load/error' }
+  | { type: 'reset' }
+  | { type: 'usage/set'; usage: Usage }
+  | { type: 'profile/set'; patch: Partial<Pick<AppState, 'displayName' | 'onboarded' | 'income' | 'payday' | 'mainCurrency'>> }
+  | { type: 'account/add'; account: Account }
+  | { type: 'notif/add'; notification: AppNotification }
   | { type: 'tx/add'; tx: Transaction; consumes?: QuotaKey }
   | { type: 'tx/addMany'; txs: Transaction[]; consumes?: QuotaKey }
   | { type: 'tx/update'; tx: Transaction }
@@ -35,20 +54,28 @@ export type Action =
   | { type: 'account/setBank'; id: string; bank: string }
   | { type: 'account/setActive'; id: string };
 
+export const EMPTY_USAGE: Usage = { accounts: 0, scan: 0, automation: 0, importPdf: 0, invoice: 0 };
+
+/** State sebelum login / sebelum data datang. Tidak ada data contoh di aplikasi (Fase 2). */
 export function initialState(): AppState {
   return {
-    accounts: seedAccounts,
-    transactions: seedTransactions,
-    notifications: seedNotifications,
+    status: 'idle',
+    email: '',
+    displayName: null,
+    onboarded: false,
+    accounts: [],
+    transactions: [],
+    notifications: [],
     plan: 'free',
-    usage: seedUsage,
+    usage: EMPTY_USAGE,
     hideBalance: false,
-    mainCurrency: DEMO_MAIN_CURRENCY,
-    income: DEMO_INCOME,
+    mainCurrency: 'IDR',
+    income: 0,
     split: DEFAULT_SPLIT,
-    payday: DEMO_PAYDAY,
+    payday: 1,
     notifPrefs: { bill_due: true, budget_alert: true, weekly_recap: true, quota_warning: true },
     activeAccountId: null,
+    ratesDate: null,
   };
 }
 
@@ -56,6 +83,22 @@ const bump = (usage: Usage, key?: QuotaKey, by = 1): Usage => (key ? { ...usage,
 
 export function reducer(state: AppState, action: Action): AppState {
   switch (action.type) {
+    case 'load/start':
+      return { ...state, status: state.status === 'ready' ? 'ready' : 'loading' };
+    case 'load/done':
+      return { ...action.data, status: 'ready' };
+    case 'load/error':
+      return { ...state, status: state.status === 'ready' ? 'ready' : 'error' };
+    case 'reset':
+      return initialState();
+    case 'usage/set':
+      return { ...state, usage: action.usage };
+    case 'profile/set':
+      return { ...state, ...action.patch };
+    case 'account/add':
+      return { ...state, accounts: [...state.accounts, action.account], usage: { ...state.usage, accounts: state.accounts.length + 1 } };
+    case 'notif/add':
+      return state.notifications.some((n) => n.id === action.notification.id) ? state : { ...state, notifications: [action.notification, ...state.notifications] };
     case 'tx/add':
       return { ...state, transactions: [action.tx, ...state.transactions], usage: bump(state.usage, action.consumes) };
     case 'tx/addMany':

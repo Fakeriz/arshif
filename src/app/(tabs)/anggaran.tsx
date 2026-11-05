@@ -12,15 +12,16 @@ import { BUCKETS } from '@/lib/budget';
 import { shortDate } from '@/lib/dates';
 import { formatMoney } from '@/lib/money';
 import { useStore } from '@/state/AppStore';
-import { useDemoState } from '@/state/demo';
+import { useLoadState } from '@/state/loadState';
 import { useBudget, useLedger } from '@/state/derived';
 import { useRetry } from '@/state/useRetry';
 import { useTheme } from '@/theme/ThemeProvider';
 import { radius, space } from '@/theme/tokens';
 
 export default function AnggaranScreen() {
-  const demo = useDemoState();
+  const demo = useLoadState();
   const retry = useRetry();
+  const { refreshing } = useStore();
   const { state, dispatch } = useStore();
   const { hues } = useTheme();
   const { t, lang } = useI18n();
@@ -53,7 +54,7 @@ export default function AnggaranScreen() {
 
   const total = b.spent.needs + b.spent.wants + b.spent.savings;
   return (
-    <Screen tabs onRefresh={retry} refreshing={false}>
+    <Screen tabs onRefresh={retry} refreshing={refreshing}>
       <TabHeader
         title={t('budget.title')}
         subtitle={subtitle}

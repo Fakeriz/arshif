@@ -1,11 +1,11 @@
+import { LogOut } from 'lucide-react-native';
 import { StyleSheet, View } from 'react-native';
 import { useState } from 'react';
 
 import { CurrencySheet } from '@/components/shell/CurrencySheet';
 import { Screen } from '@/components/shell/Screen';
 import { ScreenHeader } from '@/components/shell/ScreenHeader';
-import { AccentPicker, AppText, Card, ListItem, Tabs, Toggle } from '@/components/ui';
-import { DEMO_USER } from '@/data/seed';
+import { AccentPicker, AppText, Button, Card, ListItem, Tabs, Toggle } from '@/components/ui';
 import { AccountsCard } from '@/features/settings/AccountsCard';
 import { DataCard } from '@/features/settings/DataCard';
 import { LanguageSheet } from '@/features/settings/LanguageSheet';
@@ -13,7 +13,7 @@ import { UsageCard } from '@/features/settings/UsageCard';
 import { LANGS, useI18n } from '@/i18n';
 import { currencyMeta } from '@/lib/money';
 import { useStore } from '@/state/AppStore';
-import { useDemoState } from '@/state/demo';
+import { supabase } from '@/lib/supabase';
 import { useTheme, type ThemeMode } from '@/theme/ThemeProvider';
 import { radius, space } from '@/theme/tokens';
 import type { NotifPrefs } from '@/state/reducer';
@@ -24,11 +24,11 @@ const NOTIFS: (keyof NotifPrefs)[] = ['bill_due', 'budget_alert', 'weekly_recap'
 export default function PengaturanScreen() {
   const { colors, mode, setMode } = useTheme();
   const { state, dispatch } = useStore();
-  const demo = useDemoState();
   const { t, lang } = useI18n();
   const [currencyOpen, setCurrencyOpen] = useState(false);
   const [langOpen, setLangOpen] = useState(false);
-  const initials = DEMO_USER.name.split(' ').map((p) => p[0]).slice(0, 2).join('');
+  const name = state.displayName?.trim() || state.email.split('@')[0];
+  const initials = name.split(/[\s._-]+/).filter(Boolean).map((p) => p[0]!.toUpperCase()).slice(0, 2).join('');
 
   return (
     <Screen>
@@ -41,15 +41,17 @@ export default function PengaturanScreen() {
             </AppText>
           </View>
           <View style={styles.flex}>
-            <AppText variant="h3">{DEMO_USER.name}</AppText>
+            <AppText variant="h3" numberOfLines={1}>
+              {name}
+            </AppText>
             <AppText variant="caption" tone="secondary">
-              {DEMO_USER.email}
+              {state.email}
             </AppText>
           </View>
         </View>
       </Card>
 
-      <UsageCard plan={state.plan} usage={state.usage} accountCount={state.accounts.length} forceLimit={demo === 'limit'} />
+      <UsageCard plan={state.plan} usage={state.usage} accountCount={state.accounts.length} />
 
       <AccountsCard />
 
@@ -113,9 +115,8 @@ export default function PengaturanScreen() {
       </Card>
 
       <DataCard />
-      <AppText variant="caption" tone="muted" align="center">
-        {t('settings.footer')}
-      </AppText>
+      {/* Keluar: sesi dihapus dari perangkat, gerbang rute kembali ke layar masuk. */}
+      <Button label={t('settings.signOut')} icon={LogOut} variant="secondary" fullWidth onPress={() => void supabase.auth.signOut()} />
       <LanguageSheet visible={langOpen} onClose={() => setLangOpen(false)} />
       <CurrencySheet visible={currencyOpen} value={state.mainCurrency} onClose={() => setCurrencyOpen(false)} onSelect={(code) => dispatch({ type: 'prefs/mainCurrency', code })} />
     </Screen>

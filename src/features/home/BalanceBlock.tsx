@@ -1,9 +1,9 @@
 import { Eye, EyeOff } from 'lucide-react-native';
 import { StyleSheet, View } from 'react-native';
 
-import { useT } from '@/i18n';
-import { AppText, BalanceText, Badge, Icon, PressableScale } from '@/components/ui';
-import { SAMPLE_RATES_AT } from '@/lib/fx';
+import { useI18n } from '@/i18n';
+import { AppText, BalanceText, Icon, PressableScale } from '@/components/ui';
+import { shortDate } from '@/lib/dates';
 import { useStore } from '@/state/AppStore';
 import { useTheme } from '@/theme/ThemeProvider';
 import { layout, radius, space } from '@/theme/tokens';
@@ -12,7 +12,9 @@ export function BalanceBlock({ amount, currency, accountCount }: { amount: numbe
   const { colors } = useTheme();
   const { state, dispatch } = useStore();
   const hidden = state.hideBalance;
-  const t = useT();
+  const { t, lang } = useI18n();
+  // Kurs hanya disebut bila ada akun bermata uang lain (FR-FX-2: "Kurs per [waktu]").
+  const converted = state.accounts.some((a) => a.currency !== currency) && state.ratesDate !== null;
   return (
     <View style={styles.wrap}>
       <View style={styles.label}>
@@ -30,11 +32,10 @@ export function BalanceBlock({ amount, currency, accountCount }: { amount: numbe
       </View>
       <BalanceText amount={amount} currency={currency} hidden={hidden} countUp />
       <AppText variant="caption" tone="muted" align="center">
-        {t('home.balanceMeta', { count: accountCount, currency, date: SAMPLE_RATES_AT })}
+        {converted
+          ? t('home.balanceMeta', { count: accountCount, currency, date: shortDate(state.ratesDate!, lang) })
+          : t('home.balanceMetaSame', { count: accountCount, currency })}
       </AppText>
-      <View style={styles.badge}>
-        <Badge label={t('home.sampleData')} />
-      </View>
     </View>
   );
 }
@@ -42,6 +43,5 @@ export function BalanceBlock({ amount, currency, accountCount }: { amount: numbe
 const styles = StyleSheet.create({
   wrap: { alignItems: 'center', gap: space.xs + 2, paddingVertical: space.sm },
   label: { flexDirection: 'row', alignItems: 'center', gap: space.xs },
-  badge: { alignItems: 'center' },
   eye: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center', marginVertical: -space.md },
 });

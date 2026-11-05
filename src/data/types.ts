@@ -41,6 +41,8 @@ export type Transaction = {
   toAmount?: number;
   note?: string;
   source: TxSource;
+  /** Foto struk di bucket privat receipts: "<user_id>/<berkas>". */
+  receiptPath?: string;
   items?: ReceiptItem[];
 };
 
@@ -60,7 +62,7 @@ export type AppNotification = {
   time: string;
   read: boolean;
   /** Rute tujuan bila ada. */
-  href?: '/coach';
+  href?: '/coach' | '/anggaran' | '/pengaturan';
 };
 
 export type Plan = 'free' | 'premium';

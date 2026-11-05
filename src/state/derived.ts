@@ -1,7 +1,6 @@
 import { useMemo } from 'react';
 
-import { DEMO_BILLS, DEMO_CATEGORY_LIMITS, DEMO_PREVIOUS_SCORE } from '@/data/seed';
-import { DEMO_TODAY } from '@/lib/dates';
+import { todayYmd } from '@/lib/dates';
 import { convert } from '@/lib/fx';
 import {
   bucketLimits, budgetPeriod, pace, safeToSpend, spendByBucket, spendByCategory,
@@ -10,30 +9,31 @@ import { healthPillars, healthScore } from '@/lib/health';
 import { accountBalance, netWorth as computeNetWorth } from '@/lib/transactions';
 
 import { useStore, type AccountWithBalance } from './AppStore';
-import { useDemoState } from './demo';
 
-/** Akun + transaksi yang dilihat layar. `?state=empty` meniru pengguna baru: satu akun kosong, tanpa transaksi. */
+/** Akun (dengan saldo) + transaksi + kekayaan bersih dalam mata uang utama. */
 export function useLedger() {
   const { state } = useStore();
-  const demo = useDemoState();
   return useMemo(() => {
-    const transactions = demo === 'empty' ? [] : state.transactions;
-    const base = demo === 'empty' ? state.accounts.slice(0, 1).map((a) => ({ ...a, openingBalance: 0 })) : state.accounts;
-    const accounts: AccountWithBalance[] = base.map((a) => ({ ...a, balance: accountBalance(a, transactions) }));
+    const accounts: AccountWithBalance[] = state.accounts.map((a) => ({ ...a, balance: accountBalance(a, state.transactions) }));
     return {
       accounts,
-      transactions,
+      transactions: state.transactions,
       mainCurrency: state.mainCurrency,
-      netWorth: computeNetWorth(base, transactions, state.mainCurrency),
+      netWorth: computeNetWorth(state.accounts, state.transactions, state.mainCurrency),
     };
-  }, [state.accounts, state.transactions, state.mainCurrency, demo]);
+    // ratesDate: kurs baru dimuat = konversi ke mata uang utama ikut berubah.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state.accounts, state.transactions, state.mainCurrency, state.ratesDate]);
 }
+
+/** Batas per kategori belum bisa diatur pengguna (FR-SET-2 di luar layar inti); kosong = tidak ada batas. */
+const NO_CATEGORY_LIMITS: Record<string, number> = {};
 
 export function useBudget() {
   const { state } = useStore();
   const { transactions, mainCurrency } = useLedger();
   return useMemo(() => {
-    const period = budgetPeriod(DEMO_TODAY, state.payday);
+    const period = budgetPeriod(todayYmd(), state.payday);
     const byCategory = spendByCategory(transactions, period, mainCurrency);
     const spent = spendByBucket(byCategory);
     const limits = bucketLimits(state.income, state.split);
@@ -46,7 +46,7 @@ export function useBudget() {
       limits,
       spent,
       byCategory,
-      categoryLimits: DEMO_CATEGORY_LIMITS,
+      categoryLimits: NO_CATEGORY_LIMITS,
       categorySpent: (key: string) => catSpent.get(key) ?? 0,
       flexLimit,
       flexSpent,
@@ -74,10 +74,11 @@ export function useHealth() {
       debtPayments: budget.categorySpent('debt'),
       liquidBalance: liquid,
       monthlyExpense: projected,
-      billsDue: DEMO_BILLS.due,
-      billsOnTime: DEMO_BILLS.onTime,
+      // Modul Tagihan belum ada (di luar layar inti): pilar tagihan penuh sampai ada data tagihan.
+      billsDue: 0,
+      billsOnTime: 0,
     };
     const score = transactions.length === 0 ? null : healthScore(inputs);
-    return { inputs, score, pillars: healthPillars(inputs), delta: score === null ? 0 : score - DEMO_PREVIOUS_SCORE };
+    return { inputs, score, pillars: healthPillars(inputs), delta: 0 }; // belum ada riwayat skor bulanan: baris naik/turun disembunyikan
   }, [accounts, transactions, mainCurrency, budget]);
 }

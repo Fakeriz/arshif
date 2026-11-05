@@ -13,12 +13,10 @@ const coach = {
     formula: 'Dihitung dengan rumus dari 5 pilar, bukan tebakan AI.',
     pillarA11y: '{label}, {points} dari {max}',
     says: 'Kata Coach',
-    sample: 'Contoh narasi',
-    narration:
-      'Keuanganmu cukup sehat. Tabunganmu sudah jalan dan cicilan masih ringan. Yang paling perlu perhatian bulan ini: belanja kesehatan melewati batas dan dana daruratmu belum sampai 6 bulan pengeluaran.',
-    action1: 'Naikkan setoran tabungan ke 20% penghasilan (Rp 2.850.000).',
-    action2: 'Tahan belanja non-darurat di kategori Kesehatan sampai periode berikutnya.',
-    action3: 'Sisihkan sisa anggaran Keinginan ke dana darurat.',
+    aiBadge: 'Ditulis AI',
+    narrLoading: 'Coach sedang menulis',
+    narrError: 'Narasi Coach gagal dimuat. Skormu tetap akurat karena dihitung dengan rumus.',
+    narrRateLimited: 'Terlalu banyak permintaan AI dalam semenit. Tunggu sebentar lalu coba lagi.',
   },
   recap: {
     range: '{start} sampai {end}',

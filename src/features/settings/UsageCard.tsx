@@ -11,7 +11,7 @@ import { space } from '@/theme/tokens';
 const KEYS: QuotaKey[] = ['scan', 'automation', 'importPdf', 'accounts'];
 
 /** Pemakaian kuota bulan ini. Batas yang sudah penuh ditandai dan mengarah ke Premium. */
-export function UsageCard({ plan, usage, accountCount, forceLimit }: { plan: Plan; usage: Usage; accountCount: number; forceLimit: boolean }) {
+export function UsageCard({ plan, usage, accountCount }: { plan: Plan; usage: Usage; accountCount: number }) {
   const paywall = usePaywall();
   const t = useT();
   return (
@@ -25,7 +25,7 @@ export function UsageCard({ plan, usage, accountCount, forceLimit }: { plan: Pla
       <View style={styles.list}>
         {KEYS.map((k) => {
           const limit = quotaFor(plan, k);
-          const used = forceLimit && limit !== null ? limit : k === 'accounts' ? accountCount : usage[k];
+          const used = k === 'accounts' ? accountCount : usage[k];
           const full = limit !== null && used >= limit;
           const label = t(`domain.quota.${k}`);
           return (

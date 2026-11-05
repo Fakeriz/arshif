@@ -15,12 +15,10 @@ const coach: Messages['coach'] = {
     formula: 'Calculated by formula from 5 pillars, not an AI guess.',
     pillarA11y: '{label}, {points} of {max}',
     says: 'Coach says',
-    sample: 'Sample narration',
-    narration:
-      'Your finances are fairly healthy. Your savings are on track and your repayments are still light. What needs the most attention this month: health spending went over its limit and your emergency fund has not reached 6 months of spending yet.',
-    action1: 'Raise your savings deposit to 20% of income (Rp 2.850.000).',
-    action2: 'Hold off on non-urgent spending in Health until the next period.',
-    action3: 'Move what is left of your Wants budget into your emergency fund.',
+    aiBadge: 'AI-written',
+    narrLoading: 'Coach is writing',
+    narrError: 'Could not load the Coach note. Your score is still accurate because it is calculated by formula.',
+    narrRateLimited: 'Too many AI requests in a minute. Wait a moment and try again.',
   },
   recap: {
     range: '{start} to {end}',

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
+import { CategoryKey } from '../../../supabase/functions/_shared/contracts';
 import { Screen } from '@/components/shell/Screen';
 import { TabHeader } from '@/components/shell/TabHeader';
 import { EmptyState, Skeleton, Tabs } from '@/components/ui';
@@ -8,22 +9,27 @@ import { AskTab } from '@/features/coach/AskTab';
 import { RecapTab } from '@/features/coach/RecapTab';
 import { ScoreTab } from '@/features/coach/ScoreTab';
 import { useT } from '@/i18n';
-import { DEMO_TODAY } from '@/lib/dates';
+import { CoachNarration } from '@/features/coach/CoachNarration';
+import { todayYmd } from '@/lib/dates';
 import { weeklyRecap } from '@/lib/recap';
-import { useDemoState } from '@/state/demo';
-import { useHealth, useLedger } from '@/state/derived';
+import { useStore } from '@/state/AppStore';
+import { useLoadState } from '@/state/loadState';
+import { useBudget, useHealth, useLedger } from '@/state/derived';
 import { useRetry } from '@/state/useRetry';
 import { radius, space } from '@/theme/tokens';
 
 type Tab = 'score' | 'recap' | 'ask';
 
 export default function CoachScreen() {
-  const demo = useDemoState();
+  const demo = useLoadState();
   const retry = useRetry();
+  const { refreshing } = useStore();
   const { transactions, mainCurrency } = useLedger();
   const health = useHealth();
+  const budget = useBudget();
+  const recap = weeklyRecap(transactions, todayYmd(), mainCurrency);
   const t = useT();
-  const [tab, setTab] = useState<Tab>(demo === 'limit' ? 'ask' : 'score');
+  const [tab, setTab] = useState<Tab>('score');
 
   let body;
   if (demo === 'error') {
@@ -36,15 +42,33 @@ export default function CoachScreen() {
       </View>
     );
   } else if (tab === 'score') {
-    body = <ScoreTab score={health.score} delta={health.delta} pillars={health.pillars} />;
+    // Hanya ringkasan angka yang dikirim ke AI (FR-COACH-4): persen, hari, kunci kategori.
+    const narration =
+      health.score === null ? null : (
+        <CoachNarration
+          input={{
+            weekStart: recap.start,
+            score: health.score,
+            pillars: health.pillars.map((p) => ({ key: p.key, points: p.points, max: p.max })),
+            facts: {
+              spentChangePct: recap.changePct,
+              topCategoryKey: CategoryKey.safeParse(recap.topCategoryKey).data ?? null,
+              noSpendDays: recap.noSpendDays,
+              budgetUsedPct: budget.flexLimit > 0 ? Math.min(1000, Math.round((budget.flexSpent / budget.flexLimit) * 100)) : 0,
+              periodElapsedPct: Math.round((budget.period.elapsedDays / budget.period.totalDays) * 100),
+            },
+          }}
+        />
+      );
+    body = <ScoreTab score={health.score} delta={health.delta} pillars={health.pillars} narration={narration} />;
   } else if (tab === 'recap') {
-    body = <RecapTab recap={weeklyRecap(transactions, DEMO_TODAY, mainCurrency)} currency={mainCurrency} />;
+    body = <RecapTab recap={recap} currency={mainCurrency} />;
   } else {
     body = <AskTab />;
   }
 
   return (
-    <Screen tabs onRefresh={retry} refreshing={false}>
+    <Screen tabs onRefresh={retry} refreshing={refreshing}>
       <TabHeader title={t('coach.title')} subtitle={t('coach.subtitle')} />
       <Tabs
         variant="underline"

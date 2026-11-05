@@ -1,7 +1,7 @@
-import { useRouter } from 'expo-router';
+import { useStore } from './AppStore';
 
-/** Fase 1: "Coba lagi" menghapus paksaan state di URL. Fase 2: memicu refetch sungguhan. */
+/** "Coba lagi" / tarik untuk muat ulang: ambil ulang semua data dari Supabase. */
 export function useRetry(): () => void {
-  const router = useRouter();
-  return () => router.setParams({ state: '' });
+  const { reload } = useStore();
+  return () => void reload();
 }

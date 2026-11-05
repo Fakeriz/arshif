@@ -1,29 +1,37 @@
 import { useMemo, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
-import { AppText, Badge, Button, Card, Checkbox, CurrencyText } from '@/components/ui';
-import { sampleStatement } from '@/data/seed';
+import { AppText, Badge, Button, Card, Checkbox, CurrencyText, EmptyState } from '@/components/ui';
 import type { Transaction } from '@/data/types';
-import { shortDate } from '@/lib/dates';
 import { useI18n } from '@/i18n';
+import { shortDate } from '@/lib/dates';
 import { findDuplicate } from '@/lib/dedupe';
-import { categorizeStatementRow, prettifyDescription } from '@/lib/statement';
+import { prettifyDescription } from '@/lib/statement';
+import { newId } from '@/lib/uuid';
 import { space } from '@/theme/tokens';
 
-/** Review import PDF (FR-PDF-3): baris yang mirip transaksi yang sudah ada tidak dicentang secara default. */
-export function ImportReview({ accountId, accountName, currency, existing, onImport }: { accountId: string; accountName: string; currency: string; existing: Transaction[]; onImport: (txs: Transaction[]) => void }) {
+import type { ImportResult } from '../../../supabase/functions/_shared/contracts';
+
+type Props = { result: ImportResult; accountId: string; accountName: string; existing: Transaction[]; onImport: (txs: Transaction[]) => void };
+
+/** Review import PDF (FR-PDF-3): baris yang mirip transaksi yang sudah ada tidak dicentang secara default (FR-PDF-2). */
+export function ImportReview({ result, accountId, accountName, existing, onImport }: Props) {
   const { t, lang } = useI18n();
-  const rows = useMemo(() => sampleStatement.rows.map((r) => ({ ...r, duplicate: findDuplicate(r, existing, accountId) !== null })), [existing, accountId]);
-  const [checked, setChecked] = useState<Record<string, boolean>>(() => Object.fromEntries(rows.map((r) => [r.id, !r.duplicate])));
-  const count = rows.filter((r) => checked[r.id]).length;
+  const rows = useMemo(
+    () => result.rows.map((r, i) => ({ ...r, key: String(i), duplicate: findDuplicate(r, existing, accountId) !== null })),
+    [result.rows, existing, accountId],
+  );
+  const [checked, setChecked] = useState<Record<string, boolean>>(() => Object.fromEntries(rows.map((r) => [r.key, !r.duplicate])));
+  const count = rows.filter((r) => checked[r.key]).length;
   const dups = rows.filter((r) => r.duplicate).length;
+
+  if (rows.length === 0) return <EmptyState title={t('capture.importReview.noneTitle')} message={t('capture.importReview.noneMessage')} />;
 
   const submit = () => {
     onImport(
-      rows.filter((r) => checked[r.id]).map((r, i) => ({
-        id: `n-${Date.now().toString(36)}-${i}`, type: r.type, merchant: prettifyDescription(r.description),
-        categoryKey: categorizeStatementRow(r.description, r.type), accountId, date: r.date, time: '',
-        amount: r.amount, currency, source: 'import' as const,
+      rows.filter((r) => checked[r.key]).map((r) => ({
+        id: newId(), type: r.type, merchant: prettifyDescription(r.description), categoryKey: r.categoryKey, accountId,
+        date: r.date, time: '00:00', amount: r.amount, currency: r.currency, source: 'import' as const,
       })),
     );
   };
@@ -34,9 +42,9 @@ export function ImportReview({ accountId, accountName, currency, existing, onImp
         {t('capture.importReview.rowsRead', { count: rows.length, account: accountName }) + (dups ? ` ${t('capture.importReview.dupsSkipped', { count: dups })}` : '')}
       </AppText>
       <Card padding="md">
-        {rows.map((r, i) => (
-          <View key={r.id} style={[styles.row, i < rows.length - 1 && styles.rowGap]}>
-            <Checkbox checked={!!checked[r.id]} onChange={(v) => setChecked((c) => ({ ...c, [r.id]: v }))} accessibilityLabel={`${prettifyDescription(r.description)}, ${shortDate(r.date, lang)}`} />
+        {rows.map((r) => (
+          <View key={r.key} style={styles.row}>
+            <Checkbox checked={!!checked[r.key]} onChange={(v) => setChecked((c) => ({ ...c, [r.key]: v }))} accessibilityLabel={`${prettifyDescription(r.description)}, ${shortDate(r.date, lang)}`} />
             <View style={styles.text}>
               <AppText variant="bodyStrong" numberOfLines={2}>
                 {prettifyDescription(r.description)}
@@ -47,7 +55,7 @@ export function ImportReview({ accountId, accountName, currency, existing, onImp
               {r.duplicate && <Badge label={t('capture.importReview.duplicate')} tone="warning" />}
             </View>
             <View style={styles.amount}>
-              <CurrencyText amount={r.amount} currency={currency} kind={r.type === 'income' ? 'income' : 'expense'} variant="bodyStrong" />
+              <CurrencyText amount={r.amount} currency={r.currency} kind={r.type === 'income' ? 'income' : 'expense'} variant="bodyStrong" />
             </View>
           </View>
         ))}
@@ -63,7 +71,6 @@ export function ImportReview({ accountId, accountName, currency, existing, onImp
 const styles = StyleSheet.create({
   wrap: { gap: space.lg },
   row: { flexDirection: 'row', alignItems: 'flex-start', gap: space.xs, paddingVertical: space.sm },
-  rowGap: {},
   text: { flex: 1, gap: space.xxs, minWidth: 0, paddingTop: space.sm },
   amount: { paddingTop: space.sm },
 });

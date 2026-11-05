@@ -1,21 +1,17 @@
-import { Sparkles } from 'lucide-react-native';
+import type { ReactNode } from 'react';
 import { StyleSheet, View } from 'react-native';
 
-import { AppText, Badge, Card, EmptyState, HealthGauge, Icon, ProgressBar } from '@/components/ui';
+import { AppText, Card, EmptyState, HealthGauge, ProgressBar } from '@/components/ui';
 import type { Pillar } from '@/lib/health';
 import { useT } from '@/i18n';
-import { useTheme } from '@/theme/ThemeProvider';
 import { space } from '@/theme/tokens';
-
-/** Narasi AI sungguhan datang di Fase 2 (Gemini via Edge Function). Ini contoh yang selaras dengan data. */
-const SAMPLE_ACTIONS = ['coach.score.action1', 'coach.score.action2', 'coach.score.action3'] as const;
 
 function tone(ratio: number): 'positive' | 'warning' | 'negative' {
   return ratio >= 0.7 ? 'positive' : ratio >= 0.4 ? 'warning' : 'negative';
 }
 
-export function ScoreTab({ score, delta, pillars }: { score: number | null; delta: number; pillars: Pillar[] }) {
-  const { colors } = useTheme();
+/** `narration` = kartu narasi Coach (AI di server), disusun oleh layar karena butuh data recap + anggaran. */
+export function ScoreTab({ score, delta, pillars, narration }: { score: number | null; delta: number; pillars: Pillar[]; narration: ReactNode }) {
   const t = useT();
   if (score === null) {
     return <EmptyState title={t('coach.score.emptyTitle')} message={t('coach.score.emptyMessage')} />;
@@ -51,30 +47,7 @@ export function ScoreTab({ score, delta, pillars }: { score: number | null; delt
           })}
         </View>
       </Card>
-      <Card>
-        <View style={styles.narrHead}>
-          <Icon icon={Sparkles} color={colors.accentText} />
-          <AppText variant="h3" style={styles.flex}>
-            {t('coach.score.says')}
-          </AppText>
-          <Badge label={t('coach.score.sample')} />
-        </View>
-        <AppText variant="body" tone="secondary" style={styles.narr}>
-          {t('coach.score.narration')}
-        </AppText>
-        {SAMPLE_ACTIONS.map((a, i) => (
-          <View key={a} style={styles.action}>
-            <View style={[styles.num, { backgroundColor: colors.accentSoft }]}>
-              <AppText variant="caption" tone="accent" numeric>
-                {i + 1}
-              </AppText>
-            </View>
-            <AppText variant="body" style={styles.flex}>
-              {t(a)}
-            </AppText>
-          </View>
-        ))}
-      </Card>
+      {narration}
     </View>
   );
 }
@@ -85,8 +58,4 @@ const styles = StyleSheet.create({
   pillars: { gap: space.xl, marginTop: space.xl },
   pillar: { gap: space.sm },
   pillarHead: { flexDirection: 'row', alignItems: 'baseline', gap: space.xs },
-  narrHead: { flexDirection: 'row', alignItems: 'center', gap: space.sm },
-  narr: { marginVertical: space.md },
-  action: { flexDirection: 'row', alignItems: 'flex-start', gap: space.md, paddingVertical: space.xs + 2 },
-  num: { width: 24, height: 24, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
 });

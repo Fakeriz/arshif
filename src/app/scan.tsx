@@ -1,22 +1,30 @@
-import { Images, X, Zap, ZapOff } from 'lucide-react-native';
+import * as ImagePicker from 'expo-image-picker';
+import { Images, X } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
-import { useEffect, useRef, useState } from 'react';
+import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { useT } from '@/i18n';
+import { ForceDark } from '@/components/shell/ForceDark';
 import { usePaywall } from '@/components/shell/Paywall';
 import { AppText, EmptyState, GlassView, Icon, PressableScale } from '@/components/ui';
+import { invokeFn } from '@/data/remote/functions';
+import { discardPrivate, uploadPrivate } from '@/data/remote/upload';
+import { CaptureError, failureOf, type CaptureFailure } from '@/features/capture/CaptureError';
+import { putHandoff } from '@/features/capture/handoff';
+import { compressReceipt, MAX_RECEIPT_BYTES } from '@/features/capture/image';
 import { ProcessingView } from '@/features/capture/ProcessingView';
 import { ScanFrame } from '@/features/capture/ScanFrame';
-import { useDemoState } from '@/state/demo';
+import { useI18n } from '@/i18n';
+import { useStore } from '@/state/AppStore';
 import { useLimits } from '@/state/limits';
 import { haptic } from '@/theme/motion';
 import { useTheme } from '@/theme/ThemeProvider';
 import { radius, space } from '@/theme/tokens';
-import { ForceDark } from '@/components/shell/ForceDark';
 
-type Phase = 'ready' | 'processing' | 'failed';
+import { FUNCTIONS, ScanResult } from '../../supabase/functions/_shared/contracts';
+
+type Phase = { kind: 'ready' } | { kind: 'uploading' } | { kind: 'processing' } | { kind: 'failed'; failure: CaptureFailure };
 
 export default function ScanScreen() {
   return (
@@ -28,39 +36,54 @@ export default function ScanScreen() {
 
 function ScanInner() {
   const { colors } = useTheme();
-  const t = useT();
+  const { t, lang } = useI18n();
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const demo = useDemoState();
+  const { userId, refreshUsage } = useStore();
   const limits = useLimits();
   const paywall = usePaywall();
-  const [phase, setPhase] = useState<Phase>(demo === 'loading' ? 'processing' : 'ready');
-  const [flash, setFlash] = useState(false);
-  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [phase, setPhase] = useState<Phase>({ kind: 'ready' });
 
-  useEffect(() => () => {
-    if (timer.current) clearTimeout(timer.current);
-  }, []);
-
-  const capture = () => {
-    haptic('success');
-    setPhase('processing');
-    if (demo === 'loading') return;
-    timer.current = setTimeout(() => {
-      if (demo === 'error') setPhase('failed');
-      else router.replace('/scan-review');
-    }, 1600);
+  const take = async (source: 'camera' | 'gallery') => {
+    let receiptPath: string | null = null;
+    try {
+      if (source === 'camera') {
+        const perm = await ImagePicker.requestCameraPermissionsAsync();
+        if (!perm.granted) return setPhase({ kind: 'failed', failure: 'permission' });
+      }
+      const opts: ImagePicker.ImagePickerOptions = { mediaTypes: ['images'], quality: 1 };
+      const picked = source === 'camera' ? await ImagePicker.launchCameraAsync(opts) : await ImagePicker.launchImageLibraryAsync(opts);
+      if (picked.canceled || !picked.assets[0]) return;
+      if (!userId) return setPhase({ kind: 'failed', failure: 'session' });
+      haptic('success');
+      setPhase({ kind: 'uploading' });
+      const asset = picked.assets[0];
+      const uri = await compressReceipt(asset.uri, asset.width);
+      receiptPath = await uploadPrivate({ bucket: 'receipts', userId, uri, ext: 'jpg', contentType: 'image/jpeg', maxBytes: MAX_RECEIPT_BYTES });
+      setPhase({ kind: 'processing' });
+      const result = await invokeFn(FUNCTIONS.scan, { path: receiptPath, lang }, ScanResult);
+      refreshUsage();
+      putHandoff('scan', { result, receiptPath });
+      router.replace('/scan-review');
+    } catch (e) {
+      if (receiptPath) void discardPrivate('receipts', receiptPath);
+      refreshUsage();
+      const failure = failureOf(e);
+      if (failure === 'quota') {
+        setPhase({ kind: 'ready' });
+        paywall(t('capture.scan.limitReason'));
+      } else setPhase({ kind: 'failed', failure });
+    }
   };
-
-  const close = () => router.back();
 
   let center;
   if (limits.scan) {
     center = <EmptyState kind="limit" title={t('capture.scan.limitTitle')} message={t('capture.scan.limitMessage')} actionLabel={t('capture.seePremium')} onAction={() => paywall(t('capture.scan.limitReason'))} />;
-  } else if (phase === 'processing') {
-    center = <ProcessingView title={t('capture.scan.processingTitle')} message={t('capture.scan.processingMessage')} />;
-  } else if (phase === 'failed') {
-    center = <EmptyState kind="error" title={t('capture.scan.failedTitle')} message={t('capture.scan.failedMessage')} actionLabel={t('capture.scan.retake')} onAction={() => setPhase('ready')} />;
+  } else if (phase.kind === 'uploading' || phase.kind === 'processing') {
+    center = <ProcessingView title={phase.kind === 'uploading' ? t('capture.scan.uploading') : t('capture.scan.processingTitle')} message={t('capture.scan.processingMessage')} />;
+  } else if (phase.kind === 'failed') {
+    const retry = phase.failure === 'permission' ? () => take('gallery') : () => setPhase({ kind: 'ready' });
+    center = <CaptureError flow="scan" failure={phase.failure} actionLabel={phase.failure === 'permission' ? t('capture.scan.gallery') : t('capture.scan.retake')} onAction={retry} />;
   } else {
     center = (
       <>
@@ -72,23 +95,23 @@ function ScanInner() {
     );
   }
 
-  const canShoot = phase === 'ready' && !limits.scan;
+  const canShoot = phase.kind === 'ready' && !limits.scan;
   return (
     <View style={[styles.root, { backgroundColor: colors.bg, paddingTop: insets.top + space.md, paddingBottom: insets.bottom + space.xl }]}>
       <View style={styles.top}>
-        <RoundButton label={t('common.close')} onPress={close} icon={X} />
+        <RoundButton label={t('common.close')} onPress={() => router.back()} icon={X} />
         <AppText variant="h3" accessibilityRole="header" numberOfLines={1} style={styles.title}>
           {t('capture.scan.title')}
         </AppText>
-        <RoundButton label={flash ? t('capture.scan.flashOff') : t('capture.scan.flashOn')} onPress={() => setFlash((f) => !f)} icon={flash ? Zap : ZapOff} selected={flash} />
+        <View style={styles.spacer} />
       </View>
       <View style={styles.center}>{center}</View>
       <AppText variant="caption" tone="muted" align="center">
         {t('capture.scan.cameraNote')}
       </AppText>
       <View style={styles.bottom}>
-        <RoundButton label={t('capture.scan.gallery')} onPress={capture} icon={Images} disabled={!canShoot} />
-        <PressableScale accessibilityLabel={t('capture.scan.shutter')} disabled={!canShoot} onPress={capture} focusRadius={radius.full} scaleTo={0.94}>
+        <RoundButton label={t('capture.scan.gallery')} onPress={() => take('gallery')} icon={Images} disabled={!canShoot} />
+        <PressableScale accessibilityLabel={t('capture.scan.shutter')} disabled={!canShoot} onPress={() => take('camera')} focusRadius={radius.full} scaleTo={0.94}>
           <View style={[styles.shutterRing, { borderColor: colors.text }]}>
             <View style={[styles.shutter, { backgroundColor: colors.text }]} />
           </View>
@@ -99,12 +122,12 @@ function ScanInner() {
   );
 }
 
-function RoundButton({ label, onPress, icon, selected, disabled }: { label: string; onPress: () => void; icon: typeof X; selected?: boolean; disabled?: boolean }) {
+function RoundButton({ label, onPress, icon, disabled }: { label: string; onPress: () => void; icon: typeof X; disabled?: boolean }) {
   const { colors } = useTheme();
   return (
-    <PressableScale accessibilityLabel={label} aria-selected={!!selected} aria-disabled={!!disabled} onPress={onPress} disabled={disabled} focusRadius={radius.full}>
+    <PressableScale accessibilityLabel={label} aria-disabled={!!disabled} onPress={onPress} disabled={disabled} focusRadius={radius.full}>
       <GlassView level="floating" radius={radius.full} style={styles.round}>
-        <Icon icon={icon} color={selected ? colors.accentText : colors.text} />
+        <Icon icon={icon} color={colors.text} />
       </GlassView>
     </PressableScale>
   );

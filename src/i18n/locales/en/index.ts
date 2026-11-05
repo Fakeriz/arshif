@@ -1,5 +1,6 @@
 import type { Messages } from '../id';
 
+import auth from './auth';
 import budget from './budget';
 import capture from './capture';
 import coach from './coach';
@@ -10,4 +11,4 @@ import settings from './settings';
 import shell from './shell';
 import tx from './tx';
 
-export const en: Messages = { common, domain, shell, home, tx, capture, budget, coach, settings };
+export const en: Messages = { auth, common, domain, shell, home, tx, capture, budget, coach, settings };

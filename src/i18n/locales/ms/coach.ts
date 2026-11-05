@@ -15,12 +15,10 @@ const coach: Messages['coach'] = {
     formula: 'Dikira dengan formula daripada 5 tonggak, bukan tekaan AI.',
     pillarA11y: '{label}, {points} daripada {max}',
     says: 'Kata Coach',
-    sample: 'Contoh naratif',
-    narration:
-      'Kewangan anda agak sihat. Simpanan anda sudah berjalan dan ansuran masih ringan. Yang paling perlu perhatian bulan ini: perbelanjaan kesihatan melebihi had dan dana kecemasan anda belum mencapai 6 bulan perbelanjaan.',
-    action1: 'Naikkan simpanan kepada 20% pendapatan (Rp 2.850.000).',
-    action2: 'Tangguhkan perbelanjaan tidak mendesak dalam kategori Kesihatan hingga tempoh seterusnya.',
-    action3: 'Asingkan baki belanjawan Kehendak ke dana kecemasan.',
+    aiBadge: 'Ditulis AI',
+    narrLoading: 'Coach sedang menulis',
+    narrError: 'Nota Coach gagal dimuatkan. Skor anda tetap tepat kerana dikira dengan formula.',
+    narrRateLimited: 'Terlalu banyak permintaan AI dalam seminit. Tunggu sebentar dan cuba lagi.',
   },
   recap: {
     range: '{start} hingga {end}',

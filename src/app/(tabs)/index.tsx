@@ -14,15 +14,16 @@ import { HomeSkeleton } from '@/features/home/HomeSkeleton';
 import { RecentTransactions } from '@/features/home/RecentTransactions';
 import { useT } from '@/i18n';
 import { useStore } from '@/state/AppStore';
-import { useDemoState } from '@/state/demo';
+import { useLoadState } from '@/state/loadState';
 import { useBudget, useHealth, useLedger } from '@/state/derived';
 import { useLimits } from '@/state/limits';
 import { useRetry } from '@/state/useRetry';
 
 export default function HomeScreen() {
   const router = useRouter();
-  const demo = useDemoState();
+  const demo = useLoadState();
   const retry = useRetry();
+  const { refreshing } = useStore();
   const paywall = usePaywall();
   const limits = useLimits();
   const { state, dispatch } = useStore();
@@ -51,13 +52,13 @@ export default function HomeScreen() {
   }
 
   return (
-    <Screen tabs onRefresh={retry} refreshing={false}>
+    <Screen tabs onRefresh={retry} refreshing={refreshing}>
       <HomeHeader />
       <BalanceBlock amount={ledger.netWorth} currency={ledger.mainCurrency} accountCount={ledger.accounts.length} />
       <AccountsRail
         accounts={ledger.accounts}
         hidden={state.hideBalance}
-        limitReached={limits.accounts && demo !== 'empty'}
+        limitReached={limits.accounts}
         activeId={state.activeAccountId}
         onActiveChange={(id) => dispatch({ type: 'account/setActive', id })}
         onPressAccount={(id) => router.navigate({ pathname: '/transaksi', params: { akun: id } })}

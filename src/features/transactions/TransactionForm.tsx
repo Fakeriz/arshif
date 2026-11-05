@@ -5,7 +5,7 @@ import { useT, type MsgKey } from '@/i18n';
 import { CurrencySheet } from '@/components/shell/CurrencySheet';
 import { AmountInput, Button, Chip, Input, Tabs } from '@/components/ui';
 import type { Transaction, TxType } from '@/data/types';
-import { DEMO_TODAY, addDays } from '@/lib/dates';
+import { addDays, todayYmd } from '@/lib/dates';
 import { convert } from '@/lib/fx';
 import { validateTx } from '@/lib/validate';
 import { useActiveAccountId, type AccountWithBalance } from '@/state/AppStore';
@@ -38,7 +38,8 @@ export function TransactionForm({ accounts, initial, onSubmit }: TransactionForm
   const [accountId, setAccountId] = useState<string | null>(initial?.accountId ?? first?.id ?? null);
   const [toAccountId, setToAccountId] = useState<string | null>(initial?.toAccountId ?? null);
   const [categoryKey, setCategoryKey] = useState<string | null>(initial?.categoryKey ?? null);
-  const [date, setDate] = useState(initial?.date ?? DEMO_TODAY);
+  const today = todayYmd();
+  const [date, setDate] = useState(initial?.date ?? today);
   const [note, setNote] = useState(initial?.note ?? '');
   const [submitted, setSubmitted] = useState(false);
   const [sheet, setSheet] = useState(false);
@@ -104,8 +105,8 @@ export function TransactionForm({ accounts, initial, onSubmit }: TransactionForm
       )}
       <Input label={t('tx.form.date')} value={date} onChangeText={setDate} placeholder={t('domain.date.datePlaceholder')} hint={t('tx.form.dateHint')} error={errors.date} keyboardType="numbers-and-punctuation" />
       <View style={styles.dates}>
-        <Chip label={t('domain.date.today')} selected={date === DEMO_TODAY} onPress={() => setDate(DEMO_TODAY)} />
-        <Chip label={t('domain.date.yesterday')} selected={date === addDays(DEMO_TODAY, -1)} onPress={() => setDate(addDays(DEMO_TODAY, -1))} />
+        <Chip label={t('domain.date.today')} selected={date === today} onPress={() => setDate(today)} />
+        <Chip label={t('domain.date.yesterday')} selected={date === addDays(today, -1)} onPress={() => setDate(addDays(today, -1))} />
       </View>
       <Input label={t('tx.form.note')} value={note} onChangeText={setNote} placeholder={t('tx.form.notePlaceholder')} />
       <Button label={initial ? t('tx.form.saveEdit') : t('tx.form.saveNew')} fullWidth onPress={submit} />

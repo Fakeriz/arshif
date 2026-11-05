@@ -7,11 +7,11 @@ import { categoryLabel, useI18n } from '@/i18n';
 import { Screen } from '@/components/shell/Screen';
 import { ScreenHeader } from '@/components/shell/ScreenHeader';
 import { AppText, Button, Card, CategoryIcon, CurrencyText, Dialog, EmptyState, useToast } from '@/components/ui';
+import { ReceiptPhoto } from '@/features/capture/ReceiptPhoto';
 import { InfoRow } from '@/features/transactions/InfoRow';
 import { ReceiptItems } from '@/features/transactions/ReceiptItems';
 import { dayLong } from '@/lib/dates';
-import { crossRate } from '@/lib/fx';
-import { formatMoney } from '@/lib/money';
+import { currencyMeta, formatMoney } from '@/lib/money';
 import { useStore } from '@/state/AppStore';
 import { space } from '@/theme/tokens';
 
@@ -37,6 +37,9 @@ export default function TransactionDetail() {
   const toAccount = state.accounts.find((a) => a.id === tx.toAccountId);
   const converted = account && account.currency !== tx.currency && tx.accountAmount !== undefined;
   const kind = tx.type === 'income' ? 'income' : tx.type === 'transfer' ? 'balance' : 'expense';
+  // Kurs efektif = yang benar-benar dipakai saat disimpan (kurs pada tanggal transaksi), bukan kurs hari ini.
+  const effectiveRate = (from: number, fromCode: string, to: number, toCode: string) =>
+    (to / 10 ** currencyMeta(toCode).exponent / (from / 10 ** currencyMeta(fromCode).exponent)).toFixed(4);
 
   return (
     <Screen>
@@ -63,10 +66,11 @@ export default function TransactionDetail() {
           <AppText variant="h3">{t('tx.detail.conversion')}</AppText>
           <InfoRow label={t('tx.detail.receiptAmount')} value={formatMoney(tx.amount, tx.currency)} divider />
           <InfoRow label={t('tx.detail.deductedFrom', { account: account.name })} value={formatMoney(tx.accountAmount, account.currency)} divider />
-          <InfoRow label={t('tx.detail.rate')} value={`1 ${tx.currency} = ${Number(crossRate(tx.currency, account.currency)).toFixed(4)} ${account.currency}`} />
+          <InfoRow label={t('tx.detail.rate')} value={`1 ${tx.currency} = ${effectiveRate(tx.amount, tx.currency, tx.accountAmount, account.currency)} ${account.currency}`} />
         </Card>
       )}
       {tx.items && tx.items.length > 0 && <ReceiptItems items={tx.items} currency={tx.currency} />}
+      {tx.receiptPath && <ReceiptPhoto path={tx.receiptPath} merchant={tx.merchant} />}
       <View style={styles.actions}>
         <Button label={t('tx.detail.edit')} icon={Pencil} variant="secondary" fullWidth onPress={() => router.push({ pathname: '/tambah', params: { id: tx.id } })} />
         <Button label={t('tx.detail.delete')} icon={Trash2} variant="danger" fullWidth onPress={() => setConfirm(true)} />
