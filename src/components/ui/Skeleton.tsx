@@ -9,6 +9,7 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 
+import { useT } from '@/i18n';
 import { easeOut } from '@/theme/motion';
 import { useTheme } from '@/theme/ThemeProvider';
 import { radius as radii, space } from '@/theme/tokens';
@@ -44,11 +45,12 @@ export function Skeleton({ width = '100%', height = 16, radius = radii.sm }: Ske
 
 /** Beberapa baris teks skeleton; baris terakhir lebih pendek. */
 export function SkeletonText({ lines = 3, lineHeight = 12 }: { lines?: number; lineHeight?: number }) {
+  const t = useT();
   return (
     <View
       style={styles.lines}
       accessible
-      accessibilityLabel="Memuat"
+      accessibilityLabel={t('common.loading')}
       aria-busy
     >
       {Array.from({ length: lines }, (_, i) => (

@@ -2,6 +2,7 @@ import { RotateCcw, TriangleAlert } from 'lucide-react-native';
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
+import { useT } from '@/i18n';
 import { AmountField, AppText, Button, Card, Icon, Input } from '@/components/ui';
 import { sampleScan } from '@/data/seed';
 import type { ReceiptItem, Transaction } from '@/data/types';
@@ -18,7 +19,9 @@ const pct = (c: number) => `${Math.round(c * 100)}%`;
 /** Layar review struk (FR-OCR-3): keyakinan < 70% ditandai kuning, selisih item vs subtotal diperingatkan. */
 export function ScanReview({ accounts, onSave, onRetake }: { accounts: AccountWithBalance[]; onSave: (tx: Transaction) => void; onRetake: () => void }) {
   const { colors } = useTheme();
+  const t = useT();
   const s = sampleScan;
+  const conf = (c: number) => (isLowConfidence(c) ? t('capture.confidence', { pct: pct(c) }) : undefined);
   const [merchant, setMerchant] = useState(s.merchant.value);
   const [date, setDate] = useState(s.date.value);
   const [total, setTotal] = useState<number | null>(s.total.value);
@@ -29,8 +32,8 @@ export function ScanReview({ accounts, onSave, onRetake }: { accounts: AccountWi
 
   const mismatch = subtotalMismatch(items, s.subtotal);
   const errors = {
-    merchant: tried && !merchant.trim() ? 'Nama toko tidak boleh kosong.' : undefined,
-    total: tried && (!total || total <= 0) ? 'Isi total belanja.' : undefined,
+    merchant: tried && !merchant.trim() ? t('capture.scanReview.merchantError') : undefined,
+    total: tried && (!total || total <= 0) ? t('capture.scanReview.totalError') : undefined,
   };
 
   const save = () => {
@@ -43,22 +46,22 @@ export function ScanReview({ accounts, onSave, onRetake }: { accounts: AccountWi
     <View style={styles.wrap}>
       <View style={styles.intro}>
         <AppText variant="body" tone="secondary">
-          Isi sudah dibaca AI. Periksa kolom bertanda kuning sebelum menyimpan.
+          {t('capture.scanReview.intro')}
         </AppText>
       </View>
-      <Input label="Toko" value={merchant} onChangeText={setMerchant} error={errors.merchant} warning={isLowConfidence(s.merchant.conf) ? `Keyakinan ${pct(s.merchant.conf)}, cek ulang.` : undefined} />
-      <Input label="Tanggal" value={date} onChangeText={setDate} warning={isLowConfidence(s.date.conf) ? `Keyakinan ${pct(s.date.conf)}, cek ulang.` : undefined} />
-      <AmountField label={`Total belanja (${s.currency})`} value={total} onChange={setTotal} currency={s.currency} error={errors.total} warning={isLowConfidence(s.total.conf) ? `Keyakinan ${pct(s.total.conf)}, cek ulang.` : undefined} />
-      <CategoryPicker type="expense" scroll value={category} onChange={setCategory} warning={isLowConfidence(s.category.conf) ? `Keyakinan ${pct(s.category.conf)}, pastikan kategorinya benar.` : undefined} />
-      <AccountPicker label="Dibayar dari" accounts={accounts} value={accountId} onChange={setAccountId} />
+      <Input label={t('capture.scanReview.merchant')} value={merchant} onChangeText={setMerchant} error={errors.merchant} warning={conf(s.merchant.conf)} />
+      <Input label={t('capture.scanReview.date')} value={date} onChangeText={setDate} warning={conf(s.date.conf)} />
+      <AmountField label={t('capture.scanReview.total', { currency: s.currency })} value={total} onChange={setTotal} currency={s.currency} error={errors.total} warning={conf(s.total.conf)} />
+      <CategoryPicker type="expense" scroll value={category} onChange={setCategory} warning={isLowConfidence(s.category.conf) ? t('capture.scanReview.categoryWarning', { pct: pct(s.category.conf) }) : undefined} />
+      <AccountPicker label={t('capture.scanReview.paidFrom')} accounts={accounts} value={accountId} onChange={setAccountId} />
 
       <Card>
-        <AppText variant="h3">Item belanja</AppText>
+        <AppText variant="h3">{t('capture.scanReview.items')}</AppText>
         {mismatch.mismatch && (
           <View style={[styles.warn, { backgroundColor: colors.warningSoft }]} accessibilityRole="alert">
             <Icon icon={TriangleAlert} color={colors.warning} />
             <AppText variant="caption" style={styles.flex}>
-              {`Jumlah item ${formatMoney(itemsTotal(items), s.currency)} berbeda ${formatMoney(Math.abs(mismatch.diff), s.currency)} dari subtotal ${formatMoney(s.subtotal, s.currency)}. Cek harga tiap item.`}
+              {t('capture.scanReview.mismatch', { items: formatMoney(itemsTotal(items), s.currency), diff: formatMoney(Math.abs(mismatch.diff), s.currency), subtotal: formatMoney(s.subtotal, s.currency) })}
             </AppText>
           </View>
         )}
@@ -71,8 +74,8 @@ export function ScanReview({ accounts, onSave, onRetake }: { accounts: AccountWi
           ))}
         </View>
         <View style={styles.sub}>
-          <AppText variant="caption" tone="secondary">
-            Subtotal di struk
+          <AppText variant="caption" tone="secondary" style={styles.flex}>
+            {t('capture.scanReview.subtotal')}
           </AppText>
           <AppText variant="bodyStrong" numeric>
             {formatMoney(s.subtotal, s.currency)}
@@ -81,8 +84,8 @@ export function ScanReview({ accounts, onSave, onRetake }: { accounts: AccountWi
       </Card>
 
       <View style={styles.actions}>
-        <Button label="Simpan transaksi" fullWidth onPress={save} />
-        <Button label="Foto ulang" icon={RotateCcw} variant="secondary" fullWidth onPress={onRetake} />
+        <Button label={t('capture.scanReview.save')} fullWidth onPress={save} />
+        <Button label={t('capture.scan.retake')} icon={RotateCcw} variant="secondary" fullWidth onPress={onRetake} />
       </View>
     </View>
   );
@@ -95,6 +98,6 @@ const styles = StyleSheet.create({
   warn: { flexDirection: 'row', gap: space.md, alignItems: 'flex-start', padding: space.md, borderRadius: radius.md, marginTop: space.md },
   items: { gap: space.lg, marginTop: space.lg },
   item: { gap: space.xs },
-  sub: { flexDirection: 'row', justifyContent: 'space-between', marginTop: space.lg },
+  sub: { flexDirection: 'row', justifyContent: 'space-between', gap: space.md, marginTop: space.lg },
   actions: { gap: space.sm },
 });

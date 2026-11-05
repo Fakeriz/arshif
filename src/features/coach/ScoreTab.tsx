@@ -3,17 +3,12 @@ import { StyleSheet, View } from 'react-native';
 
 import { AppText, Badge, Card, EmptyState, HealthGauge, Icon, ProgressBar } from '@/components/ui';
 import type { Pillar } from '@/lib/health';
+import { useT } from '@/i18n';
 import { useTheme } from '@/theme/ThemeProvider';
 import { space } from '@/theme/tokens';
 
 /** Narasi AI sungguhan datang di Fase 2 (Gemini via Edge Function). Ini contoh yang selaras dengan data. */
-const SAMPLE_NARRATION =
-  'Keuanganmu cukup sehat. Tabunganmu sudah jalan dan cicilan masih ringan. Yang paling perlu perhatian bulan ini: belanja kesehatan melewati batas dan dana daruratmu belum sampai 6 bulan pengeluaran.';
-const SAMPLE_ACTIONS = [
-  'Naikkan setoran tabungan ke 20% penghasilan (Rp 2.850.000).',
-  'Tahan belanja non-darurat di kategori Kesehatan sampai periode berikutnya.',
-  'Sisihkan sisa anggaran Keinginan ke dana darurat.',
-];
+const SAMPLE_ACTIONS = ['coach.score.action1', 'coach.score.action2', 'coach.score.action3'] as const;
 
 function tone(ratio: number): 'positive' | 'warning' | 'negative' {
   return ratio >= 0.7 ? 'positive' : ratio >= 0.4 ? 'warning' : 'negative';
@@ -21,8 +16,9 @@ function tone(ratio: number): 'positive' | 'warning' | 'negative' {
 
 export function ScoreTab({ score, delta, pillars }: { score: number | null; delta: number; pillars: Pillar[] }) {
   const { colors } = useTheme();
+  const t = useT();
   if (score === null) {
-    return <EmptyState title="Skor belum tersedia" message="Coach butuh minimal satu bulan transaksi untuk menghitung skor yang adil. Mulai catat dari sekarang." />;
+    return <EmptyState title={t('coach.score.emptyTitle')} message={t('coach.score.emptyMessage')} />;
   }
   return (
     <View style={styles.wrap}>
@@ -30,38 +26,41 @@ export function ScoreTab({ score, delta, pillars }: { score: number | null; delt
         <HealthGauge score={score} delta={delta} />
       </Card>
       <Card>
-        <AppText variant="h3">Dari mana skornya</AppText>
+        <AppText variant="h3">{t('coach.score.whereFrom')}</AppText>
         <AppText variant="caption" tone="muted">
-          Dihitung dengan rumus dari 5 pilar, bukan tebakan AI.
+          {t('coach.score.formula')}
         </AppText>
         <View style={styles.pillars}>
-          {pillars.map((p) => (
-            <View key={p.key} style={styles.pillar}>
-              <View style={styles.pillarHead}>
-                <AppText variant="bodyStrong" style={styles.flex}>
-                  {p.label}
+          {pillars.map((p) => {
+            const label = t(`domain.pillar.${p.key}.label`);
+            return (
+              <View key={p.key} style={styles.pillar}>
+                <View style={styles.pillarHead}>
+                  <AppText variant="bodyStrong" style={styles.flex}>
+                    {label}
+                  </AppText>
+                  <AppText variant="bodyStrong" numeric>{`${p.points}`}</AppText>
+                  <AppText variant="caption" tone="muted" numeric>{`/ ${p.max}`}</AppText>
+                </View>
+                <ProgressBar value={p.points / p.max} tone={tone(p.points / p.max)} height={6} accessibilityLabel={t('coach.score.pillarA11y', { label, points: p.points, max: p.max })} />
+                <AppText variant="caption" tone="muted">
+                  {t(`domain.pillar.${p.key}.hint`)}
                 </AppText>
-                <AppText variant="bodyStrong" numeric>{`${p.points}`}</AppText>
-                <AppText variant="caption" tone="muted" numeric>{`/ ${p.max}`}</AppText>
               </View>
-              <ProgressBar value={p.points / p.max} tone={tone(p.points / p.max)} height={6} accessibilityLabel={`${p.label}, ${p.points} dari ${p.max}`} />
-              <AppText variant="caption" tone="muted">
-                {p.hint}
-              </AppText>
-            </View>
-          ))}
+            );
+          })}
         </View>
       </Card>
       <Card>
         <View style={styles.narrHead}>
           <Icon icon={Sparkles} color={colors.accentText} />
           <AppText variant="h3" style={styles.flex}>
-            Kata Coach
+            {t('coach.score.says')}
           </AppText>
-          <Badge label="Contoh narasi" />
+          <Badge label={t('coach.score.sample')} />
         </View>
         <AppText variant="body" tone="secondary" style={styles.narr}>
-          {SAMPLE_NARRATION}
+          {t('coach.score.narration')}
         </AppText>
         {SAMPLE_ACTIONS.map((a, i) => (
           <View key={a} style={styles.action}>
@@ -71,7 +70,7 @@ export function ScoreTab({ score, delta, pillars }: { score: number | null; delt
               </AppText>
             </View>
             <AppText variant="body" style={styles.flex}>
-              {a}
+              {t(a)}
             </AppText>
           </View>
         ))}

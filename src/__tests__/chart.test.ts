@@ -42,18 +42,18 @@ describe('geometri', () => {
 
 describe('healthBand', () => {
   it.each([
-    [0, 'Perlu perhatian'],
-    [39, 'Perlu perhatian'],
-    [40, 'Cukup'],
-    [69, 'Cukup'],
-    [70, 'Baik'],
-    [84, 'Baik'],
-    [85, 'Sangat baik'],
-    [100, 'Sangat baik'],
-    [140, 'Sangat baik'],
-    [-3, 'Perlu perhatian'],
+    [0, 'attention'],
+    [39, 'attention'],
+    [40, 'fair'],
+    [69, 'fair'],
+    [70, 'good'],
+    [84, 'good'],
+    [85, 'excellent'],
+    [100, 'excellent'],
+    [140, 'excellent'],
+    [-3, 'attention'],
   ])('skor %d → %s', (score, label) => {
-    expect(healthBand(score).label).toBe(label);
+    expect(healthBand(score).key).toBe(label);
   });
 });
 

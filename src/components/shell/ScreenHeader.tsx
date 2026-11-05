@@ -3,6 +3,7 @@ import { useRouter } from 'expo-router';
 import type { ReactNode } from 'react';
 import { StyleSheet, View } from 'react-native';
 
+import { useT } from '@/i18n';
 import { AppText, GlassView, Icon, PressableScale } from '@/components/ui';
 import { useTheme } from '@/theme/ThemeProvider';
 import { radius, space } from '@/theme/tokens';
@@ -11,10 +12,11 @@ import { radius, space } from '@/theme/tokens';
 export function ScreenHeader({ title, right }: { title: string; right?: ReactNode }) {
   const router = useRouter();
   const { colors } = useTheme();
+  const t = useT();
   return (
     <View style={styles.row}>
       <PressableScale
-        accessibilityLabel="Kembali"
+        accessibilityLabel={t('common.back')}
         focusRadius={radius.full}
         onPress={() => (router.canGoBack() ? router.back() : router.replace('/'))}
       >

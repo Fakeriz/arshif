@@ -3,6 +3,7 @@ import { useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
+import { useT } from '@/i18n';
 import { usePaywall } from '@/components/shell/Paywall';
 import { Screen } from '@/components/shell/Screen';
 import { ScreenHeader } from '@/components/shell/ScreenHeader';
@@ -23,6 +24,7 @@ const clock = (s: number) => `${String(Math.floor(s / 60)).padStart(2, '0')}:${S
 export default function VoiceScreen() {
   const router = useRouter();
   const { colors } = useTheme();
+  const t = useT();
   const demo = useDemoState();
   const limits = useLimits();
   const paywall = usePaywall();
@@ -62,30 +64,30 @@ export default function VoiceScreen() {
   if (limits.automation) {
     return (
       <Screen>
-        <ScreenHeader title="Voice Log" />
-        <EmptyState kind="limit" title="Kuota automation bulan ini habis" message="Voice Log memakai kuota automation (30/bulan di Free). Reset tanggal 1, atau upgrade untuk tanpa batas." actionLabel="Lihat Premium" onAction={() => paywall('Kuota automation Free (30/bulan, termasuk Voice Log) sudah habis.')} />
+        <ScreenHeader title={t('capture.voice.title')} />
+        <EmptyState kind="limit" title={t('capture.voice.limitTitle')} message={t('capture.voice.limitMessage')} actionLabel={t('capture.seePremium')} onAction={() => paywall(t('capture.voice.limitReason'))} />
       </Screen>
     );
   }
 
   return (
     <Screen>
-      <ScreenHeader title="Voice Log" />
+      <ScreenHeader title={t('capture.voice.title')} />
       {phase === 'processing' ? (
         <View style={styles.center}>
-          <ProcessingView title="Memahami ucapanmu" message="AI mengubah suara jadi transaksi. Kalau gagal, kuota tidak terpotong." />
+          <ProcessingView title={t('capture.voice.processingTitle')} message={t('capture.voice.processingMessage')} />
         </View>
       ) : phase === 'failed' ? (
-        <EmptyState kind="error" title="Suara kurang jelas" message="Kuota tidak terpotong. Coba ulangi di tempat yang lebih tenang dan sebut nominalnya dengan jelas." actionLabel="Rekam ulang" onAction={() => setPhase('idle')} />
+        <EmptyState kind="error" title={t('capture.voice.failedTitle')} message={t('capture.voice.failedMessage')} actionLabel={t('capture.voice.rerecord')} onAction={() => setPhase('idle')} />
       ) : (
         <View style={styles.center}>
           <Waveform active={phase === 'recording'} />
           <AppText variant="display" numeric aria-live="polite">
             {clock(seconds)}
           </AppText>
-          <AppText variant="caption" tone="muted">{`Maksimal ${clock(MAX_SECONDS)}`}</AppText>
+          <AppText variant="caption" tone="muted">{t('capture.voice.max', { time: clock(MAX_SECONDS) })}</AppText>
           <PressableScale
-            accessibilityLabel={phase === 'recording' ? 'Selesai merekam' : 'Mulai merekam'}
+            accessibilityLabel={phase === 'recording' ? t('capture.voice.stop') : t('capture.voice.start')}
             onPress={phase === 'recording' ? stop : start}
             focusRadius={radius.full}
             scaleTo={0.94}
@@ -94,17 +96,17 @@ export default function VoiceScreen() {
             <Icon icon={phase === 'recording' ? Square : Mic} color={colors.onAccent} size={36} />
           </PressableScale>
           <AppText variant="body" tone="secondary" align="center">
-            {phase === 'recording' ? 'Ketuk lagi kalau sudah selesai bicara.' : 'Ketuk lalu bicara. Bisa beberapa transaksi sekaligus.'}
+            {phase === 'recording' ? t('capture.voice.recordingHint') : t('capture.voice.idleHint')}
           </AppText>
           {phase === 'idle' && (
             <AppText variant="caption" tone="muted" align="center">
-              {'Contoh: “Tadi makan siang 45 ribu pakai GoPay, terus isi bensin 150 ribu cash.”'}
+              {t('capture.voice.example')}
             </AppText>
           )}
         </View>
       )}
       <AppText variant="caption" tone="muted" align="center">
-        Perekaman suara aktif di build native (Fase 2). Di sini hasilnya contoh.
+        {t('capture.voice.micNote')}
       </AppText>
     </Screen>
   );

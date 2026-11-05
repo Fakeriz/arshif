@@ -99,9 +99,9 @@ describe('validasi form transaksi', () => {
 
   it('transfer butuh akun asal dan tujuan berbeda, tanpa kategori', () => {
     const t = { ...ok, type: 'transfer' as const, merchant: '', categoryKey: null, toAccountId: 'a-gopay' };
-    expect(validateTx(t).toAccountId).toBe('Akun tujuan harus berbeda dari akun asal.');
+    expect(validateTx(t).toAccountId).toBe('domain.validation.sameAccount');
     expect(validateTx({ ...t, toAccountId: 'a-bca' })).toEqual({});
-    expect(validateTx({ ...t, toAccountId: null }).toAccountId).toBe('Pilih akun tujuan.');
+    expect(validateTx({ ...t, toAccountId: null }).toAccountId).toBe('domain.validation.toAccount');
   });
 
   it('tanggal salah format ditolak', () => expect(validateTx({ ...ok, date: '5/11/2026' }).date).toBeDefined());

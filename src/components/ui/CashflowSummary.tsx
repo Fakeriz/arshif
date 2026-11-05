@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import { StyleSheet, View } from 'react-native';
 
+import { useT } from '@/i18n';
 import { useTheme } from '@/theme/ThemeProvider';
 import { radius, space } from '@/theme/tokens';
 
@@ -14,20 +15,21 @@ import { CurrencyText } from './CurrencyText';
  */
 export function CashflowSummary({ point, currency }: { point: CashflowPoint; currency: string }) {
   const { colors } = useTheme();
+  const t = useT();
   const net = point.income - point.expense;
   return (
     <View style={[styles.box, { backgroundColor: colors.surfaceSunken, borderColor: colors.border }]}>
       <AppText variant="overline" tone="muted" uppercase>
         {point.label}
       </AppText>
-      <Stat label="Pemasukan" dot={colors.positive}>
+      <Stat label={t('common.income')} dot={colors.positive}>
         <CurrencyText amount={point.income} currency={currency} kind="income" variant="bodyStrong" />
       </Stat>
-      <Stat label="Pengeluaran" dot={colors.textSecondary}>
+      <Stat label={t('common.expense')} dot={colors.textSecondary}>
         <CurrencyText amount={point.expense} currency={currency} kind="expense" variant="bodyStrong" />
       </Stat>
       <View style={[styles.divider, { backgroundColor: colors.border }]} />
-      <Stat label="Selisih">
+      <Stat label={t('common.difference')}>
         <CurrencyText amount={net} currency={currency} kind={net >= 0 ? 'income' : 'over'} variant="bodyStrong" />
       </Stat>
     </View>

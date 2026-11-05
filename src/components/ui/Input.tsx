@@ -2,6 +2,7 @@ import { CircleAlert, Eye, EyeOff, TriangleAlert, type LucideIcon } from 'lucide
 import { useState, type ReactNode } from 'react';
 import { Pressable, StyleSheet, TextInput, View, type TextInputProps } from 'react-native';
 
+import { useT } from '@/i18n';
 import { useTheme } from '@/theme/ThemeProvider';
 import { layout, radius, space, type as typeScale } from '@/theme/tokens';
 
@@ -33,6 +34,7 @@ export function Input({
   ...rest
 }: InputProps) {
   const { colors } = useTheme();
+  const t = useT();
   const [focused, setFocused] = useState(false);
   const [hidden, setHidden] = useState(true);
   const borderColor = error ? colors.negative : warning ? colors.warning : focused ? colors.accent : colors.border;
@@ -71,7 +73,7 @@ export function Input({
         {secureTextEntry && (
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel={hidden ? 'Tampilkan kata sandi' : 'Sembunyikan kata sandi'}
+            accessibilityLabel={hidden ? t('common.showPassword') : t('common.hidePassword')}
             onPress={() => setHidden((h) => !h)}
             hitSlop={12}
           >

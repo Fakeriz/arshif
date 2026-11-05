@@ -61,13 +61,14 @@ export function semicircleArc(cx: number, cy: number, r: number): string {
   return `M ${cx - r} ${cy} A ${r} ${r} 0 0 1 ${cx + r} ${cy}`;
 }
 
-export type HealthBand = { min: number; label: string; tone: 'negative' | 'warning' | 'positive' | 'accent' };
+/** Label: `domain.healthBand.<key>`. */
+export type HealthBand = { min: number; key: 'excellent' | 'good' | 'fair' | 'attention'; tone: 'negative' | 'warning' | 'positive' | 'accent' };
 
 export const HEALTH_BANDS: HealthBand[] = [
-  { min: 85, label: 'Sangat baik', tone: 'accent' },
-  { min: 70, label: 'Baik', tone: 'positive' },
-  { min: 40, label: 'Cukup', tone: 'warning' },
-  { min: 0, label: 'Perlu perhatian', tone: 'negative' },
+  { min: 85, key: 'excellent', tone: 'accent' },
+  { min: 70, key: 'good', tone: 'positive' },
+  { min: 40, key: 'fair', tone: 'warning' },
+  { min: 0, key: 'attention', tone: 'negative' },
 ];
 
 export function healthBand(score: number): HealthBand {

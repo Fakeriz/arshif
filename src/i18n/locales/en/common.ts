@@ -1,0 +1,42 @@
+import type { Messages } from '../id';
+
+const common: Messages['common'] = {
+  cancel: 'Cancel',
+  close: 'Close',
+  back: 'Back',
+  save: 'Save',
+  retry: 'Try again',
+  loading: 'Loading',
+  total: 'Total',
+  amount: 'Amount',
+  income: 'Income',
+  expense: 'Expense',
+  transfer: 'Transfer',
+  difference: 'Net',
+  premiumFeature: 'Premium feature',
+  balanceHidden: 'Balance hidden',
+  overLimitPrefix: 'Over limit, ',
+  closeNotification: 'Close notification',
+  showPassword: 'Show password',
+  hidePassword: 'Hide password',
+  currencyTap: 'Currency {name}. Tap to change',
+  amountIn: '{label} in {name}',
+  currency: 'Currency {name}',
+  addTransaction: 'Add transaction',
+  noDataThisMonth: 'No data this month yet',
+  cashflowEmptyTitle: 'No cash flow yet',
+  cashflowEmptyMessage: 'Log your first transaction to see the monthly trend.',
+  accentColor: 'Accent color',
+  bankCardA11y: '{bank} {type}, balance {amount}',
+  bankCardA11yLast4: '{bank} {type}, ending {last4}, balance {amount}',
+  health: {
+    a11yNone: 'Financial health score not available yet',
+    a11y: 'Financial health score {score} out of 100, {band}',
+    needsData: 'Needs 1 month of data',
+    outOf: 'out of 100 · {band}',
+    up: 'Up {n} points from last month',
+    down: 'Down {n} points from last month',
+  },
+};
+
+export default common;

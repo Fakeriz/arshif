@@ -1,6 +1,7 @@
 import { TriangleAlert } from 'lucide-react-native';
 import { StyleSheet, View } from 'react-native';
 
+import { useT } from '@/i18n';
 import { useCountUp } from '@/hooks/useCountUp';
 import { currencyMeta, formatMoney } from '@/lib/money';
 import { useTheme } from '@/theme/ThemeProvider';
@@ -44,6 +45,7 @@ export function CurrencyText({
   ...rest
 }: CurrencyTextProps) {
   const { colors } = useTheme();
+  const t = useT();
   const shown = useCountUp(amount, !!countUp && !hidden);
   const abs = Math.abs(shown);
 
@@ -63,8 +65,8 @@ export function CurrencyText({
 
   const finalValue = kind === 'expense' ? -Math.abs(amount) : kind === 'income' ? Math.abs(amount) : amount;
   const label = hidden
-    ? 'Saldo disembunyikan'
-    : `${kind === 'over' ? 'Melebihi batas, ' : ''}${formatMoney(finalValue, currency, kind === 'income' ? 'always' : 'auto')}`;
+    ? t('common.balanceHidden')
+    : `${kind === 'over' ? t('common.overLimitPrefix') : ''}${formatMoney(finalValue, currency, kind === 'income' ? 'always' : 'auto')}`;
 
   const textEl = (
     <AppText

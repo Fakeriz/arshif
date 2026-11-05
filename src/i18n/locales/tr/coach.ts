@@ -1,0 +1,57 @@
+import type { Messages } from '../id';
+
+const coach: Messages['coach'] = {
+  title: 'Coach',
+  subtitle: 'Finansal sağlığına dürüst bir bakış',
+  errorTitle: 'Coach yüklenemedi',
+  errorMessage: 'Bağlantını kontrol edip tekrar dene. Verilerin güvende.',
+  loading: 'Coach yükleniyor',
+  sections: 'Coach bölümleri',
+  tab: { score: 'Puan', recap: 'Özet', ask: 'Coach’a Sor' },
+  score: {
+    emptyTitle: 'Puan henüz yok',
+    emptyMessage: 'Coach’un adil bir puan hesaplaması için en az bir aylık işlem gerekiyor. Şimdiden kaydetmeye başla.',
+    whereFrom: 'Puan nereden geliyor',
+    formula: '5 temel ölçüte göre formülle hesaplanır, yapay zekâ tahmini değildir.',
+    pillarA11y: '{label}, {max} üzerinden {points}',
+    says: 'Coach diyor ki',
+    sample: 'Örnek anlatım',
+    narration:
+      'Finansal durumun oldukça sağlıklı. Birikimin yolunda ve taksitlerin hâlâ hafif. Bu ay en çok dikkat gereken konular: sağlık harcaması limiti aştı ve acil durum fonun henüz 6 aylık harcamaya ulaşmadı.',
+    action1: 'Birikim tutarını gelirinin %20’sine çıkar (Rp 2.850.000).',
+    action2: 'Sağlık kategorisindeki acil olmayan harcamaları bir sonraki döneme kadar ertele.',
+    action3: 'İstekler bütçesinden kalanı acil durum fonuna aktar.',
+  },
+  recap: {
+    range: '{start} - {end}',
+    emptyTitle: 'Geçen haftaya ait veri yok',
+    emptyMessage: 'Özet, önceki haftada işlem olduğunda her pazartesi sabahı gelir.',
+    replay: '{range} haftasının özeti',
+    youSpent: 'Geçen hafta harcadığın',
+    down: 'Önceki haftaya göre %{pct} azaldı. Tasarruf ettin.',
+    same: 'Önceki haftayla aynı.',
+    up: 'Önceki haftaya göre %{pct} arttı.',
+    topIn: 'En çok harcanan',
+    noSpendDays: 'harcamasız gün',
+    allDaysSpent: 'gün harcama var',
+    txInWeek: 'Bir haftada {count} işlem',
+    txInWeek_one: 'Bir haftada {count} işlem',
+    biggest: 'En büyük harcama',
+    monthlyA11y: 'Aylık özet, Premium özellik. Premium’u aç',
+    monthlyReason: 'Aylık özet ve Coach’a Sor Premium’a dahildir.',
+    monthly: 'Aylık özet',
+    monthlySub: 'Her ayın 1’inde gelir, yalnızca Premium',
+  },
+  ask: {
+    title: 'Coach’a Sor yalnızca Premium’da',
+    message: 'Paranla ilgili her şeyi sor, günde 20 soru. Yanıtlar ham verini değil, rakamlarının özetini kullanır.',
+    cta: 'Premium’u gör',
+    reason: 'Coach’a Sor (günde 20 soru) yalnızca Premium’da var.',
+    examplesTitle: 'Sorabileceğin örnek sorular',
+    example1: 'Bu ay harcamalarım neden arttı?',
+    example2: 'Tatil için ne kadar ayırabilirim?',
+    example3: 'Önce hangisini kapatmalıyım, dizüstü bilgisayarı mı kredi kartını mı?',
+  },
+};
+
+export default coach;

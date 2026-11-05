@@ -1,12 +1,13 @@
+import { CALENDARS } from '@/i18n/calendar';
+import { translate } from '@/i18n/translate';
+import type { Lang } from '@/i18n/types';
+
 /**
  * Tanggal transaksi disimpan sebagai teks "YYYY-MM-DD" (tanpa zona waktu) agar hasilnya
  * sama di semua perangkat. Fase 2: tanggal absolut dari server mengikuti zona waktu pengguna.
  */
 export const DEMO_TODAY = '2026-11-05';
 
-const MONTHS = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
-const MONTHS_SHORT = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
-const DAYS = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
 const DAY_MS = 86_400_000;
 
 export type YMD = { y: number; m: number; d: number };
@@ -47,33 +48,38 @@ export function ymd(y: number, m: number, d: number): string {
   return `${y}-${pad2(m)}-${pad2(d)}`;
 }
 
-export function monthName(m: number): string {
-  return MONTHS[m - 1];
+export function monthName(m: number, lang: Lang): string {
+  return CALENDARS[lang].months[m - 1];
 }
 
-export function dayLabel(s: string, today: string = DEMO_TODAY): string {
+/** "Hari ini", "Kemarin", atau "29 Okt" (+ tahun bila beda tahun). */
+export function dayLabel(s: string, lang: Lang, today: string = DEMO_TODAY): string {
   const diff = diffDays(today, s);
-  if (diff === 0) return 'Hari ini';
-  if (diff === 1) return 'Kemarin';
+  if (diff === 0) return translate(lang, 'domain.date.today');
+  if (diff === 1) return translate(lang, 'domain.date.yesterday');
   const { y, m, d } = parseYMD(s);
-  const base = `${d} ${MONTHS_SHORT[m - 1]}`;
+  const base = `${d} ${CALENDARS[lang].monthsShort[m - 1]}`;
   return y === parseYMD(today).y ? base : `${base} ${y}`;
 }
 
-export function dayLong(s: string): string {
+/** "Kamis, 5 November 2026" · "Thursday, 5 November 2026" · "5 Kasım 2026 Perşembe" */
+export function dayLong(s: string, lang: Lang): string {
   const { y, m, d } = parseYMD(s);
-  return `${DAYS[weekday(s)]}, ${d} ${MONTHS[m - 1]} ${y}`;
+  const c = CALENDARS[lang];
+  const date = `${d} ${c.months[m - 1]} ${y}`;
+  return lang === 'tr' ? `${date} ${c.days[weekday(s)]}` : `${c.days[weekday(s)]}, ${date}`;
 }
 
 /** "25 Okt" */
-export function shortDate(s: string): string {
+export function shortDate(s: string, lang: Lang): string {
   const { m, d } = parseYMD(s);
-  return `${d} ${MONTHS_SHORT[m - 1]}`;
+  return `${d} ${CALENDARS[lang].monthsShort[m - 1]}`;
 }
 
-export function greeting(hour: number): string {
-  if (hour < 11) return 'Selamat pagi';
-  if (hour < 15) return 'Selamat siang';
-  if (hour < 19) return 'Selamat sore';
-  return 'Selamat malam';
+/** Kunci salam `domain.greeting.<key>` menurut jam. */
+export function greetingKey(hour: number): 'morning' | 'afternoon' | 'evening' | 'night' {
+  if (hour < 11) return 'morning';
+  if (hour < 15) return 'afternoon';
+  if (hour < 19) return 'evening';
+  return 'night';
 }

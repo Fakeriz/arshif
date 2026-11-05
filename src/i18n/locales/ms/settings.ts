@@ -1,0 +1,55 @@
+import type { Messages } from '../id';
+
+const settings: Messages['settings'] = {
+  title: 'Tetapan',
+  appearance: 'Paparan',
+  theme: 'Tema',
+  themeMode: { system: 'Sistem', dark: 'Gelap', light: 'Cerah' },
+  language: 'Bahasa',
+  languageSub: 'Bahasa aplikasi dan rekap Coach',
+  languagePick: 'Pilih bahasa',
+  mainCurrency: 'Mata wang utama',
+  mainCurrencySub: 'Semua jumlah dan belanjawan ditukar ke mata wang ini',
+  hideBalance: 'Sembunyikan baki',
+  hideBalanceSub: 'Baki dipaparkan sebagai titik di Laman Utama',
+  notifications: 'Pemberitahuan',
+  notif: {
+    bill_due: { title: 'Bil perlu dibayar', sub: '3 hari sebelum dan pada tarikh akhir' },
+    budget_alert: { title: 'Amaran belanjawan', sub: 'Apabila penggunaan bucket mencapai 80% dan 100%' },
+    weekly_recap: { title: 'Rekap mingguan', sub: 'Setiap pagi Isnin' },
+    quota_warning: { title: 'Kuota hampir habis', sub: 'Apabila kuota imbas atau automasi semakin sedikit' },
+  },
+  footer: 'Arshif versi pembangunan Fasa 1. Semua data pada skrin ini ialah contoh.',
+  accounts: {
+    title: 'Akaun & kad',
+    hint: 'Ketik akaun untuk memilih reka bentuk kad bank.',
+    pickTitle: 'Reka bentuk kad',
+    pickSub: 'Warna dan nama bank, tanpa logo rasmi',
+    country: { ID: 'Indonesia', MY: 'Malaysia', TR: 'Turkiye', ANY: 'Lain-lain' },
+  },
+  usage: {
+    title: 'Penggunaan bulan ini',
+    planFree: 'Pelan Free',
+    planPremium: 'Premium',
+    unlimited: '{used}, tanpa had',
+    a11y: '{label} {used} daripada {limit}',
+    reset: 'Kuota ditetapkan semula setiap 1 haribulan. Kerja AI yang gagal tidak memotong kuota.',
+    unlock: 'Buka had dengan Premium',
+    unlockReason: 'Premium membuka 300 imbasan/bulan, 10 import/bulan, dan akaun tanpa had.',
+  },
+  data: {
+    exportTitle: 'Eksport data',
+    exportSub: 'Muat turun semua transaksi anda sebagai JSON atau CSV',
+    exportPick: 'Pilih format fail',
+    exportAs: 'Eksport sebagai {format}',
+    exportInactive: 'Eksport {format} belum aktif',
+    deleteTitle: 'Padam akaun',
+    deleteSub: 'Memadam akaun berserta semua datanya',
+    deleteDialogTitle: 'Padam akaun dan semua data?',
+    deleteDialogMessage: 'Transaksi, akaun, belanjawan, dan fail resit akan dipadam secara kekal dan tidak boleh dipulihkan. Eksport data anda dahulu jika perlu.',
+    deleteInactive: 'Pemadaman akaun belum aktif',
+    demoNote: 'Mod demo: belum disambungkan ke pelayan, jadi tiada data yang benar-benar diproses.',
+  },
+};
+
+export default settings;

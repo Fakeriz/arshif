@@ -1,0 +1,55 @@
+import type { Messages } from '../id';
+
+const settings: Messages['settings'] = {
+  title: 'Settings',
+  appearance: 'Appearance',
+  theme: 'Theme',
+  themeMode: { system: 'System', dark: 'Dark', light: 'Light' },
+  language: 'Language',
+  languageSub: 'App language and Coach recaps',
+  languagePick: 'Choose language',
+  mainCurrency: 'Main currency',
+  mainCurrencySub: 'All totals and budgets are converted to this',
+  hideBalance: 'Hide balances',
+  hideBalanceSub: 'Balances show as dots on Home',
+  notifications: 'Notifications',
+  notif: {
+    bill_due: { title: 'Bills due', sub: '3 days before and on the due date' },
+    budget_alert: { title: 'Budget alerts', sub: 'When a bucket reaches 80% and 100%' },
+    weekly_recap: { title: 'Weekly recap', sub: 'Every Monday morning' },
+    quota_warning: { title: 'Quota running low', sub: 'When scan or automation quota runs low' },
+  },
+  footer: 'Arshif Phase 1 development build. All data on this screen is sample data.',
+  accounts: {
+    title: 'Accounts & cards',
+    hint: 'Tap an account to choose its bank card design.',
+    pickTitle: 'Card design',
+    pickSub: 'Bank colour and name, no official logos',
+    country: { ID: 'Indonesia', MY: 'Malaysia', TR: 'Türkiye', ANY: 'Other' },
+  },
+  usage: {
+    title: 'Usage this month',
+    planFree: 'Free plan',
+    planPremium: 'Premium',
+    unlimited: '{used}, unlimited',
+    a11y: '{label} {used} of {limit}',
+    reset: 'Quotas reset on the 1st of each month. Failed AI jobs do not use quota.',
+    unlock: 'Lift limits with Premium',
+    unlockReason: 'Premium gives you 300 scans/month, 10 imports/month, and unlimited accounts.',
+  },
+  data: {
+    exportTitle: 'Export data',
+    exportSub: 'Download all your transactions as JSON or CSV',
+    exportPick: 'Choose a file format',
+    exportAs: 'Export as {format}',
+    exportInactive: '{format} export is not active yet',
+    deleteTitle: 'Delete account',
+    deleteSub: 'Deletes your account and all its data',
+    deleteDialogTitle: 'Delete account and all data?',
+    deleteDialogMessage: 'Transactions, accounts, budgets, and receipt files will be permanently deleted and cannot be recovered. Export your data first if needed.',
+    deleteInactive: 'Account deletion is not active yet',
+    demoNote: 'Demo mode: not connected to a server yet, so no data is actually processed.',
+  },
+};
+
+export default settings;

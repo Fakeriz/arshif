@@ -1,4 +1,3 @@
-import { getCategory } from '@/constants/categories';
 import type { Transaction } from '@/data/types';
 
 import { addDays, weekday } from './dates';
@@ -56,4 +55,3 @@ export function weeklyRecap(txs: Transaction[], today: string, main: string): We
   };
 }
 
-export const topCategoryLabel = (r: WeeklyRecap): string => (r.topCategoryKey ? getCategory(r.topCategoryKey).label : '-');

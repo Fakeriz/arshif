@@ -26,7 +26,7 @@ R-10 membatasi glassmorphism ke 1–2 elemen. Ahmad memutuskan **kaca tetap di s
 ## Status fase
 
 - [x] **Fase 0 — Fondasi** (2026-11-05), direvisi ke "Kaca & Aksen", disetujui Ahmad
-- [x] **Fase 1 — UI layar inti dengan data contoh** (2026-11-05) — menunggu konfirmasi sebelum Fase 2
+- [x] **Fase 1 — UI layar inti dengan data contoh** (2026-11-05), dilengkapi i18n ID/MS/TR/EN + pemilih desain kartu bank. Menunggu konfirmasi sebelum Fase 2
 - [ ] Fase 2 — Backend Supabase (LIVE: login, scan, kurs sungguhan)
 - [ ] Fase 3 — Monetisasi (RevenueCat + Xendit + Paddle) & rilis
 
@@ -52,7 +52,25 @@ R-10 membatasi glassmorphism ke 1–2 elemen. Ahmad memutuskan **kaca tetap di s
 
 **Logika terpisah + teruji** (`src/lib/`): `fx` (kurs silang BigInt), `dates`, `transactions` (saldo, filter, grup), `budget` (periode gajian, laju, aman dibelanjakan, bucket), `health` (5 pilar), `recap` (Weekly Replay), `receipt` (selisih item vs subtotal), `dedupe` (duplikat PDF), `quota`, `validate`, `statement`.
 
-**Verifikasi**: `npm run verify` (typecheck + 662 test + export web/android/ios). `npm run e2e:web` (klik-tembus 25 langkah di Chromium; butuh `npx playwright install chromium`, jalankan setelah `npm run export:web`).
+**Verifikasi**: `npm run verify` (typecheck + 781 test + export web/android/ios). `npm run e2e:web` (klik-tembus 28 langkah di Chromium; butuh `npx playwright install chromium`, jalankan setelah `npm run export:web`).
+
+### i18n (ID/MS/TR/EN)
+
+- **Tanpa dependensi baru.** `src/i18n/`: katalog per namespace di `locales/<bahasa>/<ns>.ts` (`common`, `domain`, `shell`, `home`, `tx`, `capture`, `budget`, `coach`, `settings`). `id` adalah sumber; bahasa lain bertipe `Messages['ns']`, jadi kunci yang hilang = error TypeScript.
+- **Pakai**: `const t = useT()` lalu `t('home.title')`, sisipan `{nama}`. Bentuk tunggal Inggris: kunci `<key>_one` dipakai saat `count === 1` (harus ada di keempat katalog). Kunci tak dikenal jatuh ke Indonesia lalu ke kunci itu sendiri.
+- **Lib mengembalikan kunci, bukan teks**: `validateTx` → `domain.validation.*`, `healthBand().key`, `Pillar.key`, `Pace`, `QuotaKey`, `BUCKETS`, `ACCENT_OPTIONS`, `CATEGORIES` tanpa `label`. Helper: `categoryLabel(t,key)`, `currencyName(t,code)`, `bankName(t,key)`. Tanggal: `dayLabel/dayLong/shortDate/monthName(…, lang)`, nama bulan/hari di `i18n/calendar.ts` (tidak bergantung ICU/Hermes). TR menulis tanggal panjang "5 Kasım 2026 Perşembe".
+- **Bahasa awal** = bahasa perangkat bila id/ms/tr/en, selain itu Indonesia (`detectLang`, expo-localization). Ganti di Pengaturan → Bahasa (nama bahasa ditulis dalam bahasanya sendiri). Web: `<html lang>` ikut. Fase 2: simpan ke profil lewat `I18nProvider.onLangChange` / `initialLang`.
+- **Tidak diterjemahkan**: data pengguna (merchant, item struk, transkrip voice, nama akun), nama bank, "Coach", "PRO", "Arshif". Format nominal tetap per mata uang (Rp 45.000, RM 12.50), bukan per bahasa.
+- **Notifikasi contoh** sekarang `titleKey/messageKey/vars/date/time`; waktunya tampil sebagai tanggal ("2 Nov, 07.00"), bukan "Senin, 07.00". Fase 2: teks datang dari server dalam bahasa pengguna.
+- **Penjaga** (`__tests__/i18n.test.ts`): kunci identik di 4 bahasa, placeholder sama, tanpa teks kosong/em dash, dan pemindai yang menolak teks UI ditulis langsung di JSX (kecuali Lembar Desain).
+- **e2e memaksa locale `id-ID`** (Chromium default en-US). Ada langkah ganti ke Türkçe, deteksi ms-MY/en-US, dan fallback fr-FR → Indonesia.
+- Pilihan istilah: EN tab "Activity" (muat di nav pill), MS "Bajet" di tab dan "Belanjawan" di judul layar, TR persen ditulis `%{pct}` tanpa akhiran (akhiran Turki berubah mengikuti angka).
+
+### Kartu per bank (FR-ACC-2)
+
+- `constants/banks.ts`: 26 bank/dompet (ID 15, MY 5, TR 5, Tunai). Warna merek perkiraan, nama sebagai teks, tanpa logo. Semua lolos teks ≥ 4.5:1 (`banks.test.ts`).
+- Pengaturan → **Akun & kartu** → ketuk akun → sheet **Desain kartu**: pratinjau kartu yang sama dengan Beranda + grid bank per negara (grup radio). Pilihan langsung berlaku di Beranda (aksi `account/setBank`).
+- BankCard tanpa `onPress` dirender sebagai kartu statis (sebelumnya tampil pudar sebagai tombol nonaktif).
 
 ### Keputusan dan asumsi Fase 1 (cek dan koreksi bila salah)
 
@@ -69,7 +87,9 @@ R-10 membatasi glassmorphism ke 1–2 elemen. Ahmad memutuskan **kaca tetap di s
 
 ### Hasil visual check kaca per layar (override R-10)
 
-Dicek di 390px, gelap + terang, aksen Merah/Biru, termasuk fallback tanpa blur. Hierarki dan keterbacaan terjaga di Home, Transaksi, Anggaran, Coach, Pengaturan, sheet, dan dialog. **Tidak ada layar yang perlu pengurangan kaca.** Belum dicek di perangkat nyata (lihat "Belum terverifikasi").
+Dicek di 390px, gelap + terang, aksen Merah/Biru, termasuk fallback tanpa blur. Hierarki dan keterbacaan terjaga di Home, Transaksi, Anggaran, Coach, Pengaturan, sheet, dan dialog. **Tidak ada layar yang perlu pengurangan kaca.**
+
+Cek ulang i18n (10 layar × 4 bahasa, 390px, ditambah deteksi otomatis overflow horizontal dan teks terpotong): tidak ada overflow. Yang diperbaiki: subjudul Pengaturan dan nama akun yang terpotong, label sumber transaksi yang terpotong (urutan meta jadi jam · sumber · akun), label donat dan badge bucket Tabungan versi MS/TR. Yang masih terpotong dengan elipsis hanya nama merchant/akun panjang di baris daftar (utuh di layar detail). Belum dicek di perangkat nyata (lihat "Belum terverifikasi").
 
 ### Bug yang ketemu lewat uji dan sudah diperbaiki
 
@@ -82,7 +102,7 @@ Dicek di 390px, gelap + terang, aksen Merah/Biru, termasuk fallback tanpa blur. 
 
 - **Perangkat nyata**: blur Android (sengaja fallback translusen sampai ada `BlurTargetView` + uji di dev build), haptic, safe area notch, keyboard numerik, gestur tarik sheet.
 - **Kamera, rekam suara, pemilih berkas PDF**: UI-nya ada, perangkatnya Fase 2 (label jujur di layar).
-- **i18n ID/MS/TR/EN**: belum; semua teks Indonesia. Selector bahasa sengaja tidak dipasang sampai i18n ada.
+- **Terjemahan MS/TR/EN** ditulis tanpa penutur asli; perlu dibaca penutur asli sebelum rilis.
 - **Belum dibangun (di luar cakupan inti)**: onboarding/login, Planning hub, Invoices, Tools, Admin, Smart Log, Split Bill dari struk, chat Tanya Coach (Premium), PIN/biometrik, kelola kategori.
 - Persistensi: tema/aksen/preferensi hilang saat aplikasi ditutup (Fase 2: simpan ke profil).
 
@@ -115,5 +135,5 @@ EXPO_PUBLIC_DESIGN_SHEET=1 npm run web  # buka Lembar Desain di /design
 - Edge Functions: OCR struk, Voice Log, Import PDF, Coach, sync kurs. Kuota ditegakkan di server.
 - Simpan aksen/tema/preferensi per pengguna (`ThemeProvider.onAccentChange`, `initialAccent`).
 - Pasang kamera (ML Kit scanner), rekam suara, pemilih PDF; uji blur Android di dev build.
-- i18n ID/MS/TR/EN, lalu aktifkan selector bahasa.
+- Simpan bahasa per pengguna (`I18nProvider.onLangChange`); Coach/recap AI ditulis dalam bahasa pengguna (FR-COACH-4).
 - Checkpoint LIVE: login sungguhan, scan sungguhan, kurs sungguhan.

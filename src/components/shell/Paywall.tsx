@@ -3,6 +3,7 @@ import { createContext, useCallback, useContext, useState, type ReactNode } from
 import { StyleSheet, View } from 'react-native';
 
 import { AppText, BottomSheet, Button, Icon, useToast } from '@/components/ui';
+import { useT, type TFunction } from '@/i18n';
 import { QUOTAS } from '@/lib/quota';
 import { useTheme } from '@/theme/ThemeProvider';
 import { space } from '@/theme/tokens';
@@ -16,27 +17,30 @@ export function usePaywall(): (reason: string) => void {
   return open;
 }
 
-const BENEFITS = [
-  `Scan struk ${QUOTAS.premium.scan}/bulan (Free ${QUOTAS.free.scan})`,
-  `Import rekening koran PDF ${QUOTAS.premium.importPdf}/bulan (Free ${QUOTAS.free.importPdf})`,
-  'Akun, goals, dan tagihan tanpa batas',
-  'Voice Log dan automation tanpa batas',
-  'Recap bulanan dan Tanya Coach 20 pertanyaan/hari',
-  'Alat pajak lengkap dan ekspor PDF',
-];
+function benefits(t: TFunction): string[] {
+  return [
+    t('shell.paywall.benefitScan', { premium: QUOTAS.premium.scan ?? 0, free: QUOTAS.free.scan ?? 0 }),
+    t('shell.paywall.benefitPdf', { premium: QUOTAS.premium.importPdf ?? 0, free: QUOTAS.free.importPdf ?? 0 }),
+    t('shell.paywall.benefitUnlimited'),
+    t('shell.paywall.benefitVoice'),
+    t('shell.paywall.benefitCoach'),
+    t('shell.paywall.benefitTax'),
+  ];
+}
 
 export function PaywallProvider({ children }: { children: ReactNode }) {
   const [reason, setReason] = useState<string | null>(null);
   const open = useCallback((r: string) => setReason(r), []);
   const { show } = useToast();
   const { colors } = useTheme();
+  const t = useT();
 
   return (
     <PaywallContext.Provider value={open}>
       {children}
-      <BottomSheet visible={reason !== null} onClose={() => setReason(null)} title="Buka batas dengan Premium" subtitle={reason ?? undefined}>
+      <BottomSheet visible={reason !== null} onClose={() => setReason(null)} title={t('shell.paywall.title')} subtitle={reason ?? undefined}>
         <View style={styles.list}>
-          {BENEFITS.map((b) => (
+          {benefits(t).map((b) => (
             <View key={b} style={styles.row}>
               <Icon icon={Check} color={colors.positive} size={18} />
               <AppText variant="body" style={styles.flex}>
@@ -46,15 +50,15 @@ export function PaywallProvider({ children }: { children: ReactNode }) {
           ))}
         </View>
         <Button
-          label="Lihat paket Premium"
+          label={t('shell.paywall.cta')}
           icon={Crown}
           fullWidth
           onPress={() => {
             setReason(null);
-            show({ tone: 'info', title: 'Pembelian belum aktif', message: 'Pilihan paket dan harga muncul setelah RevenueCat terhubung di Fase 3.' });
+            show({ tone: 'info', title: t('shell.paywall.inactiveTitle'), message: t('shell.paywall.inactiveMessage') });
           }}
         />
-        <Button label="Nanti saja" variant="ghost" fullWidth onPress={() => setReason(null)} />
+        <Button label={t('shell.paywall.later')} variant="ghost" fullWidth onPress={() => setReason(null)} />
       </BottomSheet>
     </PaywallContext.Provider>
   );

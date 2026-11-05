@@ -1,0 +1,57 @@
+import type { Messages } from '../id';
+
+const coach: Messages['coach'] = {
+  title: 'Coach',
+  subtitle: 'An honest look at your financial health',
+  errorTitle: 'Coach failed to load',
+  errorMessage: 'Check your connection and try again. Your data is safe.',
+  loading: 'Loading Coach',
+  sections: 'Coach sections',
+  tab: { score: 'Score', recap: 'Recap', ask: 'Ask Coach' },
+  score: {
+    emptyTitle: 'Score not available yet',
+    emptyMessage: 'Coach needs at least one month of transactions to calculate a fair score. Start logging now.',
+    whereFrom: 'Where the score comes from',
+    formula: 'Calculated by formula from 5 pillars, not an AI guess.',
+    pillarA11y: '{label}, {points} of {max}',
+    says: 'Coach says',
+    sample: 'Sample narration',
+    narration:
+      'Your finances are fairly healthy. Your savings are on track and your repayments are still light. What needs the most attention this month: health spending went over its limit and your emergency fund has not reached 6 months of spending yet.',
+    action1: 'Raise your savings deposit to 20% of income (Rp 2.850.000).',
+    action2: 'Hold off on non-urgent spending in Health until the next period.',
+    action3: 'Move what is left of your Wants budget into your emergency fund.',
+  },
+  recap: {
+    range: '{start} to {end}',
+    emptyTitle: 'No data from last week yet',
+    emptyMessage: 'Your recap appears every Monday morning once the previous week has transactions.',
+    replay: 'Replay for {range}',
+    youSpent: 'Last week you spent',
+    down: 'Down {pct}% from the week before. Nice saving.',
+    same: 'Same as the week before.',
+    up: 'Up {pct}% from the week before.',
+    topIn: 'Most spent on',
+    noSpendDays: 'no-spend days',
+    allDaysSpent: 'days with spending',
+    txInWeek: '{count} transactions this week',
+    txInWeek_one: '{count} transaction this week',
+    biggest: 'Biggest expense',
+    monthlyA11y: 'Monthly recap, Premium feature. Open Premium',
+    monthlyReason: 'Monthly recap and Ask Coach are part of Premium.',
+    monthly: 'Monthly recap',
+    monthlySub: 'Arrives on the 1st of each month, Premium only',
+  },
+  ask: {
+    title: 'Ask Coach is Premium only',
+    message: 'Ask anything about your money, 20 questions a day. Answers use a summary of your numbers, not raw data.',
+    cta: 'See Premium',
+    reason: 'Ask Coach (20 questions/day) is only in Premium.',
+    examplesTitle: 'Example questions you can ask',
+    example1: 'Why did my spending go up this month?',
+    example2: 'How much can I set aside for a holiday?',
+    example3: 'Which should I pay off first, the laptop or the credit card?',
+  },
+};
+
+export default coach;

@@ -1,4 +1,3 @@
-import { getCategory } from '@/constants/categories';
 import type { Account, Transaction, TxType } from '@/data/types';
 
 import { convert } from './fx';
@@ -39,14 +38,15 @@ export function isFilterActive(f: TxFilter): boolean {
   return !!(f.query?.trim() || (f.type && f.type !== 'all') || f.accountId || f.categoryKey);
 }
 
-export function filterTransactions(txs: Transaction[], f: TxFilter): Transaction[] {
+/** `categoryLabel` memberi nama kategori dalam bahasa aktif supaya pencarian cocok dengan yang dilihat pengguna. */
+export function filterTransactions(txs: Transaction[], f: TxFilter, categoryLabel: (key: string) => string = (k) => k): Transaction[] {
   const q = f.query?.trim().toLowerCase();
   return txs.filter((tx) => {
     if (f.type && f.type !== 'all' && tx.type !== f.type) return false;
     if (f.accountId && tx.accountId !== f.accountId && tx.toAccountId !== f.accountId) return false;
     if (f.categoryKey && tx.categoryKey !== f.categoryKey) return false;
     if (q) {
-      const hay = `${tx.merchant} ${tx.note ?? ''} ${getCategory(tx.categoryKey).label}`.toLowerCase();
+      const hay = `${tx.merchant} ${tx.note ?? ''} ${categoryLabel(tx.categoryKey)}`.toLowerCase();
       if (!hay.includes(q)) return false;
     }
     return true;

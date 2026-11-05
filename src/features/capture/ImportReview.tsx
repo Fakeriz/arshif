@@ -5,12 +5,14 @@ import { AppText, Badge, Button, Card, Checkbox, CurrencyText } from '@/componen
 import { sampleStatement } from '@/data/seed';
 import type { Transaction } from '@/data/types';
 import { shortDate } from '@/lib/dates';
+import { useI18n } from '@/i18n';
 import { findDuplicate } from '@/lib/dedupe';
 import { categorizeStatementRow, prettifyDescription } from '@/lib/statement';
 import { space } from '@/theme/tokens';
 
 /** Review import PDF (FR-PDF-3): baris yang mirip transaksi yang sudah ada tidak dicentang secara default. */
 export function ImportReview({ accountId, accountName, currency, existing, onImport }: { accountId: string; accountName: string; currency: string; existing: Transaction[]; onImport: (txs: Transaction[]) => void }) {
+  const { t, lang } = useI18n();
   const rows = useMemo(() => sampleStatement.rows.map((r) => ({ ...r, duplicate: findDuplicate(r, existing, accountId) !== null })), [existing, accountId]);
   const [checked, setChecked] = useState<Record<string, boolean>>(() => Object.fromEntries(rows.map((r) => [r.id, !r.duplicate])));
   const count = rows.filter((r) => checked[r.id]).length;
@@ -29,20 +31,20 @@ export function ImportReview({ accountId, accountName, currency, existing, onImp
   return (
     <View style={styles.wrap}>
       <AppText variant="body" tone="secondary">
-        {`${rows.length} baris terbaca untuk ${accountName}.${dups ? ` ${dups} baris mirip transaksi yang sudah ada, jadi tidak dicentang.` : ''}`}
+        {t('capture.importReview.rowsRead', { count: rows.length, account: accountName }) + (dups ? ` ${t('capture.importReview.dupsSkipped', { count: dups })}` : '')}
       </AppText>
       <Card padding="md">
         {rows.map((r, i) => (
           <View key={r.id} style={[styles.row, i < rows.length - 1 && styles.rowGap]}>
-            <Checkbox checked={!!checked[r.id]} onChange={(v) => setChecked((c) => ({ ...c, [r.id]: v }))} accessibilityLabel={`${prettifyDescription(r.description)}, ${shortDate(r.date)}`} />
+            <Checkbox checked={!!checked[r.id]} onChange={(v) => setChecked((c) => ({ ...c, [r.id]: v }))} accessibilityLabel={`${prettifyDescription(r.description)}, ${shortDate(r.date, lang)}`} />
             <View style={styles.text}>
               <AppText variant="bodyStrong" numberOfLines={2}>
                 {prettifyDescription(r.description)}
               </AppText>
               <AppText variant="caption" tone="muted">
-                {shortDate(r.date)}
+                {shortDate(r.date, lang)}
               </AppText>
-              {r.duplicate && <Badge label="Kemungkinan duplikat" tone="warning" />}
+              {r.duplicate && <Badge label={t('capture.importReview.duplicate')} tone="warning" />}
             </View>
             <View style={styles.amount}>
               <CurrencyText amount={r.amount} currency={currency} kind={r.type === 'income' ? 'income' : 'expense'} variant="bodyStrong" />
@@ -50,9 +52,9 @@ export function ImportReview({ accountId, accountName, currency, existing, onImp
           </View>
         ))}
       </Card>
-      <Button label={count === 0 ? 'Pilih minimal satu baris' : `Import ${count} transaksi`} fullWidth disabled={count === 0} onPress={submit} />
+      <Button label={count === 0 ? t('capture.importReview.pickOne') : t('capture.importReview.submit', { count })} fullWidth disabled={count === 0} onPress={submit} />
       <AppText variant="caption" tone="muted" align="center">
-        Import tidak menambah kuota automation. Kuota import terpakai 1 setelah berhasil.
+        {t('capture.importReview.footer')}
       </AppText>
     </View>
   );

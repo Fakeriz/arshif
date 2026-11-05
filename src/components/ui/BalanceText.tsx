@@ -1,5 +1,6 @@
 import { StyleSheet, Text, View } from 'react-native';
 
+import { useT } from '@/i18n';
 import { useCountUp } from '@/hooks/useCountUp';
 import { formatMoney, formatMoneyParts } from '@/lib/money';
 import { useTheme } from '@/theme/ThemeProvider';
@@ -23,6 +24,7 @@ const MASK = '••••••';
  */
 export function BalanceText({ amount, currency, hidden, countUp, size = 'hero', align = 'center' }: BalanceTextProps) {
   const { colors } = useTheme();
+  const t = useT();
   const shown = useCountUp(amount, !!countUp && !hidden);
   const p = formatMoneyParts(shown, currency);
   const base = size === 'hero' ? typeScale.balanceHero : typeScale.amountHero;
@@ -31,7 +33,7 @@ export function BalanceText({ amount, currency, hidden, countUp, size = 'hero', 
   return (
     <View
       accessible
-      accessibilityLabel={hidden ? 'Saldo disembunyikan' : formatMoney(amount, currency)}
+      accessibilityLabel={hidden ? t('common.balanceHidden') : formatMoney(amount, currency)}
       style={[styles.row, { justifyContent: align === 'center' ? 'center' : 'flex-start' }]}
     >
       <Text

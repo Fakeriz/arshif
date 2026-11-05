@@ -1,13 +1,12 @@
 import { Crown } from 'lucide-react-native';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
+import { useT } from '@/i18n';
 import { usePaywall } from '@/components/shell/Paywall';
 import { AppText, BankCard, GlassView, Icon, PressableScale } from '@/components/ui';
 import type { AccountWithBalance } from '@/state/AppStore';
 import { useTheme } from '@/theme/ThemeProvider';
 import { radius, space } from '@/theme/tokens';
-
-import { ACCOUNT_TYPE_LABEL } from './accountLabels';
 
 export type AccountsRailProps = {
   accounts: AccountWithBalance[];
@@ -20,13 +19,14 @@ export type AccountsRailProps = {
 export function AccountsRail({ accounts, hidden, limitReached, onPressAccount }: AccountsRailProps) {
   const { colors } = useTheme();
   const paywall = usePaywall();
+  const t = useT();
   return (
     <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.row} style={styles.scroll}>
       {accounts.map((a) => (
         <BankCard
           key={a.id}
           bank={a.bank}
-          accountType={ACCOUNT_TYPE_LABEL[a.type]}
+          accountType={t(`domain.accountType.${a.type}`)}
           last4={a.last4}
           balance={a.balance}
           currency={a.currency}
@@ -36,19 +36,19 @@ export function AccountsRail({ accounts, hidden, limitReached, onPressAccount }:
       ))}
       {limitReached && (
         <PressableScale
-          accessibilityLabel="Batas 4 akun tercapai. Buka Premium untuk menambah akun"
+          accessibilityLabel={t('home.accountLimitA11y')}
           focusRadius={radius.lg}
-          onPress={() => paywall('Paket Free dibatasi 4 akun dan dompet. Premium tanpa batas.')}
+          onPress={() => paywall(t('home.accountLimitReason'))}
         >
           <GlassView radius={radius.lg} style={styles.limit}>
             <View style={[styles.limitIcon, { backgroundColor: colors.accentSoft }]}>
               <Icon icon={Crown} color={colors.accentText} />
             </View>
             <AppText variant="bodyStrong" align="center">
-              Batas 4 akun tercapai
+              {t('home.accountLimitTitle')}
             </AppText>
             <AppText variant="caption" tone="secondary" align="center">
-              Premium untuk menambah akun
+              {t('home.accountLimitSub')}
             </AppText>
           </GlassView>
         </PressableScale>

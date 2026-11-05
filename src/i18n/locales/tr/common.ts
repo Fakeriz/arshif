@@ -1,0 +1,42 @@
+import type { Messages } from '../id';
+
+const common: Messages['common'] = {
+  cancel: 'Vazgeç',
+  close: 'Kapat',
+  back: 'Geri',
+  save: 'Kaydet',
+  retry: 'Tekrar dene',
+  loading: 'Yükleniyor',
+  total: 'Toplam',
+  amount: 'Tutar',
+  income: 'Gelir',
+  expense: 'Gider',
+  transfer: 'Transfer',
+  difference: 'Fark',
+  premiumFeature: 'Premium özellik',
+  balanceHidden: 'Bakiye gizli',
+  overLimitPrefix: 'Limit aşıldı, ',
+  closeNotification: 'Bildirimi kapat',
+  showPassword: 'Şifreyi göster',
+  hidePassword: 'Şifreyi gizle',
+  currencyTap: 'Para birimi {name}. Değiştirmek için dokun',
+  amountIn: '{label}, {name} cinsinden',
+  currency: 'Para birimi {name}',
+  addTransaction: 'İşlem ekle',
+  noDataThisMonth: 'Bu ay henüz veri yok',
+  cashflowEmptyTitle: 'Henüz nakit akışı yok',
+  cashflowEmptyMessage: 'Aylık eğilimi görmek için ilk işlemini kaydet.',
+  accentColor: 'Vurgu rengi',
+  bankCardA11y: '{bank} {type}, bakiye {amount}',
+  bankCardA11yLast4: '{bank} {type}, son dört hane {last4}, bakiye {amount}',
+  health: {
+    a11yNone: 'Finansal sağlık puanı henüz yok',
+    a11y: 'Finansal sağlık puanı 100 üzerinden {score}, {band}',
+    needsData: '1 aylık veri gerekiyor',
+    outOf: '/ 100 · {band}',
+    up: 'Geçen aya göre {n} puan arttı',
+    down: 'Geçen aya göre {n} puan düştü',
+  },
+};
+
+export default common;

@@ -29,7 +29,8 @@ export type Action =
   | { type: 'prefs/hideBalance'; value: boolean }
   | { type: 'prefs/mainCurrency'; code: string }
   | { type: 'prefs/notif'; key: keyof NotifPrefs; value: boolean }
-  | { type: 'budget/split'; split: Split };
+  | { type: 'budget/split'; split: Split }
+  | { type: 'account/setBank'; id: string; bank: string };
 
 export function initialState(): AppState {
   return {
@@ -69,6 +70,8 @@ export function reducer(state: AppState, action: Action): AppState {
       return { ...state, mainCurrency: action.code };
     case 'prefs/notif':
       return { ...state, notifPrefs: { ...state.notifPrefs, [action.key]: action.value } };
+    case 'account/setBank':
+      return { ...state, accounts: state.accounts.map((a) => (a.id === action.id ? { ...a, bank: action.bank } : a)) };
     case 'budget/split':
       return splitIsValid(action.split) ? { ...state, split: action.split } : state;
   }

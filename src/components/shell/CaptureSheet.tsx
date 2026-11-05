@@ -1,6 +1,7 @@
 import { useRouter } from 'expo-router';
 import { StyleSheet, View } from 'react-native';
 
+import { useT } from '@/i18n';
 import { Badge, BottomSheet, Icon, ListItem } from '@/components/ui';
 import { useLimits } from '@/state/limits';
 import { useTheme } from '@/theme/ThemeProvider';
@@ -13,11 +14,12 @@ import { usePaywall } from './Paywall';
 export function CaptureSheet({ visible, onClose }: { visible: boolean; onClose: () => void }) {
   const router = useRouter();
   const paywall = usePaywall();
-  const options = captureOptions(useLimits());
+  const t = useT();
+  const options = captureOptions(useLimits(), t);
   const { colors } = useTheme();
 
   return (
-    <BottomSheet visible={visible} onClose={onClose} title="Catat transaksi" subtitle="Pilih cara tercepat untukmu">
+    <BottomSheet visible={visible} onClose={onClose} title={t('shell.capture.title')} subtitle={t('shell.capture.subtitle')}>
       {options.map((o, i) => (
         <ListItem
           key={o.key}
@@ -28,7 +30,7 @@ export function CaptureSheet({ visible, onClose }: { visible: boolean; onClose: 
           }
           title={o.title}
           subtitle={o.sub}
-          trailing={o.limited ? <Badge label="Batas" tone="warning" /> : undefined}
+          trailing={o.limited ? <Badge label={t('shell.capture.limitBadge')} tone="warning" /> : undefined}
           chevron={!o.limited}
           divider={i < options.length - 1}
           onPress={() => {

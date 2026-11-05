@@ -1,0 +1,59 @@
+/** Kerangka aplikasi: nav, sheet Catat, mata uang, notifikasi, Premium. */
+const shell = {
+  tab: { home: 'Home', transactions: 'Transaksi', budget: 'Anggaran', coach: 'Coach' },
+  capture: {
+    title: 'Catat transaksi',
+    subtitle: 'Pilih cara tercepat untukmu',
+    limitBadge: 'Batas',
+    scan: {
+      title: 'Scan Struk',
+      short: 'Scan Struk',
+      sub: 'Foto struk, AI isi semuanya · {count} scan tersisa',
+      sub_one: 'Foto struk, AI isi semuanya · {count} scan tersisa',
+      subLimited: 'Kuota scan bulan ini habis',
+      reason: 'Kuota scan struk Free ({free}/bulan) sudah habis. Reset tanggal 1, atau upgrade untuk {premium} scan/bulan.',
+    },
+    voice: {
+      title: 'Voice Log',
+      short: 'Voice Log',
+      sub: 'Ucapkan, langsung tercatat',
+      subLimited: 'Kuota automation bulan ini habis',
+      reason: 'Kuota automation Free ({free}/bulan, termasuk Voice Log) sudah habis. Upgrade untuk tanpa batas.',
+    },
+    pdf: {
+      title: 'Import Rekening Koran',
+      short: 'Import PDF',
+      sub: 'PDF dari bank · {count} import tersisa bulan ini',
+      sub_one: 'PDF dari bank · {count} import tersisa bulan ini',
+      subLimited: 'Kuota import bulan ini habis',
+      reason: 'Import PDF Free ({free}/bulan) sudah terpakai. Upgrade untuk {premium} import/bulan.',
+    },
+    manual: { title: 'Catat Manual', short: 'Manual', sub: 'Isi sendiri nominal dan kategori' },
+  },
+  currencySheet: { title: 'Pilih mata uang' },
+  notifications: {
+    title: 'Notifikasi',
+    unread: '{count} belum dibaca',
+    allRead: 'Semua sudah dibaca',
+    emptyTitle: 'Belum ada notifikasi',
+    emptyMessage: 'Pengingat tagihan dan peringatan anggaran muncul di sini.',
+    stateRead: 'Sudah dibaca',
+    stateUnread: 'Belum dibaca',
+    markAll: 'Tandai semua dibaca',
+  },
+  paywall: {
+    title: 'Buka batas dengan Premium',
+    benefitScan: 'Scan struk {premium}/bulan (Free {free})',
+    benefitPdf: 'Import rekening koran PDF {premium}/bulan (Free {free})',
+    benefitUnlimited: 'Akun, goals, dan tagihan tanpa batas',
+    benefitVoice: 'Voice Log dan automation tanpa batas',
+    benefitCoach: 'Recap bulanan dan Tanya Coach 20 pertanyaan/hari',
+    benefitTax: 'Alat pajak lengkap dan ekspor PDF',
+    cta: 'Lihat paket Premium',
+    later: 'Nanti saja',
+    inactiveTitle: 'Pembelian belum aktif',
+    inactiveMessage: 'Pilihan paket dan harga muncul setelah RevenueCat terhubung di Fase 3.',
+  },
+};
+
+export default shell;

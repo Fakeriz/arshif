@@ -1,6 +1,7 @@
 import { StyleSheet, View } from 'react-native';
 
 import { getBank } from '@/constants/banks';
+import { bankName, useT } from '@/i18n';
 import { formatMoney } from '@/lib/money';
 import { useTheme } from '@/theme/ThemeProvider';
 import { fonts, layout, radius, space } from '@/theme/tokens';
@@ -26,20 +27,17 @@ export type BankCardProps = {
  */
 export function BankCard({ bank, accountType, last4, balance, currency, hidden, onPress }: BankCardProps) {
   const { colors } = useTheme();
+  const t = useT();
   const b = getBank(bank);
+  const name = bankName(t, bank);
   const amount = hidden ? '••••••' : formatMoney(balance, currency);
-  return (
-    <PressableScale
-      onPress={onPress}
-      disabled={!onPress}
-      accessibilityLabel={`${b.name} ${accountType}${last4 ? `, akhiran ${last4}` : ''}, saldo ${hidden ? 'disembunyikan' : amount}`}
-      focusRadius={radius.lg}
-      scaleTo={0.985}
-      style={[styles.card, { backgroundColor: b.color, borderColor: colors.glassBorder }]}
-    >
+  const a11y = t(last4 ? 'common.bankCardA11yLast4' : 'common.bankCardA11y', { bank: name, type: accountType, last4: last4 ?? '', amount: hidden ? t('common.balanceHidden') : amount });
+  const cardStyle = [styles.card, { backgroundColor: b.color, borderColor: colors.glassBorder }];
+  const content = (
+    <>
       <View style={styles.head}>
         <AppText variant="h3" style={[styles.bankName, { color: b.onColor }]} numberOfLines={1}>
-          {b.name}
+          {name}
         </AppText>
         {last4 && (
           <AppText variant="caption" numeric style={{ color: b.onColor }}>
@@ -55,6 +53,19 @@ export function BankCard({ bank, accountType, last4, balance, currency, hidden, 
           {amount}
         </AppText>
       </View>
+    </>
+  );
+  // Tanpa onPress (mis. pratinjau di pemilih bank) kartu adalah gambar statis, bukan tombol nonaktif yang pudar.
+  if (!onPress) {
+    return (
+      <View accessible accessibilityLabel={a11y} style={cardStyle}>
+        {content}
+      </View>
+    );
+  }
+  return (
+    <PressableScale onPress={onPress} accessibilityLabel={a11y} focusRadius={radius.lg} scaleTo={0.985} style={cardStyle}>
+      {content}
     </PressableScale>
   );
 }

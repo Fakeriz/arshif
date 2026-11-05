@@ -75,10 +75,10 @@ export const seedTransactions: Transaction[] = [
 ];
 
 export const seedNotifications: AppNotification[] = [
-  { id: 'n1', type: 'weekly_recap', title: 'Recap mingguanmu sudah siap', message: 'Lihat ke mana uangmu pergi minggu lalu.', when: 'Senin, 07.00', read: false, href: '/coach' },
-  { id: 'n2', type: 'budget_alert', title: 'Anggaran Hiburan 82%', message: 'Sisa Rp 35.010 untuk 20 hari ke depan.', when: 'Kemarin, 18.31', read: false },
-  { id: 'n3', type: 'bill_due', title: 'Tagihan TNB jatuh tempo besok', message: 'RM 142.30. Tandai lunas setelah dibayar.', when: 'Hari ini, 07.00', read: true },
-  { id: 'n4', type: 'quota_warning', title: 'Kuota scan struk tersisa 6', message: '14 dari 20 scan terpakai. Reset 1 Desember.', when: '3 Nov, 19.05', read: true },
+  { id: 'n1', type: 'weekly_recap', titleKey: 'domain.notif.recapTitle', messageKey: 'domain.notif.recapMessage', date: '2026-11-02', time: '07:00', read: false, href: '/coach' },
+  { id: 'n2', type: 'budget_alert', titleKey: 'domain.notif.budgetTitle', messageKey: 'domain.notif.budgetMessage', vars: { pct: 82, amount: 'Rp 35.010', days: 20 }, date: '2026-11-04', time: '18:31', read: false },
+  { id: 'n3', type: 'bill_due', titleKey: 'domain.notif.billTitle', messageKey: 'domain.notif.billMessage', vars: { biller: 'TNB', amount: 'RM 142.30' }, date: '2026-11-05', time: '07:00', read: true },
+  { id: 'n4', type: 'quota_warning', titleKey: 'domain.notif.quotaTitle', messageKey: 'domain.notif.quotaMessage', vars: { left: 6, used: 14, limit: 20 }, date: '2026-11-03', time: '19:05', read: true },
 ];
 
 /** Hasil ekstraksi AI contoh untuk layar review struk. Field `conf` = keyakinan 0-1. */

@@ -1,3 +1,5 @@
+import type { MsgKey } from '@/i18n/translate';
+
 export type AccountType = 'tabungan' | 'cash' | 'ewallet' | 'kartu_kredit' | 'paylater';
 
 export type Account = {
@@ -47,10 +49,15 @@ export type NotificationType = 'bill_due' | 'budget_alert' | 'weekly_recap' | 'q
 export type AppNotification = {
   id: string;
   type: NotificationType;
-  title: string;
-  message: string;
-  /** Teks waktu relatif, mis. "Hari ini, 07.00". */
-  when: string;
+  /** Kunci i18n (Fase 1). Fase 2: teks datang dari server dalam bahasa pengguna. */
+  titleKey: MsgKey;
+  messageKey: MsgKey;
+  /** Nilai sisipan teks, mis. nominal yang sudah diformat. */
+  vars?: Record<string, string | number>;
+  /** "YYYY-MM-DD" */
+  date: string;
+  /** "HH:mm" */
+  time: string;
   read: boolean;
   /** Rute tujuan bila ada. */
   href?: '/coach';

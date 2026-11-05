@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { useT } from '@/i18n';
 import { usePaywall } from '@/components/shell/Paywall';
 import { AppText, EmptyState, GlassView, Icon, PressableScale } from '@/components/ui';
 import { ProcessingView } from '@/features/capture/ProcessingView';
@@ -27,6 +28,7 @@ export default function ScanScreen() {
 
 function ScanInner() {
   const { colors } = useTheme();
+  const t = useT();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const demo = useDemoState();
@@ -54,17 +56,17 @@ function ScanInner() {
 
   let center;
   if (limits.scan) {
-    center = <EmptyState kind="limit" title="Kuota scan bulan ini habis" message="Reset tanggal 1, atau upgrade untuk 300 scan per bulan." actionLabel="Lihat Premium" onAction={() => paywall('Kuota scan struk Free (20/bulan) sudah habis.')} />;
+    center = <EmptyState kind="limit" title={t('capture.scan.limitTitle')} message={t('capture.scan.limitMessage')} actionLabel={t('capture.seePremium')} onAction={() => paywall(t('capture.scan.limitReason'))} />;
   } else if (phase === 'processing') {
-    center = <ProcessingView title="Membaca struk" message="AI mengekstrak toko, tanggal, total, dan item. Kalau gagal, kuota tidak terpotong." />;
+    center = <ProcessingView title={t('capture.scan.processingTitle')} message={t('capture.scan.processingMessage')} />;
   } else if (phase === 'failed') {
-    center = <EmptyState kind="error" title="Struk tidak terbaca" message="Kuota scan tidak terpotong. Coba foto ulang di tempat yang lebih terang dan pastikan seluruh struk masuk bingkai." actionLabel="Foto ulang" onAction={() => setPhase('ready')} />;
+    center = <EmptyState kind="error" title={t('capture.scan.failedTitle')} message={t('capture.scan.failedMessage')} actionLabel={t('capture.scan.retake')} onAction={() => setPhase('ready')} />;
   } else {
     center = (
       <>
         <ScanFrame active />
         <AppText variant="body" tone="secondary" align="center">
-          Posisikan struk di dalam bingkai. Pastikan semua tulisan terlihat jelas.
+          {t('capture.scan.guide')}
         </AppText>
       </>
     );
@@ -74,19 +76,19 @@ function ScanInner() {
   return (
     <View style={[styles.root, { backgroundColor: colors.bg, paddingTop: insets.top + space.md, paddingBottom: insets.bottom + space.xl }]}>
       <View style={styles.top}>
-        <RoundButton label="Tutup" onPress={close} icon={X} />
-        <AppText variant="h3" accessibilityRole="header">
-          Scan struk
+        <RoundButton label={t('common.close')} onPress={close} icon={X} />
+        <AppText variant="h3" accessibilityRole="header" numberOfLines={1} style={styles.title}>
+          {t('capture.scan.title')}
         </AppText>
-        <RoundButton label={flash ? 'Matikan lampu kilat' : 'Nyalakan lampu kilat'} onPress={() => setFlash((f) => !f)} icon={flash ? Zap : ZapOff} selected={flash} />
+        <RoundButton label={flash ? t('capture.scan.flashOff') : t('capture.scan.flashOn')} onPress={() => setFlash((f) => !f)} icon={flash ? Zap : ZapOff} selected={flash} />
       </View>
       <View style={styles.center}>{center}</View>
       <AppText variant="caption" tone="muted" align="center">
-        Pratinjau kamera aktif di build native (Fase 2). Di sini hasilnya contoh.
+        {t('capture.scan.cameraNote')}
       </AppText>
       <View style={styles.bottom}>
-        <RoundButton label="Pilih dari galeri" onPress={capture} icon={Images} disabled={!canShoot} />
-        <PressableScale accessibilityLabel="Ambil foto struk" disabled={!canShoot} onPress={capture} focusRadius={radius.full} scaleTo={0.94}>
+        <RoundButton label={t('capture.scan.gallery')} onPress={capture} icon={Images} disabled={!canShoot} />
+        <PressableScale accessibilityLabel={t('capture.scan.shutter')} disabled={!canShoot} onPress={capture} focusRadius={radius.full} scaleTo={0.94}>
           <View style={[styles.shutterRing, { borderColor: colors.text }]}>
             <View style={[styles.shutter, { backgroundColor: colors.text }]} />
           </View>
@@ -110,7 +112,8 @@ function RoundButton({ label, onPress, icon, selected, disabled }: { label: stri
 
 const styles = StyleSheet.create({
   root: { flex: 1, paddingHorizontal: space.lg, gap: space.lg },
-  top: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  top: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: space.md },
+  title: { flexShrink: 1 },
   center: { flex: 1, justifyContent: 'center', gap: space.xl },
   bottom: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: space.md },
   round: { width: 48, height: 48, alignItems: 'center', justifyContent: 'center' },

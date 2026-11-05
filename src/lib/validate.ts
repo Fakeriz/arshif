@@ -1,4 +1,5 @@
 import type { TxType } from '@/data/types';
+import type { MsgKey } from '@/i18n';
 
 export type TxDraft = {
   type: TxType;
@@ -10,20 +11,20 @@ export type TxDraft = {
   date: string;
 };
 
-export type TxErrors = Partial<Record<'amount' | 'merchant' | 'accountId' | 'toAccountId' | 'categoryKey' | 'date', string>>;
+export type TxErrors = Partial<Record<'amount' | 'merchant' | 'accountId' | 'toAccountId' | 'categoryKey' | 'date', MsgKey>>;
 
-/** Validasi form transaksi manual (FR-TRX-1). Transfer butuh akun asal dan tujuan yang berbeda. */
+/** Validasi form transaksi manual (FR-TRX-1). Nilai error = kunci i18n. Transfer butuh akun asal dan tujuan yang berbeda. */
 export function validateTx(d: TxDraft): TxErrors {
   const e: TxErrors = {};
-  if (!d.amount || d.amount <= 0) e.amount = 'Isi nominal lebih dari nol.';
-  if (!d.accountId) e.accountId = d.type === 'transfer' ? 'Pilih akun asal.' : 'Pilih akun.';
+  if (!d.amount || d.amount <= 0) e.amount = 'domain.validation.amount';
+  if (!d.accountId) e.accountId = d.type === 'transfer' ? 'domain.validation.fromAccount' : 'domain.validation.account';
   if (d.type === 'transfer') {
-    if (!d.toAccountId) e.toAccountId = 'Pilih akun tujuan.';
-    else if (d.toAccountId === d.accountId) e.toAccountId = 'Akun tujuan harus berbeda dari akun asal.';
+    if (!d.toAccountId) e.toAccountId = 'domain.validation.toAccount';
+    else if (d.toAccountId === d.accountId) e.toAccountId = 'domain.validation.sameAccount';
   } else {
-    if (!d.merchant.trim()) e.merchant = d.type === 'income' ? 'Tulis sumber pemasukan.' : 'Tulis nama toko atau keterangan.';
-    if (!d.categoryKey) e.categoryKey = 'Pilih kategori.';
+    if (!d.merchant.trim()) e.merchant = d.type === 'income' ? 'domain.validation.incomeSource' : 'domain.validation.merchant';
+    if (!d.categoryKey) e.categoryKey = 'domain.validation.category';
   }
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(d.date)) e.date = 'Tanggal harus berformat TTTT-BB-HH.';
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(d.date)) e.date = 'domain.validation.date';
   return e;
 }

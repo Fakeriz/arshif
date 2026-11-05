@@ -1,0 +1,55 @@
+import type { Messages } from '../id';
+
+const settings: Messages['settings'] = {
+  title: 'Ayarlar',
+  appearance: 'Görünüm',
+  theme: 'Tema',
+  themeMode: { system: 'Sistem', dark: 'Koyu', light: 'Açık' },
+  language: 'Dil',
+  languageSub: 'Uygulama dili ve Coach özetleri',
+  languagePick: 'Dil seç',
+  mainCurrency: 'Ana para birimi',
+  mainCurrencySub: 'Tüm toplamlar ve bütçeler bu birime çevrilir',
+  hideBalance: 'Bakiyeleri gizle',
+  hideBalanceSub: 'Bakiyeler Ana Sayfa’da nokta olarak görünür',
+  notifications: 'Bildirimler',
+  notif: {
+    bill_due: { title: 'Fatura son günü', sub: '3 gün önce ve son ödeme gününde' },
+    budget_alert: { title: 'Bütçe uyarıları', sub: 'Bir grup %80 ve %100’e ulaştığında' },
+    weekly_recap: { title: 'Haftalık özet', sub: 'Her pazartesi sabahı' },
+    quota_warning: { title: 'Kota azalıyor', sub: 'Tarama veya otomasyon kotası azaldığında' },
+  },
+  footer: 'Arshif Aşama 1 geliştirme sürümü. Bu ekrandaki tüm veriler örnektir.',
+  accounts: {
+    title: 'Hesaplar & kartlar',
+    hint: 'Banka kartı tasarımını seçmek için bir hesaba dokun.',
+    pickTitle: 'Kart tasarımı',
+    pickSub: 'Banka rengi ve adı, resmi logo olmadan',
+    country: { ID: 'Endonezya', MY: 'Malezya', TR: 'Türkiye', ANY: 'Diğer' },
+  },
+  usage: {
+    title: 'Bu ayki kullanım',
+    planFree: 'Free paket',
+    planPremium: 'Premium',
+    unlimited: '{used}, sınırsız',
+    a11y: '{label} {limit} içinden {used}',
+    reset: 'Kotalar her ayın 1’inde sıfırlanır. Başarısız AI işlemleri kotadan düşmez.',
+    unlock: 'Premium ile limitleri kaldır',
+    unlockReason: 'Premium ile ayda 300 tarama, ayda 10 içe aktarma ve sınırsız hesap.',
+  },
+  data: {
+    exportTitle: 'Verileri dışa aktar',
+    exportSub: 'Tüm işlemlerini JSON veya CSV olarak indir',
+    exportPick: 'Dosya biçimi seç',
+    exportAs: '{format} olarak dışa aktar',
+    exportInactive: '{format} dışa aktarma henüz aktif değil',
+    deleteTitle: 'Hesabı sil',
+    deleteSub: 'Hesabını ve tüm verilerini siler',
+    deleteDialogTitle: 'Hesap ve tüm veriler silinsin mi?',
+    deleteDialogMessage: 'İşlemler, hesaplar, bütçeler ve fiş dosyaları kalıcı olarak silinir ve geri alınamaz. Gerekirse önce verilerini dışa aktar.',
+    deleteInactive: 'Hesap silme henüz aktif değil',
+    demoNote: 'Demo modu: henüz sunucuya bağlı değil, bu yüzden hiçbir veri gerçekten işlenmiyor.',
+  },
+};
+
+export default settings;

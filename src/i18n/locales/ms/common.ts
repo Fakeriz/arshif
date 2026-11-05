@@ -1,0 +1,42 @@
+import type { Messages } from '../id';
+
+const common: Messages['common'] = {
+  cancel: 'Batal',
+  close: 'Tutup',
+  back: 'Kembali',
+  save: 'Simpan',
+  retry: 'Cuba lagi',
+  loading: 'Memuatkan',
+  total: 'Jumlah',
+  amount: 'Amaun',
+  income: 'Pendapatan',
+  expense: 'Perbelanjaan',
+  transfer: 'Pindahan',
+  difference: 'Baki bersih',
+  premiumFeature: 'Ciri Premium',
+  balanceHidden: 'Baki disembunyikan',
+  overLimitPrefix: 'Melebihi had, ',
+  closeNotification: 'Tutup pemberitahuan',
+  showPassword: 'Tunjukkan kata laluan',
+  hidePassword: 'Sembunyikan kata laluan',
+  currencyTap: 'Mata wang {name}. Ketik untuk menukar',
+  amountIn: '{label} dalam {name}',
+  currency: 'Mata wang {name}',
+  addTransaction: 'Rekod transaksi',
+  noDataThisMonth: 'Belum ada data bulan ini',
+  cashflowEmptyTitle: 'Belum ada aliran tunai',
+  cashflowEmptyMessage: 'Rekod transaksi pertama anda untuk melihat trend bulanan.',
+  accentColor: 'Warna aksen',
+  bankCardA11y: '{bank} {type}, baki {amount}',
+  bankCardA11yLast4: '{bank} {type}, berakhir {last4}, baki {amount}',
+  health: {
+    a11yNone: 'Skor kesihatan kewangan belum tersedia',
+    a11y: 'Skor kesihatan kewangan {score} daripada 100, {band}',
+    needsData: 'Perlu data 1 bulan',
+    outOf: 'daripada 100 · {band}',
+    up: 'Naik {n} mata dari bulan lepas',
+    down: 'Turun {n} mata dari bulan lepas',
+  },
+};
+
+export default common;

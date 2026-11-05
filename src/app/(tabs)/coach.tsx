@@ -7,6 +7,7 @@ import { EmptyState, Skeleton, Tabs } from '@/components/ui';
 import { AskTab } from '@/features/coach/AskTab';
 import { RecapTab } from '@/features/coach/RecapTab';
 import { ScoreTab } from '@/features/coach/ScoreTab';
+import { useT } from '@/i18n';
 import { DEMO_TODAY } from '@/lib/dates';
 import { weeklyRecap } from '@/lib/recap';
 import { useDemoState } from '@/state/demo';
@@ -21,14 +22,15 @@ export default function CoachScreen() {
   const retry = useRetry();
   const { transactions, mainCurrency } = useLedger();
   const health = useHealth();
+  const t = useT();
   const [tab, setTab] = useState<Tab>(demo === 'limit' ? 'ask' : 'score');
 
   let body;
   if (demo === 'error') {
-    body = <EmptyState kind="error" title="Coach gagal dimuat" message="Periksa koneksimu lalu coba lagi. Datamu aman." actionLabel="Coba lagi" onAction={retry} />;
+    body = <EmptyState kind="error" title={t('coach.errorTitle')} message={t('coach.errorMessage')} actionLabel={t('common.retry')} onAction={retry} />;
   } else if (demo === 'loading') {
     body = (
-      <View style={styles.skeleton} accessibilityLabel="Memuat Coach" aria-busy>
+      <View style={styles.skeleton} accessibilityLabel={t('coach.loading')} aria-busy>
         <Skeleton height={220} radius={radius.lg} />
         <Skeleton height={300} radius={radius.lg} />
       </View>
@@ -43,16 +45,16 @@ export default function CoachScreen() {
 
   return (
     <Screen tabs onRefresh={retry} refreshing={false}>
-      <TabHeader title="Coach" subtitle="Gambaran jujur soal kesehatan keuanganmu" />
+      <TabHeader title={t('coach.title')} subtitle={t('coach.subtitle')} />
       <Tabs
         variant="underline"
-        accessibilityLabel="Bagian Coach"
+        accessibilityLabel={t('coach.sections')}
         value={tab}
         onChange={setTab}
         items={[
-          { key: 'score', label: 'Skor' },
-          { key: 'recap', label: 'Recap' },
-          { key: 'ask', label: 'Tanya Coach' },
+          { key: 'score', label: t('coach.tab.score') },
+          { key: 'recap', label: t('coach.tab.recap') },
+          { key: 'ask', label: t('coach.tab.ask') },
         ]}
       />
       {body}

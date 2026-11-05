@@ -1,6 +1,7 @@
 import { Crown, type LucideIcon } from 'lucide-react-native';
 import { StyleSheet, View } from 'react-native';
 
+import { useT } from '@/i18n';
 import { useTheme } from '@/theme/ThemeProvider';
 import { radius, space } from '@/theme/tokens';
 
@@ -40,9 +41,10 @@ export function Badge({ label, tone = 'neutral', icon }: BadgeProps) {
 /** Penanda fitur Premium. Solid kuningan — fungsional, bukan dekorasi. */
 export function ProBadge({ size = 'md' }: { size?: 'sm' | 'md' }) {
   const { colors } = useTheme();
+  const t = useT();
   return (
     <View
-      accessibilityLabel="Fitur Premium"
+      accessibilityLabel={t('common.premiumFeature')}
       style={[
         styles.badge,
         size === 'sm' && styles.sm,

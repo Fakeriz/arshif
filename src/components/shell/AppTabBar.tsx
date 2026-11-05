@@ -3,6 +3,7 @@ import { usePathname, useRouter } from 'expo-router';
 import { useState } from 'react';
 
 import { GlassTabBar } from '@/components/ui';
+import { useT } from '@/i18n';
 
 import { CaptureSheet } from './CaptureSheet';
 
@@ -26,6 +27,7 @@ export function AppTabBar() {
   const router = useRouter();
   const pathname = usePathname();
   const [capture, setCapture] = useState(false);
+  const t = useT();
 
   return (
     <>
@@ -34,10 +36,10 @@ export function AppTabBar() {
         onChange={(key) => router.navigate(ROUTES[key])}
         onPressAdd={() => setCapture(true)}
         items={[
-          { key: 'home', label: 'Home', icon: House },
-          { key: 'transaksi', label: 'Transaksi', icon: ListOrdered },
-          { key: 'anggaran', label: 'Anggaran', icon: ChartPie },
-          { key: 'coach', label: 'Coach', icon: Activity },
+          { key: 'home', label: t('shell.tab.home'), icon: House },
+          { key: 'transaksi', label: t('shell.tab.transactions'), icon: ListOrdered },
+          { key: 'anggaran', label: t('shell.tab.budget'), icon: ChartPie },
+          { key: 'coach', label: t('shell.tab.coach'), icon: Activity },
         ]}
       />
       <CaptureSheet visible={capture} onClose={() => setCapture(false)} />

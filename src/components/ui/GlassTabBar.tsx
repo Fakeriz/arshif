@@ -2,6 +2,7 @@ import { Plus, type LucideIcon } from 'lucide-react-native';
 import { StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { useT } from '@/i18n';
 import { useTheme } from '@/theme/ThemeProvider';
 import { layout, radius, space } from '@/theme/tokens';
 
@@ -25,6 +26,7 @@ export type GlassTabBarProps<K extends string> = {
 /** Bottom nav: pill kaca mengambang, ikon tab aktif memakai warna aksen. */
 export function GlassTabBar<K extends string>({ items, value, onChange, onPressAdd, floating = true }: GlassTabBarProps<K>) {
   const { colors } = useTheme();
+  const t = useT();
   const insets = useSafeAreaInsets();
   const renderTab = (item: TabBarItem<K>) => {
     const active = item.key === value;
@@ -57,7 +59,7 @@ export function GlassTabBar<K extends string>({ items, value, onChange, onPressA
           {items.slice(0, 2).map(renderTab)}
           <PressableScale
             accessibilityRole="button"
-            accessibilityLabel="Catat transaksi"
+            accessibilityLabel={t('common.addTransaction')}
             onPress={onPressAdd}
             hapticOnPress
             focusRadius={radius.full}

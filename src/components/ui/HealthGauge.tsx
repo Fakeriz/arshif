@@ -4,6 +4,7 @@ import { StyleSheet, View } from 'react-native';
 import Animated, { useAnimatedProps, useSharedValue } from 'react-native-reanimated';
 import Svg, { Path } from 'react-native-svg';
 
+import { useT } from '@/i18n';
 import { healthBand, semicircleArc } from '@/lib/chart';
 import { useMotion } from '@/theme/motion';
 import { useTheme } from '@/theme/ThemeProvider';
@@ -26,6 +27,7 @@ export type HealthGaugeProps = {
 
 export function HealthGauge({ score, delta, size = 240, loading }: HealthGaugeProps) {
   const { colors } = useTheme();
+  const t = useT();
   const { timing } = useMotion();
   const stroke = Math.round(size * 0.075);
   const r = size / 2 - stroke / 2;
@@ -51,6 +53,7 @@ export function HealthGauge({ score, delta, size = 240, loading }: HealthGaugePr
   }
 
   const band = score == null ? null : healthBand(score);
+  const bandLabel = band ? t(`domain.healthBand.${band.key}`) : '';
   const toneColor = band
     ? { accent: colors.accent, positive: colors.positive, warning: colors.warning, negative: colors.negative }[band.tone]
     : colors.track;
@@ -59,7 +62,7 @@ export function HealthGauge({ score, delta, size = 240, loading }: HealthGaugePr
     <View
       style={[styles.wrap, { width: size }]}
       accessibilityRole="progressbar"
-      accessibilityLabel={score == null ? 'Skor kesehatan keuangan belum tersedia' : `Skor kesehatan keuangan ${Math.round(score)} dari 100, ${band?.label}`}
+      accessibilityLabel={score == null ? t('common.health.a11yNone') : t('common.health.a11y', { score: Math.round(score), band: bandLabel })}
     >
       <Svg width={size} height={height}>
         <Path d={semicircleArc(cx, cy, r)} stroke={colors.track} strokeWidth={stroke} strokeLinecap="round" fill="none" />
@@ -80,14 +83,14 @@ export function HealthGauge({ score, delta, size = 240, loading }: HealthGaugePr
           {score == null ? '–' : Math.round(score)}
         </AppText>
         <AppText variant="caption" tone="muted">
-          {score == null ? 'Butuh data 1 bulan' : `dari 100 · ${band?.label}`}
+          {score == null ? t('common.health.needsData') : t('common.health.outOf', { band: bandLabel })}
         </AppText>
       </View>
       {delta != null && score != null && delta !== 0 && (
         <View style={styles.delta}>
           <Icon icon={delta > 0 ? TrendingUp : TrendingDown} color={delta > 0 ? colors.positive : colors.negative} size={16} />
           <AppText variant="caption" tone={delta > 0 ? 'positive' : 'negative'}>
-            {delta > 0 ? 'Naik' : 'Turun'} {Math.abs(delta)} poin dari bulan lalu
+            {t(delta > 0 ? 'common.health.up' : 'common.health.down', { n: Math.abs(delta) })}
           </AppText>
         </View>
       )}

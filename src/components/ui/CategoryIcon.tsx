@@ -1,5 +1,6 @@
 import { View } from 'react-native';
 
+import { categoryLabel, useT } from '@/i18n';
 import { getCategory } from '@/constants/categories';
 import { useTheme } from '@/theme/ThemeProvider';
 import { radius } from '@/theme/tokens';
@@ -14,12 +15,13 @@ export type CategoryIconProps = {
 /** Ikon kategori dalam lingkaran: warna kategori penuh di ikon, 15% di latar. */
 export function CategoryIcon({ category, size = 40 }: CategoryIconProps) {
   const { hues } = useTheme();
+  const t = useT();
   const def = getCategory(category);
   const color = hues[def.hue];
 
   return (
     <View
-      accessibilityLabel={def.label}
+      accessibilityLabel={categoryLabel(t, def.key)}
       style={{
         width: size,
         height: size,

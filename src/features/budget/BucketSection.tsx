@@ -2,7 +2,8 @@ import { StyleSheet, View } from 'react-native';
 
 import { AppText, Badge, Card, CategoryIcon, CurrencyText, ProgressBar } from '@/components/ui';
 import { CATEGORIES, type Bucket } from '@/constants/categories';
-import { PACE_LABEL, type Pace } from '@/lib/budget';
+import { categoryLabel, useT } from '@/i18n';
+import type { Pace } from '@/lib/budget';
 import { formatCompact } from '@/lib/money';
 import { space } from '@/theme/tokens';
 
@@ -22,6 +23,7 @@ export type BucketSectionProps = {
 };
 
 export function BucketSection({ bucket, label, percent, color, spent, limit, pace, currency, categoryLimits, categorySpent }: BucketSectionProps) {
+  const t = useT();
   const rows = CATEGORIES.filter((c) => c.bucket === bucket && (categoryLimits[c.key] !== undefined || categorySpent(c.key) > 0)).sort((a, b) => categorySpent(b.key) - categorySpent(a.key));
   const saving = bucket === 'savings';
   const over = !saving && spent > limit;
@@ -31,19 +33,19 @@ export function BucketSection({ bucket, label, percent, color, spent, limit, pac
         <View style={[styles.dot, { backgroundColor: color }]} />
         <View style={styles.titles}>
           <AppText variant="h3">{label}</AppText>
-          <AppText variant="caption" tone="muted">{saving ? `${percent}% dari penghasilan, target` : `${percent}% dari penghasilan`}</AppText>
+          <AppText variant="caption" tone="muted">{t(saving ? 'budget.bucket.ofIncomeTarget' : 'budget.bucket.ofIncome', { pct: percent })}</AppText>
         </View>
         {saving ? (
-          <Badge label={`${limit > 0 ? Math.round((spent / limit) * 100) : 0}% dari target`} tone="positive" />
+          <Badge label={t('budget.bucket.ofTarget', { pct: limit > 0 ? Math.round((spent / limit) * 100) : 0 })} tone="positive" />
         ) : (
-          <Badge label={PACE_LABEL[pace]} tone={PACE_TONE[pace]} />
+          <Badge label={t(`domain.pace.${pace}`)} tone={PACE_TONE[pace]} />
         )}
       </View>
       <View style={styles.total}>
         <CurrencyText amount={spent} currency={currency} kind={over ? 'over' : 'balance'} variant="h2" />
-        <AppText variant="caption" tone="muted">{`${saving ? 'target' : 'dari'} ${formatCompact(limit, currency)}`}</AppText>
+        <AppText variant="caption" tone="muted">{t(saving ? 'budget.bucket.target' : 'budget.bucket.of', { amount: formatCompact(limit, currency) })}</AppText>
       </View>
-      <ProgressBar value={limit > 0 ? spent / limit : 0} tone={saving ? 'positive' : 'auto'} accessibilityLabel={saving ? `${label} tercapai` : `${label} terpakai`} />
+      <ProgressBar value={limit > 0 ? spent / limit : 0} tone={saving ? 'positive' : 'auto'} accessibilityLabel={t(saving ? 'budget.bucket.reached' : 'budget.bucket.used', { label })} />
       <View style={styles.rows}>
         {rows.map((c) => {
           const s = categorySpent(c.key);
@@ -53,18 +55,18 @@ export function BucketSection({ bucket, label, percent, color, spent, limit, pac
               <View style={styles.rowTop}>
                 <CategoryIcon category={c.key} size={32} />
                 <AppText variant="bodyStrong" style={styles.rowName} numberOfLines={1}>
-                  {c.label}
+                  {categoryLabel(t, c.key)}
                 </AppText>
                 <CurrencyText amount={s} currency={currency} kind={l !== undefined && s > l ? 'over' : 'balance'} variant="caption" />
                 {l !== undefined && <AppText variant="caption" tone="muted">{`/ ${formatCompact(l, currency)}`}</AppText>}
               </View>
-              {l !== undefined && <ProgressBar value={s / l} height={6} accessibilityLabel={`${c.label} ${Math.round((s / l) * 100)} persen`} />}
+              {l !== undefined && <ProgressBar value={s / l} height={6} accessibilityLabel={t('budget.bucket.categoryPct', { label: categoryLabel(t, c.key), pct: Math.round((s / l) * 100) })} />}
             </View>
           );
         })}
         {rows.length === 0 && (
           <AppText variant="caption" tone="muted">
-            Belum ada pengeluaran di bucket ini.
+            {t('budget.bucket.empty')}
           </AppText>
         )}
       </View>

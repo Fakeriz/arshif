@@ -1,5 +1,6 @@
 import { StyleSheet, View } from 'react-native';
 
+import { useI18n } from '@/i18n';
 import { AppText, Card, GlassView } from '@/components/ui';
 import { useTheme } from '@/theme/ThemeProvider';
 import { ACCENT_OPTIONS, accents, motion, radius, space, type as typeScale, type Palette, type TypeVariant } from '@/theme/tokens';
@@ -19,6 +20,7 @@ const SWATCHES: { key: keyof Palette; label: string }[] = [
 
 export function ColorSection() {
   const { colors, scheme, hues } = useTheme();
+  const { t: tr } = useI18n();
   return (
     <Section index="Warna" title="Kaca & aksen" note="Netral tinta hangat, kaca translusen, satu aksen pilihan pengguna. Hijau selalu pemasukan; over budget punya warna sendiri dan selalu disertai ikon.">
       <AppText variant="overline" tone="muted">Lima aksen (tema ini)</AppText>
@@ -30,7 +32,7 @@ export function ColorSection() {
               <View style={[styles.accentChip, { backgroundColor: t.accent }]}>
                 <AppText variant="caption" style={{ color: t.onAccent }}>Aa</AppText>
               </View>
-              <AppText variant="caption">{o.label}</AppText>
+              <AppText variant="caption">{tr(`domain.accent.${o.key}`)}</AppText>
               <AppText variant="caption" tone="muted" numeric>{t.accent}</AppText>
             </View>
           );

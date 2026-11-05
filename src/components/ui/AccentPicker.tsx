@@ -1,6 +1,7 @@
 import { Check } from 'lucide-react-native';
 import { StyleSheet, View } from 'react-native';
 
+import { useT } from '@/i18n';
 import { useTheme } from '@/theme/ThemeProvider';
 import { ACCENT_OPTIONS, accents, layout, radius, space } from '@/theme/tokens';
 
@@ -11,8 +12,9 @@ import { PressableScale } from './PressableScale';
 /** Pemilih warna aksen (FR-SET-4). Grup radio: satu terpilih, langsung diterapkan ke seluruh tema. */
 export function AccentPicker() {
   const { accent, setAccent, scheme, colors } = useTheme();
+  const t = useT();
   return (
-    <View accessibilityRole="radiogroup" accessibilityLabel="Warna aksen" style={styles.row}>
+    <View accessibilityRole="radiogroup" accessibilityLabel={t('common.accentColor')} style={styles.row}>
       {ACCENT_OPTIONS.map((o) => {
         const tokens = accents[o.key][scheme];
         const selected = o.key === accent;
@@ -21,7 +23,7 @@ export function AccentPicker() {
             key={o.key}
             accessibilityRole="radio"
             aria-checked={selected}
-            accessibilityLabel={o.label}
+            accessibilityLabel={t(`domain.accent.${o.key}`)}
             onPress={() => setAccent(o.key)}
             containerStyle={styles.slot}
             focusRadius={radius.md}
@@ -37,7 +39,7 @@ export function AccentPicker() {
               {selected && <Icon icon={Check} color={tokens.onAccent} size={layout.iconSize.md} />}
             </View>
             <AppText variant="caption" tone={selected ? 'primary' : 'secondary'} numberOfLines={1}>
-              {o.label}
+              {t(`domain.accent.${o.key}`)}
             </AppText>
           </PressableScale>
         );

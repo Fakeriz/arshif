@@ -3,6 +3,7 @@ import { Modal, PanResponder, Pressable, StyleSheet, View } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { useI18n } from '@/i18n';
 import { useMotion } from '@/theme/motion';
 import { useTheme } from '@/theme/ThemeProvider';
 import { layout, motion, radius, space } from '@/theme/tokens';
@@ -22,6 +23,7 @@ const DISMISS_DISTANCE = 96;
 
 export function BottomSheet({ visible, onClose, title, subtitle, children }: BottomSheetProps) {
   const { colors } = useTheme();
+  const { t: tr } = useI18n();
   const { timing, spring } = useMotion();
   const insets = useSafeAreaInsets();
   const [mounted, setMounted] = useState(visible);
@@ -68,7 +70,7 @@ export function BottomSheet({ visible, onClose, title, subtitle, children }: Bot
   return (
     <Modal transparent visible={mounted} onShow={onShow} onRequestClose={onClose} animationType="none" statusBarTranslucent>
       <Animated.View style={[StyleSheet.absoluteFill, { backgroundColor: colors.overlay }, backdrop]}>
-        <Pressable style={StyleSheet.absoluteFill} onPress={onClose} accessibilityRole="button" accessibilityLabel="Tutup" />
+        <Pressable style={StyleSheet.absoluteFill} onPress={onClose} accessibilityRole="button" accessibilityLabel={tr('common.close')} />
       </Animated.View>
       <View style={styles.anchor} pointerEvents="box-none">
         <Animated.View

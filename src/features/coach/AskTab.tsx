@@ -2,28 +2,30 @@ import { usePaywall } from '@/components/shell/Paywall';
 import { AppText, Card, EmptyState } from '@/components/ui';
 import { View } from 'react-native';
 
+import { useT } from '@/i18n';
 import { space } from '@/theme/tokens';
 
-const EXAMPLES = ['Kenapa pengeluaranku naik bulan ini?', 'Berapa yang bisa kusisihkan untuk liburan?', 'Mana yang lebih dulu dilunasi, laptop atau kartu kredit?'];
+const EXAMPLES = ['coach.ask.example1', 'coach.ask.example2', 'coach.ask.example3'] as const;
 
 /** Tanya Coach hanya untuk Premium (20 pertanyaan/hari). Pengguna Free melihat state batas. */
 export function AskTab() {
   const paywall = usePaywall();
+  const t = useT();
   return (
     <View style={{ gap: space.lg }}>
       <EmptyState
         kind="limit"
-        title="Tanya Coach khusus Premium"
-        message="Tanyakan apa saja soal keuanganmu, 20 pertanyaan per hari. Jawaban memakai ringkasan angkamu, bukan data mentah."
-        actionLabel="Lihat Premium"
-        onAction={() => paywall('Tanya Coach (20 pertanyaan/hari) hanya ada di Premium.')}
+        title={t('coach.ask.title')}
+        message={t('coach.ask.message')}
+        actionLabel={t('coach.ask.cta')}
+        onAction={() => paywall(t('coach.ask.reason'))}
       />
       <Card>
         <AppText variant="caption" tone="secondary">
-          Contoh pertanyaan yang bisa diajukan
+          {t('coach.ask.examplesTitle')}
         </AppText>
         {EXAMPLES.map((q) => (
-          <AppText key={q} variant="body" style={{ marginTop: space.sm }}>{`“${q}”`}</AppText>
+          <AppText key={q} variant="body" style={{ marginTop: space.sm }}>{`“${t(q)}”`}</AppText>
         ))}
       </Card>
     </View>

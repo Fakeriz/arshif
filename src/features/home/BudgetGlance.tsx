@@ -2,7 +2,8 @@ import { ChevronRight } from 'lucide-react-native';
 import { StyleSheet, View } from 'react-native';
 
 import { AppText, Badge, Card, CurrencyText, Icon, ProgressBar } from '@/components/ui';
-import { PACE_LABEL, type BudgetPeriod, type Pace } from '@/lib/budget';
+import { useI18n } from '@/i18n';
+import type { BudgetPeriod, Pace } from '@/lib/budget';
 import { shortDate } from '@/lib/dates';
 import { formatMoney } from '@/lib/money';
 import { useTheme } from '@/theme/ThemeProvider';
@@ -23,32 +24,34 @@ export type BudgetGlanceProps = {
 /** Ringkasan satu keputusan: berapa yang aman dibelanjakan hari ini. */
 export function BudgetGlance({ period, pace, safePerDay, spent, limit, currency, onPress }: BudgetGlanceProps) {
   const { colors } = useTheme();
+  const { t, lang } = useI18n();
+  const paceLabel = t(`domain.pace.${pace}`);
   return (
-    <Card onPress={onPress} accessibilityLabel={`Anggaran periode ini, ${PACE_LABEL[pace]}. Aman dibelanjakan ${formatMoney(safePerDay, currency)} per hari. Buka Anggaran`}>
+    <Card onPress={onPress} accessibilityLabel={t('home.budget.a11y', { pace: paceLabel, amount: formatMoney(safePerDay, currency) })}>
       <View style={styles.head}>
         <View style={styles.titles}>
-          <AppText variant="h3">Anggaran periode ini</AppText>
+          <AppText variant="h3">{t('home.budget.title')}</AppText>
           <AppText variant="caption" tone="muted">
-            {`${shortDate(period.start)} sampai ${shortDate(period.end)} · ${period.daysLeft} hari lagi`}
+            {t('home.budget.period', { start: shortDate(period.start, lang), end: shortDate(period.end, lang), count: period.daysLeft })}
           </AppText>
         </View>
-        <Badge label={PACE_LABEL[pace]} tone={PACE_TONE[pace]} />
+        <Badge label={paceLabel} tone={PACE_TONE[pace]} />
         <Icon icon={ChevronRight} color={colors.textMuted} />
       </View>
       <View style={styles.safe}>
         <AppText variant="caption" tone="secondary">
-          Aman dibelanjakan
+          {t('home.budget.safe')}
         </AppText>
         <View style={styles.safeRow}>
           <CurrencyText amount={safePerDay} currency={currency} variant="h1" />
           <AppText variant="caption" tone="muted">
-            per hari
+            {t('home.budget.perDay')}
           </AppText>
         </View>
       </View>
-      <ProgressBar value={limit > 0 ? spent / limit : 0} accessibilityLabel="Pemakaian anggaran kebutuhan dan keinginan" />
+      <ProgressBar value={limit > 0 ? spent / limit : 0} accessibilityLabel={t('home.budget.usageA11y')} />
       <AppText variant="caption" tone="muted">
-        {`${formatMoney(spent, currency)} dari ${formatMoney(limit, currency)} untuk kebutuhan dan keinginan`}
+        {t('home.budget.usage', { spent: formatMoney(spent, currency), limit: formatMoney(limit, currency) })}
       </AppText>
     </Card>
   );

@@ -1,5 +1,6 @@
 import { StyleSheet, View } from 'react-native';
 
+import { useT } from '@/i18n';
 import { AppText, Card, CurrencyText } from '@/components/ui';
 import type { ReceiptItem } from '@/data/types';
 import { itemsTotal } from '@/lib/receipt';
@@ -7,9 +8,10 @@ import { formatMoney } from '@/lib/money';
 import { space } from '@/theme/tokens';
 
 export function ReceiptItems({ items, currency }: { items: ReceiptItem[]; currency: string }) {
+  const t = useT();
   return (
     <Card>
-      <AppText variant="h3">Item belanja</AppText>
+      <AppText variant="h3">{t('tx.detail.receiptItems')}</AppText>
       <View style={styles.list}>
         {items.map((it, i) => (
           <View key={`${it.name}-${i}`} style={styles.row}>
@@ -27,7 +29,7 @@ export function ReceiptItems({ items, currency }: { items: ReceiptItem[]; curren
       </View>
       <View style={styles.total}>
         <AppText variant="caption" tone="secondary">
-          Jumlah item
+          {t('tx.detail.itemsTotal')}
         </AppText>
         <CurrencyText amount={itemsTotal(items)} currency={currency} variant="bodyStrong" />
       </View>

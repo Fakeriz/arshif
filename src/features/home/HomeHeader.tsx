@@ -3,6 +3,7 @@ import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
+import { useT } from '@/i18n';
 import { NotificationsSheet } from '@/components/shell/NotificationsSheet';
 import { AppText, GlassView, Icon, PressableScale } from '@/components/ui';
 import { useStore } from '@/state/AppStore';
@@ -14,17 +15,18 @@ export function HomeHeader() {
   const { colors } = useTheme();
   const { state } = useStore();
   const [open, setOpen] = useState(false);
+  const t = useT();
   const unread = state.notifications.filter((n) => !n.read).length;
 
   return (
     <View style={styles.row}>
-      <PressableScale accessibilityLabel="Profil dan pengaturan" focusRadius={radius.full} onPress={() => router.push('/pengaturan')}>
+      <PressableScale accessibilityLabel={t('home.profileA11y')} focusRadius={radius.full} onPress={() => router.push('/pengaturan')}>
         <GlassView radius={radius.full} style={styles.btn}>
           <Icon icon={User} color={colors.text} />
         </GlassView>
       </PressableScale>
       <AppText variant="h3">Arshif</AppText>
-      <PressableScale accessibilityLabel={unread ? `Notifikasi, ${unread} belum dibaca` : 'Notifikasi'} focusRadius={radius.full} onPress={() => setOpen(true)}>
+      <PressableScale accessibilityLabel={unread ? t('home.notifUnreadA11y', { count: unread }) : t('home.notifA11y')} focusRadius={radius.full} onPress={() => setOpen(true)}>
         <GlassView radius={radius.full} style={styles.btn}>
           <Icon icon={Bell} color={colors.text} />
           {unread > 0 && <View style={[styles.dot, { backgroundColor: colors.accent }]} />}

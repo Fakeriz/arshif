@@ -20,7 +20,9 @@ export type HealthInputs = {
   billsOnTime: number;
 };
 
-export type Pillar = { key: string; label: string; points: number; max: number; hint: string };
+/** Label dan petunjuk: `domain.pillar.<key>.label|hint`. */
+export type PillarKey = 'savings' | 'budget' | 'debt' | 'emergency' | 'bills';
+export type Pillar = { key: PillarKey; points: number; max: number };
 
 const clamp = (v: number, lo = 0, hi = 1) => Math.min(hi, Math.max(lo, v));
 const round1 = (n: number) => Math.round(n * 10) / 10;
@@ -32,11 +34,11 @@ export function healthPillars(i: HealthInputs): Pillar[] {
   const months = i.monthlyExpense > 0 ? i.liquidBalance / i.monthlyExpense : 0;
   const onTime = i.billsDue > 0 ? i.billsOnTime / i.billsDue : 1;
   return [
-    { key: 'savings', label: 'Rasio tabungan', max: 25, points: round1(25 * clamp(savingsRatio / 0.2)), hint: 'Target 20% dari penghasilan' },
-    { key: 'budget', label: 'Kepatuhan anggaran', max: 20, points: round1(20 * clamp(adherence)), hint: 'Kategori yang masih di bawah batas' },
-    { key: 'debt', label: 'Beban utang', max: 20, points: round1(20 * clamp((0.4 - dti) / 0.3)), hint: 'Cicilan di bawah 10% penghasilan itu ideal' },
-    { key: 'emergency', label: 'Dana darurat', max: 20, points: round1(20 * clamp(months / 6)), hint: 'Target 6 bulan pengeluaran' },
-    { key: 'bills', label: 'Tagihan tepat waktu', max: 15, points: round1(15 * clamp(onTime)), hint: 'Tagihan dibayar sebelum jatuh tempo' },
+    { key: 'savings', max: 25, points: round1(25 * clamp(savingsRatio / 0.2)) },
+    { key: 'budget', max: 20, points: round1(20 * clamp(adherence)) },
+    { key: 'debt', max: 20, points: round1(20 * clamp((0.4 - dti) / 0.3)) },
+    { key: 'emergency', max: 20, points: round1(20 * clamp(months / 6)) },
+    { key: 'bills', max: 15, points: round1(15 * clamp(onTime)) },
   ];
 }
 

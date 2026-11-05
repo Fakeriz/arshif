@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { Modal, Pressable, StyleSheet, View } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue } from 'react-native-reanimated';
 
+import { useI18n } from '@/i18n';
 import { useMotion } from '@/theme/motion';
 import { useTheme } from '@/theme/ThemeProvider';
 import { layout, motion, radius, space } from '@/theme/tokens';
@@ -32,12 +33,13 @@ export function Dialog({
   message,
   tone = 'info',
   confirmLabel,
-  cancelLabel = 'Batal',
+  cancelLabel,
   onConfirm,
   onCancel,
   loading,
 }: DialogProps) {
   const { colors } = useTheme();
+  const { t: tr } = useI18n();
   const { timing } = useMotion();
   const [mounted, setMounted] = useState(visible);
   const t = useSharedValue(0);
@@ -65,7 +67,7 @@ export function Dialog({
   return (
     <Modal transparent visible={mounted} onRequestClose={onCancel} animationType="none" statusBarTranslucent>
       <Animated.View style={[StyleSheet.absoluteFill, { backgroundColor: colors.overlay }, backdrop]}>
-        <Pressable style={StyleSheet.absoluteFill} onPress={onCancel} accessibilityRole="button" accessibilityLabel="Tutup" />
+        <Pressable style={StyleSheet.absoluteFill} onPress={onCancel} accessibilityRole="button" accessibilityLabel={tr('common.close')} />
       </Animated.View>
       <View style={styles.center} pointerEvents="box-none">
         <Animated.View
@@ -86,7 +88,7 @@ export function Dialog({
             )}
           </View>
           <View style={styles.actions}>
-            <Button label={cancelLabel} variant="secondary" size="md" onPress={onCancel} fullWidth />
+            <Button label={cancelLabel ?? tr('common.cancel')} variant="secondary" size="md" onPress={onCancel} fullWidth />
             <Button
               label={confirmLabel}
               variant={tone === 'danger' ? 'danger' : 'primary'}

@@ -3,6 +3,7 @@ import { useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
+import { useT } from '@/i18n';
 import { usePaywall } from '@/components/shell/Paywall';
 import { Screen } from '@/components/shell/Screen';
 import { ScreenHeader } from '@/components/shell/ScreenHeader';
@@ -21,6 +22,7 @@ type Phase = 'form' | 'processing' | 'failed';
 export default function ImportScreen() {
   const router = useRouter();
   const { colors } = useTheme();
+  const t = useT();
   const demo = useDemoState();
   const limits = useLimits();
   const paywall = usePaywall();
@@ -37,8 +39,8 @@ export default function ImportScreen() {
   if (limits.importPdf) {
     return (
       <Screen>
-        <ScreenHeader title="Import rekening koran" />
-        <EmptyState kind="limit" title="Kuota import bulan ini habis" message="Paket Free mendapat 1 import PDF per bulan. Reset tanggal 1, atau upgrade untuk 10 import per bulan." actionLabel="Lihat Premium" onAction={() => paywall('Import PDF Free (1/bulan) sudah terpakai.')} />
+        <ScreenHeader title={t('capture.import.title')} />
+        <EmptyState kind="limit" title={t('capture.import.limitTitle')} message={t('capture.import.limitMessage')} actionLabel={t('capture.seePremium')} onAction={() => paywall(t('capture.import.limitReason'))} />
       </Screen>
     );
   }
@@ -54,16 +56,16 @@ export default function ImportScreen() {
 
   return (
     <Screen>
-      <ScreenHeader title="Import rekening koran" />
+      <ScreenHeader title={t('capture.import.title')} />
       {phase === 'processing' ? (
         <View style={styles.center}>
-          <ProcessingView title="Membaca rekening koran" message="AI membaca semua baris transaksi dan mencocokkannya dengan catatanmu. Kalau gagal, kuota tidak terpotong." />
+          <ProcessingView title={t('capture.import.processingTitle')} message={t('capture.import.processingMessage')} />
         </View>
       ) : phase === 'failed' ? (
-        <EmptyState kind="error" title="Berkas tidak bisa dibaca" message="Kuota import tidak terpotong. Pastikan PDF dari bank (bukan foto), tidak lebih dari 30 halaman, dan kata sandinya benar." actionLabel="Pilih ulang berkas" onAction={() => setPhase('form')} />
+        <EmptyState kind="error" title={t('capture.import.failedTitle')} message={t('capture.import.failedMessage')} actionLabel={t('capture.import.repick')} onAction={() => setPhase('form')} />
       ) : (
         <View style={styles.form}>
-          <AccountPicker label="Masuk ke akun" accounts={accounts} value={accountId} onChange={setAccountId} />
+          <AccountPicker label={t('capture.import.intoAccount')} accounts={accounts} value={accountId} onChange={setAccountId} />
           {picked ? (
             <Card>
               <View style={styles.file}>
@@ -78,19 +80,19 @@ export default function ImportScreen() {
                     {sampleStatement.sizeLabel}
                   </AppText>
                 </View>
-                <PressableScale accessibilityLabel="Hapus berkas" onPress={() => setPicked(false)} focusRadius={radius.full} style={styles.remove}>
+                <PressableScale accessibilityLabel={t('capture.import.removeFile')} onPress={() => setPicked(false)} focusRadius={radius.full} style={styles.remove}>
                   <Icon icon={X} color={colors.textSecondary} />
                 </PressableScale>
               </View>
             </Card>
           ) : (
-            <Button label="Pilih berkas PDF" icon={FileText} variant="secondary" fullWidth onPress={() => setPicked(true)} />
+            <Button label={t('capture.import.pickFile')} icon={FileText} variant="secondary" fullWidth onPress={() => setPicked(true)} />
           )}
-          <Input label="Kata sandi PDF (kalau ada)" value={password} onChangeText={setPassword} secureTextEntry hint="Sebagian bank mengunci rekening koran dengan kata sandi." />
+          <Input label={t('capture.import.password')} value={password} onChangeText={setPassword} secureTextEntry hint={t('capture.import.passwordHint')} />
           <AppText variant="caption" tone="muted">
-            Maksimal 15 MB atau 30 halaman. Berkas dihapus dari server 30 hari setelah import. Pemilihan berkas sungguhan aktif di Fase 2, di sini memakai berkas contoh.
+            {t('capture.import.limits')}
           </AppText>
-          <Button label="Baca rekening koran" fullWidth disabled={!picked || !accountId} onPress={read} />
+          <Button label={t('capture.import.read')} fullWidth disabled={!picked || !accountId} onPress={read} />
         </View>
       )}
     </Screen>

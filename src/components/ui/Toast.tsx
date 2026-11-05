@@ -4,6 +4,7 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { useI18n } from '@/i18n';
 import { haptic, useMotion } from '@/theme/motion';
 import { useTheme } from '@/theme/ThemeProvider';
 import { layout, motion, radius, space } from '@/theme/tokens';
@@ -44,6 +45,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
 
 function ToastView({ item, onDone }: { item: ToastItem; onDone: () => void }) {
   const { colors } = useTheme();
+  const { t: tr } = useI18n();
   const { timing, spring } = useMotion();
   const insets = useSafeAreaInsets();
   const t = useSharedValue(0);
@@ -87,7 +89,7 @@ function ToastView({ item, onDone }: { item: ToastItem; onDone: () => void }) {
             </AppText>
           )}
         </View>
-        <Pressable onPress={dismiss} hitSlop={12} accessibilityRole="button" accessibilityLabel="Tutup notifikasi">
+        <Pressable onPress={dismiss} hitSlop={12} accessibilityRole="button" accessibilityLabel={tr('common.closeNotification')}>
           <Icon icon={X} color={colors.textMuted} size={layout.iconSize.sm} />
         </Pressable>
         </GlassView>

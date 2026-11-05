@@ -7,11 +7,8 @@ import { amountIn, txInRange } from './transactions';
 export type Split = Record<Bucket, number>;
 export const DEFAULT_SPLIT: Split = { needs: 50, wants: 30, savings: 20 };
 
-export const BUCKETS: { key: Bucket; label: string }[] = [
-  { key: 'needs', label: 'Kebutuhan' },
-  { key: 'wants', label: 'Keinginan' },
-  { key: 'savings', label: 'Tabungan & Utang' },
-];
+/** Urutan bucket 50/30/20. Label: `domain.bucket.<key>`. */
+export const BUCKETS: { key: Bucket }[] = [{ key: 'needs' }, { key: 'wants' }, { key: 'savings' }];
 
 export function splitIsValid(split: Split): boolean {
   const values = Object.values(split);
@@ -45,13 +42,8 @@ export function budgetPeriod(today: string, payday: number): BudgetPeriod {
   return { start, end, totalDays, elapsedDays, daysLeft: totalDays - elapsedDays + 1 };
 }
 
+/** Label: `domain.pace.<pace>`. */
 export type Pace = 'sesuai' | 'agak_cepat' | 'terlalu_cepat';
-
-export const PACE_LABEL: Record<Pace, string> = {
-  sesuai: 'Sesuai laju',
-  agak_cepat: 'Agak cepat',
-  terlalu_cepat: 'Terlalu cepat',
-};
 
 /** Laju belanja = porsi anggaran terpakai dibanding porsi waktu berjalan. <=1,1 sesuai; <=1,3 agak cepat. */
 export function pace(spent: number, limit: number, elapsedDays: number, totalDays: number): Pace {

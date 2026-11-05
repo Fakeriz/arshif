@@ -2,6 +2,7 @@ import { ChevronDown } from 'lucide-react-native';
 import { useState } from 'react';
 import { StyleSheet, TextInput, View } from 'react-native';
 
+import { currencyName, useT } from '@/i18n';
 import { currencyMeta, formatNumber, formatTypedAmount, parseAmountInput } from '@/lib/money';
 import { useTheme } from '@/theme/ThemeProvider';
 import { layout, radius, space, type as typeScale } from '@/theme/tokens';
@@ -29,12 +30,15 @@ export function AmountInput({
   onChange,
   currency,
   onPressCurrency,
-  label = 'Nominal',
+  label: labelProp,
   error,
   autoFocus,
 }: AmountInputProps) {
   const { colors } = useTheme();
+  const t = useT();
+  const label = labelProp ?? t('common.amount');
   const m = currencyMeta(currency);
+  const name = currencyName(t, currency);
   const [text, setText] = useState(() => (value == null ? '' : formatNumber(value, currency)));
 
   const handleChange = (raw: string) => {
@@ -54,7 +58,7 @@ export function AmountInput({
         {onPressCurrency ? (
           <PressableScale
             onPress={onPressCurrency}
-            accessibilityLabel={`Mata uang ${m.name}. Ketuk untuk mengganti`}
+            accessibilityLabel={t('common.currencyTap', { name })}
             focusRadius={radius.full}
             style={[styles.currency, { backgroundColor: colors.track, borderColor: colors.glassBorder }]}
           >
@@ -62,7 +66,7 @@ export function AmountInput({
             <Icon icon={ChevronDown} color={colors.textSecondary} size={layout.iconSize.sm} />
           </PressableScale>
         ) : (
-          <View accessibilityLabel={`Mata uang ${m.name}`} style={[styles.currency, { backgroundColor: colors.track, borderColor: colors.glassBorder }]}>
+          <View accessibilityLabel={t('common.currency', { name })} style={[styles.currency, { backgroundColor: colors.track, borderColor: colors.glassBorder }]}>
             <AppText variant="bodyStrong">{m.code}</AppText>
           </View>
         )}
@@ -72,7 +76,7 @@ export function AmountInput({
           {m.symbol}
         </AppText>
         <TextInput
-          accessibilityLabel={`${label} dalam ${m.name}`}
+          accessibilityLabel={t('common.amountIn', { label, name })}
           accessibilityHint={error}
           value={text}
           onChangeText={handleChange}

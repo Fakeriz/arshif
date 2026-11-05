@@ -1,0 +1,57 @@
+import type { Messages } from '../id';
+
+const coach: Messages['coach'] = {
+  title: 'Coach',
+  subtitle: 'Gambaran jujur tentang kesihatan kewangan anda',
+  errorTitle: 'Coach gagal dimuatkan',
+  errorMessage: 'Semak sambungan anda dan cuba lagi. Data anda selamat.',
+  loading: 'Memuatkan Coach',
+  sections: 'Bahagian Coach',
+  tab: { score: 'Skor', recap: 'Rekap', ask: 'Tanya Coach' },
+  score: {
+    emptyTitle: 'Skor belum tersedia',
+    emptyMessage: 'Coach perlukan sekurang-kurangnya sebulan transaksi untuk mengira skor yang adil. Mula rekod sekarang.',
+    whereFrom: 'Dari mana skor ini',
+    formula: 'Dikira dengan formula daripada 5 tonggak, bukan tekaan AI.',
+    pillarA11y: '{label}, {points} daripada {max}',
+    says: 'Kata Coach',
+    sample: 'Contoh naratif',
+    narration:
+      'Kewangan anda agak sihat. Simpanan anda sudah berjalan dan ansuran masih ringan. Yang paling perlu perhatian bulan ini: perbelanjaan kesihatan melebihi had dan dana kecemasan anda belum mencapai 6 bulan perbelanjaan.',
+    action1: 'Naikkan simpanan kepada 20% pendapatan (Rp 2.850.000).',
+    action2: 'Tangguhkan perbelanjaan tidak mendesak dalam kategori Kesihatan hingga tempoh seterusnya.',
+    action3: 'Asingkan baki belanjawan Kehendak ke dana kecemasan.',
+  },
+  recap: {
+    range: '{start} hingga {end}',
+    emptyTitle: 'Belum ada data minggu lepas',
+    emptyMessage: 'Rekap muncul setiap pagi Isnin selepas ada transaksi pada minggu sebelumnya.',
+    replay: 'Ulang tayang minggu {range}',
+    youSpent: 'Minggu lepas anda berbelanja',
+    down: 'Turun {pct}% daripada minggu sebelumnya. Jimat.',
+    same: 'Sama dengan minggu sebelumnya.',
+    up: 'Naik {pct}% daripada minggu sebelumnya.',
+    topIn: 'Paling banyak pada',
+    noSpendDays: 'hari tanpa belanja',
+    allDaysSpent: 'hari ada perbelanjaan',
+    txInWeek: '{count} transaksi dalam seminggu',
+    txInWeek_one: '{count} transaksi dalam seminggu',
+    biggest: 'Perbelanjaan terbesar',
+    monthlyA11y: 'Rekap bulanan, ciri Premium. Buka Premium',
+    monthlyReason: 'Rekap bulanan dan Tanya Coach termasuk dalam Premium.',
+    monthly: 'Rekap bulanan',
+    monthlySub: 'Muncul setiap 1 haribulan, khas Premium',
+  },
+  ask: {
+    title: 'Tanya Coach khas untuk Premium',
+    message: 'Tanya apa sahaja tentang kewangan anda, 20 soalan sehari. Jawapan menggunakan ringkasan angka anda, bukan data mentah.',
+    cta: 'Lihat Premium',
+    reason: 'Tanya Coach (20 soalan/hari) hanya ada dalam Premium.',
+    examplesTitle: 'Contoh soalan yang boleh ditanya',
+    example1: 'Kenapa perbelanjaan saya naik bulan ini?',
+    example2: 'Berapa yang boleh saya simpan untuk bercuti?',
+    example3: 'Mana yang patut dilunaskan dahulu, laptop atau kad kredit?',
+  },
+};
+
+export default coach;

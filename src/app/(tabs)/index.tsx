@@ -12,6 +12,7 @@ import { HealthGlance } from '@/features/home/HealthGlance';
 import { HomeHeader } from '@/features/home/HomeHeader';
 import { HomeSkeleton } from '@/features/home/HomeSkeleton';
 import { RecentTransactions } from '@/features/home/RecentTransactions';
+import { useT } from '@/i18n';
 import { useStore } from '@/state/AppStore';
 import { useDemoState } from '@/state/demo';
 import { useBudget, useHealth, useLedger } from '@/state/derived';
@@ -28,13 +29,14 @@ export default function HomeScreen() {
   const ledger = useLedger();
   const budget = useBudget();
   const health = useHealth();
-  const options = captureOptions(limits);
+  const t = useT();
+  const options = captureOptions(limits, t);
 
   if (demo === 'error') {
     return (
       <Screen tabs>
         <HomeHeader />
-        <EmptyState kind="error" title="Beranda gagal dimuat" message="Periksa koneksimu lalu coba lagi. Datamu aman." actionLabel="Coba lagi" onAction={retry} />
+        <EmptyState kind="error" title={t('home.error.title')} message={t('home.error.message')} actionLabel={t('common.retry')} onAction={retry} />
       </Screen>
     );
   }
@@ -68,7 +70,7 @@ export default function HomeScreen() {
         }))}
       />
       {state.notifPrefs.weekly_recap && ledger.transactions.length > 0 && (
-        <PromoCard icon={Sparkles} title="Recap mingguanmu sudah siap" message="Lihat ke mana uangmu pergi minggu lalu." onPress={() => router.navigate('/coach')} />
+        <PromoCard icon={Sparkles} title={t('home.recapTitle')} message={t('home.recapMessage')} onPress={() => router.navigate('/coach')} />
       )}
       {ledger.transactions.length > 0 && (
         <BudgetGlance

@@ -1,19 +1,12 @@
 import type { Plan } from '@/data/types';
 
 /** Limit Free vs Premium dari PRD Bab 7. null = tanpa batas. Penegakan sesungguhnya di server (Fase 2). */
+/** Label: `domain.quota.<key>`. */
 export type QuotaKey = 'accounts' | 'scan' | 'automation' | 'importPdf' | 'invoice';
 
 export const QUOTAS: Record<Plan, Record<QuotaKey, number | null>> = {
   free: { accounts: 4, scan: 20, automation: 30, importPdf: 1, invoice: 5 },
   premium: { accounts: null, scan: 300, automation: null, importPdf: 10, invoice: null },
-};
-
-export const QUOTA_LABEL: Record<QuotaKey, string> = {
-  accounts: 'Akun & dompet',
-  scan: 'Scan struk',
-  automation: 'Automation & Voice Log',
-  importPdf: 'Import PDF',
-  invoice: 'Invoice',
 };
 
 export type Usage = Record<QuotaKey, number>;

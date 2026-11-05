@@ -1,5 +1,6 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
 
+import { useT } from '@/i18n';
 import { Screen } from '@/components/shell/Screen';
 import { ScreenHeader } from '@/components/shell/ScreenHeader';
 import { EmptyState, useToast } from '@/components/ui';
@@ -10,6 +11,7 @@ import { useLedger } from '@/state/derived';
 export default function ImportReviewScreen() {
   const { akun } = useLocalSearchParams<{ akun?: string }>();
   const router = useRouter();
+  const t = useT();
   const { show } = useToast();
   const { dispatch } = useStore();
   const { accounts, transactions } = useLedger();
@@ -17,7 +19,7 @@ export default function ImportReviewScreen() {
 
   return (
     <Screen glow={false}>
-      <ScreenHeader title="Cek hasil import" />
+      <ScreenHeader title={t('capture.importReview.title')} />
       {account ? (
         <ImportReview
           accountId={account.id}
@@ -26,12 +28,12 @@ export default function ImportReviewScreen() {
           existing={transactions}
           onImport={(txs) => {
             dispatch({ type: 'tx/addMany', txs, consumes: 'importPdf' });
-            show({ tone: 'success', title: `${txs.length} transaksi diimpor`, message: `Masuk ke ${account.name}.` });
+            show({ tone: 'success', title: t('capture.importReview.importedTitle', { count: txs.length }), message: t('capture.importReview.importedMessage', { account: account.name }) });
             router.replace('/transaksi');
           }}
         />
       ) : (
-        <EmptyState title="Belum ada akun" message="Tambahkan akun dulu sebelum mengimpor rekening koran." />
+        <EmptyState title={t('capture.importReview.noAccountTitle')} message={t('capture.importReview.noAccountMessage')} />
       )}
     </Screen>
   );

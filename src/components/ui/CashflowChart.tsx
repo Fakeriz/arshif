@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import Svg, { Line, Rect } from 'react-native-svg';
 
+import { useT } from '@/i18n';
 import { niceCeil } from '@/lib/chart';
 import { formatCompact } from '@/lib/money';
 import { haptic } from '@/theme/motion';
@@ -27,6 +28,7 @@ const AXIS_W = 44;
 /** Batang berpasangan pemasukan vs pengeluaran per periode. Ketuk kolom untuk rinciannya. */
 export function CashflowChart({ data, currency, height = 180, loading }: CashflowChartProps) {
   const { colors } = useTheme();
+  const t = useT();
   const [width, setWidth] = useState(0);
   const [selected, setSelected] = useState(Math.max(0, data.length - 1));
 
@@ -40,7 +42,7 @@ export function CashflowChart({ data, currency, height = 180, loading }: Cashflo
   }
   const hasData = data.some((d) => d.income > 0 || d.expense > 0);
   if (!hasData) {
-    return <EmptyState compact title="Belum ada arus kas" message="Catat transaksi pertamamu untuk melihat tren bulanan." />;
+    return <EmptyState compact title={t('common.cashflowEmptyTitle')} message={t('common.cashflowEmptyMessage')} />;
   }
 
   const max = niceCeil(Math.max(...data.flatMap((d) => [d.income, d.expense])));
@@ -81,7 +83,7 @@ export function CashflowChart({ data, currency, height = 180, loading }: Cashflo
                 <Pressable
                   key={d.label}
                   accessibilityRole="button"
-                  accessibilityLabel={`${d.label}: pemasukan ${formatCompact(d.income, currency)}, pengeluaran ${formatCompact(d.expense, currency)}`}
+                  accessibilityLabel={`${d.label}: ${t('common.income')} ${formatCompact(d.income, currency)}, ${t('common.expense')} ${formatCompact(d.expense, currency)}`}
                   aria-selected={i === selected}
                   onPress={() => {
                     haptic('tap');

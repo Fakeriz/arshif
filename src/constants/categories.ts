@@ -29,35 +29,34 @@ export type Bucket = 'needs' | 'wants' | 'savings';
 
 export type CategoryDef = {
   key: string;
-  label: string;
   icon: LucideIcon;
   hue: CategoryHue;
   bucket: Bucket | null;
 };
 
-/** Kategori bawaan. Pengguna bisa menambah kategori kustom (FR-SET-2) di Fase 1–2. */
+/** Kategori bawaan. Label per bahasa: `domain.category.<key>` di katalog i18n. Pengguna bisa menambah kategori kustom (FR-SET-2) di Fase 1–2. */
 export const CATEGORIES: CategoryDef[] = [
-  { key: 'groceries', label: 'Belanja Harian', icon: ShoppingCart, hue: 'jade', bucket: 'needs' },
-  { key: 'food', label: 'Makan & Minum', icon: Utensils, hue: 'saffron', bucket: 'needs' },
-  { key: 'transport', label: 'Transportasi', icon: Bus, hue: 'sky', bucket: 'needs' },
-  { key: 'fuel', label: 'Bensin & Parkir', icon: Car, hue: 'slate', bucket: 'needs' },
-  { key: 'housing', label: 'Tempat Tinggal', icon: House, hue: 'clay', bucket: 'needs' },
-  { key: 'utilities', label: 'Listrik & Air', icon: Zap, hue: 'olive', bucket: 'needs' },
-  { key: 'phone', label: 'Pulsa & Internet', icon: Smartphone, hue: 'teal', bucket: 'needs' },
-  { key: 'health', label: 'Kesehatan', icon: HeartPulse, hue: 'rose', bucket: 'needs' },
-  { key: 'education', label: 'Pendidikan', icon: GraduationCap, hue: 'plum', bucket: 'needs' },
-  { key: 'hangout', label: 'Nongkrong', icon: Coffee, hue: 'coral', bucket: 'wants' },
-  { key: 'shopping', label: 'Belanja', icon: Shirt, hue: 'rose', bucket: 'wants' },
-  { key: 'entertainment', label: 'Hiburan', icon: Film, hue: 'plum', bucket: 'wants' },
-  { key: 'travel', label: 'Liburan', icon: Plane, hue: 'sky', bucket: 'wants' },
-  { key: 'gift', label: 'Hadiah & Donasi', icon: Gift, hue: 'coral', bucket: 'wants' },
-  { key: 'bills', label: 'Tagihan', icon: Receipt, hue: 'olive', bucket: 'needs' },
-  { key: 'savings', label: 'Tabungan', icon: PiggyBank, hue: 'jade', bucket: 'savings' },
-  { key: 'debt', label: 'Cicilan & Utang', icon: CreditCard, hue: 'clay', bucket: 'savings' },
-  { key: 'salary', label: 'Gaji', icon: Briefcase, hue: 'jade', bucket: null },
-  { key: 'investment_income', label: 'Hasil Usaha', icon: TrendingUp, hue: 'teal', bucket: null },
-  { key: 'bank', label: 'Bank & Biaya Admin', icon: Landmark, hue: 'slate', bucket: 'needs' },
-  { key: 'other', label: 'Lainnya', icon: Ellipsis, hue: 'slate', bucket: 'wants' },
+  { key: 'groceries', icon: ShoppingCart, hue: 'jade', bucket: 'needs' },
+  { key: 'food', icon: Utensils, hue: 'saffron', bucket: 'needs' },
+  { key: 'transport', icon: Bus, hue: 'sky', bucket: 'needs' },
+  { key: 'fuel', icon: Car, hue: 'slate', bucket: 'needs' },
+  { key: 'housing', icon: House, hue: 'clay', bucket: 'needs' },
+  { key: 'utilities', icon: Zap, hue: 'olive', bucket: 'needs' },
+  { key: 'phone', icon: Smartphone, hue: 'teal', bucket: 'needs' },
+  { key: 'health', icon: HeartPulse, hue: 'rose', bucket: 'needs' },
+  { key: 'education', icon: GraduationCap, hue: 'plum', bucket: 'needs' },
+  { key: 'hangout', icon: Coffee, hue: 'coral', bucket: 'wants' },
+  { key: 'shopping', icon: Shirt, hue: 'rose', bucket: 'wants' },
+  { key: 'entertainment', icon: Film, hue: 'plum', bucket: 'wants' },
+  { key: 'travel', icon: Plane, hue: 'sky', bucket: 'wants' },
+  { key: 'gift', icon: Gift, hue: 'coral', bucket: 'wants' },
+  { key: 'bills', icon: Receipt, hue: 'olive', bucket: 'needs' },
+  { key: 'savings', icon: PiggyBank, hue: 'jade', bucket: 'savings' },
+  { key: 'debt', icon: CreditCard, hue: 'clay', bucket: 'savings' },
+  { key: 'salary', icon: Briefcase, hue: 'jade', bucket: null },
+  { key: 'investment_income', icon: TrendingUp, hue: 'teal', bucket: null },
+  { key: 'bank', icon: Landmark, hue: 'slate', bucket: 'needs' },
+  { key: 'other', icon: Ellipsis, hue: 'slate', bucket: 'wants' },
 ];
 
 const byKey = new Map(CATEGORIES.map((c) => [c.key, c]));

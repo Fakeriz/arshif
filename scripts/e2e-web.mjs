@@ -9,8 +9,9 @@ await new Promise((r) => server.listen(8095, r));
 const b = await chromium.launch();
 const results = []; const errors = [];
 const step = async (name, fn) => { try { await fn(); results.push(`PASS ${name}`); } catch (e) { results.push(`FAIL ${name}: ${String(e.message).split('\n')[0]}`); } };
-const open = async (url, scheme = 'dark') => {
-  const ctx = await b.newContext({ viewport: { width: 390, height: 844 }, colorScheme: scheme });
+// Bahasa mengikuti perangkat (I18nProvider.detectLang), jadi locale dipaksa: default id-ID.
+const open = async (url, scheme = 'dark', locale = 'id-ID') => {
+  const ctx = await b.newContext({ viewport: { width: 390, height: 844 }, colorScheme: scheme, locale });
   const p = await ctx.newPage();
   p.on('console', (m) => m.type() === 'error' && errors.push(`${url}: ${m.text().slice(0, 160)}`));
   p.on('pageerror', (e) => errors.push(`${url}: ${String(e).slice(0, 160)}`));
@@ -104,6 +105,24 @@ await step('Pengaturan: ganti aksen ke Biru, mata uang MYR, toggle notifikasi', 
 });
 await step('Pengaturan: Hapus akun menampilkan dialog konfirmasi', async () => {
   const p = await open('/pengaturan'); await p.getByRole('button', { name: /^Hapus akun/ }).click(); await expectText(p, 'Hapus akun dan semua data?'); await btn(p, 'Batal').click();
+});
+await step('Pengaturan: ganti bahasa ke Türkçe -> seluruh UI ikut, nav dan tanggal', async () => {
+  const p = await open('/pengaturan'); await p.getByRole('button', { name: /^Bahasa/ }).click();
+  await btn(p, 'Türkçe').click(); await expectText(p, 'Ayarlar'); await expectText(p, 'Görünüm');
+  await btn(p, 'Geri').click(); await p.waitForTimeout(400); await p.getByRole('tab', { name: 'Ana Sayfa', exact: true }).waitFor({ timeout: 3000 });
+});
+await step('Bahasa perangkat: locale ms-MY dan en-US terdeteksi otomatis, locale lain jatuh ke Indonesia', async () => {
+  const ms = await open('/pengaturan', 'dark', 'ms-MY'); await expectText(ms, 'Tetapan');
+  const en = await open('/pengaturan', 'dark', 'en-US'); await expectText(en, 'Settings');
+  const fr = await open('/pengaturan', 'dark', 'fr-FR'); await expectText(fr, 'Pengaturan');
+});
+await step('Pengaturan: pilih desain kartu bank -> kartu di Beranda berganti warna dan nama', async () => {
+  const p = await open('/pengaturan'); await p.getByRole('button', { name: /^GoPay/ }).first().click();
+  await expectText(p, 'Desain kartu'); await p.getByRole('radio', { name: 'ShopeePay' }).click();
+  if ((await p.getByRole('radio', { name: 'ShopeePay' }).getAttribute('aria-checked')) !== 'true') throw new Error('ShopeePay tidak terpilih');
+  await p.keyboard.press('Escape'); await p.waitForTimeout(400);
+  await p.getByRole('button', { name: /^Kembali$/ }).first().click(); await p.waitForTimeout(400);
+  await p.getByLabel(/^ShopeePay E-Wallet/).first().waitFor({ timeout: 3000 });
 });
 await step('Scan: bidik -> baca -> review -> simpan -> masuk daftar, kuota 15', async () => {
   const p = await open('/scan'); await btn(p, 'Ambil foto struk').click(); await expectText(p, 'Membaca struk'); await expectText(p, 'Cek hasil scan', 5000);

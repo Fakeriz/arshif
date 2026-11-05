@@ -6,8 +6,11 @@ import { Screen } from '@/components/shell/Screen';
 import { ScreenHeader } from '@/components/shell/ScreenHeader';
 import { AccentPicker, AppText, Card, ListItem, Tabs, Toggle } from '@/components/ui';
 import { DEMO_USER } from '@/data/seed';
+import { AccountsCard } from '@/features/settings/AccountsCard';
 import { DataCard } from '@/features/settings/DataCard';
+import { LanguageSheet } from '@/features/settings/LanguageSheet';
 import { UsageCard } from '@/features/settings/UsageCard';
+import { LANGS, useI18n } from '@/i18n';
 import { currencyMeta } from '@/lib/money';
 import { useStore } from '@/state/AppStore';
 import { useDemoState } from '@/state/demo';
@@ -15,29 +18,21 @@ import { useTheme, type ThemeMode } from '@/theme/ThemeProvider';
 import { radius, space } from '@/theme/tokens';
 import type { NotifPrefs } from '@/state/reducer';
 
-const MODES: { key: ThemeMode; label: string }[] = [
-  { key: 'system', label: 'Sistem' },
-  { key: 'dark', label: 'Gelap' },
-  { key: 'light', label: 'Terang' },
-];
-
-const NOTIFS: { key: keyof NotifPrefs; title: string; sub: string }[] = [
-  { key: 'bill_due', title: 'Tagihan jatuh tempo', sub: 'H-3 dan pada hari jatuh tempo' },
-  { key: 'budget_alert', title: 'Peringatan anggaran', sub: 'Saat pemakaian bucket mencapai 80% dan 100%' },
-  { key: 'weekly_recap', title: 'Recap mingguan', sub: 'Setiap Senin pagi' },
-  { key: 'quota_warning', title: 'Kuota hampir habis', sub: 'Saat kuota scan atau automation menipis' },
-];
+const MODES: ThemeMode[] = ['system', 'dark', 'light'];
+const NOTIFS: (keyof NotifPrefs)[] = ['bill_due', 'budget_alert', 'weekly_recap', 'quota_warning'];
 
 export default function PengaturanScreen() {
   const { colors, mode, setMode } = useTheme();
   const { state, dispatch } = useStore();
   const demo = useDemoState();
+  const { t, lang } = useI18n();
   const [currencyOpen, setCurrencyOpen] = useState(false);
+  const [langOpen, setLangOpen] = useState(false);
   const initials = DEMO_USER.name.split(' ').map((p) => p[0]).slice(0, 2).join('');
 
   return (
     <Screen>
-      <ScreenHeader title="Pengaturan" />
+      <ScreenHeader title={t('settings.title')} />
       <Card>
         <View style={styles.profile}>
           <View style={[styles.avatar, { backgroundColor: colors.accentSoft }]}>
@@ -56,17 +51,19 @@ export default function PengaturanScreen() {
 
       <UsageCard plan={state.plan} usage={state.usage} accountCount={state.accounts.length} forceLimit={demo === 'limit'} />
 
+      <AccountsCard />
+
       <Card>
-        <AppText variant="h3">Tampilan</AppText>
+        <AppText variant="h3">{t('settings.appearance')}</AppText>
         <View style={styles.block}>
           <AppText variant="caption" tone="secondary">
-            Tema
+            {t('settings.theme')}
           </AppText>
-          <Tabs items={MODES} value={mode} onChange={setMode} accessibilityLabel="Tema" />
+          <Tabs items={MODES.map((key) => ({ key, label: t(`settings.themeMode.${key}`) }))} value={mode} onChange={setMode} accessibilityLabel={t('settings.theme')} />
         </View>
         <View style={styles.block}>
           <AppText variant="caption" tone="secondary">
-            Warna aksen
+            {t('common.accentColor')}
           </AppText>
           <AccentPicker />
         </View>
@@ -74,8 +71,17 @@ export default function PengaturanScreen() {
 
       <Card padding="md">
         <ListItem
-          title="Mata uang utama"
-          subtitle="Semua total dan anggaran dikonversi ke sini"
+          title={t('settings.language')}
+          subtitle={t('settings.languageSub')}
+          subtitleLines={2}
+          trailing={LANGS.find((l) => l.key === lang)?.nativeName}
+          chevron
+          divider
+          onPress={() => setLangOpen(true)}
+        />
+        <ListItem
+          title={t('settings.mainCurrency')}
+          subtitle={t('settings.mainCurrencySub')}
           subtitleLines={2}
           trailing={currencyMeta(state.mainCurrency).code}
           chevron
@@ -83,32 +89,34 @@ export default function PengaturanScreen() {
           onPress={() => setCurrencyOpen(true)}
         />
         <ListItem
-          title="Sembunyikan saldo"
-          subtitle="Saldo tampil sebagai titik di Beranda"
-          trailing={<Toggle value={state.hideBalance} onChange={(value) => dispatch({ type: 'prefs/hideBalance', value })} accessibilityLabel="Sembunyikan saldo" />}
+          title={t('settings.hideBalance')}
+          subtitle={t('settings.hideBalanceSub')}
+          subtitleLines={2}
+          trailing={<Toggle value={state.hideBalance} onChange={(value) => dispatch({ type: 'prefs/hideBalance', value })} accessibilityLabel={t('settings.hideBalance')} />}
         />
       </Card>
 
       <Card padding="md">
         <AppText variant="h3" style={styles.cardTitle}>
-          Notifikasi
+          {t('settings.notifications')}
         </AppText>
-        {NOTIFS.map((n, i) => (
+        {NOTIFS.map((key, i) => (
           <ListItem
-            key={n.key}
-            title={n.title}
-            subtitle={n.sub}
+            key={key}
+            title={t(`settings.notif.${key}.title`)}
+            subtitle={t(`settings.notif.${key}.sub`)}
             subtitleLines={2}
             divider={i < NOTIFS.length - 1}
-            trailing={<Toggle value={state.notifPrefs[n.key]} onChange={(value) => dispatch({ type: 'prefs/notif', key: n.key, value })} accessibilityLabel={n.title} />}
+            trailing={<Toggle value={state.notifPrefs[key]} onChange={(value) => dispatch({ type: 'prefs/notif', key, value })} accessibilityLabel={t(`settings.notif.${key}.title`)} />}
           />
         ))}
       </Card>
 
       <DataCard />
       <AppText variant="caption" tone="muted" align="center">
-        Arshif versi pengembangan Fase 1. Semua data di layar ini adalah contoh.
+        {t('settings.footer')}
       </AppText>
+      <LanguageSheet visible={langOpen} onClose={() => setLangOpen(false)} />
       <CurrencySheet visible={currencyOpen} value={state.mainCurrency} onClose={() => setCurrencyOpen(false)} onSelect={(code) => dispatch({ type: 'prefs/mainCurrency', code })} />
     </Screen>
   );

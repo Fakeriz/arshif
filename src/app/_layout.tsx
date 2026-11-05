@@ -14,6 +14,7 @@ import { useEffect } from 'react';
 
 import { PaywallProvider } from '@/components/shell/Paywall';
 import { ToastProvider } from '@/components/ui';
+import { I18nProvider } from '@/i18n';
 import { AppStoreProvider } from '@/state/AppStore';
 import { ThemeProvider, useTheme } from '@/theme/ThemeProvider';
 
@@ -36,9 +37,11 @@ export default function RootLayout() {
   if (!loaded && !error) return null;
 
   return (
-    <ThemeProvider>
-      <ThemedStack />
-    </ThemeProvider>
+    <I18nProvider>
+      <ThemeProvider>
+        <ThemedStack />
+      </ThemeProvider>
+    </I18nProvider>
   );
 }
 

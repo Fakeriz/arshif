@@ -1,12 +1,14 @@
 import { StyleSheet, View } from 'react-native';
 
+import { useT } from '@/i18n';
 import { Card, ListItemSkeleton, Skeleton } from '@/components/ui';
 import { radius, space } from '@/theme/tokens';
 
 /** Kerangka dengan proporsi sama seperti Home, supaya tidak ada layar kosong saat memuat. */
 export function HomeSkeleton() {
+  const t = useT();
   return (
-    <View style={styles.wrap} accessibilityLabel="Memuat" aria-busy>
+    <View style={styles.wrap} accessibilityLabel={t('common.loading')} aria-busy>
       <View style={styles.balance}>
         <Skeleton width={140} height={14} />
         <Skeleton width={260} height={44} />

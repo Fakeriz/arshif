@@ -3,6 +3,7 @@ import { StyleSheet, View } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue } from 'react-native-reanimated';
 import Svg, { Circle, G, Path } from 'react-native-svg';
 
+import { useT } from '@/i18n';
 import { annularSector, donutSlices } from '@/lib/chart';
 import { haptic, useMotion } from '@/theme/motion';
 import { useTheme } from '@/theme/ThemeProvider';
@@ -30,14 +31,15 @@ export type DonutChartProps = {
 export function DonutChart({
   segments,
   currency,
-  centerLabel = 'Total',
+  centerLabel,
   size = 200,
   loading,
-  emptyLabel = 'Belum ada data bulan ini',
+  emptyLabel,
   showLegend = true,
   onSelect,
 }: DonutChartProps) {
   const { colors } = useTheme();
+  const t = useT();
   const { timing } = useMotion();
   const [selected, setSelected] = useState<string | null>(null);
   const appear = useSharedValue(0);
@@ -102,12 +104,12 @@ export function DonutChart({
         <View style={styles.center} pointerEvents="none">
           {total <= 0 ? (
             <AppText variant="caption" tone="muted" align="center" style={styles.centerText}>
-              {emptyLabel}
+              {emptyLabel ?? t('common.noDataThisMonth')}
             </AppText>
           ) : (
             <>
               <AppText variant="caption" tone="muted" numberOfLines={1}>
-                {active ? active.label : centerLabel}
+                {active ? active.label : (centerLabel ?? t('common.total'))}
               </AppText>
               <CurrencyText amount={active ? active.value : total} currency={currency} variant="h3" style={styles.centerText} />
               {active && (

@@ -32,11 +32,17 @@ describe('tanggal', () => {
 
   it('hari dalam seminggu dan label', () => {
     expect(weekday('2026-11-05')).toBe(4); // Kamis
-    expect(dayLong('2026-11-05')).toBe('Kamis, 5 November 2026');
-    expect(dayLabel('2026-11-05', DEMO_TODAY)).toBe('Hari ini');
-    expect(dayLabel('2026-11-04', DEMO_TODAY)).toBe('Kemarin');
-    expect(dayLabel('2026-10-29', DEMO_TODAY)).toBe('29 Okt');
-    expect(dayLabel('2025-12-31', DEMO_TODAY)).toBe('31 Des 2025');
+    expect(dayLong('2026-11-05', 'id')).toBe('Kamis, 5 November 2026');
+    expect(dayLong('2026-11-05', 'en')).toBe('Thursday, 5 November 2026');
+    expect(dayLong('2026-11-05', 'ms')).toBe('Khamis, 5 November 2026');
+    expect(dayLong('2026-11-05', 'tr')).toBe('5 Kasım 2026 Perşembe');
+    expect(dayLabel('2026-11-05', 'id', DEMO_TODAY)).toBe('Hari ini');
+    expect(dayLabel('2026-11-04', 'id', DEMO_TODAY)).toBe('Kemarin');
+    expect(dayLabel('2026-11-04', 'tr', DEMO_TODAY)).toBe('Dün');
+    expect(dayLabel('2026-11-04', 'ms', DEMO_TODAY)).toBe('Semalam');
+    expect(dayLabel('2026-10-29', 'id', DEMO_TODAY)).toBe('29 Okt');
+    expect(dayLabel('2026-10-29', 'tr', DEMO_TODAY)).toBe('29 Eki');
+    expect(dayLabel('2025-12-31', 'id', DEMO_TODAY)).toBe('31 Des 2025');
   });
 
   it('menolak format tanggal yang salah', () => {

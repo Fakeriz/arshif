@@ -13,6 +13,7 @@ import {
   ListItemSkeleton,
   ProgressBar,
 } from '@/components/ui';
+import { categoryLabel, useI18n } from '@/i18n';
 import { CATEGORIES } from '@/constants/categories';
 import { formatCompact } from '@/lib/money';
 import { useTheme } from '@/theme/ThemeProvider';
@@ -87,6 +88,7 @@ export function ProgressSection() {
 }
 
 export function ListSection() {
+  const { t: tr } = useI18n();
   return (
     <Section index="Daftar" title="ListItem & CategoryIcon">
       <Card padding="lg" style={styles.listCard}>
@@ -112,7 +114,7 @@ export function ListSection() {
           <View key={c.key} style={styles.iconCell}>
             <CategoryIcon category={c.key} />
             <AppText variant="caption" tone="muted" align="center" numberOfLines={2}>
-              {c.label}
+              {categoryLabel(tr, c.key)}
             </AppText>
           </View>
         ))}

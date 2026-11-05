@@ -1,5 +1,6 @@
 import { ScrollView, StyleSheet, View } from 'react-native';
 
+import { categoryLabel, useT } from '@/i18n';
 import { AppText, Chip } from '@/components/ui';
 import { CATEGORIES } from '@/constants/categories';
 import type { TxType } from '@/data/types';
@@ -53,10 +54,11 @@ export function categoriesFor(type: TxType) {
 }
 
 export function CategoryPicker({ type, value, onChange, error, warning, scroll }: { type: TxType; value: string | null; onChange: (key: string) => void; error?: string; warning?: string; scroll?: boolean }) {
+  const t = useT();
   return (
-    <Shell label="Kategori" error={error} warning={warning} scroll={scroll}>
+    <Shell label={t('tx.form.category')} error={error} warning={warning} scroll={scroll}>
       {categoriesFor(type).map((c) => (
-        <Chip key={c.key} label={c.label} selected={value === c.key} onPress={() => onChange(c.key)} />
+        <Chip key={c.key} label={categoryLabel(t, c.key)} selected={value === c.key} onPress={() => onChange(c.key)} />
       ))}
     </Shell>
   );

@@ -1,14 +1,15 @@
+import { useT, type MsgKey } from '@/i18n';
 import { CategoryIcon, CurrencyText, ListItem } from '@/components/ui';
 import type { Transaction } from '@/data/types';
 import { formatMoney } from '@/lib/money';
 import { amountIn } from '@/lib/transactions';
 
-const SOURCE_LABEL: Record<Transaction['source'], string> = {
-  manual: '',
-  scan: 'Struk',
-  voice: 'Voice',
-  import: 'PDF',
-  smartlog: 'Notifikasi bank',
+const SOURCE_LABEL: Record<Transaction['source'], MsgKey | null> = {
+  manual: null,
+  scan: 'tx.rowSource.scan',
+  voice: 'tx.rowSource.voice',
+  import: 'tx.rowSource.import',
+  smartlog: 'tx.rowSource.smartlog',
 };
 
 export type TransactionRowProps = {
@@ -21,14 +22,17 @@ export type TransactionRowProps = {
 
 /** Satu baris transaksi. Mata uang asing diberi perkiraan nilai di mata uang utama. */
 export function TransactionRow({ tx, accountName, mainCurrency, divider, onPress }: TransactionRowProps) {
-  const source = SOURCE_LABEL[tx.source];
+  const t = useT();
+  const sourceKey = SOURCE_LABEL[tx.source];
+  const source = sourceKey ? t(sourceKey) : '';
   const foreign = tx.currency !== mainCurrency;
   const transfer = tx.type === 'transfer';
   return (
     <ListItem
       leading={<CategoryIcon category={tx.categoryKey} />}
       title={tx.merchant}
-      subtitle={[accountName, tx.time.replace(':', '.'), source].filter(Boolean).join(' · ')}
+      // Jam dan sumber pendek dan tetap; nama akun yang panjangnya bervariasi diletakkan terakhir agar dialah yang terpotong.
+      subtitle={[tx.time.replace(':', '.'), source, accountName].filter(Boolean).join(' · ')}
       trailing={
         <CurrencyText
           amount={tx.amount}
@@ -38,7 +42,7 @@ export function TransactionRow({ tx, accountName, mainCurrency, divider, onPress
           tone={transfer ? 'secondary' : undefined}
         />
       }
-      trailingCaption={foreign ? `≈ ${formatMoney(amountIn(tx, mainCurrency), mainCurrency)}` : transfer ? 'Transfer' : undefined}
+      trailingCaption={foreign ? `≈ ${formatMoney(amountIn(tx, mainCurrency), mainCurrency)}` : transfer ? t('common.transfer') : undefined}
       divider={divider}
       onPress={onPress}
       accessibilityLabel={`${tx.merchant}, ${formatMoney(tx.amount, tx.currency)}, ${accountName}`}

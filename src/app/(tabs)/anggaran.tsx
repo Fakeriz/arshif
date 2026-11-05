@@ -7,7 +7,8 @@ import { TabHeader } from '@/components/shell/TabHeader';
 import { AppText, Badge, Button, Card, CurrencyText, DonutChart, EmptyState, Skeleton } from '@/components/ui';
 import { BucketSection } from '@/features/budget/BucketSection';
 import { SplitSheet } from '@/features/budget/SplitSheet';
-import { BUCKETS, PACE_LABEL } from '@/lib/budget';
+import { useI18n } from '@/i18n';
+import { BUCKETS } from '@/lib/budget';
 import { shortDate } from '@/lib/dates';
 import { formatMoney } from '@/lib/money';
 import { useStore } from '@/state/AppStore';
@@ -22,25 +23,26 @@ export default function AnggaranScreen() {
   const retry = useRetry();
   const { state, dispatch } = useStore();
   const { hues } = useTheme();
+  const { t, lang } = useI18n();
   const { mainCurrency, transactions } = useLedger();
   const b = useBudget();
   const [sheet, setSheet] = useState(false);
   const colors = { needs: hues.sky, wants: hues.saffron, savings: hues.jade };
-  const subtitle = `${shortDate(b.period.start)} sampai ${shortDate(b.period.end)} · ${b.period.daysLeft} hari lagi`;
+  const subtitle = t('budget.period', { start: shortDate(b.period.start, lang), end: shortDate(b.period.end, lang), days: b.period.daysLeft });
 
   if (demo === 'error') {
     return (
       <Screen tabs>
-        <TabHeader title="Anggaran" />
-        <EmptyState kind="error" title="Anggaran gagal dimuat" message="Periksa koneksimu lalu coba lagi. Datamu aman." actionLabel="Coba lagi" onAction={retry} />
+        <TabHeader title={t('budget.title')} />
+        <EmptyState kind="error" title={t('budget.errorTitle')} message={t('budget.errorMessage')} actionLabel={t('common.retry')} onAction={retry} />
       </Screen>
     );
   }
   if (demo === 'loading') {
     return (
       <Screen tabs>
-        <TabHeader title="Anggaran" />
-        <View style={styles.skeleton} accessibilityLabel="Memuat anggaran" aria-busy>
+        <TabHeader title={t('budget.title')} />
+        <View style={styles.skeleton} accessibilityLabel={t('budget.loading')} aria-busy>
           <Skeleton height={180} radius={radius.lg} />
           <Skeleton height={260} radius={radius.lg} />
           <Skeleton height={260} radius={radius.lg} />
@@ -53,39 +55,39 @@ export default function AnggaranScreen() {
   return (
     <Screen tabs onRefresh={retry} refreshing={false}>
       <TabHeader
-        title="Anggaran"
+        title={t('budget.title')}
         subtitle={subtitle}
-        right={<Button label="Atur" icon={SlidersHorizontal} variant="secondary" size="sm" onPress={() => setSheet(true)} />}
+        right={<Button label={t('budget.adjust')} icon={SlidersHorizontal} variant="secondary" size="sm" onPress={() => setSheet(true)} />}
       />
       <Card>
         <View style={styles.safeHead}>
           <AppText variant="caption" tone="secondary">
-            Aman dibelanjakan
+            {t('budget.safeToSpend')}
           </AppText>
-          <Badge label={PACE_LABEL[b.flexPace]} tone={b.flexPace === 'sesuai' ? 'positive' : b.flexPace === 'agak_cepat' ? 'warning' : 'negative'} />
+          <Badge label={t(`domain.pace.${b.flexPace}`)} tone={b.flexPace === 'sesuai' ? 'positive' : b.flexPace === 'agak_cepat' ? 'warning' : 'negative'} />
         </View>
         <View style={styles.safeRow}>
           <CurrencyText amount={b.safePerDay} currency={mainCurrency} variant="amountHero" />
           <AppText variant="caption" tone="muted">
-            per hari
+            {t('budget.perDay')}
           </AppText>
         </View>
         <AppText variant="caption" tone="secondary">
           {transactions.length === 0
-            ? 'Belum ada pengeluaran periode ini, jadi seluruh anggaran masih utuh.'
-            : `Sisa ${formatMoney(Math.max(0, b.flexLimit - b.flexSpent), mainCurrency)} untuk kebutuhan dan keinginan selama ${b.period.daysLeft} hari.`}
+            ? t('budget.untouched')
+            : t('budget.remaining', { amount: formatMoney(Math.max(0, b.flexLimit - b.flexSpent), mainCurrency), days: b.period.daysLeft })}
         </AppText>
       </Card>
       <Card padding="xl">
         <DonutChart
           currency={mainCurrency}
-          centerLabel="Terpakai periode ini"
-          emptyLabel="Belum ada pengeluaran periode ini"
-          segments={BUCKETS.map((x) => ({ key: x.key, label: x.label, value: b.spent[x.key], color: colors[x.key], caption: `Batas ${formatMoney(b.limits[x.key], mainCurrency)} · ${state.split[x.key]}%` }))}
+          centerLabel={t('budget.donutCenter')}
+          emptyLabel={t('budget.donutEmpty')}
+          segments={BUCKETS.map((x) => ({ key: x.key, label: t(`domain.bucket.${x.key}`), value: b.spent[x.key], color: colors[x.key], caption: t('budget.donutCaption', { amount: formatMoney(b.limits[x.key], mainCurrency), pct: state.split[x.key] }) }))}
         />
         {total === 0 && (
           <AppText variant="caption" tone="muted" align="center" style={styles.note}>
-            Catat transaksi pertamamu untuk mengisi grafik ini.
+            {t('budget.chartHint')}
           </AppText>
         )}
       </Card>
@@ -93,7 +95,7 @@ export default function AnggaranScreen() {
         <BucketSection
           key={x.key}
           bucket={x.key}
-          label={x.label}
+          label={t(`domain.bucket.${x.key}`)}
           percent={state.split[x.key]}
           color={colors[x.key]}
           spent={b.spent[x.key]}

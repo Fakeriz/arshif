@@ -136,13 +136,8 @@ export const accents: Record<AccentKey, Record<ColorScheme, AccentTokens>> = {
   },
 };
 
-export const ACCENT_OPTIONS: { key: AccentKey; label: string }[] = [
-  { key: 'merah', label: 'Merah' },
-  { key: 'kuningan', label: 'Kuningan' },
-  { key: 'zamrud', label: 'Zamrud' },
-  { key: 'biru', label: 'Biru' },
-  { key: 'ungu', label: 'Ungu' },
-];
+/** Urutan pilihan aksen. Label: `domain.accent.<key>`. */
+export const ACCENT_OPTIONS: { key: AccentKey }[] = [{ key: 'merah' }, { key: 'kuningan' }, { key: 'zamrud' }, { key: 'biru' }, { key: 'ungu' }];
 
 export const DEFAULT_ACCENT: AccentKey = 'merah';
 

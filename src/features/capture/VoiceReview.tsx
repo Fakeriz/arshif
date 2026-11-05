@@ -2,6 +2,7 @@ import { Trash2 } from 'lucide-react-native';
 import { useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
+import { categoryLabel, useT } from '@/i18n';
 import { AmountField, AppText, Button, Card, Chip, EmptyState, Input } from '@/components/ui';
 import { sampleVoice } from '@/data/seed';
 import type { Transaction } from '@/data/types';
@@ -16,12 +17,13 @@ type Draft = { id: string; merchant: string; categoryKey: string; amount: number
 
 /** Review Voice Log (FR-VOICE-3): satu kartu per transaksi, bisa diedit atau dibuang sebelum "Simpan semua". */
 export function VoiceReview({ accounts, onSave }: { accounts: AccountWithBalance[]; onSave: (txs: Transaction[]) => void }) {
+  const t = useT();
   const fallback = accounts[0];
   const [drafts, setDrafts] = useState<Draft[]>(() =>
     sampleVoice.items.map((i) => ({
       id: i.id, merchant: i.merchant, categoryKey: i.categoryKey, amount: i.amount,
       accountId: i.accountId ?? fallback?.id ?? '',
-      hint: i.accountId ? null : `Akun "${i.accountHint}" tidak ditemukan, memakai ${fallback?.name}.`,
+      hint: i.accountId ? null : t('capture.voiceReview.accountNotFound', { hint: i.accountHint, account: fallback?.name ?? '' }),
     })),
   );
   const [tried, setTried] = useState(false);
@@ -40,31 +42,31 @@ export function VoiceReview({ accounts, onSave }: { accounts: AccountWithBalance
     );
   };
 
-  if (drafts.length === 0) return <EmptyState title="Semua transaksi dibuang" message="Rekam ulang atau catat manual." />;
+  if (drafts.length === 0) return <EmptyState title={t('capture.voiceReview.allDiscardedTitle')} message={t('capture.voiceReview.allDiscardedMessage')} />;
 
   return (
     <View style={styles.wrap}>
       <Card>
         <AppText variant="caption" tone="secondary">
-          Yang kudengar
+          {t('capture.voiceReview.heard')}
         </AppText>
         <AppText variant="body" style={styles.quote}>{`“${sampleVoice.transcript}”`}</AppText>
       </Card>
       {drafts.map((d, i) => (
         <Card key={d.id}>
           <View style={styles.head}>
-            <AppText variant="h3">{`Transaksi ${i + 1}`}</AppText>
-            <Button label="Buang" icon={Trash2} variant="ghost" size="sm" onPress={() => setDrafts((l) => l.filter((x) => x.id !== d.id))} />
+            <AppText variant="h3" numberOfLines={1} style={styles.flex}>{t('capture.voiceReview.item', { n: i + 1 })}</AppText>
+            <Button label={t('capture.voiceReview.discard')} icon={Trash2} variant="ghost" size="sm" onPress={() => setDrafts((l) => l.filter((x) => x.id !== d.id))} />
           </View>
           <View style={styles.fields}>
-            <Input label="Keterangan" value={d.merchant} onChangeText={(merchant) => patch(d.id, { merchant })} error={tried && !d.merchant.trim() ? 'Isi keterangan.' : undefined} />
-            <AmountField label="Nominal" value={d.amount} currency={accounts.find((a) => a.id === d.accountId)?.currency ?? 'IDR'} onChange={(amount) => patch(d.id, { amount })} error={tried && !d.amount ? 'Isi nominal.' : undefined} />
+            <Input label={t('capture.voiceReview.description')} value={d.merchant} onChangeText={(merchant) => patch(d.id, { merchant })} error={tried && !d.merchant.trim() ? t('capture.voiceReview.descriptionError') : undefined} />
+            <AmountField label={t('common.amount')} value={d.amount} currency={accounts.find((a) => a.id === d.accountId)?.currency ?? 'IDR'} onChange={(amount) => patch(d.id, { amount })} error={tried && !d.amount ? t('capture.voiceReview.amountError') : undefined} />
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chips}>
               {categoriesFor('expense').map((c) => (
-                <Chip key={c.key} label={c.label} selected={d.categoryKey === c.key} onPress={() => patch(d.id, { categoryKey: c.key })} />
+                <Chip key={c.key} label={categoryLabel(t, c.key)} selected={d.categoryKey === c.key} onPress={() => patch(d.id, { categoryKey: c.key })} />
               ))}
             </ScrollView>
-            <AccountPicker label="Akun" accounts={accounts} value={d.accountId} onChange={(accountId) => patch(d.id, { accountId, hint: null })} />
+            <AccountPicker label={t('capture.voiceReview.account')} accounts={accounts} value={d.accountId} onChange={(accountId) => patch(d.id, { accountId, hint: null })} />
             {d.hint && (
               <AppText variant="caption" tone="warning">
                 {d.hint}
@@ -73,9 +75,9 @@ export function VoiceReview({ accounts, onSave }: { accounts: AccountWithBalance
           </View>
         </Card>
       ))}
-      <Button label={`Simpan semua (${drafts.length})`} fullWidth onPress={save} />
+      <Button label={t('capture.voiceReview.saveAll', { count: drafts.length })} fullWidth onPress={save} />
       <AppText variant="caption" tone="muted" align="center">
-        {`Total ${formatMoney(drafts.reduce((s, d) => s + (d.amount ?? 0), 0), 'IDR')}. Voice Log memakai 1 kuota automation.`}
+        {t('capture.voiceReview.footer', { total: formatMoney(drafts.reduce((s, d) => s + (d.amount ?? 0), 0), 'IDR') })}
       </AppText>
     </View>
   );
@@ -84,7 +86,8 @@ export function VoiceReview({ accounts, onSave }: { accounts: AccountWithBalance
 const styles = StyleSheet.create({
   wrap: { gap: space.lg },
   quote: { marginTop: space.xs },
-  head: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  head: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: space.sm },
+  flex: { flex: 1, minWidth: 0 },
   fields: { gap: space.lg, marginTop: space.md },
   chips: { gap: space.sm },
 });

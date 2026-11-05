@@ -1,0 +1,47 @@
+import type { Messages } from '../id';
+
+const home: Messages['home'] = {
+  profileA11y: 'Profil dan tetapan',
+  notifA11y: 'Pemberitahuan',
+  notifUnreadA11y: 'Pemberitahuan, {count} belum dibaca',
+  netWorth: 'Jumlah nilai bersih',
+  showBalance: 'Tunjukkan baki',
+  hideBalance: 'Sembunyikan baki',
+  balanceMeta: '{count} akaun · ditukar ke {currency} · kadar contoh {date}',
+  balanceMeta_one: '{count} akaun · ditukar ke {currency} · kadar contoh {date}',
+  sampleData: 'Data contoh',
+  accountLimitA11y: 'Had 4 akaun dicapai. Buka Premium untuk menambah akaun',
+  accountLimitReason: 'Pakej Free dihadkan kepada 4 akaun dan dompet. Premium tanpa had.',
+  accountLimitTitle: 'Had 4 akaun dicapai',
+  accountLimitSub: 'Premium untuk menambah akaun',
+  recapTitle: 'Rekap mingguan anda sudah sedia',
+  recapMessage: 'Lihat ke mana wang anda pergi minggu lepas.',
+  budget: {
+    title: 'Belanjawan tempoh ini',
+    a11y: 'Belanjawan tempoh ini, {pace}. Selamat dibelanjakan {amount} sehari. Buka Belanjawan',
+    period: '{start} hingga {end} · {count} hari lagi',
+    period_one: '{start} hingga {end} · {count} hari lagi',
+    safe: 'Selamat dibelanjakan',
+    perDay: 'sehari',
+    usageA11y: 'Penggunaan belanjawan keperluan dan kehendak',
+    usage: '{spent} daripada {limit} untuk keperluan dan kehendak',
+  },
+  health: {
+    title: 'Kesihatan kewangan',
+    openCoach: '{label}. Buka Coach',
+  },
+  recent: {
+    title: 'Transaksi terkini',
+    seeAll: 'Lihat semua',
+    emptyTitle: 'Belum ada transaksi',
+    emptyMessage: 'Foto resit atau sebut perbelanjaan anda, direkod dalam 10 saat.',
+    emptyAction: 'Rekod sekarang',
+    accountFallback: 'Akaun',
+  },
+  error: {
+    title: 'Halaman utama gagal dimuatkan',
+    message: 'Semak sambungan anda dan cuba lagi. Data anda selamat.',
+  },
+};
+
+export default home;
