@@ -130,6 +130,23 @@ await test('item struk: hanya untuk transaksi sendiri', async () => {
   eq(await as(B, 'select count(*)::int as n from public.transaction_items'), [{ n: 0 }]);
 });
 
+await test('rincian struk: diskon, pajak, lokasi tersimpan; diskon item tidak boleh melebihi harga', async () => {
+  const [{ id: tx }] = await as(
+    A,
+    `insert into public.transactions (type, merchant, category_key, account_id, date, amount, currency, source, subtotal, discount_total, tax_total, tax_included,
+       discounts, tax_lines, receipt_no, payment_method, store_address, store_tax_id)
+     values ('expense', 'WATSONS - CAROUSEL', 'shopping', $1, '2025-08-06', 63620, 'TRY', 'scan', 95455, 31835, 7184, true,
+       $2::jsonb, $3::jsonb, '0039', 'FinansBank', 'Carousel AVM No:21, Bakırköy', 'Anadolu KR. VD. 2120370364') returning id`,
+    [bca, JSON.stringify([{ itemName: 'WATSONS TEKRAR KULLA', taxRate: 10, amount: 345 }]), JSON.stringify([{ rate: 10, tax: 4103, gross: 45135 }])],
+  );
+  await as(A, `insert into public.transaction_items (transaction_id, name, qty, unit_price, total, discount, tax_rate) values ($1, 'WATSONS TEKRAR KULLA', 1, 1595, 1595, 345, 10)`, [tx]);
+  eq(await as(A, `select receipt_no, payment_method, tax_total::int, (discounts->0->>'amount')::int as d from public.transactions where id = $1`, [tx]), [{ receipt_no: '0039', payment_method: 'FinansBank', tax_total: 7184, d: 345 }]);
+  await rejects(as(A, `insert into public.transaction_items (transaction_id, name, qty, unit_price, total, discount) values ($1, 'x', 1, 100, 100, 101)`, [tx]), /item_discount_le_total/);
+  await rejects(as(A, `update public.transactions set discounts = '{"a":1}'::jsonb where id = $1`, [tx]), /check constraint/);
+  await as(A, `update public.transactions set payment_method = 'Kredi Kartı' where id = $1`, [tx]);
+  await as(A, 'delete from public.transactions where id = $1', [tx]);
+});
+
 await test('batas Free 4 akun ditegakkan di server', async () => {
   await as(A, `insert into public.accounts (bank, name, type, currency) values ('gopay', 'GoPay', 'ewallet', 'IDR')`);
   await rejects(as(A, `insert into public.accounts (bank, name, type, currency) values ('ovo', 'OVO', 'ewallet', 'IDR')`), /quota_accounts/);

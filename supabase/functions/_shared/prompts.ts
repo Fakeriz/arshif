@@ -3,7 +3,8 @@
  * lalu dikonversi di server (money.ts), karena angka JSON dari model bisa kehilangan presisi.
  */
 import { CATEGORY_KEYS } from './contracts.ts';
-import type { GeminiSchema } from './ai.ts';
+/** Skema keluaran Gemini (subset OpenAPI); sama dengan GeminiSchema di ai.ts, ditulis ulang supaya file ini bisa diuji jest tanpa Deno. */
+type GeminiSchema = Record<string, unknown>;
 
 const S = (description?: string, nullable = false): GeminiSchema => ({ type: 'STRING', ...(description ? { description } : {}), ...(nullable ? { nullable: true } : {}) });
 const N = (description: string): GeminiSchema => ({ type: 'NUMBER', description });
@@ -12,21 +13,65 @@ const AMOUNT = 'Plain decimal string in major units, dot as decimal separator, n
 
 const CATEGORY_GUIDE = `Category keys: groceries (supermarket/minimarket), food (meals, restaurants), hangout (coffee, cafe, eating out with friends), transport (ride hailing, public transport), fuel (petrol, parking, toll), housing (rent), utilities (electricity, water), phone (mobile credit, internet), health, education, shopping (clothes, electronics), entertainment (cinema, streaming), travel, gift, bills, savings, debt (loan or installment), salary, investment_income, bank (bank fees), other.`;
 
+const RATE = 'Tax rate percent as a plain number string without "%", e.g. "10", "20", "11". Null when not printed.';
+
 export const SCAN_SCHEMA: GeminiSchema = {
   type: 'OBJECT',
   properties: {
-    merchant: S('Store name as printed'),
+    merchant: S('Store or branch name as printed at the top, e.g. "WATSONS - CAROUSEL"'),
+    storeAddress: S('Street address of THIS store/branch (not the head office "MERKEZ"), one line, or null', true),
+    storeTaxId: S('Store tax number with its tax office as printed (NPWP, VKN "VD.", SST/GST no.), or null', true),
+    receiptNo: S('Receipt / invoice number as printed (FİŞ NO, No. Struk, Bill No), or null', true),
+    paymentMethod: S('Payment method or bank/card name printed near the paid amount (e.g. "FinansBank", "QRIS", "Cash", "Visa"), or null', true),
     date: S('YYYY-MM-DD or null', true),
     time: S('HH:MM 24h or null', true),
     currency: S('ISO 4217 code'),
-    subtotal: S(AMOUNT, true),
-    tax: S(AMOUNT, true),
+    subtotal: S(`${AMOUNT} Sum of item prices BEFORE discounts (ARA TOPLAM, Subtotal). Null if not printed.`, true),
+    discountTotal: S(`${AMOUNT} Total of all discounts as a POSITIVE number. Null if there are no discounts.`, true),
+    taxTotal: S(`${AMOUNT} Total tax (TOPKDV, PPN, PB1, SST). Null if not printed.`, true),
+    taxIncluded: { type: 'BOOLEAN', description: 'true when item prices already include the tax (Turkish KDV, retail PPN shown as "termasuk"); false when tax is added on top of the subtotal' },
     service: S(AMOUNT, true),
-    discount: S(AMOUNT, true),
     total: S(`${AMOUNT} Null if the total is not readable.`, true),
     items: {
       type: 'ARRAY',
-      items: { type: 'OBJECT', properties: { name: S(), qty: S('Quantity as decimal string, default "1"'), unitPrice: S(AMOUNT), total: S(AMOUNT) }, required: ['name', 'qty', 'total'] },
+      items: {
+        type: 'OBJECT',
+        properties: {
+          name: S('Item name as printed'),
+          qty: S('Quantity as decimal string, default "1"'),
+          unitPrice: S(AMOUNT),
+          total: S(`${AMOUNT} Line price BEFORE any discount, positive`),
+          taxRate: S(RATE, true),
+        },
+        required: ['name', 'qty', 'total'],
+      },
+    },
+    discounts: {
+      type: 'ARRAY',
+      description: 'Every discount / promotion line (Promosyonlar, KAZANÇ, İndirim, Diskon, Potongan, Hemat, Promo, Voucher)',
+      items: {
+        type: 'OBJECT',
+        properties: {
+          label: S('Promotion caption printed with this discount line (e.g. "8.8 KAZANCI", "AGUSTOS INSERT"), or null', true),
+          itemName: S('Name of the item the discount applies to, copied exactly as in items[].name; null for a whole-receipt discount', true),
+          taxRate: S(RATE, true),
+          amount: S(`${AMOUNT} The discount as a POSITIVE number (printed "-3,45" -> "3.45")`),
+        },
+        required: ['amount'],
+      },
+    },
+    taxLines: {
+      type: 'ARRAY',
+      description: 'Tax summary table per rate (e.g. KDV / KDV TUTARI / KDV\'Lİ TOPLAM)',
+      items: {
+        type: 'OBJECT',
+        properties: {
+          rate: S('Tax rate percent, e.g. "10"'),
+          tax: S(`${AMOUNT} Tax amount for this rate`),
+          gross: S(`${AMOUNT} Total for this rate including tax, or null`, true),
+        },
+        required: ['rate', 'tax'],
+      },
     },
     categoryKey: CATEGORY,
     confidence: {
@@ -35,17 +80,23 @@ export const SCAN_SCHEMA: GeminiSchema = {
       required: ['merchant', 'date', 'total', 'items'],
     },
   },
-  required: ['merchant', 'currency', 'total', 'items', 'categoryKey', 'confidence'],
+  required: ['merchant', 'currency', 'total', 'items', 'discounts', 'taxLines', 'categoryKey', 'confidence'],
 };
 
 export function scanPrompt(): string {
-  return `You read a photographed shopping receipt (Indonesia, Malaysia, Turkey or elsewhere) and extract it.
+  return `You read a photographed shopping receipt (Indonesia, Malaysia, Turkey or elsewhere) and extract ALL of it. Read the whole receipt from top to bottom, including the parts below the subtotal.
 Rules:
-- Amounts: ${AMOUNT} Indonesian receipts use "." as thousands separator ("Rp 45.000" means 45000). Turkish uses "," as decimal ("₺350,00" means 350.00). Malaysian "RM 12.50" means 12.50.
+- Amounts: ${AMOUNT} Indonesian receipts use "." as thousands separator ("Rp 45.000" means 45000). Turkish uses "," as decimal ("₺350,00" means 350.00, "*259,90" means 259.90; the "*" is a print marker, ignore it). Malaysian "RM 12.50" means 12.50.
 - currency: ISO code. Rp/IDR -> IDR, RM -> MYR, ₺/TL -> TRY, $ -> USD, S$ -> SGD, € -> EUR.
-- items: every purchased line with name, qty, unit price and line total. Skip payment, change and tax lines.
-- total: the final amount paid. If the image is not a receipt or the total is unreadable, set total to null.
-- date as YYYY-MM-DD, time as HH:MM, null when absent.
+- Header: merchant = store/branch name; storeAddress = this branch's address (skip the head office line starting with "MERKEZ"); storeTaxId = tax office + number (e.g. "Anadolu KR. VD. 2120370364", NPWP); receiptNo = FİŞ NO / No. Struk / Bill No.
+- items: every purchased product line with name, qty, unit price, line total BEFORE discount (positive) and its tax rate when printed next to it (Turkish "%10" / "%20" after the name is the KDV rate). Never put a discount line in items.
+- discounts: NEVER skip the promotion section. Lines under "Promosyonlar", "KAZANÇ"/"KAZANC", "İndirim", "Diskon", "Potongan", "Promo", "Hemat", "Voucher", or any negative amount are discounts. For each: itemName = the product name on that line (copy it exactly as in items), taxRate = the "%" printed on that line, amount = positive value, label = the promotion caption printed just above that line (or null). A caption line without an amount is a label, not a discount.
+- discountTotal = sum of all discounts. subtotal = ARA TOPLAM / Subtotal (before discounts).
+- Tax: NEVER skip it. taxTotal = TOPKDV / Total PPN / PB1 / SST. taxLines = the per-rate tax table (KDV rate, KDV TUTARI = tax, KDV'Lİ TOPLAM = gross). taxIncluded = true when the total already contains the tax (Turkish receipts: always true).
+- paymentMethod = the bank, card or method printed next to the paid amount (e.g. "FinansBank", "Kredi Kartı", "Tunai", "QRIS").
+- total: the final amount paid (TOPLAM / Total / Grand Total). If the image is not a receipt or the total is unreadable, set total to null.
+- Check yourself: subtotal - discountTotal (+ taxTotal when not included) (+ service) should equal total. If it does not, re-read the discount and tax lines before answering.
+- date as YYYY-MM-DD (Turkish/Indonesian/Malaysian dates are DD/MM/YYYY), time as HH:MM, null when absent.
 - ${CATEGORY_GUIDE} Pick the single best category for the whole receipt.
 - confidence: your certainty per field from 0 to 1. Be honest; blurry or guessed values must be below 0.7.
 Do not invent values that are not on the receipt.`;

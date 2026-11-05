@@ -16,14 +16,16 @@ export default function ScanReviewScreen() {
   const router = useRouter();
   const t = useT();
   const { show } = useToast();
-  const { dispatch } = useStore();
+  const { state, dispatch } = useStore();
   const { accounts } = useLedger();
   const [data] = useState(() => peekHandoff('scan'));
+  const existing = data?.txId ? state.transactions.find((tx) => tx.id === data.txId) : undefined;
   const saved = useRef(false);
 
-  // Keluar dari review tanpa menyimpan: foto struk tidak dipakai, jangan dibiarkan di storage.
+  // Keluar dari review tanpa menyimpan: foto struk baru tidak dipakai, jangan dibiarkan di storage.
+  // Foto milik transaksi yang dibaca ulang tetap disimpan.
   useEffect(() => {
-    const path = data?.receiptPath;
+    const path = data?.txId ? undefined : data?.receiptPath;
     return () => {
       if (path && !saved.current) void discardPrivate('receipts', path);
     };
@@ -37,15 +39,23 @@ export default function ScanReviewScreen() {
           result={data.result}
           receiptPath={data.receiptPath}
           accounts={accounts}
+          existing={existing}
           onRetake={() => {
             clearHandoff('scan');
-            router.replace('/scan');
+            if (existing) router.back();
+            else router.replace('/scan');
           }}
           onSave={(tx) => {
             // Kuota sudah dipotong server saat struk berhasil dibaca (angka di layar diambil ulang di layar Scan).
             saved.current = true;
-            dispatch({ type: 'tx/add', tx });
             clearHandoff('scan');
+            if (existing) {
+              dispatch({ type: 'tx/update', tx });
+              show({ tone: 'success', title: t('tx.form.updated') });
+              router.back();
+              return;
+            }
+            dispatch({ type: 'tx/add', tx });
             show({ tone: 'success', title: t('capture.scanReview.savedTitle'), message: t('capture.scanReview.savedMessage', { merchant: tx.merchant, amount: formatMoney(tx.amount, tx.currency) }) });
             router.replace('/transaksi');
           }}

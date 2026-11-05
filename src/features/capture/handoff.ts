@@ -5,7 +5,8 @@ import type { ImportResult, ScanResult, VoiceResult } from '../../../supabase/fu
  * dan berisi data keuangan. Hilang saat aplikasi ditutup: layar review lalu menampilkan state kosong.
  */
 type Handoff = {
-  scan: { result: ScanResult; receiptPath: string } | null;
+  /** txId terisi = baca ulang struk transaksi yang sudah ada (foto miliknya, jangan dihapus). */
+  scan: { result: ScanResult; receiptPath: string; txId?: string } | null;
   voice: { result: VoiceResult } | null;
   import: { result: ImportResult; accountId: string } | null;
 };

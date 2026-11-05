@@ -4,7 +4,7 @@
  * Keluaran AI tidak dipercaya: field yang tidak valid dibuang atau diganti nilai aman, bukan diteruskan.
  */
 import { CATEGORY_KEYS, ImportResult, ScanResult, VoiceResult, type CoachResult } from './contracts.ts';
-import { cleanText, nonNegativeMinor, normalizeCurrency, positiveMinor } from './money.ts';
+import { cleanText, decimalToMinor, nonNegativeMinor, normalizeCurrency, positiveMinor } from './money.ts';
 
 type Raw = Record<string, unknown>;
 const str = (v: unknown): string => (typeof v === 'string' ? v : v == null ? '' : String(v));
@@ -18,23 +18,66 @@ const category = (v: unknown, fallback = 'other'): (typeof CATEGORY_KEYS)[number
   (CATEGORY_KEYS as readonly string[]).includes(str(v)) ? (str(v) as (typeof CATEGORY_KEYS)[number]) : (fallback as 'other');
 const arr = (v: unknown): Raw[] => (Array.isArray(v) ? (v.filter((x) => x && typeof x === 'object') as Raw[]) : []);
 
+const rate = (v: unknown): number | null => {
+  const n = Number(str(v).replace('%', '').replace(',', '.').trim());
+  return str(v).trim() !== '' && Number.isFinite(n) && n >= 0 && n <= 100 ? n : null;
+};
+const textOrNull = (v: unknown, max: number): string | null => cleanText(str(v)).slice(0, max) || null;
+/** Kunci pencocokan nama item vs baris diskon: tanpa diakritik (Ş/S, İ/I), huruf besar, tanpa tanda baca. */
+const nameKey = (s: string): string => s.normalize('NFD').replace(/\p{M}/gu, '').toUpperCase().replace(/[^\p{L}\p{N}]+/gu, ' ').trim();
+
 /** null = struk tidak terbaca (total kosong/<= 0): pemanggil mengembalikan kuota + 422. */
 export function normalizeScan(raw: unknown, fallbackCurrency = 'IDR'): ScanResult | null {
   const r = (raw ?? {}) as Raw;
   const currency = normalizeCurrency(str(r.currency), fallbackCurrency);
   const total = positiveMinor(str(r.total), currency);
   if (total === null) return null;
-  const items = arr(r.items)
-    .map((it) => {
-      const qtyN = Number(str(it.qty) || '1');
-      const qty = Number.isFinite(qtyN) && qtyN > 0 ? Math.round(qtyN * 1000) / 1000 : 1;
-      const lineTotal = nonNegativeMinor(str(it.total), currency);
-      const unit = nonNegativeMinor(str(it.unitPrice), currency) ?? (lineTotal !== null ? Math.round(lineTotal / qty) : null);
-      const name = cleanText(str(it.name)).slice(0, 120);
-      return name && lineTotal !== null && unit !== null ? { name, qty, unitPrice: unit, total: lineTotal } : null;
+
+  type Item = ScanResult['items'][number];
+  type Discount = ScanResult['discounts'][number];
+  const items: Item[] = [];
+  const discounts: Discount[] = [];
+  for (const it of arr(r.items)) {
+    const name = cleanText(str(it.name)).slice(0, 120);
+    const signed = decimalToMinor(str(it.total), currency);
+    if (!name || signed === null) continue;
+    // Model kadang memasukkan baris promosi sebagai item bernilai negatif: pindahkan ke diskon.
+    if (signed < 0) {
+      discounts.push({ label: null, itemName: name, taxRate: rate(it.taxRate), amount: -signed });
+      continue;
+    }
+    const qtyN = Number(str(it.qty) || '1');
+    const qty = Number.isFinite(qtyN) && qtyN > 0 ? Math.round(qtyN * 1000) / 1000 : 1;
+    const unit = nonNegativeMinor(str(it.unitPrice), currency) ?? Math.round(signed / qty);
+    items.push({ name, qty, unitPrice: unit, total: signed, discount: 0, taxRate: rate(it.taxRate) });
+  }
+  for (const d of arr(r.discounts)) {
+    // Diskon boleh tercetak negatif ("-3,45"); yang disimpan selalu besarannya.
+    const amount = decimalToMinor(str(d.amount), currency);
+    if (amount === null || amount === 0) continue;
+    discounts.push({ label: textOrNull(d.label, 120), itemName: textOrNull(d.itemName, 120), taxRate: rate(d.taxRate), amount: Math.abs(amount) });
+  }
+  // Tempelkan tiap diskon ke item yang namanya sama (nama di struk sering terpotong, jadi cek awalan juga).
+  for (const d of discounts) {
+    if (!d.itemName) continue;
+    const key = nameKey(d.itemName);
+    const target =
+      items.find((i) => nameKey(i.name) === key) ?? items.find((i) => key.length >= 4 && (nameKey(i.name).startsWith(key) || key.startsWith(nameKey(i.name))));
+    if (target) target.discount = Math.min(target.total, target.discount + d.amount);
+  }
+  const discountSum = discounts.reduce((sum, d) => sum + d.amount, 0);
+
+  const taxLines = arr(r.taxLines)
+    .map((l) => {
+      const rt = rate(l.rate);
+      const tax = nonNegativeMinor(str(l.tax), currency);
+      return rt === null || tax === null ? null : { rate: rt, tax, gross: nonNegativeMinor(str(l.gross) || null, currency) };
     })
     .filter((x): x is NonNullable<typeof x> => x !== null)
-    .slice(0, 80);
+    .slice(0, 10);
+  const taxTotal = nonNegativeMinor(str(r.taxTotal ?? r.tax) || null, currency) ?? (taxLines.length ? taxLines.reduce((sum, l) => sum + l.tax, 0) : null);
+  const discountTotal = nonNegativeMinor(str(r.discountTotal ?? r.discount) || null, currency) ?? (discounts.length ? discountSum : null);
+
   const conf = (r.confidence ?? {}) as Raw;
   const parsed = ScanResult.safeParse({
     merchant: cleanText(str(r.merchant)).slice(0, 120),
@@ -42,11 +85,18 @@ export function normalizeScan(raw: unknown, fallbackCurrency = 'IDR'): ScanResul
     time: hhmm(r.time),
     currency,
     subtotal: nonNegativeMinor(str(r.subtotal) || null, currency),
-    tax: nonNegativeMinor(str(r.tax) || null, currency),
+    tax: taxTotal,
     service: nonNegativeMinor(str(r.service) || null, currency),
-    discount: nonNegativeMinor(str(r.discount) || null, currency),
+    discount: discountTotal,
     total,
-    items,
+    items: items.slice(0, 80),
+    discounts: discounts.slice(0, 80),
+    taxLines,
+    taxIncluded: r.taxIncluded !== false,
+    storeAddress: textOrNull(r.storeAddress, 240),
+    storeTaxId: textOrNull(r.storeTaxId, 80),
+    receiptNo: textOrNull(r.receiptNo, 60),
+    paymentMethod: textOrNull(r.paymentMethod, 60),
     categoryKey: category(r.categoryKey),
     confidence: { merchant: num01(conf.merchant), date: num01(conf.date), total: num01(conf.total), items: num01(conf.items) },
   });

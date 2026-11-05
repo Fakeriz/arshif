@@ -18,7 +18,27 @@ export type Account = {
 export type TxType = 'income' | 'expense' | 'transfer';
 export type TxSource = 'manual' | 'scan' | 'voice' | 'import' | 'smartlog';
 
-export type ReceiptItem = { name: string; qty: number; unitPrice: number; total: number };
+/** total = harga sebelum diskon (minor units); bayar = total - discount. taxRate dalam persen. */
+export type ReceiptItem = { name: string; qty: number; unitPrice: number; total: number; discount?: number; taxRate?: number };
+
+export type ReceiptDiscount = { label?: string; itemName?: string; taxRate?: number; amount: number };
+export type ReceiptTaxLine = { rate: number; tax: number; gross?: number };
+
+/** Rincian struk hasil scan. Nominal dalam minor units `currency` transaksi. */
+export type ReceiptDetails = {
+  subtotal?: number;
+  discountTotal?: number;
+  taxTotal?: number;
+  /** true = harga sudah termasuk pajak (KDV); false = pajak ditambahkan ke subtotal. */
+  taxIncluded?: boolean;
+  service?: number;
+  discounts: ReceiptDiscount[];
+  taxLines: ReceiptTaxLine[];
+  receiptNo?: string;
+  paymentMethod?: string;
+  storeAddress?: string;
+  storeTaxId?: string;
+};
 
 export type Transaction = {
   id: string;
@@ -44,6 +64,7 @@ export type Transaction = {
   /** Foto struk di bucket privat receipts: "<user_id>/<berkas>". */
   receiptPath?: string;
   items?: ReceiptItem[];
+  receipt?: ReceiptDetails;
 };
 
 export type NotificationType = 'bill_due' | 'budget_alert' | 'weekly_recap' | 'quota_warning' | 'system';

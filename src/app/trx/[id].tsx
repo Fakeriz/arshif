@@ -1,28 +1,54 @@
-import { Pencil, Trash2 } from 'lucide-react-native';
+import { Pencil, ScanText, Trash2 } from 'lucide-react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import { categoryLabel, useI18n } from '@/i18n';
+import { usePaywall } from '@/components/shell/Paywall';
 import { Screen } from '@/components/shell/Screen';
 import { ScreenHeader } from '@/components/shell/ScreenHeader';
 import { AppText, Button, Card, CategoryIcon, CurrencyText, Dialog, EmptyState, useToast } from '@/components/ui';
+import { invokeFn } from '@/data/remote/functions';
+import { failureOf } from '@/features/capture/CaptureError';
+import { putHandoff } from '@/features/capture/handoff';
 import { ReceiptPhoto } from '@/features/capture/ReceiptPhoto';
 import { InfoRow } from '@/features/transactions/InfoRow';
 import { ReceiptItems } from '@/features/transactions/ReceiptItems';
+import { DiscountsCard, StoreCard, TaxCard } from '@/features/transactions/ReceiptSections';
 import { dayLong } from '@/lib/dates';
 import { currencyMeta, formatMoney } from '@/lib/money';
 import { useStore } from '@/state/AppStore';
 import { space } from '@/theme/tokens';
+
+import { FUNCTIONS, ScanResult } from '../../../supabase/functions/_shared/contracts';
 
 export default function TransactionDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const { t, lang } = useI18n();
   const { show } = useToast();
-  const { state, dispatch } = useStore();
+  const { state, dispatch, refreshUsage } = useStore();
+  const paywall = usePaywall();
   const [confirm, setConfirm] = useState(false);
+  const [rereading, setRereading] = useState(false);
   const tx = state.transactions.find((t) => t.id === id);
+
+  // Baca ulang foto struk yang tersimpan (memakai kuota scan), lalu periksa hasilnya di layar review.
+  const reread = async (path: string, txId: string) => {
+    setRereading(true);
+    try {
+      const result = await invokeFn(FUNCTIONS.scan, { path, lang }, ScanResult);
+      putHandoff('scan', { result, receiptPath: path, txId });
+      router.push('/scan-review');
+    } catch (e) {
+      const failure = failureOf(e);
+      if (failure === 'quota') paywall(t('capture.scan.limitReason'));
+      else show({ tone: 'error', title: t(failure === 'unreadable' ? 'capture.scan.failedTitle' : 'tx.receipt.rereadFailed') });
+    } finally {
+      refreshUsage();
+      setRereading(false);
+    }
+  };
 
   if (!tx) {
     return (
@@ -69,8 +95,14 @@ export default function TransactionDetail() {
           <InfoRow label={t('tx.detail.rate')} value={`1 ${tx.currency} = ${effectiveRate(tx.amount, tx.currency, tx.accountAmount, account.currency)} ${account.currency}`} />
         </Card>
       )}
-      {tx.items && tx.items.length > 0 && <ReceiptItems items={tx.items} currency={tx.currency} />}
+      {tx.items && tx.items.length > 0 && <ReceiptItems items={tx.items} currency={tx.currency} receipt={tx.receipt} total={tx.amount} />}
+      {tx.receipt && <DiscountsCard discounts={tx.receipt.discounts} currency={tx.currency} />}
+      {tx.receipt && <TaxCard receipt={tx.receipt} items={tx.items ?? []} currency={tx.currency} />}
+      {tx.receipt && <StoreCard merchant={tx.merchant} receipt={tx.receipt} />}
       {tx.receiptPath && <ReceiptPhoto path={tx.receiptPath} merchant={tx.merchant} />}
+      {tx.receiptPath && tx.type === 'expense' && (
+        <Button label={t('tx.receipt.reread')} icon={ScanText} variant="secondary" fullWidth loading={rereading} disabled={rereading} onPress={() => void reread(tx.receiptPath!, tx.id)} />
+      )}
       <View style={styles.actions}>
         <Button label={t('tx.detail.edit')} icon={Pencil} variant="secondary" fullWidth onPress={() => router.push({ pathname: '/tambah', params: { id: tx.id } })} />
         <Button label={t('tx.detail.delete')} icon={Trash2} variant="danger" fullWidth onPress={() => setConfirm(true)} />

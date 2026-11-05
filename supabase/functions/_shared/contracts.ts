@@ -33,7 +33,25 @@ export const ErrorBody = z.object({ error: ErrorCode, quotaKey: z.string().optio
 
 // ------------------------------------------------------------------ scan-receipt (FR-OCR-2/3)
 export const ScanRequest = z.object({ path: StoragePath, lang: Lang });
-export const ScanItem = z.object({ name: z.string().min(1).max(120), qty: z.number().positive(), unitPrice: Minor, total: Minor });
+/** total = harga sebelum diskon; discount = jumlah diskon promosi yang menempel ke item ini. */
+export const ScanItem = z.object({
+  name: z.string().min(1).max(120),
+  qty: z.number().positive(),
+  unitPrice: Minor,
+  total: Minor,
+  discount: Minor.default(0),
+  /** Tarif pajak item dalam persen (KDV %10 -> 10), null bila tidak tercetak. */
+  taxRate: z.number().min(0).max(100).nullable().default(null),
+});
+/** Baris promosi/diskon. amount positif (ditampilkan sebagai pengurang). */
+export const ScanDiscount = z.object({
+  label: z.string().max(120).nullable(),
+  itemName: z.string().max(120).nullable(),
+  taxRate: z.number().min(0).max(100).nullable(),
+  amount: Minor.positive(),
+});
+/** Rincian pajak per tarif: tax = pajak, gross = total termasuk pajak (KDV'Li TOPLAM). */
+export const ScanTaxLine = z.object({ rate: z.number().min(0).max(100), tax: Minor, gross: Minor.nullable() });
 export const ScanResult = z.object({
   merchant: z.string().max(120),
   date: Ymd.nullable(),
@@ -45,6 +63,14 @@ export const ScanResult = z.object({
   discount: Minor.nullable(),
   total: Minor.positive(),
   items: z.array(ScanItem).max(80),
+  discounts: z.array(ScanDiscount).max(80).default([]),
+  taxLines: z.array(ScanTaxLine).max(10).default([]),
+  /** true = harga item sudah termasuk pajak (KDV Turki, PPN di struk ritel): pajak tidak ditambahkan ke total. */
+  taxIncluded: z.boolean().default(true),
+  storeAddress: z.string().max(240).nullable().default(null),
+  storeTaxId: z.string().max(80).nullable().default(null),
+  receiptNo: z.string().max(60).nullable().default(null),
+  paymentMethod: z.string().max(60).nullable().default(null),
   categoryKey: CategoryKey,
   /** Keyakinan 0–1 per field; < 0,7 ditandai kuning di layar review. */
   confidence: z.object({ merchant: z.number().min(0).max(1), date: z.number().min(0).max(1), total: z.number().min(0).max(1), items: z.number().min(0).max(1) }),

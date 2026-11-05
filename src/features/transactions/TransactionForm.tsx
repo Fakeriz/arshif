@@ -82,6 +82,7 @@ export function TransactionForm({ accounts, initial, onSubmit }: TransactionForm
       note: note.trim() || undefined,
       source: initial?.source ?? 'manual',
       items: initial?.items,
+      receipt: initial?.receipt,
     });
   };
 

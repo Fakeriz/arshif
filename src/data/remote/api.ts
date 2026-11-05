@@ -100,7 +100,7 @@ export async function loadTransactions(): Promise<Transaction[]> {
     const rows = must(
       await supabase
         .from('transactions')
-        .select('*, transaction_items(name, qty, unit_price, total, position)')
+        .select('*, transaction_items(name, qty, unit_price, total, position, discount, tax_rate)')
         .order('date', { ascending: false })
         .order('time', { ascending: false })
         .order('id', { ascending: false })
@@ -162,7 +162,9 @@ async function replaceItems(txs: Transaction[]): Promise<void> {
   check(await supabase.from('transaction_items').delete().in('transaction_id', withItems.map((t) => t.id)));
   check(
     await supabase.from('transaction_items').insert(
-      withItems.flatMap((t) => t.items!.map((it, position) => ({ transaction_id: t.id, position, name: it.name, qty: it.qty, unit_price: it.unitPrice, total: it.total }))),
+      withItems.flatMap((t) =>
+        t.items!.map((it, position) => ({ transaction_id: t.id, position, name: it.name, qty: it.qty, unit_price: it.unitPrice, total: it.total, discount: Math.min(it.discount ?? 0, it.total), tax_rate: it.taxRate ?? null })),
+      ),
     ),
   );
 }

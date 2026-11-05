@@ -76,8 +76,8 @@ describe('normalizeScan', () => {
     expect(s.total).toBe(87500);
     expect(s.discount).toBe(0);
     expect(s.items).toEqual([
-      { name: 'Indomie Goreng', qty: 5, unitPrice: 3500, total: 17500 },
-      { name: 'Telur Ayam 1 kg', qty: 1, unitPrice: 29000, total: 29000 },
+      { name: 'Indomie Goreng', qty: 5, unitPrice: 3500, total: 17500, discount: 0, taxRate: null },
+      { name: 'Telur Ayam 1 kg', qty: 1, unitPrice: 29000, total: 29000, discount: 0, taxRate: null },
     ]);
     expect(s.confidence).toEqual({ merchant: 0.95, date: 1, total: 0.9, items: 0.6 });
   });
