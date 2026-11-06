@@ -163,11 +163,17 @@ export function normalizeCoach(raw: unknown): Omit<CoachResult, 'cached'> | null
   return { narration, actions };
 }
 
-/** Jawaban Tanya Coach: teks dibersihkan (tanpa em dash), dibatasi panjangnya. */
-export function normalizeAsk(raw: unknown): { answer: string } | null {
+/** Jawaban Tanya Coach: teks dibersihkan (tanpa em dash, tanpa penanda daftar/markdown), dibatasi panjangnya. */
+export function normalizeAsk(raw: unknown): { answer: string; points: string[]; tip: string | null } | null {
   const r = (raw ?? {}) as Raw;
-  const answer = cleanAnswer(str(r.answer)).slice(0, 1500);
-  return answer ? { answer } : null;
+  const answer = cleanAnswer(str(r.answer)).slice(0, 600);
+  if (!answer) return null;
+  const points = (Array.isArray(r.points) ? r.points : [])
+    .map((p) => cleanText(str(p)).replace(/^([-*\u2022]|\d+[.)])\s*/, '').replace(/\*\*/g, '').slice(0, 220))
+    .filter(Boolean)
+    .slice(0, 4);
+  const tip = cleanText(str(r.tip)).replace(/\*\*/g, '').slice(0, 240) || null;
+  return { answer: answer.replace(/\*\*/g, ''), points, tip };
 }
 
 /** Seperti cleanText, tapi baris baru dipertahankan (daftar singkat). */

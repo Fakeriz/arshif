@@ -41,6 +41,8 @@ const coach: Messages['coach'] = {
     monthlySub: 'Arrives on the 1st of each month, Premium only',
   },
   ask: {
+    nextStep: 'Next step',
+    thinkingTitle: 'Coach is putting together an answer from your budget numbers',
     privacy: 'Coach answers from a summary of your budget numbers, without shop names, notes, or individual transactions.',
     left: '{count} questions left today',
     left_one: '{count} question left today',

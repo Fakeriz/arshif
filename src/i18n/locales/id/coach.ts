@@ -39,6 +39,8 @@ const coach = {
     monthlySub: 'Muncul setiap tanggal 1, khusus Premium',
   },
   ask: {
+    nextStep: 'Langkah berikutnya',
+    thinkingTitle: 'Coach sedang menyusun jawaban dari angka anggaranmu',
     privacy: 'Coach menjawab dari ringkasan angka anggaranmu, tanpa nama toko, catatan, atau transaksi satu per satu.',
     left: 'Sisa {count} pertanyaan hari ini',
     left_one: 'Sisa {count} pertanyaan hari ini',

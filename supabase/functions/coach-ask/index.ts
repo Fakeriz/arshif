@@ -9,7 +9,7 @@ import { AskRequest } from '../_shared/contracts.ts';
 import { runAiJob } from '../_shared/guard.ts';
 import { HttpError, json, readJson, serve } from '../_shared/http.ts';
 import { normalizeAsk } from '../_shared/normalize.ts';
-import { ASK_SCHEMA, askPrompt } from '../_shared/prompts.ts';
+import { ASK_SCHEMA, askPrompt, askView } from '../_shared/prompts.ts';
 
 serve(async (req) => {
   const user = await requireUser(req);
@@ -19,7 +19,7 @@ serve(async (req) => {
   const db = adminClient();
 
   const result = await runAiJob(db, user.id, 'coach', 'coachAsk', async () => {
-    const raw = await generateJson(askPrompt(lang, { question, history, context }), ASK_SCHEMA);
+    const raw = await generateJson(askPrompt(lang, { question, history, context: askView(context) }), ASK_SCHEMA);
     const answer = normalizeAsk(raw);
     if (!answer) throw new HttpError('ai_failed', 502);
     return answer;

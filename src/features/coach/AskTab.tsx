@@ -1,9 +1,9 @@
-import { SendHorizontal } from 'lucide-react-native';
+import { Lightbulb, SendHorizontal } from 'lucide-react-native';
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import { usePaywall } from '@/components/shell/Paywall';
-import { AppText, Button, Card, Chip, EmptyState, GlassView, Icon, Input, PressableScale, ProBadge, SkeletonText } from '@/components/ui';
+import { AppText, Button, Card, Chip, EmptyState, GlassView, Icon, Input, PressableScale, ProBadge, Skeleton } from '@/components/ui';
 import { FnError, invokeFn } from '@/data/remote/functions';
 import { useI18n } from '@/i18n';
 import { buildAskContext } from '@/lib/coachAsk';
@@ -21,7 +21,10 @@ const EXAMPLES = ['coach.ask.example1', 'coach.ask.example2', 'coach.ask.example
 /** Giliran yang dikirim ulang ke AI sebagai konteks percakapan. */
 const HISTORY_TURNS = 6;
 
-type Turn = { role: 'user' | 'coach'; text: string };
+type Turn = { role: 'user'; text: string } | { role: 'coach'; text: string; points: string[]; tip: string | null };
+
+/** Teks satu giliran Coach untuk riwayat yang dikirim balik ke AI. */
+const turnText = (t: Turn) => (t.role === 'coach' ? [t.text, ...t.points, t.tip ?? ''].filter(Boolean).join('\n').slice(0, 1500) : t.text);
 type Failure = 'quota' | 'rate_limited' | 'network' | 'other';
 
 /** Tanya Coach (FR-COACH-3): Premium 20 pertanyaan/hari. Pengguna Free melihat state batas. */
@@ -83,8 +86,9 @@ function AskChat() {
         limits: budget.limits, spent: budget.spent, byCategory: budget.byCategory, categoryLimits: budget.categoryLimits,
         week: recap, score: health.score, pillars: health.pillars,
       });
-      const res = await invokeFn(FUNCTIONS.coachAsk, { lang, question, history: turns.slice(-HISTORY_TURNS), context }, AskResult);
-      setTurns((list) => [...list, { role: 'user', text: question }, { role: 'coach', text: res.answer }]);
+      const history = turns.slice(-HISTORY_TURNS).map((x) => ({ role: x.role, text: turnText(x) }));
+      const res = await invokeFn(FUNCTIONS.coachAsk, { lang, question, history, context }, AskResult);
+      setTurns((list) => [...list, { role: 'user', text: question }, { role: 'coach', text: res.answer, points: res.points, tip: res.tip }]);
     } catch (e) {
       const code = e instanceof FnError ? e.code : 'other';
       setFailure({ kind: code === 'quota' || code === 'rate_limited' || code === 'network' ? code : 'other', question });
@@ -124,11 +128,7 @@ function AskChat() {
       {pending && (
         <>
           <Bubble turn={{ role: 'user', text: pending }} />
-          <GlassView radius={radius.lg} style={[styles.bubble, styles.coach]} accessibilityLabel={t('coach.ask.thinking')}>
-            <View aria-busy>
-              <SkeletonText lines={2} />
-            </View>
-          </GlassView>
+          <Thinking />
         </>
       )}
 
@@ -182,12 +182,67 @@ function Bubble({ turn }: { turn: Turn }) {
       </View>
     );
   }
+  // Jawaban Coach: jawaban langsung (paling menonjol), poin pendukung berangka, lalu satu langkah berikutnya.
   return (
-    <GlassView radius={radius.lg} style={[styles.bubble, styles.coach]} accessibilityLabel={t('coach.ask.coachSaid', { text: turn.text })}>
+    <GlassView radius={radius.lg} style={[styles.bubble, styles.coach, styles.answer]} accessibilityLabel={t('coach.ask.coachSaid', { text: turnText(turn) })}>
       <AppText variant="caption" tone="accent">
         {t('coach.ask.coachName')}
       </AppText>
-      <AppText variant="body">{turn.text}</AppText>
+      <AppText variant="bodyStrong">{turn.text}</AppText>
+      {turn.points.length > 0 && (
+        <View style={styles.points}>
+          {turn.points.map((p, i) => (
+            <View key={i} style={styles.point}>
+              <View style={[styles.dot, { backgroundColor: colors.accent }]} />
+              <AppText variant="body" tone="secondary" style={styles.flex}>
+                {p}
+              </AppText>
+            </View>
+          ))}
+        </View>
+      )}
+      {turn.tip && (
+        <View style={[styles.tip, { backgroundColor: colors.accentSoft }]}>
+          <Icon icon={Lightbulb} color={colors.accentText} size={18} />
+          <View style={styles.flex}>
+            <AppText variant="caption" tone="accent">
+              {t('coach.ask.nextStep')}
+            </AppText>
+            <AppText variant="body">{turn.tip}</AppText>
+          </View>
+        </View>
+      )}
+    </GlassView>
+  );
+}
+
+/**
+ * Skeleton saat Coach menyusun jawaban: bentuknya sama dengan kartu jawaban (jawaban, poin, langkah berikutnya),
+ * jadi tata letak tidak meloncat saat jawaban datang. Berdenyut pelan; statis saat reduced motion.
+ */
+function Thinking() {
+  const { colors } = useTheme();
+  const { t } = useI18n();
+  return (
+    <GlassView radius={radius.lg} style={[styles.bubble, styles.coach, styles.answer]}>
+      <View accessible accessibilityLabel={t('coach.ask.thinking')} aria-busy aria-live="polite" style={styles.thinking}>
+        <AppText variant="caption" tone="accent">
+          {t('coach.ask.thinkingTitle')}
+        </AppText>
+        <Skeleton height={14} width="92%" />
+        <Skeleton height={14} width="64%" />
+        <View style={styles.points}>
+          {(['88%', '76%', '58%'] as const).map((w) => (
+            <View key={w} style={styles.point}>
+              <View style={[styles.dot, { backgroundColor: colors.skeleton }]} />
+              <View style={styles.flex}>
+                <Skeleton height={12} width={w} />
+              </View>
+            </View>
+          ))}
+        </View>
+        <Skeleton height={52} radius={radius.md} />
+      </View>
     </GlassView>
   );
 }
@@ -198,6 +253,13 @@ const styles = StyleSheet.create({
   example: { marginTop: space.sm },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: space.sm, marginTop: space.md },
   bubble: { padding: space.md, gap: space.xs, maxWidth: '88%' },
+  // Kartu jawaban selebar kolom: poin dan langkah berikutnya butuh ruang baca.
+  answer: { maxWidth: '100%', alignSelf: 'stretch', gap: space.sm },
+  points: { gap: space.sm },
+  point: { flexDirection: 'row', alignItems: 'flex-start', gap: space.sm },
+  dot: { width: 6, height: 6, borderRadius: 3, marginTop: 8 },
+  tip: { flexDirection: 'row', gap: space.sm, padding: space.md, borderRadius: radius.md, alignItems: 'flex-start' },
+  thinking: { gap: space.sm },
   user: { alignSelf: 'flex-end', borderRadius: radius.lg, borderBottomRightRadius: radius.sm },
   coach: { alignSelf: 'flex-start', borderBottomLeftRadius: radius.sm },
   inputRow: { flexDirection: 'row', alignItems: 'flex-end', gap: space.sm },

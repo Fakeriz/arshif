@@ -41,6 +41,8 @@ const coach: Messages['coach'] = {
     monthlySub: 'Muncul setiap 1 haribulan, khas Premium',
   },
   ask: {
+    nextStep: 'Langkah seterusnya',
+    thinkingTitle: 'Coach sedang menyusun jawapan daripada angka belanjawan anda',
     privacy: 'Coach menjawab daripada ringkasan angka belanjawan anda, tanpa nama kedai, nota atau transaksi satu demi satu.',
     left: 'Baki {count} soalan hari ini',
     left_one: 'Baki {count} soalan hari ini',

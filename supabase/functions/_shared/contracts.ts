@@ -165,7 +165,15 @@ export const AskRequest = z.object({
   history: z.array(AskTurn).max(6),
   context: AskContext,
 });
-export const AskResult = z.object({ answer: z.string().min(1).max(1500) });
+/**
+ * Jawaban terstruktur: `answer` = jawaban langsung (1-2 kalimat), `points` = 0-4 poin pendukung berangka,
+ * `tip` = satu langkah berikutnya. Server lama hanya mengirim `answer`; poin dan tip opsional.
+ */
+export const AskResult = z.object({
+  answer: z.string().min(1).max(600),
+  points: z.array(z.string().min(1).max(220)).max(4).default([]),
+  tip: z.string().min(1).max(240).nullable().default(null),
+});
 export type AskResult = z.infer<typeof AskResult>;
 
 // ------------------------------------------------------------------ delete-account (FR-SET-3)

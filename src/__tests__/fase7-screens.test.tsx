@@ -197,14 +197,22 @@ describe('perbaikan uji HP', () => {
   });
 
   it('Premium: kirim pertanyaan -> jawaban Coach; hanya ringkasan angka yang dikirim', async () => {
-    mockInvoke.mockResolvedValueOnce({ answer: 'Makan & Minum paling besar periode ini.' });
+    let resolve: (v: unknown) => void = () => undefined;
+    mockInvoke.mockReturnValueOnce(new Promise((r) => (resolve = r)));
     await act(async () => {
       wrap(<AskTab />, { plan: 'premium' });
     });
     expect(screen.getByText('Sisa 20 pertanyaan hari ini')).toBeTruthy();
     await act(async () => fireEvent.changeText(screen.getByLabelText('Pertanyaanmu'), 'Kategori mana yang paling boros?'));
     await act(async () => fireEvent.press(screen.getByLabelText('Kirim pertanyaan')));
+    // Selama menunggu: skeleton berbentuk kartu jawaban.
+    expect(screen.getByLabelText('Coach sedang menjawab')).toBeTruthy();
+    await act(async () => resolve({ answer: 'Makan & Minum paling besar periode ini.', points: ['Rp1.650.000, lewat batas Rp1.500.000.'], tip: 'Batasi makan di luar Rp100.000 per hari.' }));
+    expect(screen.queryByLabelText('Coach sedang menjawab')).toBeNull();
     expect(screen.getByText('Makan & Minum paling besar periode ini.')).toBeTruthy();
+    expect(screen.getByText('Rp1.650.000, lewat batas Rp1.500.000.')).toBeTruthy();
+    expect(screen.getByText('Langkah berikutnya')).toBeTruthy();
+    expect(screen.getByText('Batasi makan di luar Rp100.000 per hari.')).toBeTruthy();
     const [name, body] = mockInvoke.mock.calls[0]!;
     expect(name).toBe('coach-ask');
     expect(body).toMatchObject({ lang: 'id', question: 'Kategori mana yang paling boros?', history: [] });

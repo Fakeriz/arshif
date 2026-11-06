@@ -41,6 +41,8 @@ const coach: Messages['coach'] = {
     monthlySub: 'Her ayın 1’inde gelir, yalnızca Premium',
   },
   ask: {
+    nextStep: 'Sonraki adım',
+    thinkingTitle: 'Koç, bütçe rakamlarından yanıtını hazırlıyor',
     privacy: 'Koç, bütçe rakamlarının özetinden yanıt verir; mağaza adı, not veya tek tek işlemler gönderilmez.',
     left: 'Bugün {count} soru hakkın kaldı',
     left_one: 'Bugün {count} soru hakkın kaldı',
