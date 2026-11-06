@@ -130,7 +130,7 @@ function SubscriptionSheet({ sub, onClose }: { sub: Subscription | null; onClose
   };
   return (
     <>
-      <BottomSheet visible={!edit && !confirm} onClose={onClose} title={sub.name} subtitle={`${formatMoney(sub.amount, sub.currency)}${t(`plan.subs.perCycle.${sub.cycle}`)}`}>
+      <BottomSheet scrollable visible={!edit && !confirm} onClose={onClose} title={sub.name} subtitle={`${formatMoney(sub.amount, sub.currency)}${t(`plan.subs.perCycle.${sub.cycle}`)}`}>
         <InfoRow label={t('plan.subs.nextRenewal')} value={sub.status === 'active' ? shortDate(sub.nextRenewal, lang) : t('plan.subs.stopped')} divider />
         <InfoRow label={t('plan.subs.cycle')} value={t(`plan.subs.cycles.${sub.cycle}`)} />
         <View style={styles.actions}>

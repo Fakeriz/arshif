@@ -1,4 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useReducer, useRef, useState, type ReactNode } from 'react';
+import { AppState as RNAppState } from 'react-native';
 
 import { useToast } from '@/components/ui';
 import * as api from '@/data/remote/api';
@@ -157,6 +158,24 @@ export function AppStoreProvider({ children, preset }: { children: ReactNode; pr
       })
       .catch(() => fresh.forEach((c) => historyTried.current.delete(c)));
   }, [userId, state.status, state.accounts, state.transactions, state.mainCurrency, state.limitGroups, state.ratesDate]);
+
+  // Paket bisa berubah di server saat aplikasi di latar (grant manual, webhook pembayaran): baca ulang paket
+  // dan kuota setiap aplikasi kembali aktif, supaya fitur Premium tidak tertahan state Free yang lama.
+  useEffect(() => {
+    if (!userId) return;
+    const sub = RNAppState.addEventListener('change', (next) => {
+      if (next !== 'active' || stateRef.current.status !== 'ready') return;
+      api
+        .loadPlan(userId)
+        .then((p) => {
+          const cur = stateRef.current;
+          if (cur.plan !== p.plan || cur.premiumUntil !== p.premiumUntil) localDispatch({ type: 'plan/set', plan: p.plan, premiumUntil: p.premiumUntil, premiumSource: p.premiumSource });
+        })
+        .catch(() => undefined);
+      api.loadUsage().then((usage) => localDispatch({ type: 'usage/set', usage })).catch(() => undefined);
+    });
+    return () => sub.remove();
+  }, [userId]);
 
   // Lonceng live (FR-NOTIF-1): notifikasi baru masuk lewat Realtime.
   useEffect(() => {

@@ -80,6 +80,12 @@ export async function loadProfile(userId: string, email: string): Promise<Profil
 }
 
 /** Kolom profil yang boleh diubah klien (sama dengan grant di migrasi). */
+/** Paket saja (dibaca ulang saat aplikasi kembali aktif, mis. setelah grant Premium). */
+export async function loadPlan(userId: string): Promise<{ plan: Plan; premiumUntil: string | null; premiumSource: Profile['premiumSource'] }> {
+  const r = must(await supabase.from('profiles').select('plan, premium_until, premium_source').eq('id', userId).single<Pick<ProfileRow, 'plan' | 'premium_until' | 'premium_source'>>());
+  return { plan: r.plan, premiumUntil: r.premium_until, premiumSource: r.premium_source };
+}
+
 export type ProfilePatch = Partial<{
   display_name: string; main_currency: string; lang: Lang; accent: AccentKey; theme_mode: ThemeMode; hide_balance: boolean;
   payday: number; monthly_income: number; split_needs: number; split_wants: number; split_savings: number;

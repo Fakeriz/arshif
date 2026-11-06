@@ -15,7 +15,7 @@ const shell: Messages['shell'] = {
       reason: 'Your Free receipt scans ({free}/month) are used up. They reset on the 1st, or upgrade for {premium} scans/month.',
     },
     docscan: {
-      title: 'Scan document',
+      title: 'Scan Document',
       short: 'Document',
       sub: 'Receipt edges are detected and cropped automatically',
     },

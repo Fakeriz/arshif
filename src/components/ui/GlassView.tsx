@@ -117,10 +117,16 @@ export function GlassView({ children, level = 'panel', radius = radii.lg, style,
   const enabled = useGlassEnabled();
   // Panel di atas Backdrop memakai kaca lapisan mengambang (sama dengan modal) dan mem-blur Backdrop.
   const floating = level === 'floating' || backdrop !== null;
-  const target = level === 'floating' ? (blurTarget !== inside ? blurTarget : null) : backdrop;
+  // Android: hanya lapisan mengambang (nav pill, sheet, dialog, toast) yang memakai blur hidup. Panel konten
+  // di atas Backdrop tidak: blur dimezis menggambar ulang latar di setiap frame scroll, dan puluhan panel
+  // (satu Card per hari di daftar transaksi) membuat FPS turun. Latar panel hanya glow radial yang sudah
+  // halus, jadi blur-nya hampir tak terlihat; panel tetap memakai warna kaca mengambang yang sama (glassStrong)
+  // di atas glow, sehingga tampilan dan kontras tidak berubah.
+  const target = level === 'floating' ? (blurTarget !== inside ? blurTarget : null) : Platform.OS === 'android' ? null : backdrop;
   // Android API 31+ butuh target di luar elemen ini. Selain itu fallback translusen solid.
   const androidBlur = androidBlurSupported && !!target;
   const blur = enabled && (Platform.OS !== 'android' || androidBlur);
+  const panelOverBackdrop = Platform.OS === 'android' && level === 'panel' && backdrop !== null && enabled;
 
   const shell: ViewStyle = {
     borderRadius: radius,
@@ -130,7 +136,7 @@ export function GlassView({ children, level = 'panel', radius = radii.lg, style,
     // Stacking context sendiri: lapisan blur (zIndex -1) selalu di belakang konten,
     // termasuk <svg> yang di web bukan elemen positioned.
     zIndex: 0,
-    backgroundColor: blur
+    backgroundColor: blur || panelOverBackdrop
       ? floating ? colors.glassStrong : colors.glass
       : floating ? colors.glassStrongFallback : colors.glassFallback,
   };

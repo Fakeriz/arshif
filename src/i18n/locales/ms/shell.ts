@@ -15,7 +15,7 @@ const shell: Messages['shell'] = {
       reason: 'Kuota imbas resit Free ({free}/bulan) sudah habis. Set semula pada 1 haribulan, atau naik taraf untuk {premium} imbasan/bulan.',
     },
     docscan: {
-      title: 'Imbas dokumen',
+      title: 'Imbas Dokumen',
       short: 'Dokumen',
       sub: 'Tepi resit dikesan dan dipotong secara automatik',
     },

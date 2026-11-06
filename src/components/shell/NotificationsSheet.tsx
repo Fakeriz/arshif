@@ -39,7 +39,7 @@ export function NotificationsSheet({ visible, onClose }: { visible: boolean; onC
   const unread = state.notifications.filter((n) => !n.read).length;
 
   return (
-    <BottomSheet visible={visible} onClose={onClose} title={t('shell.notifications.title')} subtitle={unread ? t('shell.notifications.unread', { count: unread }) : t('shell.notifications.allRead')}>
+    <BottomSheet scrollable visible={visible} onClose={onClose} title={t('shell.notifications.title')} subtitle={unread ? t('shell.notifications.unread', { count: unread }) : t('shell.notifications.allRead')}>
       {state.notifications.length === 0 ? (
         <EmptyState compact title={t('shell.notifications.emptyTitle')} message={t('shell.notifications.emptyMessage')} />
       ) : (

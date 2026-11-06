@@ -8,7 +8,8 @@ import type { Transaction } from '@/data/types';
 import { categoryLabel, useI18n } from '@/i18n';
 import { shortDate, todayYmd } from '@/lib/dates';
 import { formatMoney } from '@/lib/money';
-import { weeklyRecap, type Achievement, type WeeklyRecap } from '@/lib/recap';
+import { monthlyRecap, weeklyRecap, type Achievement, type WeeklyRecap } from '@/lib/recap';
+import { useStore } from '@/state/AppStore';
 import { useTheme } from '@/theme/ThemeProvider';
 import { radius, space } from '@/theme/tokens';
 
@@ -23,16 +24,39 @@ const ACHIEVEMENT_ICON: Record<Achievement, LucideIcon> = {
 /**
  * Weekly Replay (FR-COACH-5): recap minggu dengan nada merayakan. Satu kartu satu cerita: angka besar di depan,
  * lalu sorotan (belanja terbesar, hemat terbesar) dan pencapaian. Bawaan minggu berjalan; minggu lalu satu ketuk.
+ * Bulan lalu = recap bulanan (Premium); paket Free melihat ajakan Premium di tab itu.
  */
 export function RecapTab({ transactions, currency }: { transactions: Transaction[]; currency: string }) {
   const { t } = useI18n();
-  const [week, setWeek] = useState<'this' | 'last'>('this');
+  const { state } = useStore();
+  const premium = state.plan === 'premium';
+  const [week, setWeek] = useState<'this' | 'last' | 'month'>('this');
   const today = todayYmd();
   const recaps = useMemo(
-    () => ({ this: weeklyRecap(transactions, today, currency, 'this'), last: weeklyRecap(transactions, today, currency, 'last') }),
+    () => ({
+      this: weeklyRecap(transactions, today, currency, 'this'),
+      last: weeklyRecap(transactions, today, currency, 'last'),
+      month: monthlyRecap(transactions, today, currency),
+    }),
     [transactions, today, currency],
   );
   const recap = recaps[week];
+
+  let body;
+  if (week === 'month' && !premium) body = <MonthlyTeaser />;
+  else if (recap.txCount === 0) {
+    body =
+      week === 'month' ? (
+        <EmptyState title={t('coach.replay.emptyMonthTitle')} message={t('coach.replay.emptyMonthMessage')} />
+      ) : (
+        <EmptyState
+          title={week === 'this' ? t('coach.replay.emptyThisTitle') : t('coach.recap.emptyTitle')}
+          message={week === 'this' ? t('coach.replay.emptyThisMessage') : t('coach.recap.emptyMessage')}
+          actionLabel={week === 'this' && recaps.last.txCount > 0 ? t('coach.replay.seeLast') : undefined}
+          onAction={week === 'this' && recaps.last.txCount > 0 ? () => setWeek('last') : undefined}
+        />
+      );
+  } else body = <Replay recap={recap} currency={currency} />;
 
   return (
     <View style={styles.wrap}>
@@ -43,19 +67,10 @@ export function RecapTab({ transactions, currency }: { transactions: Transaction
         items={[
           { key: 'this', label: t('coach.replay.thisWeek') },
           { key: 'last', label: t('coach.replay.lastWeek') },
+          { key: 'month', label: t('coach.replay.lastMonth') },
         ]}
       />
-      {recap.txCount === 0 ? (
-        <EmptyState
-          title={week === 'this' ? t('coach.replay.emptyThisTitle') : t('coach.recap.emptyTitle')}
-          message={week === 'this' ? t('coach.replay.emptyThisMessage') : t('coach.recap.emptyMessage')}
-          actionLabel={week === 'this' && recaps.last.txCount > 0 ? t('coach.replay.seeLast') : undefined}
-          onAction={week === 'this' && recaps.last.txCount > 0 ? () => setWeek('last') : undefined}
-        />
-      ) : (
-        <Replay recap={recap} currency={currency} />
-      )}
-      <MonthlyTeaser />
+      {body}
     </View>
   );
 }
@@ -70,17 +85,19 @@ function Replay({ recap, currency }: { recap: WeeklyRecap; currency: string }) {
     <>
       <GlassView radius={radius.lg} style={[styles.hero, { backgroundColor: colors.accentSoft }]}>
         <AppText variant="overline" tone="secondary">
-          {t('coach.recap.replay', { range })}
+          {recap.week === 'month' ? t('coach.replay.monthRange', { range }) : t('coach.recap.replay', { range })}
         </AppText>
-        <AppText variant="bodyStrong">{recap.week === 'this' ? t('coach.replay.heroThis', { days: recap.days }) : t('coach.recap.youSpent')}</AppText>
+        <AppText variant="bodyStrong">
+          {recap.week === 'this' ? t('coach.replay.heroThis', { days: recap.days }) : recap.week === 'month' ? t('coach.replay.heroMonth') : t('coach.recap.youSpent')}
+        </AppText>
         <CurrencyText amount={recap.spent} currency={currency} variant="amountHero" />
         {recap.changePct !== null && (
           <AppText variant="bodyStrong" tone={down ? 'positive' : 'secondary'}>
             {down
-              ? t('coach.recap.down', { pct: Math.abs(recap.changePct) })
+              ? t(recap.week === 'month' ? 'coach.replay.monthDown' : 'coach.recap.down', { pct: Math.abs(recap.changePct) })
               : recap.changePct === 0
-                ? t('coach.recap.same')
-                : t('coach.recap.up', { pct: recap.changePct })}
+                ? t(recap.week === 'month' ? 'coach.replay.monthSame' : 'coach.recap.same')
+                : t(recap.week === 'month' ? 'coach.replay.monthUp' : 'coach.recap.up', { pct: recap.changePct })}
           </AppText>
         )}
         {recap.week === 'this' && recap.changePct !== null && (
@@ -94,7 +111,7 @@ function Replay({ recap, currency }: { recap: WeeklyRecap; currency: string }) {
         <Card>
           <View style={styles.titleRow}>
             <Icon icon={Trophy} color={colors.accentText} />
-            <AppText variant="h3">{t('coach.replay.achievements', { count: recap.achievements.length })}</AppText>
+            <AppText variant="h3">{t(recap.week === 'month' ? 'coach.replay.achievementsMonth' : 'coach.replay.achievements', { count: recap.achievements.length })}</AppText>
           </View>
           <View style={styles.list}>
             {recap.achievements.map((a) => (
@@ -137,7 +154,7 @@ function Replay({ recap, currency }: { recap: WeeklyRecap; currency: string }) {
                 {categoryLabel(t, recap.biggestSaving.categoryKey)}
               </AppText>
               <AppText variant="caption" tone="positive">
-                {t('coach.replay.savedVsLast', { amount: formatMoney(recap.biggestSaving.saved, currency) })}
+                {t(recap.week === 'month' ? 'coach.replay.savedVsLastMonth' : 'coach.replay.savedVsLast', { amount: formatMoney(recap.biggestSaving.saved, currency) })}
               </AppText>
             </>
           ) : (
@@ -169,7 +186,7 @@ function Replay({ recap, currency }: { recap: WeeklyRecap; currency: string }) {
           </View>
         </View>
         <AppText variant="caption" tone="muted">
-          {t('coach.recap.txInWeek', { count: recap.txCount })}
+          {t(recap.week === 'month' ? 'coach.replay.txInMonth' : 'coach.recap.txInWeek', { count: recap.txCount })}
         </AppText>
       </Card>
     </>
@@ -181,13 +198,13 @@ function achievementText(a: Achievement, r: WeeklyRecap, currency: string, t: Re
     case 'noSpend':
       return t('coach.replay.achievement.noSpend', { count: r.noSpendDays });
     case 'spentLess':
-      return t('coach.replay.achievement.spentLess', { pct: Math.abs(r.changePct ?? 0) });
+      return t(r.week === 'month' ? 'coach.replay.achievement.spentLessMonth' : 'coach.replay.achievement.spentLess', { pct: Math.abs(r.changePct ?? 0) });
     case 'saved':
       return t('coach.replay.achievement.saved', { amount: formatMoney(r.savedAmount, currency) });
     case 'debtPaid':
       return t('coach.replay.achievement.debtPaid', { amount: formatMoney(r.debtPaid, currency) });
     case 'cooked':
-      return t('coach.replay.achievement.cooked');
+      return t(r.week === 'month' ? 'coach.replay.achievement.cookedMonth' : 'coach.replay.achievement.cooked');
   }
 }
 

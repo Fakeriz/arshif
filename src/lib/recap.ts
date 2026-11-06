@@ -1,14 +1,14 @@
 import type { Transaction } from '@/data/types';
 
-import { addDays, diffDays, weekday } from './dates';
+import { addDays, daysInMonth, diffDays, parseYMD, weekday, ymd } from './dates';
 import { amountIn, countsAsSpending, txInRange } from './transactions';
 
 /** Pencapaian minggu itu. Label: `coach.replay.achievement.<key>`. */
 export type Achievement = 'noSpend' | 'spentLess' | 'saved' | 'debtPaid' | 'cooked';
 
 export type WeeklyRecap = {
-  /** 'this' = minggu berjalan (Senin sampai hari ini), 'last' = minggu lalu penuh. */
-  week: 'this' | 'last';
+  /** 'this' = minggu berjalan (Senin sampai hari ini), 'last' = minggu lalu penuh, 'month' = bulan lalu penuh. */
+  week: 'this' | 'last' | 'month';
   start: string;
   end: string;
   /** Jumlah hari di jendela (minggu berjalan: 1-7). */
@@ -56,10 +56,26 @@ const FOOD_OUT = new Set(['food', 'hangout']);
 export function weeklyRecap(txs: Transaction[], today: string, main: string, week: 'this' | 'last' = 'last'): WeeklyRecap {
   const start = week === 'this' ? mondayOf(today) : lastFullWeek(today).start;
   const end = week === 'this' ? today : addDays(start, 6);
-  const days = diffDays(end, start) + 1;
-  const prevStart = addDays(start, -7);
-  const prevEnd = addDays(end, -7);
+  return buildRecap(txs, main, week, start, end, addDays(start, -7), addDays(end, -7));
+}
 
+/**
+ * Recap bulanan (Premium): bulan kalender lalu penuh, dibanding bulan sebelumnya penuh. Aturan sama dengan
+ * Weekly Replay (reimbursement, tabungan, dan bayar utang tidak dihitung sebagai belanja yang disorot).
+ */
+export function monthlyRecap(txs: Transaction[], today: string, main: string): WeeklyRecap {
+  const { y, m } = parseYMD(today);
+  const last = m === 1 ? { y: y - 1, m: 12 } : { y, m: m - 1 };
+  const before = last.m === 1 ? { y: last.y - 1, m: 12 } : { y: last.y, m: last.m - 1 };
+  return buildRecap(
+    txs, main, 'month',
+    ymd(last.y, last.m, 1), ymd(last.y, last.m, daysInMonth(last.y, last.m)),
+    ymd(before.y, before.m, 1), ymd(before.y, before.m, daysInMonth(before.y, before.m)),
+  );
+}
+
+function buildRecap(txs: Transaction[], main: string, week: WeeklyRecap['week'], start: string, end: string, prevStart: string, prevEnd: string): WeeklyRecap {
+  const days = diffDays(end, start) + 1;
   const spending = (a: string, b: string) => txInRange(txs, a, b).filter(countsAsSpending);
   const all = spending(start, end);
   const prevAll = spending(prevStart, prevEnd);

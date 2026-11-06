@@ -19,9 +19,11 @@ const home = {
   recapMessage: 'Lihat ke mana uangmu pergi minggu lalu.',
   quick: { scan: 'Struk OCR', coach: 'Coach', more: 'Lainnya' },
   more: {
+    sectionLog: 'Catat',
+    sectionBusiness: 'Bisnis & alat',
     title: 'Lainnya',
     subtitle: 'Catat dari rekening koran atau manual, buat invoice, dan hitung kurs atau pajak',
-    invoice: 'Invoice & penawaran',
+    invoice: 'Invoice & Penawaran',
     invoiceSub: 'Tagih klien, nomor otomatis, bagikan PDF',
     invoiceSubLimited: 'Jatah Free bulan ini habis, daftar tetap bisa dibuka',
     tools: 'Alat',

@@ -20,6 +20,8 @@ const home: Messages['home'] = {
   recapMessage: 'Geçen hafta paranın nereye gittiğine bak.',
   quick: { scan: 'Fiş OCR', coach: 'Coach', more: 'Diğer' },
   more: {
+    sectionLog: 'Kayıt',
+    sectionBusiness: 'İş ve araçlar',
     title: 'Diğer',
     subtitle: 'Banka ekstresinden ya da elle kaydet, fatura oluştur, kur veya vergi hesapla',
     invoice: 'Fatura & teklif',

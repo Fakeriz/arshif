@@ -1,6 +1,6 @@
 import { ListFilter, Search } from 'lucide-react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { categoryLabel, useT, type MsgKey } from '@/i18n';
@@ -15,7 +15,7 @@ import { TransactionListSkeleton } from '@/features/transactions/TransactionList
 import { useLoadState } from '@/state/loadState';
 import { useLedger } from '@/state/derived';
 import { useRetry } from '@/state/useRetry';
-import { filterTransactions, isFilterActive, reimbursementIncomeIds, totals, type TxFilter } from '@/lib/transactions';
+import { filterTransactions, isFilterActive, reimbursementIncomeIds, sortNewestFirst, totals, type TxFilter } from '@/lib/transactions';
 import { space } from '@/theme/tokens';
 
 const TYPES: { key: NonNullable<TxFilter['type']>; label: MsgKey }[] = [
@@ -24,6 +24,9 @@ const TYPES: { key: NonNullable<TxFilter['type']>; label: MsgKey }[] = [
   { key: 'income', label: 'common.income' },
   { key: 'transfer', label: 'common.transfer' },
 ];
+
+/** Baris per tahap render daftar transaksi. */
+const PAGE_ROWS = 60;
 
 export default function TransaksiScreen() {
   const router = useRouter();
@@ -34,8 +37,13 @@ export default function TransaksiScreen() {
   const ledger = useLedger();
   const [filter, setFilter] = useState<TxFilter>({ type: 'all', accountId: akun ?? null });
   const [sheet, setSheet] = useState(false);
+  // Render bertahap: daftar panjang (ratusan baris di ScrollView) membuat scroll patah-patah.
+  const [limit, setLimit] = useState(PAGE_ROWS);
 
   const shown = useMemo(() => filterTransactions(ledger.transactions, filter, (k) => categoryLabel(t, k)), [ledger.transactions, filter, t]);
+  const visible = useMemo(() => sortNewestFirst(shown).slice(0, limit), [shown, limit]);
+  // Filter berubah = mulai lagi dari atas.
+  useEffect(() => setLimit(PAGE_ROWS), [filter]);
   // Pemasukan pengganti reimbursement dicari dari SEMUA transaksi (pengeluarannya bisa tidak ikut tersaring).
   const repayments = useMemo(() => reimbursementIncomeIds(ledger.transactions), [ledger.transactions]);
   const sum = useMemo(() => totals(shown, ledger.mainCurrency, repayments), [shown, ledger.mainCurrency, repayments]);
@@ -59,13 +67,13 @@ export default function TransaksiScreen() {
       />
     );
   } else {
-    body = <TransactionList transactions={shown} accounts={ledger.accounts} mainCurrency={ledger.mainCurrency} />;
+    body = <TransactionList transactions={visible} accounts={ledger.accounts} mainCurrency={ledger.mainCurrency} />;
   }
 
   const ready = demo !== 'error' && demo !== 'loading' && ledger.transactions.length > 0;
 
   return (
-    <Screen tabs>
+    <Screen tabs onEndReached={visible.length < shown.length ? () => setLimit((n) => n + PAGE_ROWS) : undefined}>
       <TabHeader title={t('tx.title')} subtitle={ready ? t('tx.count', { shown: shown.length, total: ledger.transactions.length }) : undefined} />
       <ReviewBanner />
       <MissingRatesBanner />

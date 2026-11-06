@@ -20,9 +20,11 @@ const home: Messages['home'] = {
   recapMessage: 'Lihat ke mana wang anda pergi minggu lepas.',
   quick: { scan: 'Resit OCR', coach: 'Coach', more: 'Lagi' },
   more: {
+    sectionLog: 'Rekod',
+    sectionBusiness: 'Perniagaan & alatan',
     title: 'Lagi',
     subtitle: 'Rekod daripada penyata bank atau manual, buat invois, dan kira kadar tukaran atau cukai',
-    invoice: 'Invois & sebut harga',
+    invoice: 'Invois & Sebut Harga',
     invoiceSub: 'Tagih pelanggan, nombor automatik, kongsi PDF',
     invoiceSubLimited: 'Kuota Free bulan ini habis, senarai masih boleh dibuka',
     tools: 'Alatan',

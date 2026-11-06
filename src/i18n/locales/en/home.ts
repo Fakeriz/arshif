@@ -20,9 +20,11 @@ const home: Messages['home'] = {
   recapMessage: 'See where your money went last week.',
   quick: { scan: 'Receipt OCR', coach: 'Coach', more: 'More' },
   more: {
+    sectionLog: 'Log',
+    sectionBusiness: 'Business & tools',
     title: 'More',
     subtitle: 'Import a bank statement or add by hand, create invoices, and work out rates or tax',
-    invoice: 'Invoices & quotes',
+    invoice: 'Invoices & Quotes',
     invoiceSub: 'Bill clients, automatic numbers, share as PDF',
     invoiceSubLimited: 'This month\'s Free quota is used up, the list still opens',
     tools: 'Tools',

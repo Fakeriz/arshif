@@ -32,9 +32,14 @@ export type ScreenProps = {
   /** Tarik untuk muat ulang (state error/loading di Fase 2). */
   onRefresh?: () => void;
   refreshing?: boolean;
+  /** Dipanggil saat scroll mendekati bawah (render bertahap daftar panjang). */
+  onEndReached?: () => void;
 };
 
-export function Screen({ children, tabs, glow = true, onRefresh, refreshing }: ScreenProps) {
+/** Jarak dari bawah (px) yang memicu onEndReached. */
+const END_THRESHOLD = 600;
+
+export function Screen({ children, tabs, glow = true, onRefresh, refreshing, onEndReached }: ScreenProps) {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
   const { footprint } = useNavFootprint();
@@ -43,6 +48,14 @@ export function Screen({ children, tabs, glow = true, onRefresh, refreshing }: S
     <ScrollView
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
+        scrollEventThrottle={onEndReached ? 250 : undefined}
+        onScroll={
+          onEndReached
+            ? ({ nativeEvent: e }) => {
+                if (e.contentOffset.y + e.layoutMeasurement.height >= e.contentSize.height - END_THRESHOLD) onEndReached();
+              }
+            : undefined
+        }
         refreshControl={onRefresh ? <RefreshControl refreshing={!!refreshing} onRefresh={onRefresh} tintColor={colors.accentText} /> : undefined}
         contentContainerStyle={[
           styles.content,

@@ -38,7 +38,7 @@ export function PaywallProvider({ children }: { children: ReactNode }) {
   return (
     <PaywallContext.Provider value={open}>
       {children}
-      <BottomSheet visible={reason !== null} onClose={() => setReason(null)} title={t('shell.paywall.title')} subtitle={reason ?? undefined}>
+      <BottomSheet scrollable visible={reason !== null} onClose={() => setReason(null)} title={t('shell.paywall.title')} subtitle={reason ?? undefined}>
         <View style={styles.list}>
           {benefits(t).map((b) => (
             <View key={b} style={styles.row}>

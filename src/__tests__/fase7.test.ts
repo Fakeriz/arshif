@@ -6,7 +6,7 @@ import {
 } from '@/lib/budget';
 import { cardUtilization, feeStatus, groupUtilization, lastFeeDate, markFeePaid, nextFeeDate, unmarkFeePaid } from '@/lib/credit';
 import * as fx from '@/lib/fx';
-import { weeklyRecap } from '@/lib/recap';
+import { monthlyRecap, weeklyRecap } from '@/lib/recap';
 import { amountIn, netWorth, reimbursementIncomeIds, totals } from '@/lib/transactions';
 import { initialState, keepReimbursement, reducer } from '@/state/reducer';
 
@@ -304,5 +304,22 @@ describe('Weekly Replay (FR-COACH-5)', () => {
     expect(weeklyRecap(txs, '2026-11-05', 'IDR', 'last')).toMatchObject({ start: '2026-10-26', end: '2026-11-01', days: 7, spent: 1_299_000 });
     const empty = weeklyRecap([], '2026-11-05', 'IDR', 'this');
     expect(empty).toMatchObject({ txCount: 0, spent: 0, biggest: null, biggestSaving: null, achievements: [] });
+  });
+});
+
+describe('recap bulanan (Premium)', () => {
+  it('bulan kalender lalu penuh vs bulan sebelumnya; reimbursement tidak dihitung', () => {
+    const txs = [
+      tx({ id: 'a', date: '2026-09-10', amount: 400_000, categoryKey: 'food' }),
+      tx({ id: 'b', date: '2026-10-01', amount: 100_000, categoryKey: 'food' }),
+      tx({ id: 'c', date: '2026-10-31', amount: 200_000, categoryKey: 'shopping', merchant: 'Sepatu' }),
+      tx({ id: 'd', date: '2026-10-15', amount: 999_000, categoryKey: 'food', reimburseStatus: 'pending' }),
+      tx({ id: 'e', date: '2026-11-02', amount: 50_000 }),
+    ];
+    const r = monthlyRecap(txs, '2026-11-05', 'IDR');
+    expect(r).toMatchObject({ week: 'month', start: '2026-10-01', end: '2026-10-31', days: 31, spent: 300_000, previousSpent: 400_000, changePct: -25 });
+    expect(r.biggest?.merchant).toBe('Sepatu');
+    expect(r.biggestSaving).toEqual({ categoryKey: 'food', saved: 300_000 });
+    expect(monthlyRecap(txs, '2026-01-15', 'IDR')).toMatchObject({ start: '2025-12-01', end: '2025-12-31', txCount: 0 });
   });
 });

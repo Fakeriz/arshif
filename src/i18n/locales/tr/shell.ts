@@ -15,7 +15,7 @@ const shell: Messages['shell'] = {
       reason: 'Free fiş tarama kotan ({free}/ay) doldu. Ayın 1’inde sıfırlanır ya da ayda {premium} tarama için yükselt.',
     },
     docscan: {
-      title: 'Belge tara',
+      title: 'Belge Tara',
       short: 'Belge',
       sub: 'Fiş kenarları otomatik algılanır ve kırpılır',
     },

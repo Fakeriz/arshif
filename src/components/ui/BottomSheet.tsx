@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
-import { Modal, PanResponder, Pressable, StyleSheet, View } from 'react-native';
+import { Modal, PanResponder, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -17,11 +17,16 @@ export type BottomSheetProps = {
   title?: string;
   subtitle?: string;
   children: ReactNode;
+  /**
+   * Isi bisa digulir: sheet dibatasi 90% tinggi layar dan isinya (daftar mata uang, notifikasi, pilihan)
+   * di-scroll di dalamnya. Sheet yang sudah punya ScrollView sendiri (FormSheet) tidak memakainya.
+   */
+  scrollable?: boolean;
 };
 
 const DISMISS_DISTANCE = 96;
 
-export function BottomSheet({ visible, onClose, title, subtitle, children }: BottomSheetProps) {
+export function BottomSheet({ visible, onClose, title, subtitle, children, scrollable }: BottomSheetProps) {
   const { colors } = useTheme();
   const { t: tr } = useI18n();
   const { timing, spring } = useMotion();
@@ -79,9 +84,9 @@ export function BottomSheet({ visible, onClose, title, subtitle, children }: Bot
           onLayout={(e) => {
             sheetHeight.current = e.nativeEvent.layout.height;
           }}
-          style={[styles.sheetWrap, sheet]}
+          style={[styles.sheetWrap, scrollable && styles.sheetWrapScroll, sheet]}
         >
-          <GlassView level="floating" radius={0} style={[styles.sheet, { paddingBottom: insets.bottom + space.xl }]}>
+          <GlassView level="floating" radius={0} style={[styles.sheet, scrollable && styles.sheetScroll, { paddingBottom: insets.bottom + space.xl }]}>
             <View {...pan.panHandlers} style={styles.handleArea}>
               <View style={[styles.handle, { backgroundColor: colors.borderStrong }]} />
             </View>
@@ -97,7 +102,13 @@ export function BottomSheet({ visible, onClose, title, subtitle, children }: Bot
                 )}
               </View>
             )}
-            {children}
+            {scrollable ? (
+              <ScrollView style={styles.body} bounces={false} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator>
+                {children}
+              </ScrollView>
+            ) : (
+              children
+            )}
           </GlassView>
         </Animated.View>
       </View>
@@ -115,6 +126,10 @@ const styles = StyleSheet.create({
     borderBottomWidth: 0,
     paddingHorizontal: space.xl,
   },
+  // Rantai flex agar ScrollView menyusut di dalam batas 90% tinggi layar.
+  sheetWrapScroll: { flexShrink: 1 },
+  sheetScroll: { flexShrink: 1 },
+  body: { flexGrow: 0, flexShrink: 1 },
   handleArea: { alignItems: 'center', paddingTop: space.sm, paddingBottom: space.md },
   handle: { width: 40, height: 4, borderRadius: radius.full },
   header: { gap: space.xxs, marginBottom: space.lg },

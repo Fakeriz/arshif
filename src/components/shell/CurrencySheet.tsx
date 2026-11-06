@@ -24,7 +24,7 @@ export function CurrencySheet({ visible, value, onSelect, onClose, title }: { vi
   const order = visible ? ALL : [];
   return (
     <>
-      <BottomSheet visible={visible && needRate === null} onClose={onClose} title={title ?? t('shell.currencySheet.title')}>
+      <BottomSheet scrollable visible={visible && needRate === null} onClose={onClose} title={title ?? t('shell.currencySheet.title')}>
         {order.map((code, i) => {
           const m = currencyMeta(code);
           const rated = hasRate(code);

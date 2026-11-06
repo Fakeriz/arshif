@@ -18,7 +18,7 @@ export type FilterSheetProps = {
 export function FilterSheet({ visible, onClose, filter, onChange, accounts }: FilterSheetProps) {
   const t = useT();
   return (
-    <BottomSheet visible={visible} onClose={onClose} title={t('tx.sheet.title')}>
+    <BottomSheet scrollable visible={visible} onClose={onClose} title={t('tx.sheet.title')}>
       <AppText variant="overline" tone="secondary">
         {t('tx.sheet.account')}
       </AppText>

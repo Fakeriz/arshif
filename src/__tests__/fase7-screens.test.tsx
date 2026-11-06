@@ -4,6 +4,11 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import AccountDetail from '@/app/akun/[id]';
 import MyRates from '@/app/kurs-saya';
+import TransaksiScreen from '@/app/(tabs)/transaksi';
+import { CaptureSheet } from '@/components/shell/CaptureSheet';
+import { CurrencySheet } from '@/components/shell/CurrencySheet';
+import { moreOptions } from '@/components/shell/captureOptions';
+import { AskTab } from '@/features/coach/AskTab';
 import { PaywallProvider } from '@/components/shell/Paywall';
 import { ToastProvider } from '@/components/ui';
 import type { Bill } from '@/data/planning';
@@ -13,8 +18,9 @@ import { RecapTab } from '@/features/coach/RecapTab';
 import { BillCalendar } from '@/features/planning/BillCalendar';
 import { StepAccount } from '@/features/setup/StepAccount';
 import { ReimbursementCard } from '@/features/transactions/ReimbursementCard';
-import { I18nProvider } from '@/i18n';
+import { I18nProvider, useT as useI18nT } from '@/i18n';
 import { AppStoreProvider, useStore } from '@/state/AppStore';
+import { SmartLogProvider } from '@/state/smartlog';
 import type { AppState } from '@/state/reducer';
 import { ThemeProvider } from '@/theme/ThemeProvider';
 
@@ -161,3 +167,97 @@ describe('reimbursement', () => {
     expect(store!.state.transactions.find((t) => t.id === e.id)!.reimburseStatus).toBe('pending');
   });
 });
+
+describe('perbaikan uji HP', () => {
+  it('pemilih mata uang: semua mata uang ada di dalam ScrollView (bisa digulir sampai bawah)', async () => {
+    await act(async () => {
+      wrap(<CurrencySheet visible value="IDR" onSelect={jest.fn()} onClose={jest.fn()} />);
+    });
+    const last = screen.getByText('VND · Dong Vietnam');
+    let node: { type?: unknown; parent: unknown } | null = last as unknown as { parent: unknown };
+    let inScroll = false;
+    while (node) {
+      if ((node as { type?: unknown }).type === 'RCTScrollView') inScroll = true;
+      node = (node as { parent: typeof node }).parent;
+    }
+    expect(inScroll).toBe(true);
+  });
+
+  it('Premium: Tanya Coach tidak membuka paywall; recap bulanan terbuka', async () => {
+    await act(async () => {
+      wrap(<AskTab />, { plan: 'premium' });
+    });
+    expect(screen.getByText('Tanya Coach sedang disiapkan')).toBeTruthy();
+    expect(screen.queryByText('Lihat Premium')).toBeNull();
+  });
+
+  const octTx: Transaction[] = [{ id: 'm', type: 'expense', merchant: 'Toko', categoryKey: 'food', accountId: 'a-bca', date: '2026-10-10', time: '10:00', amount: 50_000, currency: 'IDR', source: 'manual' }];
+  const atNov5 = () => jest.useFakeTimers({ now: new Date('2026-11-05T10:00:00'), doNotFake: ['setTimeout', 'setInterval', 'nextTick', 'setImmediate', 'queueMicrotask', 'requestAnimationFrame'] });
+
+  it('Free: tab Bulan lalu menampilkan ajakan Premium', async () => {
+    atNov5();
+    try {
+      await act(async () => {
+        wrap(<RecapTab transactions={octTx} currency="IDR" />, { plan: 'free' });
+      });
+      await act(async () => fireEvent.press(screen.getByText('Bulan lalu')));
+      expect(screen.getByText('Recap bulanan')).toBeTruthy();
+    } finally {
+      jest.useRealTimers();
+    }
+  });
+
+  it('Premium: tab Bulan lalu menampilkan recap bulanan', async () => {
+    atNov5();
+    try {
+      await act(async () => {
+        wrap(<RecapTab transactions={octTx} currency="IDR" />, { plan: 'premium' });
+      });
+      await act(async () => fireEvent.press(screen.getByText('Bulan lalu')));
+      expect(screen.getByText('Belanjamu bulan lalu')).toBeTruthy();
+      expect(screen.queryByText('Recap bulanan')).toBeNull();
+    } finally {
+      jest.useRealTimers();
+    }
+  });
+
+  it('Lainnya: seksi Catat dan Bisnis & alat dengan item yang sama seperti sebelumnya', async () => {
+    await act(async () => {
+      wrap(<MoreSheet />);
+    });
+    for (const title of ['Catat', 'Bisnis & alat']) expect(screen.getByText(title)).toBeTruthy();
+    for (const item of ['Scan Dokumen', 'Import Rekening Koran', 'Catat Manual', 'Invoice & Penawaran', 'Alat']) expect(screen.getByText(item)).toBeTruthy();
+  });
+
+  it('daftar transaksi dirender bertahap (60 baris dulu)', async () => {
+    const many: Transaction[] = Array.from({ length: 150 }, (_, i) => ({
+      id: `t${i}`, type: 'expense', merchant: `Toko ${i}`, categoryKey: 'food', accountId: 'a-bca', date: `2026-10-${String((i % 28) + 1).padStart(2, '0')}`, time: '10:00', amount: 1000, currency: 'IDR', source: 'manual',
+    }));
+    await act(async () => {
+      wrap(
+        <SmartLogProvider>
+          <TransaksiScreen />
+        </SmartLogProvider>,
+        { transactions: many },
+      );
+    });
+    expect(screen.getAllByText(/^Toko \d+$/)).toHaveLength(60);
+  });
+});
+
+/** Sheet Lainnya dengan seksi yang sama seperti Home. */
+function MoreSheet() {
+  const limits = { scan: false, automation: false, importPdf: false, invoice: false, accounts: false, goals: false, billsDebts: false, subscriptions: false, scanLeft: 20, importLeft: 3 };
+  const t = useI18nT();
+  const items = moreOptions(limits, t);
+  return (
+    <CaptureSheet
+      visible
+      onClose={jest.fn()}
+      sections={[
+        { key: 'log', title: t('home.more.sectionLog'), keys: ['docscan', 'pdf', 'manual'] },
+        { key: 'business', title: t('home.more.sectionBusiness'), extras: items },
+      ]}
+    />
+  );
+}

@@ -36,6 +36,7 @@ export default function HomeScreen() {
   const t = useT();
   const [more, setMore] = useState(false);
   const capture = captureOptions(limits, t);
+  const moreItems = moreOptions(limits, t);
   const scan = capture.find((o) => o.key === 'scan')!;
   const voice = capture.find((o) => o.key === 'voice')!;
   const openCapture = (o: typeof scan) => (o.limited ? paywall(o.reason) : router.push(o.href));
@@ -78,7 +79,16 @@ export default function HomeScreen() {
         ]}
       />
       <MissingRatesBanner />
-      <CaptureSheet visible={more} onClose={() => setMore(false)} keys={['docscan', 'pdf', 'manual']} extras={moreOptions(limits, t)} title={t('home.more.title')} subtitle={t('home.more.subtitle')} />
+      <CaptureSheet
+        visible={more}
+        onClose={() => setMore(false)}
+        title={t('home.more.title')}
+        subtitle={t('home.more.subtitle')}
+        sections={[
+          { key: 'log', title: t('home.more.sectionLog'), keys: ['docscan', 'pdf', 'manual'] },
+          { key: 'business', title: t('home.more.sectionBusiness'), extras: moreItems },
+        ]}
+      />
       {state.notifPrefs.weekly_recap && ledger.transactions.length > 0 && (
         <PromoCard icon={Sparkles} title={t('home.recapTitle')} message={t('home.recapMessage')} onPress={() => router.push('/coach')} />
       )}

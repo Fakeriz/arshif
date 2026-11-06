@@ -28,7 +28,7 @@ export function BillSheet({ bill, onClose }: { bill: Bill | null; onClose: () =>
 
   return (
     <>
-      <BottomSheet visible={!pay && !edit && !confirm} onClose={onClose} title={bill.name} subtitle={formatMoney(bill.amount, bill.currency)}>
+      <BottomSheet scrollable visible={!pay && !edit && !confirm} onClose={onClose} title={bill.name} subtitle={formatMoney(bill.amount, bill.currency)}>
         <View>
           <InfoRow label={t('plan.bills.dueDate')} value={shortDate(bill.dueDate, lang)} divider />
           <InfoRow label={t('plan.bills.frequency')} value={t(`plan.bills.freq.${bill.frequency}`)} divider />

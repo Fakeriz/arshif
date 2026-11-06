@@ -181,3 +181,32 @@ URL manual `exp://100.91.191.123:8082`.
 
 Belum diuji: perangkat nyata (scanner ML Kit, OTA, tampilan baru di HP) dan alur layar Fase 7 dari aplikasi terhadap
 Supabase live. Terjemahan MS/TR/EN baru ditulis tanpa penutur asli.
+
+## Perbaikan setelah uji HP (2026-11-06)
+
+- **Pemilih mata uang tidak bisa digulir**: `BottomSheet` punya mode `scrollable` (sheet maks 90% layar, isi
+  di-scroll). Dipakai pemilih mata uang (semua pemakainya: Pengaturan, form transaksi, Konverter, Cicilan, invoice,
+  Planning) dan sheet daftar lain yang belum bisa digulir: notifikasi, filter transaksi, + Catat / Lainnya, Paywall,
+  detail tagihan, preset langganan. Tambah akun dan Kurs saya tidak memakai sheet ini (chip / layar penuh).
+- **Coach terkunci padahal Premium**: grant Premium sampai ke server (gerbang `taxFull`/`pdfExport` lolos, jadi
+  estimator pajak dan PDF terbuka). Penyebabnya: tab Tanya Coach dan kartu recap bulanan selalu membuka paywall
+  tanpa melihat paket, karena keduanya belum pernah dibangun. Sekarang:
+  - Recap bulanan dibangun (tab "Bulan lalu" di Coach -> Recap): bulan kalender lalu vs bulan sebelumnya, aturan
+    sama dengan Weekly Replay, data lokal tanpa AI. Free melihat ajakan Premium di tab itu.
+  - Tanya Coach untuk Premium menampilkan keterangan jujur "sedang disiapkan" (bukan paywall). Chat-nya butuh Edge
+    Function baru (kuota `coachAsk` 20/hari sudah ada di server): menunggu keputusan pemilik.
+  - Paket dan kuota dibaca ulang setiap aplikasi kembali aktif, jadi grant/pembelian di server langsung terlihat
+    tanpa keluar-masuk.
+- **Lainnya (Home)**: dua seksi berjudul, "Catat" (Scan Dokumen, Import Rekening Koran, Catat Manual) dan
+  "Bisnis & alat" (Invoice & Penawaran, Alat). Seksi "Alat" terpisah tidak dipakai karena isinya satu item yang juga
+  berjudul "Alat". Tujuan tiap item tidak berubah.
+- **Kurs**: sinkronisasi sehat. Cron `fx-sync` jalan 00.15, 08.15, 16.15 UTC dan sukses; setiap hari kerja ada
+  kursnya. ECB menerbitkan kurs referensi sekali per hari kerja (sekitar 16.00 CET), tanpa akhir pekan dan libur
+  TARGET. Sumber dan aturan FR-FX-4 tidak diubah.
+- **Performa**:
+  - Android: panel konten tidak lagi memakai blur hidup (dimezis menggambar ulang latar setiap frame scroll; daftar
+    transaksi punya satu Card per hari). Panel tetap memakai warna kaca yang sama di atas glow, jadi tampilannya
+    hampir sama. Blur tetap aktif di nav pill, sheet, dialog, toast. iOS tidak berubah.
+  - Daftar transaksi dirender bertahap: 60 baris dulu, 60 berikutnya saat scroll mendekati bawah.
+  - Mengukur FPS di development build: JS mode dev jauh lebih lambat dari rilis. Ukur dengan
+    `npx expo start --dev-client --port 8082 --no-dev --minify`.
