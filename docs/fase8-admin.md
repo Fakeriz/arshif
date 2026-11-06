@@ -1,7 +1,7 @@
 # Fase 8: admin web (PRD FR-ADM-1..4)
 
-Status: dibangun dan diuji lokal. Live: hanya secret `APP_URL` dan penanda admin untuk hafizhxcv@gmail.com.
-**Belum di-deploy**: migrasi 14, Edge Functions (`admin-user`, `fx-sync`, `entitlement-sync`), dan web Vercel.
+Status: backend **live 2026-11-06** (migrasi 14, semua Edge Functions, `admin-grant` dihapus, secret `APP_URL`,
+hafizhxcv@gmail.com di `admin_users`). **Web Vercel belum**: menunggu pengaturan dashboard + push ke `main`.
 
 ## Host: Vercel, proyek arshifstudio
 
@@ -26,11 +26,10 @@ Diputuskan Ahmad 2026-11-06. Admin web, `/harga`, dan checkout web tinggal di Ve
   Kedua env bersifat publik (publishable key). Tanpa env pun build memakai nilai bawaan di `src/config/public.ts`.
   Aplikasi menerima `EXPO_PUBLIC_SUPABASE_KEY` maupun `EXPO_PUBLIC_SUPABASE_ANON_KEY`.
 
-## Urutan deploy (setelah izin pemilik)
+## Urutan deploy
 
-1. `SUPABASE_ACCESS_TOKEN=... ./scripts/deploy-supabase.sh` (menerapkan migrasi 14 dan semua function).
-2. Hapus function lama yang sudah diganti `admin-user`: `npx supabase functions delete admin-grant`.
-3. Push ke `main` -> Vercel build (setelah pengaturan dashboard di atas).
+1. Selesai: `./scripts/deploy-supabase.sh` (migrasi 14 + semua function), `npx supabase functions delete admin-grant`.
+2. Belum: pengaturan dashboard Vercel di atas, lalu push ke `main` -> Vercel build.
 
 Migrasi harus lebih dulu dari web. Web yang lebih baru tetap aman di atas skema lama (layar ditangguhkan memakai
 cek truthy, panggilan `touch_last_seen` gagal diam-diam), tapi panel admin baru butuh RPC migrasi 14.
@@ -77,3 +76,8 @@ dari RevenueCat belum terhubung (kunci kosong), panel menyebutkannya, tidak mene
   ditangguhkan + pulihkan, log AI, pesanan kosong, sinkron kurs, broadcast sampai di lonceng) dan "Premium web USD".
   Langkah admin login sebagai `E2E_ADMIN_EMAIL` (bawaan hafizhxcv@gmail.com) lewat `generateLink` admin API,
   tanpa email terkirim.
+
+Hasil LIVE 2026-11-06: e2e admin 10/10 + Premium web USD lolos tanpa error konsol tak terduga; regresi e2e lain
+35/35 (langkah Gemini LIVE dilewati). Visual: 6 bagian x 390/1280 px x gelap/terang, tanpa overflow horizontal.
+Keyboard: Tab mengikuti urutan visual, Enter pindah bagian, Escape menutup dialog.
+

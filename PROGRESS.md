@@ -244,7 +244,7 @@ Detail, rumus, dan langkah build/OTA: `docs/fase7-enhancements.md`.
 - Ambang laju berubah ke 1 / 1,2. Tab Tagihan: Daftar / Kalender. Coach Recap: Minggu ini / Minggu lalu.
 
 
-## Fase 8: Admin web (dibangun lokal, BELUM di-deploy)
+## Fase 8: Admin web (backend live 2026-11-06, web Vercel belum)
 
 Detail, pengaturan Vercel, dan urutan deploy: `docs/fase8-admin.md`.
 

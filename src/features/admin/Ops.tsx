@@ -116,6 +116,7 @@ export function BroadcastSection() {
     let live = true;
     setCount(null);
     setCountError(false);
+    if (segment === 'email' && !email.trim()) return;
     const id = setTimeout(() => {
       adminBroadcastCount(segment, email.trim())
         .then((n) => live && setCount(n))
@@ -187,7 +188,7 @@ export function BroadcastSection() {
         hint={`${message.trim().length}/300`}
       />
       <AppText variant="caption" tone={countError ? 'negative' : 'secondary'} accessibilityLiveRegion="polite">
-        {countError ? b.countFailed : count === null ? b.counting : b.recipients(count)}
+        {countError ? b.countFailed : segment === 'email' && !email.trim() ? b.invalidEmail : count === null ? b.counting : b.recipients(count)}
       </AppText>
       {notice && (
         <AppText variant="body" tone={notice.tone} accessibilityRole="alert">
@@ -198,7 +199,7 @@ export function BroadcastSection() {
         <Button
           label={count ? b.send(count) : b.sendDisabled}
           loading={busy}
-          disabled={busy || count === 0}
+          disabled={busy || !count}
           onPress={() => {
             setTouched(true);
             if (valid) setConfirm(true);

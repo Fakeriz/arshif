@@ -6,7 +6,8 @@ import { AppText, Badge, Button, Dialog, EmptyState, Input, ListItem, ListItemSk
 import { adminSearchUsers, adminUserDetail, type AdminUserDetail } from '@/data/remote/api';
 import { FnError, invokeFn } from '@/data/remote/functions';
 import { formatMoney } from '@/lib/money';
-import { space } from '@/theme/tokens';
+import { useTheme } from '@/theme/ThemeProvider';
+import { radius, space } from '@/theme/tokens';
 
 import { AdminUserResponse, FUNCTIONS } from '../../../supabase/functions/_shared/contracts';
 import { copy } from './copy';
@@ -21,6 +22,7 @@ export function UsersSection() {
   const [debounced, setDebounced] = useState('');
   const [selected, setSelected] = useState<string | null>(null);
   const { width } = useWindowDimensions();
+  const { colors } = useTheme();
   const wide = width >= 860;
 
   useEffect(() => {
@@ -50,17 +52,18 @@ export function UsersSection() {
           {(rows) => (
             <View>
               {rows.map((u, i) => (
-                <ListItem
-                  key={u.id}
-                  title={u.email}
-                  subtitle={[u.plan === 'premium' ? c.premium : c.free, u.suspended_at ? c.suspended : null, u.is_admin ? c.admin : null, u.last_seen_at ? c.lastSeen(ago(u.last_seen_at)) : c.neverSeen]
-                    .filter(Boolean)
-                    .join(' · ')}
-                  onPress={() => setSelected(u.id)}
-                  chevron
-                  divider={i < rows.length - 1}
-                  accessibilityLabel={`${u.email}${selected === u.id ? ', dipilih' : ''}`}
-                />
+                <View key={u.id} style={selected === u.id && wide ? [styles.selected, { backgroundColor: colors.accentSoft }] : undefined}>
+                  <ListItem
+                    title={u.email}
+                    subtitle={[u.plan === 'premium' ? c.premium : c.free, u.suspended_at ? c.suspended : null, u.is_admin ? c.admin : null, u.last_seen_at ? c.lastSeen(ago(u.last_seen_at)) : c.neverSeen]
+                      .filter(Boolean)
+                      .join(' · ')}
+                    onPress={() => setSelected(u.id)}
+                    chevron
+                    divider={i < rows.length - 1}
+                    accessibilityLabel={`${u.email}${selected === u.id ? ', dipilih' : ''}`}
+                  />
+                </View>
               ))}
             </View>
           )}
@@ -302,6 +305,8 @@ const styles = StyleSheet.create({
   split: { flexDirection: 'row', gap: space.lg, alignItems: 'flex-start' },
   listCol: { flex: 2, minWidth: 0 },
   detailCol: { flex: 3, minWidth: 0 },
+  // Baris terpilih di daftar (tata letak lebar): detailnya tampil di kolom kanan.
+  selected: { borderRadius: radius.md },
   badges: { flexDirection: 'row', flexWrap: 'wrap', gap: space.xs },
   facts: { gap: space.xxs },
   actions: { flexDirection: 'row', flexWrap: 'wrap', gap: space.sm },
