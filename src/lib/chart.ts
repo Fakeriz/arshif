@@ -101,3 +101,46 @@ export function linePoints(values: number[], width: number, height: number, pad 
     y: span === 0 ? height / 2 : pad + inner - ((v - min) / span) * inner,
   }));
 }
+
+/**
+ * Path garis halus (Catmull-Rom → Bézier kubik) lewat semua titik. Kontrol dijepit ke rentang y
+ * tetangga agar kurva tidak melewati puncak/lembah data (tanpa "overshoot").
+ */
+export function smoothPath(points: Point[], tension = 0.5): string {
+  if (points.length === 0) return '';
+  const f = (n: number) => n.toFixed(2);
+  if (points.length === 1) return `M ${f(points[0].x)} ${f(points[0].y)}`;
+  const clamp = (v: number, a: number, b: number) => Math.min(Math.max(v, Math.min(a, b)), Math.max(a, b));
+  let d = `M ${f(points[0].x)} ${f(points[0].y)}`;
+  for (let i = 0; i < points.length - 1; i++) {
+    const p0 = points[i - 1] ?? points[i];
+    const p1 = points[i];
+    const p2 = points[i + 1];
+    const p3 = points[i + 2] ?? p2;
+    const k = tension / 3;
+    const c1 = { x: p1.x + (p2.x - p0.x) * k, y: clamp(p1.y + (p2.y - p0.y) * k, p1.y, p2.y) };
+    const c2 = { x: p2.x - (p3.x - p1.x) * k, y: clamp(p2.y - (p3.y - p1.y) * k, p1.y, p2.y) };
+    d += ` C ${f(c1.x)} ${f(c1.y)} ${f(c2.x)} ${f(c2.y)} ${f(p2.x)} ${f(p2.y)}`;
+  }
+  return d;
+}
+
+/** Tutup path garis ke dasar grafik untuk isian area di bawahnya. */
+export function areaUnder(line: string, points: Point[], baseY: number): string {
+  if (points.length === 0) return '';
+  const last = points[points.length - 1];
+  return `${line} L ${last.x.toFixed(2)} ${baseY.toFixed(2)} L ${points[0].x.toFixed(2)} ${baseY.toFixed(2)} Z`;
+}
+
+/** Perubahan relatif dari `prev` ke `curr` (0.124 = naik 12,4%). Tanpa pembanding (prev 0) → null. */
+export function pctChange(prev: number, curr: number): number | null {
+  if (!Number.isFinite(prev) || !Number.isFinite(curr) || prev === 0) return null;
+  return (curr - prev) / Math.abs(prev);
+}
+
+/** Lingkaran progres: panjang garis terisi untuk rasio 0–1 (dijepit) pada jari-jari r. */
+export function ringDash(ratio: number, r: number): { circumference: number; filled: number } {
+  const circumference = 2 * Math.PI * r;
+  const clamped = Number.isFinite(ratio) ? Math.min(Math.max(ratio, 0), 1) : 0;
+  return { circumference, filled: circumference * clamped };
+}
