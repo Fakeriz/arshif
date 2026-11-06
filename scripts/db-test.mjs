@@ -335,13 +335,103 @@ await test('planning: pengingat tagihan H-3/H dan langganan H-2 sekali saja, mul
   eq((await as(B, `select next_renewal::text from public.subscriptions where name = 'Lama'`))[0].next_renewal, '2026-12-01');
 });
 
-await test('kuota bulanan per baris generik: invoice 5/bulan (Free)', async () => {
-  await sys(`create table public.invoices (id uuid primary key default gen_random_uuid(), user_id uuid not null default auth.uid())`);
-  await sys(`grant insert on public.invoices to authenticated`);
-  await sys(`create trigger invoices_quota before insert on public.invoices for each row execute function public.enforce_counter_quota('invoice')`);
-  for (let i = 0; i < 5; i++) await as(A, 'insert into public.invoices default values');
-  await rejects(as(A, 'insert into public.invoices default values'), /quota_invoice/);
-  await sys('drop table public.invoices');
+// ------------------------------------------------------------------ Fase 6: invoice & penawaran, gerbang alat pajak
+const inv = (user, kind = 'invoice', extra = {}) =>
+  as(
+    user,
+    `insert into public.invoices (kind, client_name, issue_date, due_date, currency, items, discount, tax_bp)
+     values ($1, 'PT Klien', $2, $3, 'IDR', $4::jsonb, $5, $6) returning id, number, status, subtotal, tax, total`,
+    [kind, extra.issue ?? '2026-11-10', extra.due ?? null, JSON.stringify(extra.items ?? [{ id: '1', name: 'Desain logo', qty: 1, unitPrice: 2500000 }]), extra.discount ?? 0, extra.taxBp ?? 0],
+  );
+
+await test('invoice: nomor INV-2026-0001, 0002; penawaran terpisah QUO-2026-0001; pengguna lain urutannya sendiri', async () => {
+  const [a1] = await inv(A);
+  const [a2] = await inv(A);
+  const [q1] = await inv(A, 'quote');
+  const [b1] = await inv(B);
+  eq([a1.number, a2.number, q1.number, b1.number], ['INV-2026-0001', 'INV-2026-0002', 'QUO-2026-0001', 'INV-2026-0001']);
+  const [n27] = await inv(B, 'invoice', { issue: '2027-01-02' });
+  eq(n27.number, 'INV-2027-0001', 'tahun baru mulai dari 0001');
+  await as(A, `update public.invoices set issue_date = '2027-03-01' where id = $1`, [a2.id]);
+  eq((await as(A, 'select number from public.invoices where id = $1', [a2.id]))[0].number, 'INV-2026-0002', 'nomor tidak berubah saat diedit');
+  await rejects(as(A, `update public.invoices set number = 'INV-2026-9999' where id = $1`, [a1.id]), /permission denied/);
+});
+
+await test('invoice: jumlah dihitung server dari item (qty pecahan, diskon, pajak 11%)', async () => {
+  const items = [{ id: 'a', name: 'Konsultasi', qty: 1.5, unitPrice: 333333 }, { id: 'b', name: 'Revisi', qty: 2, unitPrice: 150000 }];
+  // 1,5 × 333.333 = 499.999,5 -> 500.000; + 300.000 = 800.000; diskon 50.000 -> 750.000; PPN 11% = 82.500
+  const [r] = await inv(B, 'invoice', { items, discount: 50000, taxBp: 1100 });
+  eq([Number(r.subtotal), Number(r.tax), Number(r.total)], [800000, 82500, 832500]);
+  await rejects(inv(B, 'invoice', { items: [{ id: 'x', name: 'A', qty: 1, unitPrice: 1000 }], discount: 5000 }), /invoice_discount_exceeds/);
+  await rejects(inv(B, 'invoice', { items: [{ id: 'x', name: 'A', qty: 0.333, unitPrice: 1000 }] }), /invoice_item_invalid/);
+  await rejects(as(B, `update public.invoices set total = 1 where id = $1`, [r.id]), /permission denied/);
+});
+
+await test('invoice: tandai Dibayar -> tepat satu transaksi pemasukan; dua kali tetap satu', async () => {
+  const [acc] = await as(B, `select id from public.accounts limit 1`);
+  const [r] = await inv(B, 'invoice', { items: [{ id: 'a', name: 'Website', qty: 1, unitPrice: 4000000 }] });
+  const before = await balance(acc.id);
+  const tx = (id) => as(B, `insert into public.transactions (id, type, merchant, category_key, account_id, date, amount, currency, source) values ($1, 'income', 'PT Klien', 'freelance', $2, '2026-11-10', 4000000, 'IDR', 'invoice')`, [id, acc.id]);
+  await tx(r.id);
+  const [p1] = await as(B, `select * from public.invoice_mark_paid($1, $2)`, [r.id, r.id]);
+  eq(p1.status, 'paid');
+  // Tandai lagi: transaksi kedua dengan id yang sama ditolak, RPC mengembalikan hasil yang sama.
+  await rejects(tx(r.id), /duplicate key/);
+  const [p2] = await as(B, `select * from public.invoice_mark_paid($1, $2)`, [r.id, r.id]);
+  eq(p2.transaction_id, r.id);
+  eq((await as(B, `select count(*)::int as n from public.transactions where id = $1`, [r.id]))[0].n, 1);
+  eq(await balance(acc.id), before + 4000000, 'saldo akun naik sekali');
+  // Transaksi lain untuk invoice yang sama ditolak; invoice lunas terkunci.
+  const [{ id: other }] = await as(B, `insert into public.transactions (type, merchant, category_key, account_id, date, amount, currency) values ('income', 'x', 'freelance', $1, '2026-11-10', 4000000, 'IDR') returning id`, [acc.id]);
+  await rejects(as(B, `select * from public.invoice_mark_paid($1, $2)`, [r.id, other]), /invoice_already_paid/);
+  await rejects(as(B, `update public.invoices set client_name = 'Lain' where id = $1`, [r.id]), /invoice_locked/);
+});
+
+await test('invoice: Dibayar hanya lewat RPC, transaksi harus cocok, penawaran tidak bisa dibayar', async () => {
+  const [acc] = await as(B, `select id from public.accounts limit 1`);
+  const [r] = await inv(B);
+  await rejects(as(B, `update public.invoices set status = 'paid' where id = $1`, [r.id]), /invoice_paid_via_rpc/);
+  await as(B, `update public.invoices set status = 'sent' where id = $1`, [r.id]);
+  await as(B, `insert into public.transactions (id, type, merchant, category_key, account_id, date, amount, currency) values ($1, 'income', 'x', 'freelance', $2, '2026-11-10', 100, 'IDR')`, [r.id, acc.id]);
+  await rejects(as(B, `select * from public.invoice_mark_paid($1, $2)`, [r.id, r.id]), /transaction_mismatch/);
+  const [q] = await inv(B, 'quote');
+  await rejects(as(B, `select * from public.invoice_mark_paid($1, $2)`, [q.id, r.id]), /quote_cannot_be_paid/);
+  await rejects(as(B, `update public.invoices set status = 'paid' where id = $1`, [q.id]), /invoices_status_kind|invoice_paid_via_rpc/);
+  await as(B, `update public.invoices set status = 'accepted' where id = $1`, [q.id]);
+  // Insert dengan status Dibayar diabaikan: selalu Draf.
+  const [d] = await as(B, `insert into public.invoices (kind, client_name, issue_date, currency, items) values ('invoice', 'x', '2026-11-10', 'IDR', '[{"id":"1","name":"a","qty":1,"unitPrice":1}]') returning status`);
+  eq(d.status, 'draft');
+});
+
+await test('invoice: RLS, pengguna lain tidak melihat atau membayar invoice A', async () => {
+  const [r] = await inv(A);
+  eq(await as(B, `select id from public.invoices where id = $1`, [r.id]), []);
+  await rejects(as(B, `select * from public.invoice_mark_paid($1, $2)`, [r.id, r.id]), /invoice_not_found/);
+  await rejects(as(A, `select * from public.invoice_counters`), /permission denied/);
+});
+
+await test('invoice: Free 5/bulan gabungan (invoice + penawaran), ke-6 ditolak; Premium tanpa batas', async () => {
+  const D = '00000000-0000-4000-8000-00000000000d';
+  await sys(`insert into auth.users (id, email) values ('${D}', 'd@example.com')`);
+  for (let i = 0; i < 3; i++) await inv(D);
+  await inv(D, 'quote');
+  await inv(D, 'quote');
+  await rejects(inv(D), /quota_invoice/);
+  await rejects(inv(D, 'quote'), /quota_invoice/);
+  eq((await as(D, `select used, monthly_limit from public.my_usage() where key = 'invoice'`))[0], { used: 5, monthly_limit: 5 });
+  // Bulan lalu tidak dihitung: hanya penghitung bulan berjalan yang dipakai.
+  await sys(`update public.usage_counters set period = '2026-01' where user_id = $1 and key = 'invoice'`, [D]);
+  await inv(D);
+  // Premium (B) sudah membuat > 5 di atas tanpa ditolak.
+  eq((await as(B, `select count(*)::int as n from public.invoices`))[0].n >= 6, true);
+});
+
+await test('alat pajak + PDF Export: gerbang server (Free ditolak quota_*, Premium boleh)', async () => {
+  await rejects(as(A, `select public.feature_gate('taxFull')`), /quota_taxFull/);
+  await rejects(as(A, `select public.feature_gate('pdfExport')`), /quota_pdfExport/);
+  eq((await as(B, `select public.feature_gate('taxFull') as ok`))[0].ok, true);
+  eq((await as(B, `select public.feature_gate('pdfExport') as ok`))[0].ok, true);
+  await rejects(as(B, `select public.feature_gate('scan')`), /unknown_feature/);
 });
 
 await test('harga: publik bisa dibaca (anon), tidak bisa ditulis', async () => {
@@ -532,7 +622,7 @@ await test('smartlog: kuota automation Free 30/bulan; habis = tidak diproses + d
 
 await test('hapus pengguna: semua data ikut terhapus (cascade)', async () => {
   await sys(`delete from auth.users where id = $1`, [A]);
-  for (const t of ['profiles', 'accounts', 'transactions', 'transaction_items', 'notifications', 'usage_counters', 'orders', 'smartlog_links', 'smartlog_items']) {
+  for (const t of ['profiles', 'accounts', 'transactions', 'transaction_items', 'notifications', 'usage_counters', 'orders', 'smartlog_links', 'smartlog_items', 'invoices', 'invoice_counters']) {
     const col = t === 'profiles' ? 'id' : 'user_id';
     eq((await sys(`select count(*)::int as n from public.${t} where ${col} = $1`, [A]))[0].n, 0, t);
   }

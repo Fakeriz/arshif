@@ -10,6 +10,7 @@ const SOURCE_LABEL: Record<Transaction['source'], MsgKey | null> = {
   voice: 'tx.rowSource.voice',
   import: 'tx.rowSource.import',
   smartlog: 'tx.rowSource.smartlog',
+  invoice: 'tx.rowSource.invoice',
 };
 
 export type TransactionRowProps = {

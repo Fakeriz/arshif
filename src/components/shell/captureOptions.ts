@@ -1,4 +1,5 @@
-import { FileText, Mic, PenLine, ScanLine, type LucideIcon } from 'lucide-react-native';
+import type { Href } from 'expo-router';
+import { Calculator, FileText, Mic, PenLine, ReceiptText, ScanLine, type LucideIcon } from 'lucide-react-native';
 
 import type { TFunction } from '@/i18n';
 import { QUOTAS } from '@/lib/quota';
@@ -39,5 +40,20 @@ export function captureOptions(limits: ReturnType<typeof useLimits>, t: TFunctio
       reason: t('shell.capture.pdf.reason', { free: free.importPdf ?? 0, premium: premium.importPdf ?? 0 }),
     },
     { key: 'manual', title: t('shell.capture.manual.title'), short: t('shell.capture.manual.short'), icon: PenLine, href: '/tambah', limited: false, sub: t('shell.capture.manual.sub'), reason: '' },
+  ];
+}
+
+/** Baris sheet "Lainnya": cara mencatat atau entri fitur lain. */
+export type MoreOption = { key: string; title: string; sub: string; icon: LucideIcon; href: Href; limited: boolean; reason: string };
+
+/** Invoice dan Alat di sheet "Lainnya" Home (aksi cepat). Bottom nav tidak berubah. */
+export function moreOptions(limits: ReturnType<typeof useLimits>, t: TFunction): MoreOption[] {
+  return [
+    {
+      key: 'invoice', title: t('home.more.invoice'), icon: ReceiptText, href: '/invoice', limited: false,
+      sub: limits.invoice ? t('home.more.invoiceSubLimited') : t('home.more.invoiceSub'),
+      reason: '',
+    },
+    { key: 'tools', title: t('home.more.tools'), sub: t('home.more.toolsSub'), icon: Calculator, href: '/alat', limited: false, reason: '' },
   ];
 }

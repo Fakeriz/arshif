@@ -31,6 +31,7 @@ const tx = {
     voice: 'Voice',
     import: 'PDF',
     smartlog: 'Notifikasi bank',
+    invoice: 'Invoice',
   },
   detail: {
     title: 'Detail transaksi',
@@ -84,6 +85,7 @@ const tx = {
     voice: 'Voice Log',
     import: 'Import PDF',
     smartlog: 'Notifikasi bank',
+    invoice: 'Invoice',
   },
   form: {
     titleNew: 'Catat transaksi',

@@ -19,7 +19,15 @@ const home: Messages['home'] = {
   recapTitle: 'Rekap mingguan anda sudah sedia',
   recapMessage: 'Lihat ke mana wang anda pergi minggu lepas.',
   quick: { scan: 'Resit OCR', coach: 'Coach', more: 'Lagi' },
-  more: { title: 'Lagi', subtitle: 'Import penyata bank atau rekod secara manual' },
+  more: {
+    title: 'Lagi',
+    subtitle: 'Rekod daripada penyata bank atau manual, buat invois, dan kira kadar tukaran atau cukai',
+    invoice: 'Invois & sebut harga',
+    invoiceSub: 'Tagih pelanggan, nombor automatik, kongsi PDF',
+    invoiceSubLimited: 'Kuota Free bulan ini habis, senarai masih boleh dibuka',
+    tools: 'Alatan',
+    toolsSub: 'Penukar mata wang, ansuran, anggaran cukai',
+  },
   deck: { stripA11y: '{name}, kad akaun aktif', openHint: 'Buka kad akaun' },
   budget: {
     title: 'Belanjawan tempoh ini',

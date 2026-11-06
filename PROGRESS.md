@@ -30,6 +30,7 @@ R-10 membatasi glassmorphism ke 1–2 elemen. Ahmad memutuskan **kaca tetap di s
 - [ ] **Fase 2 — Backend Supabase, LIVE** (2026-11-05): scan dan kurs sungguhan lolos; login sungguhan lolos di level Auth/API, tapi **login dari aplikasi oleh pengguna nyata masih terblokir** keputusan email OTP (lihat "Keputusan terbuka"). Fase 2 belum dinyatakan selesai.
 - [ ] Fase 3 — Monetisasi (RevenueCat + Xendit + Paddle) & rilis
 - [ ] Fase 5 — Smart Log: migrasi 10 + 11 live 2026-11-06 (uji live 11/11); uji di HP lewat development build menunggu. Detail: `docs/fase5-smartlog.md`
+- [ ] Fase 6 — Invoice & penawaran + Money & Tax Tools: dibangun dan diuji lokal 2026-11-06, **belum deploy** (migrasi 12). Detail: `docs/fase6-invoice-alat.md`
 
 ## Fase 0 — yang sudah ada
 
@@ -210,3 +211,17 @@ Detail lengkap, langkah development build, pemasangan di Xiaomi, dan Metro: `doc
   yang memakainya (mis. chip tidak terpilih) perlu dicek.
 - **Kotlin belum pernah dikompilasi** (mesin ini aarch64 tanpa Android SDK). Build EAS pertama = cek kompilasi.
 
+
+## Fase 6: Invoice + Alat (dibangun lokal, BELUM di-deploy)
+
+Detail, tarif pajak 2026 yang dipakai, dan langkah deploy: `docs/fase6-invoice-alat.md`.
+
+- **Akses**: Home -> Lainnya -> "Invoice & penawaran" (`/invoice`) dan "Alat" (`/alat`). Bottom nav tidak berubah.
+- **Server**: migrasi 12: tabel `invoices` + `invoice_counters` (nomor INV/QUO per pengguna, per tahun, per jenis),
+  jumlah dihitung trigger, RPC `invoice_mark_paid` (idempoten; transaksi pemasukan memakai id = id invoice),
+  `feature_gate('taxFull'|'pdfExport')`, sumber transaksi `invoice`. Kuota Free 5/bulan = `enforce_counter_quota`.
+- **Klien**: `state/invoices.tsx`, `lib/invoice.ts`, `lib/tax/` (ID/MY/TR), `lib/loan.ts`, `lib/pdf/` (HTML + expo-print +
+  share), `features/tools/documents.ts` (invoice, laporan bulanan, laporan pajak, riwayat). Kategori baru `freelance`.
+- **expo-print** ditambahkan: modul native, dev build lama di Xiaomi belum punya (PDF menampilkan pesan, tidak crash).
+- `CurrencySheet` sekarang menghitung daftar mata uang saat dibuka (sebelumnya dihitung saat modul dimuat, bisa
+  hanya USD bila kurs belum termuat).

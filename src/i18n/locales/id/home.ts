@@ -18,7 +18,15 @@ const home = {
   recapTitle: 'Recap mingguanmu sudah siap',
   recapMessage: 'Lihat ke mana uangmu pergi minggu lalu.',
   quick: { scan: 'Struk OCR', coach: 'Coach', more: 'Lainnya' },
-  more: { title: 'Lainnya', subtitle: 'Import rekening koran atau catat manual' },
+  more: {
+    title: 'Lainnya',
+    subtitle: 'Catat dari rekening koran atau manual, buat invoice, dan hitung kurs atau pajak',
+    invoice: 'Invoice & penawaran',
+    invoiceSub: 'Tagih klien, nomor otomatis, bagikan PDF',
+    invoiceSubLimited: 'Jatah Free bulan ini habis, daftar tetap bisa dibuka',
+    tools: 'Alat',
+    toolsSub: 'Konverter kurs, cicilan, estimasi pajak',
+  },
   deck: { stripA11y: '{name}, kartu akun aktif', openHint: 'Buka kartu akun' },
   budget: {
     title: 'Anggaran periode ini',

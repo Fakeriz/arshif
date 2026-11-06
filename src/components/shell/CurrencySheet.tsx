@@ -6,14 +6,16 @@ import { CURRENCIES, PINNED_CURRENCIES, currencyMeta } from '@/lib/money';
 import { currencyName, useT } from '@/i18n';
 import { useTheme } from '@/theme/ThemeProvider';
 
-/** IDR/MYR/TRY/USD dipin di atas (FR-FX-1). Hanya mata uang yang punya kurs yang ditawarkan. */
-const ORDER = [...PINNED_CURRENCIES, ...Object.keys(CURRENCIES).filter((c) => !(PINNED_CURRENCIES as readonly string[]).includes(c))].filter((c) => hasRate(c));
+const ALL = [...PINNED_CURRENCIES, ...Object.keys(CURRENCIES).filter((c) => !(PINNED_CURRENCIES as readonly string[]).includes(c))];
 
-export function CurrencySheet({ visible, value, onSelect, onClose }: { visible: boolean; value: string; onSelect: (code: string) => void; onClose: () => void }) {
+export function CurrencySheet({ visible, value, onSelect, onClose, title }: { visible: boolean; value: string; onSelect: (code: string) => void; onClose: () => void; title?: string }) {
   const { colors } = useTheme();
   const t = useT();
+  // IDR/MYR/TRY/USD dipin di atas (FR-FX-1). Hanya mata uang yang punya kurs: dihitung saat dibuka, karena
+  // tabel kurs baru terisi setelah data dimuat.
+  const ORDER = visible ? ALL.filter((c) => hasRate(c)) : [];
   return (
-    <BottomSheet visible={visible} onClose={onClose} title={t('shell.currencySheet.title')}>
+    <BottomSheet visible={visible} onClose={onClose} title={title ?? t('shell.currencySheet.title')}>
       {ORDER.map((code, i) => {
         const m = currencyMeta(code);
         return (

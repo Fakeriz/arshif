@@ -16,7 +16,7 @@ export type Account = {
 };
 
 export type TxType = 'income' | 'expense' | 'transfer';
-export type TxSource = 'manual' | 'scan' | 'voice' | 'import' | 'smartlog';
+export type TxSource = 'manual' | 'scan' | 'voice' | 'import' | 'smartlog' | 'invoice';
 
 /** total = harga sebelum diskon (minor units); bayar = total - discount. taxRate dalam persen. */
 export type ReceiptItem = { name: string; qty: number; unitPrice: number; total: number; discount?: number; taxRate?: number };

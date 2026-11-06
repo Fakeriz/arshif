@@ -7,7 +7,7 @@ import { useLimits } from '@/state/limits';
 import { useTheme } from '@/theme/ThemeProvider';
 import { radius } from '@/theme/tokens';
 
-import { captureOptions, type CaptureKey } from './captureOptions';
+import { captureOptions, type CaptureKey, type MoreOption } from './captureOptions';
 import { usePaywall } from './Paywall';
 
 type CaptureSheetProps = {
@@ -17,14 +17,16 @@ type CaptureSheetProps = {
   keys?: CaptureKey[];
   title?: string;
   subtitle?: string;
+  /** Entri tambahan di bawah cara mencatat (sheet "Lainnya": Invoice, Alat). */
+  extras?: MoreOption[];
 };
 
 /** Sheet "+ Catat": empat cara mencatat. Fitur yang kuotanya habis membuka Premium, bukan error mentah. */
-export function CaptureSheet({ visible, onClose, keys, title, subtitle }: CaptureSheetProps) {
+export function CaptureSheet({ visible, onClose, keys, title, subtitle, extras = [] }: CaptureSheetProps) {
   const router = useRouter();
   const paywall = usePaywall();
   const t = useT();
-  const options = captureOptions(useLimits(), t).filter((o) => !keys || keys.includes(o.key));
+  const options: MoreOption[] = [...captureOptions(useLimits(), t).filter((o) => !keys || keys.includes(o.key)), ...extras];
   const { colors } = useTheme();
 
   return (

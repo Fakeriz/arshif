@@ -19,7 +19,15 @@ const home: Messages['home'] = {
   recapTitle: 'Haftalık özetin hazır',
   recapMessage: 'Geçen hafta paranın nereye gittiğine bak.',
   quick: { scan: 'Fiş OCR', coach: 'Coach', more: 'Diğer' },
-  more: { title: 'Diğer', subtitle: 'Banka ekstresini içe aktar ya da elle kaydet' },
+  more: {
+    title: 'Diğer',
+    subtitle: 'Banka ekstresinden ya da elle kaydet, fatura oluştur, kur veya vergi hesapla',
+    invoice: 'Fatura & teklif',
+    invoiceSub: 'Müşteriye fatura kes, otomatik numara, PDF paylaş',
+    invoiceSubLimited: 'Bu ayki Free kotası doldu, liste yine açılabilir',
+    tools: 'Araçlar',
+    toolsSub: 'Döviz çevirici, kredi taksiti, vergi tahmini',
+  },
   deck: { stripA11y: '{name}, etkin hesap kartı', openHint: 'Hesap kartlarını açar' },
   budget: {
     title: 'Bu dönemin bütçesi',

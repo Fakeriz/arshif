@@ -3,7 +3,7 @@ import { useRouter } from 'expo-router';
 import { useState } from 'react';
 
 import { CaptureSheet } from '@/components/shell/CaptureSheet';
-import { captureOptions } from '@/components/shell/captureOptions';
+import { captureOptions, moreOptions } from '@/components/shell/captureOptions';
 import { usePaywall } from '@/components/shell/Paywall';
 import { Screen } from '@/components/shell/Screen';
 import { EmptyState, PromoCard, QuickActions } from '@/components/ui';
@@ -76,7 +76,7 @@ export default function HomeScreen() {
           { key: 'more', label: t('home.quick.more'), icon: LayoutGrid, onPress: () => setMore(true) },
         ]}
       />
-      <CaptureSheet visible={more} onClose={() => setMore(false)} keys={['pdf', 'manual']} title={t('home.more.title')} subtitle={t('home.more.subtitle')} />
+      <CaptureSheet visible={more} onClose={() => setMore(false)} keys={['pdf', 'manual']} extras={moreOptions(limits, t)} title={t('home.more.title')} subtitle={t('home.more.subtitle')} />
       {state.notifPrefs.weekly_recap && ledger.transactions.length > 0 && (
         <PromoCard icon={Sparkles} title={t('home.recapTitle')} message={t('home.recapMessage')} onPress={() => router.push('/coach')} />
       )}

@@ -46,11 +46,11 @@ export function AccountPicker({ label, accounts, value, onChange, error }: { lab
   );
 }
 
-const INCOME_KEYS = ['salary', 'investment_income', 'other'];
+const INCOME_KEYS = ['salary', 'freelance', 'investment_income', 'other'];
 
 /** Pemasukan dan pengeluaran memakai daftar kategori yang berbeda. */
 export function categoriesFor(type: TxType) {
-  return CATEGORIES.filter((c) => (type === 'income' ? INCOME_KEYS.includes(c.key) : !['salary', 'investment_income'].includes(c.key)));
+  return CATEGORIES.filter((c) => (type === 'income' ? INCOME_KEYS.includes(c.key) : !['salary', 'freelance', 'investment_income'].includes(c.key)));
 }
 
 export function CategoryPicker({ type, value, onChange, error, warning, scroll }: { type: TxType; value: string | null; onChange: (key: string) => void; error?: string; warning?: string; scroll?: boolean }) {

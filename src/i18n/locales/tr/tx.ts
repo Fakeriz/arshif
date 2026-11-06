@@ -27,7 +27,7 @@ const tx: Messages['tx'] = {
     reset: 'Sıfırla',
     done: 'Tamam',
   },
-  rowSource: { scan: 'Fiş', voice: 'Ses', import: 'PDF', smartlog: 'Banka bildirimi' },
+  rowSource: { scan: 'Fiş', voice: 'Ses', import: 'PDF', smartlog: 'Banka bildirimi', invoice: 'Fatura' },
   detail: {
     title: 'İşlem detayı',
     notFoundTitle: 'İşlem bulunamadı',
@@ -74,7 +74,7 @@ const tx: Messages['tx'] = {
     reread: 'Fişi tekrar oku',
     rereadFailed: 'Fiş tekrar okunamadı. Daha sonra dene.',
   },
-  source: { manual: 'Elle girildi', scan: 'Fiş tarama', voice: 'Voice Log', import: 'PDF içe aktarma', smartlog: 'Banka bildirimi' },
+  source: { manual: 'Elle girildi', scan: 'Fiş tarama', voice: 'Voice Log', import: 'PDF içe aktarma', smartlog: 'Banka bildirimi', invoice: 'Fatura' },
   form: {
     titleNew: 'İşlem ekle',
     titleEdit: 'İşlemi düzenle',

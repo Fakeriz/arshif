@@ -19,7 +19,15 @@ const home: Messages['home'] = {
   recapTitle: 'Your weekly recap is ready',
   recapMessage: 'See where your money went last week.',
   quick: { scan: 'Receipt OCR', coach: 'Coach', more: 'More' },
-  more: { title: 'More', subtitle: 'Import a bank statement or add one by hand' },
+  more: {
+    title: 'More',
+    subtitle: 'Import a bank statement or add by hand, create invoices, and work out rates or tax',
+    invoice: 'Invoices & quotes',
+    invoiceSub: 'Bill clients, automatic numbers, share as PDF',
+    invoiceSubLimited: 'This month\'s Free quota is used up, the list still opens',
+    tools: 'Tools',
+    toolsSub: 'Currency converter, loan payments, tax estimate',
+  },
   deck: { stripA11y: '{name}, active account card', openHint: 'Opens your account cards' },
   budget: {
     title: 'This period’s budget',

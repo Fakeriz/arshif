@@ -18,6 +18,7 @@ import { BootScreen } from '@/components/shell/BootScreen';
 import { BlurTargetArea, BlurTargetScope, ToastProvider } from '@/components/ui';
 import { I18nProvider } from '@/i18n';
 import { AppStoreProvider, useStore } from '@/state/AppStore';
+import { InvoicesProvider } from '@/state/invoices';
 import { PlanningProvider } from '@/state/planning';
 import { PurchasesBridge } from '@/state/billing';
 import { SmartLogProvider } from '@/state/smartlog';
@@ -63,16 +64,18 @@ function Shell() {
       <ToastProvider>
         <AppStoreProvider>
           <PlanningProvider>
-            <PaywallProvider>
-              <SmartLogProvider>
-                <PurchasesBridge />
-                <StatusBar style={scheme === 'dark' ? 'light' : 'dark'} />
-                {/* Android: konten Stack = sumber blur untuk toast (di luar area) serta sheet/dialog (Modal). */}
-                <BlurTargetArea style={styles.fill}>
-                  <Routes />
-                </BlurTargetArea>
-              </SmartLogProvider>
-            </PaywallProvider>
+            <InvoicesProvider>
+              <PaywallProvider>
+                <SmartLogProvider>
+                  <PurchasesBridge />
+                  <StatusBar style={scheme === 'dark' ? 'light' : 'dark'} />
+                  {/* Android: konten Stack = sumber blur untuk toast (di luar area) serta sheet/dialog (Modal). */}
+                  <BlurTargetArea style={styles.fill}>
+                    <Routes />
+                  </BlurTargetArea>
+                </SmartLogProvider>
+              </PaywallProvider>
+            </InvoicesProvider>
           </PlanningProvider>
         </AppStoreProvider>
       </ToastProvider>
@@ -140,6 +143,15 @@ function Routes() {
         <Stack.Screen name="premium/index" />
         <Stack.Screen name="premium/order/[id]" />
         <Stack.Screen name="premium/sukses" />
+        <Stack.Screen name="invoice/index" />
+        <Stack.Screen name="invoice/[id]" />
+        <Stack.Screen name="invoice/form" />
+        <Stack.Screen name="alat/index" />
+        <Stack.Screen name="alat/kurs" />
+        <Stack.Screen name="alat/cicilan" />
+        <Stack.Screen name="alat/pajak" />
+        <Stack.Screen name="alat/laporan" />
+        <Stack.Screen name="alat/ekspor" />
         <Stack.Screen name="admin" />
       </Stack.Protected>
     </Stack>

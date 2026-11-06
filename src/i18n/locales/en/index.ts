@@ -12,6 +12,8 @@ import home from './home';
 import settings from './settings';
 import shell from './shell';
 import slog from './slog';
+import inv from './inv';
+import tools from './tools';
 import tx from './tx';
 
-export const en: Messages = { auth, billing, common, domain, shell, home, tx, capture, budget, plan, coach, settings, slog };
+export const en: Messages = { auth, billing, common, domain, shell, home, tx, capture, budget, plan, coach, settings, slog, inv, tools };

@@ -27,7 +27,7 @@ const tx: Messages['tx'] = {
     reset: 'Set semula',
     done: 'Selesai',
   },
-  rowSource: { scan: 'Resit', voice: 'Suara', import: 'PDF', smartlog: 'Notifikasi bank' },
+  rowSource: { scan: 'Resit', voice: 'Suara', import: 'PDF', smartlog: 'Notifikasi bank', invoice: 'Invois' },
   detail: {
     title: 'Butiran transaksi',
     notFoundTitle: 'Transaksi tidak dijumpai',
@@ -74,7 +74,7 @@ const tx: Messages['tx'] = {
     reread: 'Baca semula resit',
     rereadFailed: 'Resit gagal dibaca semula. Cuba lagi nanti.',
   },
-  source: { manual: 'Direkod secara manual', scan: 'Imbas resit', voice: 'Voice Log', import: 'Import PDF', smartlog: 'Notifikasi bank' },
+  source: { manual: 'Direkod secara manual', scan: 'Imbas resit', voice: 'Voice Log', import: 'Import PDF', smartlog: 'Notifikasi bank', invoice: 'Invois' },
   form: {
     titleNew: 'Rekod transaksi',
     titleEdit: 'Ubah transaksi',

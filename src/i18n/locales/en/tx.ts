@@ -27,7 +27,7 @@ const tx: Messages['tx'] = {
     reset: 'Reset',
     done: 'Done',
   },
-  rowSource: { scan: 'Receipt', voice: 'Voice', import: 'PDF', smartlog: 'Bank alert' },
+  rowSource: { scan: 'Receipt', voice: 'Voice', import: 'PDF', smartlog: 'Bank alert', invoice: 'Invoice' },
   detail: {
     title: 'Transaction details',
     notFoundTitle: 'Transaction not found',
@@ -74,7 +74,7 @@ const tx: Messages['tx'] = {
     reread: 'Read receipt again',
     rereadFailed: 'Could not read the receipt again. Try later.',
   },
-  source: { manual: 'Entered manually', scan: 'Receipt scan', voice: 'Voice Log', import: 'PDF import', smartlog: 'Bank alert' },
+  source: { manual: 'Entered manually', scan: 'Receipt scan', voice: 'Voice Log', import: 'PDF import', smartlog: 'Bank alert', invoice: 'Invoice' },
   form: {
     titleNew: 'Add transaction',
     titleEdit: 'Edit transaction',

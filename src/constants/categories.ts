@@ -8,6 +8,7 @@ import {
   Film,
   Gift,
   GraduationCap,
+  HandCoins,
   HeartPulse,
   House,
   Landmark,
@@ -55,6 +56,7 @@ export const CATEGORIES: CategoryDef[] = [
   { key: 'debt', icon: CreditCard, hue: 'clay', bucket: 'savings' },
   { key: 'salary', icon: Briefcase, hue: 'jade', bucket: null },
   { key: 'investment_income', icon: TrendingUp, hue: 'teal', bucket: null },
+  { key: 'freelance', icon: HandCoins, hue: 'saffron', bucket: null },
   { key: 'bank', icon: Landmark, hue: 'slate', bucket: 'needs' },
   { key: 'other', icon: Ellipsis, hue: 'slate', bucket: 'wants' },
 ];

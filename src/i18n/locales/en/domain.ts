@@ -21,6 +21,7 @@ const domain: Messages['domain'] = {
     debt: 'Loans & Debt',
     salary: 'Salary',
     investment_income: 'Business Income',
+    freelance: 'Freelance & Projects',
     bank: 'Bank & Admin Fees',
     other: 'Other',
   },

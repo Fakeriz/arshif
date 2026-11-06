@@ -10,6 +10,7 @@ export function useLimits() {
     scan: isLimited(plan, 'scan', usage.scan),
     automation: isLimited(plan, 'automation', usage.automation),
     importPdf: isLimited(plan, 'importPdf', usage.importPdf),
+    invoice: isLimited(plan, 'invoice', usage.invoice),
     accounts: isLimited(plan, 'accounts', state.accounts.length),
     goals: isLimited(plan, 'goals', usage.goals),
     billsDebts: isLimited(plan, 'billsDebts', usage.billsDebts),

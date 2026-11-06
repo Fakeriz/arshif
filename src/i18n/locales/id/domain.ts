@@ -20,6 +20,7 @@ const domain = {
     debt: 'Cicilan & Utang',
     salary: 'Gaji',
     investment_income: 'Hasil Usaha',
+    freelance: 'Freelance & Proyek',
     bank: 'Bank & Biaya Admin',
     other: 'Lainnya',
   },
