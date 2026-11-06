@@ -6,19 +6,18 @@ import { CaptureSheet } from '@/components/shell/CaptureSheet';
 import { captureOptions, moreOptions } from '@/components/shell/captureOptions';
 import { usePaywall } from '@/components/shell/Paywall';
 import { Screen } from '@/components/shell/Screen';
-import { EmptyState, PromoCard, QuickActions } from '@/components/ui';
+import { EmptyState, PromoCard, QuickActions, SwipeDismiss } from '@/components/ui';
 import { AccountDeck } from '@/features/home/AccountDeck';
 import { BalanceBlock } from '@/features/home/BalanceBlock';
 import { MissingRatesBanner } from '@/features/fx/MissingRatesBanner';
-import { BudgetGlance } from '@/features/home/BudgetGlance';
-import { HealthGlance } from '@/features/home/HealthGlance';
 import { HomeHeader } from '@/features/home/HomeHeader';
 import { HomeSkeleton } from '@/features/home/HomeSkeleton';
 import { RecentTransactions } from '@/features/home/RecentTransactions';
+import { useSessionDismiss } from '@/features/home/sessionDismiss';
 import { useT } from '@/i18n';
 import { useStore } from '@/state/AppStore';
 import { useLoadState } from '@/state/loadState';
-import { useBudget, useHealth, useLedger } from '@/state/derived';
+import { useLedger } from '@/state/derived';
 import { useNetWorth, useNetWorthSnapshot } from '@/state/netWorth';
 import { useLimits } from '@/state/limits';
 import { useRetry } from '@/state/useRetry';
@@ -34,8 +33,7 @@ export default function HomeScreen() {
   const ledger = useLedger();
   const netWorth = useNetWorth();
   useNetWorthSnapshot(netWorth);
-  const budget = useBudget();
-  const health = useHealth();
+  const [recapGone, dismissRecap] = useSessionDismiss('weekly_recap');
   const t = useT();
   const [more, setMore] = useState(false);
   const capture = captureOptions(limits, t);
@@ -92,21 +90,11 @@ export default function HomeScreen() {
           { key: 'business', title: t('home.more.sectionBusiness'), extras: moreItems },
         ]}
       />
-      {state.notifPrefs.weekly_recap && ledger.transactions.length > 0 && (
-        <PromoCard icon={Sparkles} title={t('home.recapTitle')} message={t('home.recapMessage')} onPress={() => router.push('/coach')} />
+      {state.notifPrefs.weekly_recap && ledger.transactions.length > 0 && !recapGone && (
+        <SwipeDismiss onDismiss={dismissRecap} actionLabel={t('home.recapDismiss')}>
+          <PromoCard icon={Sparkles} title={t('home.recapTitle')} message={t('home.recapMessage')} onPress={() => router.push('/coach')} />
+        </SwipeDismiss>
       )}
-      {ledger.transactions.length > 0 && (
-        <BudgetGlance
-          period={budget.period}
-          pace={budget.flexPace}
-          safePerDay={budget.safePerDay}
-          spent={budget.flexSpent}
-          limit={budget.flexLimit}
-          currency={ledger.mainCurrency}
-          onPress={() => router.navigate('/anggaran')}
-        />
-      )}
-      {ledger.transactions.length > 0 && <HealthGlance score={health.score} delta={health.delta} onPress={() => router.push('/coach')} />}
       <RecentTransactions transactions={ledger.transactions} accounts={ledger.accounts} mainCurrency={ledger.mainCurrency} />
     </Screen>
   );

@@ -17,6 +17,7 @@ const home = {
   accountLimitSub: 'Premium untuk menambah akun',
   recapTitle: 'Recap mingguanmu sudah siap',
   recapMessage: 'Lihat ke mana uangmu pergi minggu lalu.',
+  recapDismiss: 'Tutup recap mingguan',
   quick: { scan: 'Struk OCR', coach: 'Coach', more: 'Lainnya' },
   more: {
     sectionLog: 'Catat',
@@ -30,20 +31,6 @@ const home = {
     toolsSub: 'Konverter kurs, cicilan, estimasi pajak',
   },
   deck: { stripA11y: '{name}, kartu akun aktif', openHint: 'Buka kartu akun' },
-  budget: {
-    title: 'Anggaran periode ini',
-    a11y: 'Anggaran periode ini, {pace}. Aman dibelanjakan {amount} per hari. Buka Anggaran',
-    period: '{start} sampai {end} · {count} hari lagi',
-    period_one: '{start} sampai {end} · {count} hari lagi',
-    safe: 'Aman dibelanjakan',
-    perDay: 'per hari',
-    usageA11y: 'Pemakaian anggaran kebutuhan dan keinginan',
-    usage: '{spent} dari {limit} untuk kebutuhan dan keinginan',
-  },
-  health: {
-    title: 'Kesehatan keuangan',
-    openCoach: '{label}. Buka Coach',
-  },
   recent: {
     title: 'Transaksi terakhir',
     seeAll: 'Lihat semua',

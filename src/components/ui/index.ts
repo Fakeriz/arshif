@@ -27,6 +27,7 @@ export { ProgressBar } from './ProgressBar';
 export { PromoCard } from './PromoCard';
 export { QuickActions, type QuickAction } from './QuickActions';
 export { Skeleton, SkeletonText } from './Skeleton';
+export { SwipeDismiss } from './SwipeDismiss';
 export { Tabs } from './Tabs';
 export { Toggle } from './Toggle';
 export { ToastProvider, useToast } from './Toast';

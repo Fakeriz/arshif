@@ -18,6 +18,7 @@ const home: Messages['home'] = {
   accountLimitSub: 'Premium untuk menambah akaun',
   recapTitle: 'Rekap mingguan anda sudah sedia',
   recapMessage: 'Lihat ke mana wang anda pergi minggu lepas.',
+  recapDismiss: 'Tutup rekap mingguan',
   quick: { scan: 'Resit OCR', coach: 'Coach', more: 'Lagi' },
   more: {
     sectionLog: 'Rekod',
@@ -31,20 +32,6 @@ const home: Messages['home'] = {
     toolsSub: 'Penukar mata wang, ansuran, anggaran cukai',
   },
   deck: { stripA11y: '{name}, kad akaun aktif', openHint: 'Buka kad akaun' },
-  budget: {
-    title: 'Belanjawan tempoh ini',
-    a11y: 'Belanjawan tempoh ini, {pace}. Selamat dibelanjakan {amount} sehari. Buka Belanjawan',
-    period: '{start} hingga {end} · {count} hari lagi',
-    period_one: '{start} hingga {end} · {count} hari lagi',
-    safe: 'Selamat dibelanjakan',
-    perDay: 'sehari',
-    usageA11y: 'Penggunaan belanjawan keperluan dan kehendak',
-    usage: '{spent} daripada {limit} untuk keperluan dan kehendak',
-  },
-  health: {
-    title: 'Kesihatan kewangan',
-    openCoach: '{label}. Buka Coach',
-  },
   recent: {
     title: 'Transaksi terkini',
     seeAll: 'Lihat semua',

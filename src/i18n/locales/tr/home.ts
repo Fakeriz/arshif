@@ -18,6 +18,7 @@ const home: Messages['home'] = {
   accountLimitSub: 'Hesap eklemek için Premium',
   recapTitle: 'Haftalık özetin hazır',
   recapMessage: 'Geçen hafta paranın nereye gittiğine bak.',
+  recapDismiss: 'Haftalık özeti kapat',
   quick: { scan: 'Fiş OCR', coach: 'Coach', more: 'Diğer' },
   more: {
     sectionLog: 'Kayıt',
@@ -31,20 +32,6 @@ const home: Messages['home'] = {
     toolsSub: 'Döviz çevirici, kredi taksiti, vergi tahmini',
   },
   deck: { stripA11y: '{name}, etkin hesap kartı', openHint: 'Hesap kartlarını açar' },
-  budget: {
-    title: 'Bu dönemin bütçesi',
-    a11y: 'Bu dönemin bütçesi, {pace}. Günde {amount} güvenle harcayabilirsin. Bütçeyi aç',
-    period: '{start} - {end} · {count} gün kaldı',
-    period_one: '{start} - {end} · {count} gün kaldı',
-    safe: 'Güvenle harcanabilir',
-    perDay: 'günlük',
-    usageA11y: 'İhtiyaç ve istek bütçesi kullanımı',
-    usage: 'İhtiyaç ve istekler için {limit} bütçenin {spent} kadarı kullanıldı',
-  },
-  health: {
-    title: 'Finansal sağlık',
-    openCoach: '{label}. Coach’u aç',
-  },
   recent: {
     title: 'Son işlemler',
     seeAll: 'Tümünü gör',
