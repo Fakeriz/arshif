@@ -1,5 +1,16 @@
 const settings = {
   title: 'Pengaturan',
+  groups: { account: 'Akun & paket', prefs: 'Preferensi', data: 'Data & lainnya' },
+  menu: {
+    plan: 'Paket & pemakaian',
+    accountsCount: '{count} akun',
+    accountsCount_one: '{count} akun',
+    finance: 'Keuangan',
+    notifCount: '{on}/{total} aktif',
+    data: 'Data & privasi',
+    dataSub: 'Ekspor transaksi atau hapus akun',
+    adminSub: 'Panel admin web',
+  },
   appearance: 'Tampilan',
   theme: 'Tema',
   themeMode: { system: 'Sistem', dark: 'Gelap', light: 'Terang' },

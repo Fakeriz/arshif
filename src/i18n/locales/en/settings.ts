@@ -2,6 +2,17 @@ import type { Messages } from '../id';
 
 const settings: Messages['settings'] = {
   title: 'Settings',
+  groups: { account: 'Account & plan', prefs: 'Preferences', data: 'Data & more' },
+  menu: {
+    plan: 'Plan & usage',
+    accountsCount: '{count} accounts',
+    accountsCount_one: '{count} account',
+    finance: 'Money',
+    notifCount: '{on}/{total} on',
+    data: 'Data & privacy',
+    dataSub: 'Export transactions or delete your account',
+    adminSub: 'Web admin panel',
+  },
   appearance: 'Appearance',
   theme: 'Theme',
   themeMode: { system: 'System', dark: 'Dark', light: 'Light' },

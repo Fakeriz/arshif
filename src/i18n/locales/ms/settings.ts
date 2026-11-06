@@ -2,6 +2,17 @@ import type { Messages } from '../id';
 
 const settings: Messages['settings'] = {
   title: 'Tetapan',
+  groups: { account: 'Akaun & pelan', prefs: 'Keutamaan', data: 'Data & lain-lain' },
+  menu: {
+    plan: 'Pelan & penggunaan',
+    accountsCount: '{count} akaun',
+    accountsCount_one: '{count} akaun',
+    finance: 'Kewangan',
+    notifCount: '{on}/{total} aktif',
+    data: 'Data & privasi',
+    dataSub: 'Eksport transaksi atau padam akaun',
+    adminSub: 'Panel admin web',
+  },
   appearance: 'Paparan',
   theme: 'Tema',
   themeMode: { system: 'Sistem', dark: 'Gelap', light: 'Cerah' },

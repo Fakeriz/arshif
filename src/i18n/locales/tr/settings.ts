@@ -2,6 +2,17 @@ import type { Messages } from '../id';
 
 const settings: Messages['settings'] = {
   title: 'Ayarlar',
+  groups: { account: 'Hesap ve plan', prefs: 'Tercihler', data: 'Veri ve diğer' },
+  menu: {
+    plan: 'Plan ve kullanım',
+    accountsCount: '{count} hesap',
+    accountsCount_one: '{count} hesap',
+    finance: 'Para',
+    notifCount: '{on}/{total} açık',
+    data: 'Veri ve gizlilik',
+    dataSub: 'İşlemleri dışa aktar veya hesabı sil',
+    adminSub: 'Web yönetim paneli',
+  },
   appearance: 'Görünüm',
   theme: 'Tema',
   themeMode: { system: 'Sistem', dark: 'Koyu', light: 'Açık' },

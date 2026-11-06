@@ -24,8 +24,8 @@ export function AccountsCard() {
 
   return (
     <Card padding="md">
+      {/* Judul "Akun & kartu" ada di header layar turunan Pengaturan. */}
       <View style={styles.head}>
-        <AppText variant="h3">{t('settings.accounts.title')}</AppText>
         <AppText variant="caption" tone="muted">
           {t('settings.accounts.hint')}
         </AppText>

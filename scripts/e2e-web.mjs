@@ -179,14 +179,27 @@ await step('Coach: Recap minggu lalu, Bulan lalu (Free = ajakan Premium), Tanya 
   await p.getByRole('tab', { name: 'Bulan lalu' }).click(); await expectText(p, 'Muncul setiap tanggal 1, khusus Premium');
   await p.getByRole('tab', { name: 'Tanya Coach' }).click(); await expectText(p, 'Tanya Coach khusus Premium'); await btn(p, 'Lihat Premium').click(); await expectText(p, 'Buka batas dengan Premium');
 });
+const back = async (p) => { await p.getByRole('button', { name: /^Kembali$/ }).locator('visible=true').first().click(); await p.waitForTimeout(500); };
+const menu = async (p, name) => { await p.getByRole('button', { name }).first().click(); await p.waitForTimeout(500); };
+await step('Pengaturan: menu per kategori, tiap baris membuka layar turunannya', async () => {
+  const p = await open('/pengaturan');
+  for (const t of ['Akun & paket', 'Preferensi', 'Data & lainnya']) await expectText(p, t);
+  for (const [name, path_, text] of [[/^Paket & pemakaian/, '/pengaturan/paket', 'Pemakaian bulan ini'], [/^Akun & kartu/, '/pengaturan/akun', 'Tambah akun'], [/^Keuangan/, '/pengaturan/keuangan', 'Mata uang utama'], [/^Tampilan/, '/pengaturan/tampilan', 'Warna aksen'], [/^Notifikasi/, '/pengaturan/notifikasi', 'Recap mingguan'], [/^Data & privasi/, '/pengaturan/data', 'Ekspor data'], [/^Automation/, '/otomasi', 'Smart Log']]) {
+    await menu(p, name); if (url(p) !== path_) throw new Error(`${name} -> ${url(p)}`); await expectText(p, text); await back(p);
+    if (url(p) !== '/pengaturan') throw new Error('kembali -> ' + url(p));
+  }
+});
 await step('Pengaturan: ganti aksen ke Biru, mata uang MYR, toggle notifikasi', async () => {
-  const p = await open('/pengaturan'); await p.getByRole('radio', { name: 'Biru' }).click();
+  const p = await open('/pengaturan'); await menu(p, /^Tampilan/); await p.getByRole('radio', { name: 'Biru' }).click();
   if ((await p.getByRole('radio', { name: 'Biru' }).getAttribute('aria-checked')) !== 'true') throw new Error('aksen tidak terpilih');
-  await p.getByRole('button', { name: /Mata uang utama/ }).click(); await p.getByRole('button', { name: /^MYR/ }).click(); await expectText(p, 'MYR');
+  await back(p); await menu(p, /^Keuangan/); await p.getByRole('button', { name: /Mata uang utama/ }).click(); await p.getByRole('button', { name: /^MYR/ }).click(); await expectText(p, 'MYR');
+  await back(p); await p.getByRole('button', { name: /^Keuangan, MYR/ }).waitFor({ timeout: 3000 });
+  await menu(p, /^Notifikasi/);
   const sw = p.getByRole('switch', { name: 'Recap mingguan' }); if ((await sw.getAttribute('aria-checked')) !== 'true') throw new Error('switch awal'); await sw.click(); if ((await sw.getAttribute('aria-checked')) !== 'false') throw new Error('toggle');
+  await back(p); await p.getByRole('button', { name: /^Notifikasi, 3\/4 aktif/ }).waitFor({ timeout: 3000 });
 });
 await step('Pengaturan: Hapus akun menampilkan dialog konfirmasi', async () => {
-  const p = await open('/pengaturan'); await p.getByRole('button', { name: /^Hapus akun/ }).click(); await expectText(p, 'Hapus akun dan semua data?'); await btn(p, 'Batal').click();
+  const p = await open('/pengaturan'); await menu(p, /^Data & privasi/); await p.getByRole('button', { name: /^Hapus akun/ }).click(); await expectText(p, 'Hapus akun dan semua data?'); await btn(p, 'Batal').click();
 });
 await step('Pengaturan: ganti bahasa ke Türkçe -> seluruh UI ikut, nav dan tanggal', async () => {
   const p = await open('/pengaturan'); await p.getByRole('button', { name: /^Bahasa/ }).click();
@@ -202,7 +215,7 @@ await step('Bahasa: sebelum login ikut perangkat (ms/en, lainnya Indonesia); set
 }, { signedIn: false });
 await step('Pengaturan: pilih desain kartu bank -> kartu di Beranda berganti warna dan nama', async () => {
   // Fase 7: ketuk akun membuka Detail akun; desain kartu dipilih dari baris "Desain kartu".
-  const p = await open('/pengaturan'); await p.getByRole('button', { name: /^GoPay/ }).first().click(); await p.waitForTimeout(500);
+  const p = await open('/pengaturan/akun'); await p.getByRole('button', { name: /^GoPay/ }).first().click(); await p.waitForTimeout(500);
   if (!url(p).startsWith('/akun/')) throw new Error('detail akun -> ' + url(p));
   await p.getByRole('button', { name: /^Desain kartu/ }).first().click();
   await expectText(p, 'Desain kartu'); await p.getByRole('radio', { name: 'ShopeePay' }).click();
@@ -255,18 +268,20 @@ await step('Simpan manual bertahan setelah muat ulang (tersimpan di Supabase)', 
   await expectText(p, 'Es teh Solo'); await expectText(p, '29 dari 29 transaksi');
 });
 await step('Preferensi bertahan setelah muat ulang: aksen, bahasa, desain kartu', async () => {
-  const p = await open('/pengaturan'); await p.getByRole('radio', { name: 'Biru' }).click();
-  await p.getByRole('button', { name: /^GoPay/ }).first().click(); await p.waitForTimeout(500);
+  const p = await open('/pengaturan'); await menu(p, /^Tampilan/); await p.getByRole('radio', { name: 'Biru' }).click(); await back(p);
+  await menu(p, /^Akun & kartu/); await p.getByRole('button', { name: /^GoPay/ }).first().click(); await p.waitForTimeout(500);
   await p.getByRole('button', { name: /^Desain kartu/ }).first().click(); await p.getByRole('radio', { name: 'ShopeePay' }).click(); await p.keyboard.press('Escape');
-  await p.waitForTimeout(400); await p.getByRole('button', { name: /^Kembali$/ }).locator('visible=true').first().click(); await p.waitForTimeout(500);
+  await p.waitForTimeout(400); await back(p); await back(p);
   await p.getByRole('button', { name: /^Bahasa/ }).click(); await btn(p, 'English').click(); await expectText(p, 'Settings');
   await p.waitForTimeout(1500); await reloadPage(p);
   await expectText(p, 'Settings');
+  await menu(p, /^Appearance/);
   if ((await p.getByRole('radio', { name: 'Blue' }).getAttribute('aria-checked')) !== 'true') throw new Error('aksen tidak tersimpan');
-  await expectText(p, 'ShopeePay');
+  await p.getByRole('button', { name: /^Back$/ }).locator('visible=true').first().click(); await p.waitForTimeout(500);
+  await menu(p, /^Accounts & cards/); await expectText(p, 'ShopeePay');
 });
 await step('Fase 7: Tanggal gajian 1-28 + pratinjau periode; Kurs saya terbuka', async () => {
-  const p = await open('/pengaturan'); await p.getByRole('button', { name: /^Tanggal gajian/ }).click();
+  const p = await open('/pengaturan/keuangan'); await p.getByRole('button', { name: /^Tanggal gajian/ }).click();
   await expectText(p, 'Pilih 1 sampai 28'); await p.getByRole('checkbox', { name: '10', exact: true }).first().click(); await expectText(p, 'Periode sekarang');
   await p.keyboard.press('Escape'); await p.waitForTimeout(400); await expectText(p, 'Tgl 10');
   await p.getByRole('button', { name: /^Kurs saya/ }).click(); await p.waitForTimeout(500);
