@@ -1,6 +1,7 @@
 # Fase 7: Enhancements v1 (Bab 13 PRD)
 
-Status: dibangun dan diuji lokal. **Belum di-deploy** (migrasi 13 belum diterapkan, menunggu izin pemilik).
+Status: migrasi 13 + Edge Functions **live 2026-11-06** (izin pemilik). `npm run test:live` 11/11; fitur migrasi 13 dicek live
+sebagai pengguna biasa dalam transaksi yang di-rollback. Build EAS development baru menunggu login Expo pemilik.
 Panel Admin web bukan bagian fase ini (Fase 8).
 
 ## Ringkasan
@@ -178,5 +179,5 @@ URL manual `exp://100.91.191.123:8082`.
   tandai reimbursement.
 - `npm run verify` lolos: typecheck, 1126 tes jest, 64 uji DB, 7 alur Smart Log, export web/android/ios.
 
-Belum diuji: perangkat nyata (scanner ML Kit, OTA, tampilan baru di HP) dan terhadap Supabase live (migrasi 13 belum
-diterapkan). Terjemahan MS/TR/EN baru ditulis tanpa penutur asli.
+Belum diuji: perangkat nyata (scanner ML Kit, OTA, tampilan baru di HP) dan alur layar Fase 7 dari aplikasi terhadap
+Supabase live. Terjemahan MS/TR/EN baru ditulis tanpa penutur asli.
