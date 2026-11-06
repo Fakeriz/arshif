@@ -2,6 +2,7 @@ import { ActivityIndicator, StyleSheet, View } from 'react-native';
 
 import { AmbientGlow, AppText, EmptyState } from '@/components/ui';
 import { useT } from '@/i18n';
+import { supabase } from '@/lib/supabase';
 import { useTheme } from '@/theme/ThemeProvider';
 import { space } from '@/theme/tokens';
 
@@ -25,6 +26,24 @@ export function BootScreen({ onRetry }: { onRetry?: () => void }) {
           </AppText>
         </View>
       )}
+    </View>
+  );
+}
+
+/** Akun ditangguhkan admin: tidak ada data yang ditampilkan, hanya penjelasan dan tombol keluar. */
+export function SuspendedScreen() {
+  const { colors } = useTheme();
+  const t = useT();
+  return (
+    <View style={[styles.root, { backgroundColor: colors.bg }]}>
+      <AmbientGlow />
+      <EmptyState
+        kind="error"
+        title={t('common.suspendedTitle')}
+        message={t('common.suspendedMessage')}
+        actionLabel={t('settings.signOut')}
+        onAction={() => void supabase.auth.signOut()}
+      />
     </View>
   );
 }

@@ -81,6 +81,7 @@ export function AppStoreProvider({ children, preset }: { children: ReactNode; pr
       ]);
       setUsdRates(rates.table, rates.date);
       setUserRates(userRates);
+      api.touchLastSeen().catch(() => undefined);
       // Riwayat kurs harian untuk semua kode yang dipakai, sejak transaksi tertua (FR-FX-4).
       const codes = usedCodes(accounts, transactions, profile.mainCurrency, limitGroups.map((g) => g.currency));
       const oldest = transactions.reduce<string | null>((min, t) => (min === null || t.date < min ? t.date : min), null);
@@ -104,7 +105,7 @@ export function AppStoreProvider({ children, preset }: { children: ReactNode; pr
       localDispatch({
         type: 'load/done',
         data: {
-          email: profile.email, displayName: profile.displayName, onboarded: profile.onboarded, accounts, transactions, notifications,
+          email: profile.email, displayName: profile.displayName, onboarded: profile.onboarded, suspended: profile.suspended, accounts, transactions, notifications,
           plan: profile.plan, premiumUntil: profile.premiumUntil, premiumSource: profile.premiumSource, usage, hideBalance: profile.hideBalance, mainCurrency: profile.mainCurrency, income: profile.income,
           split: profile.split, payday: profile.payday, notifPrefs: profile.notifPrefs, activeAccountId: profile.activeAccountId, ratesDate: rates.date,
           budgets, limitGroups, userRates,
@@ -165,6 +166,7 @@ export function AppStoreProvider({ children, preset }: { children: ReactNode; pr
     if (!userId) return;
     const sub = RNAppState.addEventListener('change', (next) => {
       if (next !== 'active' || stateRef.current.status !== 'ready') return;
+      api.touchLastSeen().catch(() => undefined);
       api
         .loadPlan(userId)
         .then((p) => {

@@ -34,12 +34,14 @@ export type ScreenProps = {
   refreshing?: boolean;
   /** Dipanggil saat scroll mendekati bawah (render bertahap daftar panjang). */
   onEndReached?: () => void;
+  /** Lebar kolom maksimum. Bawaan = kolom aplikasi; panel admin web memakai kolom lebih lebar. */
+  maxWidth?: number;
 };
 
 /** Jarak dari bawah (px) yang memicu onEndReached. */
 const END_THRESHOLD = 600;
 
-export function Screen({ children, tabs, glow = true, onRefresh, refreshing, onEndReached }: ScreenProps) {
+export function Screen({ children, tabs, glow = true, onRefresh, refreshing, onEndReached, maxWidth }: ScreenProps) {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
   const { footprint } = useNavFootprint();
@@ -62,7 +64,7 @@ export function Screen({ children, tabs, glow = true, onRefresh, refreshing, onE
           { paddingTop: insets.top + space.md, paddingBottom: tabs ? tabSpace : space.x4 + insets.bottom },
         ]}
       >
-        <View style={styles.column}>{children}</View>
+        <View style={[styles.column, maxWidth ? { maxWidth } : null]}>{children}</View>
     </ScrollView>
   );
   // Latar (glow) = target blur terpisah, sehingga semua panel di layar ini blur seperti modal.

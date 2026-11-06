@@ -48,13 +48,14 @@ export type Profile = {
   premiumUntil: string | null;
   premiumSource: 'store' | 'web' | 'manual' | null;
   onboarded: boolean;
+  suspended: boolean;
 };
 
 type ProfileRow = {
   display_name: string | null; main_currency: string; lang: Lang; accent: AccentKey; theme_mode: ThemeMode; hide_balance: boolean;
   payday: number; monthly_income: number; split_needs: number; split_wants: number; split_savings: number;
   notif_prefs: Profile['notifPrefs']; active_account_id: string | null; plan: Plan; onboarded_at: string | null;
-  premium_until: string | null; premium_source: 'store' | 'web' | 'manual' | null;
+  premium_until: string | null; premium_source: 'store' | 'web' | 'manual' | null; suspended_at: string | null;
 };
 
 export async function loadProfile(userId: string, email: string): Promise<Profile> {
@@ -76,6 +77,7 @@ export async function loadProfile(userId: string, email: string): Promise<Profil
     premiumUntil: r.premium_until,
     premiumSource: r.premium_source,
     onboarded: r.onboarded_at !== null,
+    suspended: !!r.suspended_at,
   };
 }
 
@@ -352,4 +354,60 @@ export async function adminAiUsage(days: number): Promise<AiUsageRow[]> {
 export type AiFailure = { created_at: string; kind: string; email: string; error: string | null; latency_ms: number | null };
 export async function adminAiFailures(): Promise<AiFailure[]> {
   return must(await supabase.rpc('admin_ai_failures', { p_limit: 50 })) as AiFailure[];
+}
+
+/** Aktivitas harian untuk DAU (FR-ADM-1). Server menulis paling sering 1x per 10 menit; gagal diabaikan. */
+export async function touchLastSeen(): Promise<void> {
+  await supabase.rpc('touch_last_seen');
+}
+
+export type AdminDashboard = {
+  today: string;
+  total_users: number;
+  new_today: number;
+  dau: number;
+  dau_7: { day: string; users: number }[];
+  premium_users: number;
+  premium_by_source: Record<string, number>;
+  suspended_users: number;
+  ai_today: Record<string, { total: number; failed: number }>;
+  revenue_month: Record<string, number>;
+  paid_orders_month: number;
+};
+export async function adminDashboard(): Promise<AdminDashboard> {
+  return must(await supabase.rpc('admin_dashboard')) as AdminDashboard;
+}
+
+export type AdminUserRow = {
+  id: string; email: string; display_name: string | null; plan: Plan; premium_until: string | null; premium_source: Profile['premiumSource'];
+  suspended_at: string | null; last_seen_at: string | null; created_at: string; is_admin: boolean;
+};
+export async function adminSearchUsers(query: string): Promise<AdminUserRow[]> {
+  return must(await supabase.rpc('admin_search_users', { p_query: query, p_limit: 50 })) as AdminUserRow[];
+}
+
+export type AdminUserDetail = Omit<AdminUserRow, 'display_name'> & {
+  display_name: string | null; onboarded: boolean; main_currency: string; lang: string;
+  usage: { key: string; used: number; limit: number | null; window: 'month' | 'day' | 'total' | 'feature' }[];
+  orders: { id: string; provider: string; period: string; status: OrderStatus; days: number | null; currency: string; amount: number; created_at: string; granted_until: string | null }[];
+  ai_30d: Record<string, number>;
+};
+export async function adminUserDetail(userId: string): Promise<AdminUserDetail | null> {
+  return must(await supabase.rpc('admin_user_detail', { p_user: userId })) as AdminUserDetail | null;
+}
+
+export type AdminFxStatus = {
+  latest_rate_date: string | null; latest_fetched_at: string | null; codes: number;
+  runs: { ran_at: string; trigger: 'cron' | 'admin'; ok: boolean; rate_date: string | null; codes: number | null; error: string | null }[];
+};
+export async function adminFxStatus(): Promise<AdminFxStatus> {
+  return must(await supabase.rpc('admin_fx_status')) as AdminFxStatus;
+}
+
+export type BroadcastSegment = 'all' | 'free' | 'premium' | 'email';
+export async function adminBroadcastCount(segment: BroadcastSegment, email: string): Promise<number> {
+  return Number(must(await supabase.rpc('admin_broadcast_count', { p_segment: segment, p_email: email })));
+}
+export async function adminBroadcast(segment: BroadcastSegment, title: string, message: string, email: string): Promise<number> {
+  return Number(must(await supabase.rpc('admin_broadcast', { p_segment: segment, p_title: title, p_message: message, p_email: email })));
 }

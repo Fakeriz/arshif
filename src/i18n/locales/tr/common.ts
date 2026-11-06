@@ -16,6 +16,8 @@ const common: Messages['common'] = {
   syncFailed: 'Kaydedilemedi',
   syncFailedMessage: 'Değişiklik sunucuya kaydedilemedi. Veriler yeniden yüklendi, tekrar dene.',
   bootLoading: 'Verilerin yükleniyor',
+  suspendedTitle: 'Hesap askıya alındı',
+  suspendedMessage: 'Bu hesap askıya alındı, bu yüzden veriler açılamaz veya değiştirilemez. Bunun bir hata olduğunu düşünüyorsan Arshif destek ekibine yaz.',
   bootErrorTitle: 'Veriler yüklenemedi',
   bootErrorMessage: 'İnternet bağlantını kontrol edip tekrar dene. Verilerin sunucuda güvende.',
   premiumFeature: 'Premium özellik',

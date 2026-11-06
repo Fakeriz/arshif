@@ -14,7 +14,8 @@ import { useEffect } from 'react';
 import { Platform, StyleSheet } from 'react-native';
 
 import { PaywallProvider } from '@/components/shell/Paywall';
-import { BootScreen } from '@/components/shell/BootScreen';
+import { BootScreen, SuspendedScreen } from '@/components/shell/BootScreen';
+import { readReturnTo } from '@/lib/returnTo';
 import { BlurTargetArea, BlurTargetScope, ToastProvider } from '@/components/ui';
 import { I18nProvider } from '@/i18n';
 import { AppStoreProvider, useStore } from '@/state/AppStore';
@@ -101,17 +102,22 @@ function Routes() {
   // Native: splash masih tampil. Web tidak punya splash, jadi tampilkan layar muat (bukan layar kosong).
   if (booting) return Platform.OS === 'web' ? <BootScreen /> : null;
   if (signedIn && state.status === 'error') return <BootScreen onRetry={reload} />;
+  if (signedIn && state.suspended) return <SuspendedScreen />;
 
   const onboarded = signedIn && state.onboarded;
+  // Web: /admin yang dibuka sebelum login kembali ke /admin setelah login (bukan ke Home).
+  const afterLogin = onboarded ? (readReturnTo() ?? '/') : '/setup';
   return (
     <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.bg }, animation: 'slide_from_right' }}>
       {/* Layar auth didaftarkan satu per satu (tanpa layout grup) supaya redirect guard jatuh ke "masuk"
           dan "/" tetap milik (tabs)/index. */}
       {/* Pricing publik: bisa dibuka dengan atau tanpa login. */}
       <Stack.Screen name="harga" />
+      {/* Admin web: gerbangnya sendiri (login + role admin di server); tidak tersedia di aplikasi mobile. */}
+      <Stack.Screen name="admin" />
       {/* redirectTo eksplisit di tiap grup: tanpa itu expo-router jatuh ke rute tak-terkunci pertama menurut
           nama berkas, yaitu "harga", sehingga pengguna baru setelah verifikasi mendarat di Harga, bukan Setup. */}
-      <Stack.Protected guard={!signedIn} redirectTo={onboarded ? '/' : '/setup'}>
+      <Stack.Protected guard={!signedIn} redirectTo={afterLogin}>
         <Stack.Screen name="(auth)/masuk" />
         <Stack.Screen name="(auth)/verifikasi" />
       </Stack.Protected>
@@ -157,7 +163,6 @@ function Routes() {
         <Stack.Screen name="akun/[id]" />
         <Stack.Screen name="akun/grup" />
         <Stack.Screen name="kurs-saya" />
-        <Stack.Screen name="admin" />
       </Stack.Protected>
     </Stack>
   );

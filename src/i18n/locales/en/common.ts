@@ -16,6 +16,8 @@ const common: Messages['common'] = {
   syncFailed: 'Could not save',
   syncFailedMessage: 'Your change was not saved to the server. Data was reloaded, please try again.',
   bootLoading: 'Loading your data',
+  suspendedTitle: 'Account suspended',
+  suspendedMessage: 'This account is suspended, so its data cannot be opened or changed. Contact Arshif support if you think this is a mistake.',
   bootErrorTitle: 'Could not load your data',
   bootErrorMessage: 'Check your internet connection and try again. Your data is safe on the server.',
   premiumFeature: 'Premium feature',

@@ -6,14 +6,14 @@
 | `voice-log` | klien | `automation` | audio base64 inline, maks 60 detik |
 | `import-statement` | klien | `importPdf` | PDF dari bucket `statements`, dihapus setelah diproses |
 | `coach` | klien | tanpa kuota (rate limit) | hanya ringkasan angka, di-cache per minggu + bahasa |
-| `fx-sync` | pg_cron (`x-cron-secret`) | - | Frankfurter/ECB, backfill 365 hari bila riwayat < 30 hari |
+| `fx-sync` | pg_cron (`x-cron-secret`) atau admin (token, `admin_users`) | - | Frankfurter/ECB, backfill 365 hari bila riwayat < 30 hari; tiap percobaan dicatat di `fx_sync_runs` |
 | `delete-account` | klien | - | hapus storage + pengguna Auth (cascade) |
 | `checkout-create` | klien | maks 5 pesanan/10 menit | harga dari tabel `prices`; IDR/MYR -> Xendit Invoice, USD -> transaksi Paddle |
 | `xendit-webhook` | Xendit (`x-callback-token`) | - | invoice PAID/SETTLED/EXPIRED, `refund.succeeded`; idempoten |
 | `paddle-webhook` | Paddle (`Paddle-Signature`, HMAC) | - | transaction.completed/paid/payment_failed, refund (adjustment); idempoten |
 | `revenuecat-webhook` | RevenueCat (`Authorization`) | - | siapa pun yang berubah -> `syncPlan` dari REST API; idempoten |
-| `entitlement-sync` | klien (6/menit) atau pg_cron | - | cocokkan paket dengan RevenueCat; cron: Premium kedaluwarsa + grant gagal |
-| `admin-grant` | klien, hanya `admin_users` | - | grant Premium manual, dicatat sebagai pesanan `manual` |
+| `entitlement-sync` | klien (6/menit) atau pg_cron | - | cocokkan paket dengan RevenueCat (tanpa kunci: dengan pesanan lunas); cron: Premium kedaluwarsa + grant gagal |
+| `admin-user` | klien, hanya `admin_users` | - | grant Premium manual (pesanan `manual`), cabut grant manual, tangguhkan/pulihkan akun (ban Auth + `profiles.suspended_at`) |
 
 Aturan bersama (`_shared/guard.ts`): rate limit 10 permintaan AI/menit/pengguna, kuota diambil atomik
 sebelum AI dipanggil dan dikembalikan bila gagal, setiap percobaan dicatat di `ai_jobs`.

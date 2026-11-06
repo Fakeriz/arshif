@@ -13,6 +13,8 @@ export type AppState = {
   email: string;
   displayName: string | null;
   onboarded: boolean;
+  /** Akun ditangguhkan admin (FR-ADM-2): aplikasi hanya menampilkan layar penjelasan. */
+  suspended: boolean;
   accounts: Account[];
   transactions: Transaction[];
   notifications: AppNotification[];
@@ -87,6 +89,7 @@ export function initialState(): AppState {
     email: '',
     displayName: null,
     onboarded: false,
+    suspended: false,
     accounts: [],
     transactions: [],
     notifications: [],

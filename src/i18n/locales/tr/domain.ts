@@ -96,6 +96,9 @@ const domain: Messages['domain'] = {
     billMessage: '{amount}. Ödedikten sonra ödendi olarak işaretle.',
     quotaTitle: '{left} fiş tarama hakkın kaldı',
     quotaMessage: '{limit} taramadan {used} tanesi kullanıldı. 1 Aralık’ta sıfırlanır.',
+    // Broadcast admin: judul + isi bebas dari panel /admin, tidak diterjemahkan.
+    broadcastTitle: '{title}',
+    broadcastMessage: '{message}',
     premiumTitle: 'Premium etkin',
     premiumMessage: 'Free sınırlarının tümü kaldırıldı. Bitiş tarihi Ayarlar\'da.',
     billTodayTitle: '{biller} faturasının son günü bugün',

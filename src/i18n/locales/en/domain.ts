@@ -96,6 +96,9 @@ const domain: Messages['domain'] = {
     billMessage: '{amount}. Mark it paid once settled.',
     quotaTitle: '{left} receipt scans left',
     quotaMessage: '{used} of {limit} scans used. Resets 1 December.',
+    // Broadcast admin: judul + isi bebas dari panel /admin, tidak diterjemahkan.
+    broadcastTitle: '{title}',
+    broadcastMessage: '{message}',
     premiumTitle: 'Premium is active',
     premiumMessage: 'Every Free limit is lifted. Your end date is in Settings.',
     billTodayTitle: '{biller} bill due today',

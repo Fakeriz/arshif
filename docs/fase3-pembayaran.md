@@ -102,7 +102,7 @@ https://gyxtdpmruuhhkprlhlrk.supabase.co/functions/v1/paddle-webhook
 
 ## Admin
 
-Panel di `/admin` (web saja). Akun admin ditambahkan lewat SQL editor Supabase:
+Panel di `/admin` (web saja, Fase 8: lihat `docs/fase8-admin.md`). Akun admin ditambahkan lewat SQL editor Supabase:
 
 ```sql
 insert into public.admin_users (user_id) select id from auth.users where email = 'email-admin@contoh.com';

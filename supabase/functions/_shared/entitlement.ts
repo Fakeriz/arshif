@@ -1,7 +1,8 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 
 import { nextStatus, type BillingPeriod, type OrderStatus } from './billing.ts';
-import { grantPremium, premiumUntil, revokeGrants } from './revenuecat.ts';
+import { configured } from './env.ts';
+import * as rc from './revenuecat.ts';
 
 export type OrderRow = {
   id: string;
@@ -18,11 +19,35 @@ const ORDER_COLUMNS = 'id, user_id, provider, period, status, days, granted_unti
 const THREE_HOURS = 3 * 3600_000;
 
 /**
+ * Tanpa kunci RevenueCat, sumber kebenaran Premium = pesanan lunas di tabel orders (grant manual admin).
+ * Begitu kunci diisi, grant berikutnya lewat RevenueCat dan pesanan lama tetap tercatat untuk audit.
+ */
+export const revenueCatReady = (): boolean => configured('RC_SECRET_KEY', 'RC_PROJECT_ID', 'RC_ENTITLEMENT_ID');
+
+async function localPremiumUntil(db: SupabaseClient, userId: string): Promise<number | null> {
+  const { data, error } = await db
+    .from('orders')
+    .select('granted_until')
+    .eq('user_id', userId)
+    .eq('status', 'paid')
+    .gt('granted_until', new Date().toISOString())
+    .order('granted_until', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (error) throw new Error(`order_read_${error.code}`);
+  return data ? Date.parse(data.granted_until) : null;
+}
+
+const premiumUntil = (db: SupabaseClient, userId: string) => (revenueCatReady() ? rc.premiumUntil(userId) : localPremiumUntil(db, userId));
+const grantPremium = (userId: string, untilMs: number) => (revenueCatReady() ? rc.grantPremium(userId, untilMs) : Promise.resolve());
+const revokeGrants = (userId: string) => (revenueCatReady() ? rc.revokeGrants(userId) : Promise.resolve());
+
+/**
  * Cermin paket di profil = entitlement aktif di RevenueCat. Dipanggil setelah grant/revoke, dari webhook
  * RevenueCat, setelah beli/pulihkan di aplikasi, dan oleh cron untuk Premium yang sudah lewat masa aktif.
  */
 export async function syncPlan(db: SupabaseClient, userId: string): Promise<{ plan: 'free' | 'premium'; premiumUntil: string | null }> {
-  const until = await premiumUntil(userId);
+  const until = await premiumUntil(db, userId);
   const plan = until ? 'premium' : 'free';
   const premiumUntilIso = until && Number.isFinite(until) ? new Date(until).toISOString() : null;
 
@@ -79,7 +104,7 @@ export async function transitionOrder(db: SupabaseClient, orderId: string, incom
  */
 export async function grantOrder(db: SupabaseClient, order: OrderRow): Promise<string | null> {
   try {
-    const current = await premiumUntil(order.user_id);
+    const current = await premiumUntil(db, order.user_id);
     if (current === Infinity) {
       // Sudah Premium tanpa tanggal akhir: tidak ada yang perlu diperpanjang.
       await db.from('orders').update({ grant_error: null, updated_at: new Date().toISOString() }).eq('id', order.id);

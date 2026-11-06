@@ -96,6 +96,9 @@ const domain: Messages['domain'] = {
     billMessage: '{amount}. Tandakan selesai selepas dibayar.',
     quotaTitle: 'Baki kuota imbas resit {left}',
     quotaMessage: '{used} daripada {limit} imbasan digunakan. Set semula 1 Disember.',
+    // Broadcast admin: judul + isi bebas dari panel /admin, tidak diterjemahkan.
+    broadcastTitle: '{title}',
+    broadcastMessage: '{message}',
     premiumTitle: 'Premium aktif',
     premiumMessage: 'Semua had Free sudah dibuka. Tarikh tamat ada di Tetapan.',
     billTodayTitle: 'Bil {biller} perlu dibayar hari ini',

@@ -191,7 +191,7 @@ Detail, daftar kunci, dan checklist dashboard: `docs/fase3-pembayaran.md`.
 - Fitur Goals/Tagihan/Utang/Langganan/Invoice/Alat Pajak/Tanya Coach/recap bulanan belum dibangun; batasnya sudah ada di server, tinggal pasang trigger saat tabelnya dibuat.
 - Selesaikan keputusan email OTP; login Google (FR-AUTH-1).
 - Hardening: cabut token akses Supabase dan kunci Gemini yang pernah ditempel di percakapan, buat ulang.
-- Host web (untuk `/harga`, checkout web, `/admin`) dan `APP_URL` belum ditentukan.
+- Host web: Vercel proyek arshifstudio (diputuskan 2026-11-06), `APP_URL` = https://arshifstudio.vercel.app. Pengaturan dashboard Vercel: `docs/fase8-admin.md`.
 
 ## Fase 5: Smart Log (migrasi 10 + 11 live 2026-11-06)
 
@@ -242,3 +242,18 @@ Detail, rumus, dan langkah build/OTA: `docs/fase7-enhancements.md`.
 - **Native**: modul lokal `modules/doc-scanner` (ML Kit Document Scanner, Kotlin belum dikompilasi) + `expo-updates`
   (runtime fingerprint, channel development/preview/production).
 - Ambang laju berubah ke 1 / 1,2. Tab Tagihan: Daftar / Kalender. Coach Recap: Minggu ini / Minggu lalu.
+
+
+## Fase 8: Admin web (dibangun lokal, BELUM di-deploy)
+
+Detail, pengaturan Vercel, dan urutan deploy: `docs/fase8-admin.md`.
+
+- **Host**: Vercel arshifstudio. `vercel.json` = rewrite SPA saja; preset/build/output diatur di dashboard Vercel
+  (langkah pemilik). Secret `APP_URL` sudah diset. hafizhxcv@gmail.com sudah ditandai admin di `admin_users`.
+- **Migrasi 14** `20261112000014_admin.sql`: last seen + `user_activity_days` (DAU), `suspended_at`, `fx_sync_runs`,
+  RPC dasbor/pengguna/detail/kurs/broadcast (semua `assert_admin`).
+- **Functions**: `admin-user` menggantikan `admin-grant` (grant, cabut, tangguhkan, pulihkan). Grant manual jalan
+  tanpa kunci RevenueCat (masa aktif dari `orders`). `fx-sync` bisa dipicu admin + dicatat.
+- **Web** `/admin`: Dasbor, Pengguna, Log AI, Pesanan, Kurs, Broadcast. Hanya web, Bahasa Indonesia. Pengguna yang
+  ditangguhkan melihat layar "Akun ditangguhkan" (4 bahasa).
+

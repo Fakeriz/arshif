@@ -692,6 +692,51 @@ await test('reimbursement: pending -> reimbursed lewat tautan pemasukan; hapus p
   eq(await as(E, 'select reimburse_status from public.transactions where id = $1', [i2]), [{ reimburse_status: null }], 'hanya pengeluaran');
 });
 
+const G = '00000000-0000-4000-8000-00000000000f';
+await sys(`insert into auth.users (id, email) values ('${G}', 'g@example.com')`);
+
+await test('admin: RPC admin ditolak untuk bukan admin; tabel admin tidak terbaca klien', async () => {
+  for (const sql of ['select public.admin_dashboard()', `select * from public.admin_search_users('')`, `select public.admin_user_detail('${G}')`,
+    'select public.admin_fx_status()', `select public.admin_broadcast('all', 'x', 'y')`, `select public.admin_broadcast_count('all')`]) {
+    await rejects(as(G, sql), /not_admin/);
+  }
+  for (const t of ['admin_users', 'user_activity_days', 'fx_sync_runs']) await rejects(as(G, `select * from public.${t}`), /permission denied/);
+  await rejects(as(G, `update public.profiles set suspended_at = now(), last_seen_at = now() where id = '${G}'`), /permission denied/);
+});
+
+await test('admin: last seen + DAU, dasbor, cari pengguna, detail kuota', async () => {
+  await sys(`insert into public.admin_users (user_id) values ('${A}')`);
+  await as(G, 'select public.touch_last_seen()');
+  await as(G, 'select public.touch_last_seen()');
+  eq(await sys(`select count(*)::int n from public.user_activity_days where user_id = '${G}'`), [{ n: 1 }], 'satu baris per hari');
+  const [{ admin_dashboard: d }] = await as(A, 'select public.admin_dashboard()');
+  eq([d.dau, d.dau_7.length, typeof d.total_users, d.revenue_month], [1, 7, 'number', {}]);
+  const found = await as(A, `select email, is_admin from public.admin_search_users('G@EXAMPLE')`);
+  eq(found, [{ email: 'g@example.com', is_admin: false }]);
+  eq((await as(A, `select count(*)::int n from public.admin_search_users('%')`))[0].n, 0, 'wildcard di-escape');
+  const [{ admin_user_detail: u }] = await as(A, `select public.admin_user_detail('${G}')`);
+  eq([u.email, u.plan, u.usage.some((x) => x.key === 'scan')], ['g@example.com', 'free', true]);
+});
+
+await test('admin: broadcast ke segmen + satu email; pengguna disuspend tidak menerima', async () => {
+  eq((await as(A, `select public.admin_broadcast_count('email', 'g@example.com') n`))[0].n, 1);
+  const [{ n }] = await as(A, `select public.admin_broadcast('email', 'Halo', 'Uji broadcast', 'g@example.com') n`);
+  eq(n, 1);
+  eq(await as(G, `select title_key, vars->>'message' m from public.notifications where title_key = 'domain.notif.broadcastTitle'`), [{ title_key: 'domain.notif.broadcastTitle', m: 'Uji broadcast' }]);
+  await rejects(as(A, `select public.admin_broadcast('all', '', 'x')`), /invalid_broadcast/);
+  await rejects(as(A, `select public.admin_broadcast('vip', 'a', 'b')`), /invalid_segment/);
+  await sys(`update public.profiles set suspended_at = now() where id = '${G}'`);
+  eq((await as(A, `select public.admin_broadcast('free', 'a', 'b') n`))[0].n, (await sys(`select count(*)::int n from public.profiles where plan = 'free' and suspended_at is null`))[0].n);
+  eq((await as(G, `select count(*)::int n from public.notifications where title_key = 'domain.notif.broadcastTitle'`))[0].n, 1, 'G tidak menerima kedua');
+  await sys(`update public.profiles set suspended_at = null where id = '${G}'`);
+});
+
+await test('admin: status kurs membaca log sinkronisasi', async () => {
+  await sys(`insert into public.fx_sync_runs (trigger, ok, rate_date, codes) values ('admin', true, '2026-11-05', 31)`);
+  const [{ admin_fx_status: s }] = await as(A, 'select public.admin_fx_status()');
+  eq([s.runs.length, s.runs[0].trigger, s.runs[0].ok], [1, 'admin', true]);
+});
+
 await test('hapus pengguna: semua data ikut terhapus (cascade)', async () => {
   await sys(`delete from auth.users where id = $1`, [A]);
   await sys(`delete from auth.users where id = $1`, [E]);

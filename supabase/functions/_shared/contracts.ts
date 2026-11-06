@@ -204,8 +204,23 @@ export type CheckoutResponse = z.infer<typeof CheckoutResponse>;
 export const SyncResponse = z.object({ plan: z.enum(['free', 'premium']), premiumUntil: z.string().nullable() });
 export type SyncResponse = z.infer<typeof SyncResponse>;
 
-export const AdminGrantRequest = z.object({ email: z.string().email().max(254), days: z.number().int().min(1).max(3660) });
-export const AdminGrantResponse = z.object({ orderId: Uuid, premiumUntil: z.string() });
+/** Aksi admin pada satu pengguna (FR-ADM-2). Grant = pesanan provider 'manual'; cabut = semua grant manual aktif. */
+export const AdminUserRequest = z.discriminatedUnion('action', [
+  z.object({ action: z.literal('grant'), userId: Uuid, days: z.number().int().min(1).max(3660) }),
+  z.object({ action: z.literal('revoke'), userId: Uuid }),
+  z.object({ action: z.literal('suspend'), userId: Uuid }),
+  z.object({ action: z.literal('unsuspend'), userId: Uuid }),
+]);
+export const AdminUserResponse = z.object({
+  plan: z.enum(['free', 'premium']),
+  premiumUntil: z.string().nullable(),
+  suspendedAt: z.string().nullable(),
+  /** false = kunci RevenueCat belum diisi; grant hanya tercatat di Arshif. */
+  revenueCat: z.boolean(),
+});
+
+/** Sinkron kurs manual dari panel admin (fx-sync dengan token admin, bukan secret cron). */
+export const FxSyncResponse = z.object({ date: z.string(), codes: z.number(), backfilledDays: z.number() });
 
 /** Nama function = path di /functions/v1/<nama>. */
 export const FUNCTIONS = {
@@ -218,5 +233,5 @@ export const FUNCTIONS = {
   deleteAccount: 'delete-account',
   checkout: 'checkout-create',
   entitlementSync: 'entitlement-sync',
-  adminGrant: 'admin-grant',
+  adminUser: 'admin-user',
 } as const;

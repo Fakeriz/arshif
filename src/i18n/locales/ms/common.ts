@@ -16,6 +16,8 @@ const common: Messages['common'] = {
   syncFailed: 'Gagal menyimpan',
   syncFailedMessage: 'Perubahan belum disimpan di pelayan. Data dimuatkan semula, cuba lagi.',
   bootLoading: 'Memuatkan data anda',
+  suspendedTitle: 'Akaun digantung',
+  suspendedMessage: 'Akaun ini sedang digantung, jadi data tidak boleh dibuka atau diubah. Hubungi sokongan Arshif jika anda rasa ini satu kesilapan.',
   bootErrorTitle: 'Data gagal dimuatkan',
   bootErrorMessage: 'Semak sambungan internet anda dan cuba lagi. Data anda selamat di pelayan.',
   premiumFeature: 'Ciri Premium',

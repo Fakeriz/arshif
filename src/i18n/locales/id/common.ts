@@ -15,6 +15,8 @@ const common = {
   syncFailed: 'Gagal menyimpan',
   syncFailedMessage: 'Perubahan belum tersimpan di server. Data dimuat ulang, coba lagi.',
   bootLoading: 'Memuat datamu',
+  suspendedTitle: 'Akun ditangguhkan',
+  suspendedMessage: 'Akun ini sedang ditangguhkan, jadi data tidak bisa dibuka atau diubah. Hubungi dukungan Arshif kalau menurutmu ini keliru.',
   bootErrorTitle: 'Data gagal dimuat',
   bootErrorMessage: 'Periksa koneksi internetmu lalu coba lagi. Datamu aman di server.',
   premiumFeature: 'Fitur Premium',

@@ -462,7 +462,7 @@ import_map = "./functions/import_map.json"
 verify_jwt = false
 import_map = "./functions/import_map.json"
 
-[functions.admin-grant]
+[functions.admin-user]
 verify_jwt = false
 import_map = "./functions/import_map.json"
 

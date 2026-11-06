@@ -114,6 +114,9 @@ const domain = {
     billMessage: '{amount}. Tandai lunas setelah dibayar.',
     quotaTitle: 'Kuota scan struk tersisa {left}',
     quotaMessage: '{used} dari {limit} scan terpakai. Reset 1 Desember.',
+    // Broadcast admin: judul + isi bebas dari panel /admin, tidak diterjemahkan.
+    broadcastTitle: '{title}',
+    broadcastMessage: '{message}',
     premiumTitle: 'Premium aktif',
     premiumMessage: 'Semua batas Free sudah terbuka. Masa aktif tercatat di Pengaturan.',
     billTodayTitle: 'Tagihan {biller} jatuh tempo hari ini',

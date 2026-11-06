@@ -170,7 +170,8 @@ await step('Premium web: pilih paket + metode, checkout dibuat (mode test) atau 
 await step('Pengguna Free tidak bisa memberi diri sendiri Premium (RPC admin ditolak, tombol Admin tidak tampil)', async () => {
   const p = await open('/pengaturan'); await expectText(p, 'Pengaturan');
   if (await p.getByRole('button', { name: 'Admin' }).count()) throw new Error('tombol admin tampil');
-  const p2 = await open('/admin'); await expectText(p2, 'Halaman ini khusus admin.');
+  const p2 = await open('/admin'); await expectText(p2, 'Akun ini bukan admin');
+  if (await p2.getByText('Pengguna aktif hari ini').count()) throw new Error('dasbor tampil untuk non-admin');
 });
 await step('Coach: Recap minggu lalu, Bulan lalu (Free = ajakan Premium), Tanya Coach (batas) -> Premium', async () => {
   const p = await open('/coach'); await p.getByRole('tab', { name: 'Recap' }).click();
@@ -297,6 +298,66 @@ await step('Import PDF LIVE: pilih PDF -> Gemini membaca baris -> duplikat tidak
   await (await chooser).setFiles({ name: 'rekening.pdf', mimeType: 'application/pdf', buffer: await statementPdf() });
   await btn(p, 'Baca rekening koran').click(); await expectText(p, 'Cek hasil import', 45000);
   await expectText(p, 'Kemungkinan duplikat'); await p.getByRole('button', { name: /^Import \d+ transaksi/ }).click(); await expectText(p, 'transaksi diimpor');
+});
+// ---------------------------------------------------------------- Fase 8: admin web
+const ADMIN_EMAIL = process.env.E2E_ADMIN_EMAIL ?? 'hafizhxcv@gmail.com';
+const asAdmin = async (path_) => { session = await sessionFor(ADMIN_EMAIL); return open(path_); };
+const openUser = async (p, email) => {
+  await p.getByLabel('Cari email, nama, atau ID').fill(email); await p.waitForTimeout(1200);
+  await p.getByRole('button', { name: email }).first().click(); await expectText(p, 'Kuota periode ini', 8000);
+};
+const confirmDialog = async (p, name) => { await p.getByRole('dialog').getByRole('button', { name, exact: true }).click(); };
+await step('Admin: tanpa login -> ajakan masuk -> /masuk', async () => {
+  const p = await open('/admin'); await expectText(p, 'Masuk untuk membuka panel admin');
+  await btn(p, 'Masuk dengan email').click(); await p.waitForTimeout(500);
+  if (url(p) !== '/masuk') throw new Error(url(p));
+}, { signedIn: false });
+await step('Admin: dasbor angka nyata (DAU, total, Premium, AI hari ini, pendapatan)', async () => {
+  const p = await asAdmin('/admin');
+  for (const t of ['Pengguna aktif hari ini', 'Aktif 7 hari terakhir', 'Total pengguna', 'Pengguna Premium', 'Pemakaian AI hari ini', 'Estimasi pendapatan bulan ini']) await expectText(p, t, 8000);
+});
+await step('Admin: cari pengguna uji -> detail paket + kuota -> grant 7 hari -> cabut', async () => {
+  const p = await asAdmin('/admin?bagian=pengguna'); await openUser(p, 'e2e@arshif.test');
+  await expectText(p, 'Scan struk');
+  await p.getByLabel('Jumlah hari').fill('7'); await btn(p, 'Beri Premium 7 hari').click();
+  await expectText(p, 'Premium aktif sampai', 15000);
+  await btn(p, 'Cabut grant manual').click(); await confirmDialog(p, 'Cabut grant manual');
+  await expectText(p, 'Grant manual dicabut. Paket sekarang Free.', 15000);
+});
+await step('Admin: tangguhkan pengguna uji -> aplikasinya menampilkan layar ditangguhkan -> pulihkan', async () => {
+  const userSession = session;
+  const p = await asAdmin('/admin?bagian=pengguna'); await openUser(p, 'e2e@arshif.test');
+  await btn(p, 'Tangguhkan akun').click(); await confirmDialog(p, 'Tangguhkan akun'); await expectText(p, 'Akun ditangguhkan.', 15000);
+  session = userSession; const u = await open('/'); await expectText(u, 'Akun ditangguhkan'); await expectText(u, 'Keluar');
+  await btn(p, 'Pulihkan akun').click(); await expectText(p, 'Akun dipulihkan.', 15000);
+});
+await step('Admin: log AI per jenis + rasio gagal + latensi', async () => {
+  const p = await asAdmin('/admin?bagian=ai'); await btn(p, '90 hari').click().catch(() => p.getByText('90 hari').click());
+  for (const t of ['Scan struk (OCR)', 'Voice Log', 'Import PDF', 'Kegagalan terakhir']) await expectText(p, t, 8000);
+  await expectText(p, 'Rasio gagal'); await expectText(p, 'Latensi rata-rata');
+});
+await step('Admin: pesanan web kosong dengan penjelasan kunci belum diisi', async () => {
+  const p = await asAdmin('/admin?bagian=pesanan'); await expectText(p, 'Kunci Xendit dan Paddle belum diisi', 8000);
+});
+await step('Admin: kurs -> status terakhir -> sinkron manual memperbarui status', async () => {
+  const p = await asAdmin('/admin?bagian=kurs'); await expectText(p, 'Sinkronisasi terakhir', 8000);
+  await btn(p, 'Sinkronkan sekarang').click(); await expectText(p, 'Sinkron selesai', 30000);
+  await expectText(p, 'baru saja'); await expectText(p, 'Manual');
+});
+await step('Admin: broadcast ke satu email -> notifikasi sampai di lonceng pengguna uji', async () => {
+  const userSession = session; const title = `Uji broadcast ${Date.now() % 100000}`;
+  const p = await asAdmin('/admin?bagian=broadcast');
+  await p.getByText('Satu email', { exact: true }).click();
+  await p.getByLabel('Email penerima').fill('e2e@arshif.test'); await expectText(p, '1 penerima', 8000);
+  await p.getByLabel('Judul').fill(title); await p.getByLabel('Isi').fill('Pesan uji dari panel admin.');
+  await btn(p, 'Kirim ke 1 penerima').click(); await confirmDialog(p, 'Kirim ke 1 penerima'); await expectText(p, 'Terkirim ke 1 penerima', 10000);
+  session = userSession; const u = await open('/'); await u.getByRole('button', { name: /^Notifikasi/ }).first().click();
+  await expectText(u, title, 8000); await expectText(u, 'Pesan uji dari panel admin.');
+});
+await step('Premium web USD (Paddle): checkout sampai pesan "belum aktif", bukan error mentah', async () => {
+  const p = await open('/premium'); await p.getByText('USD', { exact: true }).first().click();
+  await p.getByRole('radio', { name: /^Bulanan/ }).click(); await p.getByRole('button', { name: /^Bayar \$1.50/ }).click(); await p.waitForTimeout(4000);
+  await expectText(p, 'belum aktif');
 });
 // Diharapkan: checkout-create menjawab 503 not_configured selama kunci Xendit/Paddle belum diisi (langkah
 // "Premium web" memeriksa pesannya). Browser mencatatnya sebagai error resource; error lain tetap membuat gagal.

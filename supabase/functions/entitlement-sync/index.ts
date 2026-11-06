@@ -1,5 +1,5 @@
 /**
- * Cocokkan paket dengan RevenueCat.
+ * Cocokkan paket dengan RevenueCat (atau dengan pesanan lunas selama kunci RevenueCat belum diisi).
  *  - Klien (token pengguna): setelah beli/pulihkan di aplikasi atau di halaman status pesanan. Hanya dirinya.
  *  - Cron (x-cron-secret): Premium yang sudah lewat masa aktif, dan pesanan lunas yang grant-nya gagal.
  */
@@ -16,7 +16,7 @@ serve(async (req) => {
   const db = adminClient();
   const cron = req.headers.get('x-cron-secret');
   if (cron && safeEqual(cron, CRON_SECRET())) {
-    if (!configured('RC_SECRET_KEY', 'RC_PROJECT_ID', 'RC_ENTITLEMENT_ID')) return json({ ok: true, skipped: 'not_configured' });
+    // Tanpa kunci RevenueCat tetap jalan: masa aktif grant manual dihitung dari tabel orders (lihat entitlement.ts).
     const { data: expired } = await db.from('profiles').select('id').eq('plan', 'premium').lt('premium_until', new Date().toISOString()).limit(200);
     for (const p of expired ?? []) await syncPlan(db, p.id).catch((e) => console.error('sync_failed', p.id, String(e)));
     const { data: stuck } = await db
