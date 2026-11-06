@@ -23,8 +23,8 @@ Sumber kebenaran nilai: `src/theme/tokens.ts`. Dokumen ini menjelaskan *kenapa* 
 
 | Token | Gelap | Terang | Pakai untuk |
 |---|---|---|---|
-| `bg` | `#0A0A0A` | `#F3F3F3` | Kanvas layar |
-| `surface` / `glass` | `#171717` | `#FFFFFF` | Kartu utama |
+| `bg` | `#09090B` | `#F3F3F3` | Kanvas layar |
+| `surface` / `glass` | `#121214` | `#FFFFFF` | Kartu utama |
 | `surfaceRaised` / `glassStrong` | `#1F1F1F` | `#FFFFFF` | Sheet, dialog, tab bar, popover |
 | `surfaceSunken` | `#262626` | `#F4F4F4` | Panel inset di dalam kartu, isian input, tombol secondary |
 | `border` / `glassBorder` | `rgba(255,255,255,.06)` | `rgba(0,0,0,.06)` | Garis kartu, pemisah baris |
@@ -117,7 +117,7 @@ Aturan bersarang: radius dalam = radius luar − padding (20 − 16 ≈ 4 → di
 
 ### Elevasi (`elevation`)
 
-- **Gelap:** tanpa bayangan; kartu `#171717` di kanvas `#0A0A0A` sudah cukup.
+- **Gelap:** tanpa bayangan; kartu `#121214` di kanvas `#09090B` sudah cukup.
 - **Terang:** kartu putih dengan bayangan sangat tipis (`opacity .04, radius 12`) + garis `border`.
 - `floating` (tab bar, sheet, toast) memakai bayangan lebih tegas di kedua tema.
 - Blur hanya untuk tab bar mengambang (`layout.blur.floating`); panel tidak blur.
@@ -178,6 +178,6 @@ Sudah dilakukan di token:
 Langkah lanjutan di komponen:
 1. `Button`, `Input`, `Chip`, `Badge`, `Toggle` → `radius.control`.
 2. `Card` → `radius.card`, tambah `elevation[scheme].card`; `GlassView` boleh render `View` biasa bila `layout.blur.panel === 0`.
-3. `AmbientGlow` → tidak dirender saat aksen `netral` (glow transparan).
+3. `AmbientGlow` → tidak dirender saat aksen `netral` (glow transparan). Selesai: cek ada di `AmbientGlow` sendiri, berlaku di semua layar.
 4. `CashflowChart`, `HealthGauge`, `ProgressBar` → `chartRamp` / `text` sebagai isi.
 5. Visual check tiap layar lawan referensi (aturan PRD), dua tema.

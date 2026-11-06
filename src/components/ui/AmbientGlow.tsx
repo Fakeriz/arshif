@@ -7,12 +7,14 @@ import { useTheme } from '@/theme/ThemeProvider';
  * Gradasi radial warna aksen di belakang konten atas layar (PRD Bab 11).
  * Satu glow per layar, statis (tanpa animasi), mengikuti aksen pilihan pengguna.
  * Puncak glow sudah diuji: teks di atasnya tetap >= 4.5:1.
+ * Aksen netral tidak punya glow (docs/design.md bagian 8), jadi tidak dirender sama sekali.
  */
 export function AmbientGlow({ height = 460 }: { height?: number }) {
   const { colors, accent } = useTheme();
+  if (accent === 'netral') return null;
   const id = `glow-${accent}`;
   return (
-    <View pointerEvents="none" style={[styles.wrap, { height }]} aria-hidden>
+    <View testID="ambient-glow" pointerEvents="none" style={[styles.wrap, { height }]} aria-hidden>
       <Svg width="100%" height="100%">
         <Defs>
           <RadialGradient id={id} cx="50%" cy="0%" rx="80%" ry="100%" fx="50%" fy="0%">

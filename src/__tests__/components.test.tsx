@@ -3,6 +3,7 @@ import type { ReactElement } from 'react';
 
 import {
   AccentPicker,
+  AmbientGlow,
   BalanceText,
   BankCard,
   Button,
@@ -177,6 +178,18 @@ describe('AccentPicker', () => {
     await fireEvent.press(screen.getByLabelText('Biru'));
     expect(screen.getByTestId('accent').props.children).toBe('biru:#2F6FE0');
     expect(screen.getByLabelText('Biru').props.accessibilityState.checked).toBe(true);
+  });
+
+  it('AmbientGlow tidak dirender saat aksen netral, muncul saat aksen berwarna', async () => {
+    await wrap(
+      <>
+        <AccentPicker />
+        <AmbientGlow />
+      </>,
+    );
+    expect(screen.queryByTestId('ambient-glow', { includeHiddenElements: true })).toBeNull();
+    await fireEvent.press(screen.getByLabelText('Merah'));
+    expect(screen.getByTestId('ambient-glow', { includeHiddenElements: true })).toBeTruthy();
   });
 
   it('memanggil onAccentChange agar bisa disimpan per pengguna', async () => {

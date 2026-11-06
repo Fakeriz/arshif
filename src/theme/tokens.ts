@@ -58,8 +58,8 @@ export type Palette = BasePalette & AccentTokens;
 
 export const palettes: Record<ColorScheme, BasePalette> = {
   dark: {
-    bg: '#0A0A0A',
-    surface: '#171717',
+    bg: '#09090B',
+    surface: '#121214',
     surfaceRaised: '#1F1F1F',
     surfaceSunken: '#262626',
     border: 'rgba(255, 255, 255, 0.06)',
@@ -78,10 +78,10 @@ export const palettes: Record<ColorScheme, BasePalette> = {
     track: 'rgba(255, 255, 255, 0.10)',
     skeleton: 'rgba(255, 255, 255, 0.06)',
     overlay: 'rgba(0, 0, 0, 0.64)',
-    glass: '#171717',
+    glass: '#121214',
     glassStrong: '#1F1F1F',
     glassBorder: 'rgba(255, 255, 255, 0.06)',
-    glassFallback: '#171717',
+    glassFallback: '#121214',
     glassStrongFallback: '#1F1F1F',
   },
   light: {
