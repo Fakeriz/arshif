@@ -16,8 +16,11 @@ import { radius, space } from '@/theme/tokens';
 type Status = 'paid' | 'overdue' | 'upcoming';
 type Entry = { bill: Bill; status: Status };
 
-/** Kalender jatuh tempo sebulan (minggu mulai Senin). Titik per status + daftar tagihan hari yang dipilih. */
-export function BillCalendar({ bills, today, onPressBill }: { bills: Bill[]; today: string; onPressBill: (b: Bill) => void }) {
+/**
+ * Kalender jatuh tempo sebulan (FR-BILL-4, minggu mulai Senin): tagihan muncul di tanggal jatuhnya. Titik per
+ * status + daftar tagihan hari yang dipilih. `filter` mengikuti filter Lunas / Belum lunas di layar Tagihan.
+ */
+export function BillCalendar({ bills, today, filter, onPressBill }: { bills: Bill[]; today: string; filter?: 'paid' | 'unpaid'; onPressBill: (b: Bill) => void }) {
   const { t, lang } = useI18n();
   const { colors } = useTheme();
   const now = parseYMD(today);
@@ -30,11 +33,12 @@ export function BillCalendar({ bills, today, onPressBill }: { bills: Bill[]; tod
     for (const b of bills) {
       for (const d of occurrencesInMonth(b.dueDate, b.frequency, b.anchorDay, month.y, month.m)) {
         const status = dayStatus(b, d, today);
-        if (status) map.set(d, [...(map.get(d) ?? []), { bill: b, status }]);
+        if (!status || (filter === 'paid' && status !== 'paid') || (filter === 'unpaid' && status === 'paid')) continue;
+        map.set(d, [...(map.get(d) ?? []), { bill: b, status }]);
       }
     }
     return map;
-  }, [bills, month, today]);
+  }, [bills, month, today, filter]);
 
   const total = daysInMonth(month.y, month.m);
   const lead = (weekday(ymd(month.y, month.m, 1)) + 6) % 7;
@@ -77,7 +81,7 @@ export function BillCalendar({ bills, today, onPressBill }: { bills: Bill[]; tod
               style={styles.cell}
               onPress={() => setSelected(d)}
               accessibilityRole="button"
-              accessibilityState={{ selected: isSel }}
+              aria-selected={isSel}
               accessibilityLabel={entries.length ? t('plan.bills.dayLabel', { date: shortDate(d, lang), names: entries.map((e) => `${e.bill.name} (${statusLabel(e.status)})`).join(', ') }) : shortDate(d, lang)}
             >
               <View style={[styles.day, isSel && { backgroundColor: colors.accentSoft }, isToday && { borderColor: colors.accent, borderWidth: 1 }]}>
@@ -95,7 +99,7 @@ export function BillCalendar({ bills, today, onPressBill }: { bills: Bill[]; tod
         })}
       </View>
       <View style={styles.legend}>
-        {(['upcoming', 'overdue', 'paid'] as const).map((s) => (
+        {(filter === 'paid' ? (['paid'] as const) : filter === 'unpaid' ? (['upcoming', 'overdue'] as const) : (['upcoming', 'overdue', 'paid'] as const)).map((s) => (
           <View key={s} style={styles.legendItem}>
             <View style={[styles.dot, { backgroundColor: tone[s] }]} />
             <AppText variant="caption" tone="secondary">
@@ -104,6 +108,16 @@ export function BillCalendar({ bills, today, onPressBill }: { bills: Bill[]; tod
           </View>
         ))}
       </View>
+      {selected && picked.length === 0 && (
+        <AppText variant="caption" tone="muted" style={styles.none}>
+          {t('plan.bills.dayEmpty', { date: shortDate(selected, lang) })}
+        </AppText>
+      )}
+      {byDay.size === 0 && (
+        <AppText variant="caption" tone="muted" align="center">
+          {filter === 'paid' ? t('plan.bills.monthEmptyPaid') : t('plan.bills.monthEmpty')}
+        </AppText>
+      )}
       {picked.length > 0 && (
         <View style={[styles.picked, { borderTopColor: colors.border }]}>
           {picked.map((e) => (
@@ -148,4 +162,5 @@ const styles = StyleSheet.create({
   picked: { marginTop: space.md, paddingTop: space.sm, borderTopWidth: StyleSheet.hairlineWidth, gap: space.xs },
   pickedRow: { flexDirection: 'row', alignItems: 'center', gap: space.sm, minHeight: 44 },
   flex: { flex: 1, minWidth: 0 },
+  none: { marginTop: space.md },
 });

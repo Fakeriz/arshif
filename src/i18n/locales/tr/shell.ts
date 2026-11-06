@@ -14,6 +14,11 @@ const shell: Messages['shell'] = {
       subLimited: 'Bu ayın tarama kotası doldu',
       reason: 'Free fiş tarama kotan ({free}/ay) doldu. Ayın 1’inde sıfırlanır ya da ayda {premium} tarama için yükselt.',
     },
+    docscan: {
+      title: 'Belge tara',
+      short: 'Belge',
+      sub: 'Fiş kenarları otomatik algılanır ve kırpılır',
+    },
     voice: {
       title: 'Voice Log',
       short: 'Voice Log',

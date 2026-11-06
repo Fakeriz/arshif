@@ -5,7 +5,8 @@ import * as api from '@/data/remote/api';
 import { toNotification, type NotificationRow } from '@/data/remote/mappers';
 import type { Account, Transaction } from '@/data/types';
 import { useI18n } from '@/i18n';
-import { setUsdRates } from '@/lib/fx';
+import { addRateHistory, historyCodes, setRateHistory, setUsdRates, setUserRates } from '@/lib/fx';
+import { addDays } from '@/lib/dates';
 import { supabase } from '@/lib/supabase';
 import { accountBalance } from '@/lib/transactions';
 import { useTheme } from '@/theme/ThemeProvider';
@@ -50,6 +51,14 @@ export function AppStoreProvider({ children, preset }: { children: ReactNode; pr
   const stateRef = useRef(state);
   const [refreshing, setRefreshing] = useState(false);
   stateRef.current = state;
+  // Kode mata uang yang riwayat kursnya sudah dicoba dimuat.
+  const historyTried = useRef(new Set<string>());
+  // "Kurs saya" dipasang ke modul kurs saat render, supaya agregat di render yang sama sudah memakainya.
+  const appliedRates = useRef(state.userRates);
+  if (appliedRates.current !== state.userRates) {
+    appliedRates.current = state.userRates;
+    setUserRates(state.userRates);
+  }
   // Setter tema/bahasa berganti identitas saat nilainya berubah; lewat ref agar reload tidak ikut terpicu.
   const applyPrefs = useRef({ setLang, setAccent, setMode });
   applyPrefs.current = { setLang, setAccent, setMode };
@@ -65,10 +74,17 @@ export function AppStoreProvider({ children, preset }: { children: ReactNode; pr
     localDispatch({ type: 'load/start' });
     if (stateRef.current.status === 'ready') setRefreshing(true);
     try {
-      const [profile, accounts, transactions, notifications, usage, rates] = await Promise.all([
+      const [profile, accounts, transactions, notifications, usage, rates, budgets, limitGroups, userRates] = await Promise.all([
         api.loadProfile(userId, email), api.loadAccounts(), api.loadTransactions(), api.loadNotifications(), api.loadUsage(), api.loadLatestRates(),
+        api.loadBudgets(), api.loadLimitGroups(), api.loadUserRates(),
       ]);
       setUsdRates(rates.table, rates.date);
+      setUserRates(userRates);
+      // Riwayat kurs harian untuk semua kode yang dipakai, sejak transaksi tertua (FR-FX-4).
+      const codes = usedCodes(accounts, transactions, profile.mainCurrency, limitGroups.map((g) => g.currency));
+      const oldest = transactions.reduce<string | null>((min, t) => (min === null || t.date < min ? t.date : min), null);
+      setRateHistory(oldest ? await api.loadRateHistory(codes, addDays(oldest, -7)) : []);
+      historyTried.current = new Set(codes);
       const cur = currentPrefs.current;
       if (!profile.onboarded) {
         // Pengguna baru: profil masih berisi default DB. Bahasa/aksen/tema perangkat yang dipakai dan disimpan.
@@ -90,6 +106,7 @@ export function AppStoreProvider({ children, preset }: { children: ReactNode; pr
           email: profile.email, displayName: profile.displayName, onboarded: profile.onboarded, accounts, transactions, notifications,
           plan: profile.plan, premiumUntil: profile.premiumUntil, premiumSource: profile.premiumSource, usage, hideBalance: profile.hideBalance, mainCurrency: profile.mainCurrency, income: profile.income,
           split: profile.split, payday: profile.payday, notifPrefs: profile.notifPrefs, activeAccountId: profile.activeAccountId, ratesDate: rates.date,
+          budgets, limitGroups, userRates,
         },
       });
     } catch {
@@ -122,6 +139,24 @@ export function AppStoreProvider({ children, preset }: { children: ReactNode; pr
     synced.current = { lang, accent, mode };
     api.updateProfile(userId, { lang, accent, theme_mode: mode }).catch(() => show({ tone: 'error', title: t('common.syncFailed'), message: t('common.syncFailedMessage') }));
   }, [userId, lang, accent, mode, show, t]);
+
+  // Mata uang baru (transaksi/akun dengan kode yang belum punya riwayat kurs): muat riwayatnya.
+  useEffect(() => {
+    if (!userId || state.status !== 'ready') return;
+    const codes = usedCodes(state.accounts, state.transactions, state.mainCurrency, state.limitGroups.map((g) => g.currency));
+    const fresh = codes.filter((c) => !historyTried.current.has(c) && !historyCodes().includes(c));
+    if (fresh.length === 0) return;
+    fresh.forEach((c) => historyTried.current.add(c));
+    const oldest = state.transactions.reduce<string | null>((min, t) => (min === null || t.date < min ? t.date : min), null);
+    api
+      .loadRateHistory(fresh, addDays(oldest ?? state.ratesDate ?? '2026-01-01', -7))
+      .then((rows) => {
+        if (rows.length === 0) return;
+        addRateHistory(rows);
+        localDispatch({ type: 'fx/history' });
+      })
+      .catch(() => fresh.forEach((c) => historyTried.current.delete(c)));
+  }, [userId, state.status, state.accounts, state.transactions, state.mainCurrency, state.limitGroups, state.ratesDate]);
 
   // Lonceng live (FR-NOTIF-1): notifikasi baru masuk lewat Realtime.
   useEffect(() => {
@@ -188,6 +223,14 @@ export function useStore(): StoreValue {
 }
 
 export type AccountWithBalance = Account & { balance: number };
+
+/** Semua kode mata uang yang dipakai pengguna (untuk riwayat kurs dan pemeriksaan kurs hilang). */
+export function usedCodes(accounts: Account[], txs: Transaction[], main: string, extra: string[] = []): string[] {
+  const set = new Set<string>([main, ...extra]);
+  for (const a of accounts) set.add(a.currency);
+  for (const t of txs) set.add(t.currency);
+  return [...set].sort();
+}
 
 export function useAccounts(): AccountWithBalance[] {
   const { state } = useStore();

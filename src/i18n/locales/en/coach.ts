@@ -50,6 +50,28 @@ const coach: Messages['coach'] = {
     example2: 'How much can I set aside for a holiday?',
     example3: 'Which should I pay off first, the laptop or the credit card?',
   },
+  replay: {
+    weekLabel: 'Replay week',
+    thisWeek: 'This week',
+    lastWeek: 'Last week',
+    heroThis: 'Your spending in the first {days} days of this week',
+    fairCompare: 'Compared with the same days last week.',
+    achievements: "This week's wins",
+    biggestSaving: 'Biggest saving',
+    savedVsLast: '{amount} less than last week',
+    noSaving: 'No category is lower than last week yet.',
+    noSpendOf: 'no-spend days out of {days}',
+    emptyThisTitle: 'Nothing this week yet',
+    emptyThisMessage: 'Your replay fills in once you log a transaction this week.',
+    seeLast: 'See last week',
+    achievement: {
+      noSpend: '{count} no-spend days',
+      spentLess: 'Spending down {pct}% from last week',
+      saved: 'Saved {amount}',
+      debtPaid: 'Paid {amount} of debt',
+      cooked: 'Ate out less than last week',
+    },
+  },
 };
 
 export default coach;

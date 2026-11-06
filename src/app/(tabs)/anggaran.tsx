@@ -6,6 +6,8 @@ import { Screen } from '@/components/shell/Screen';
 import { TabHeader } from '@/components/shell/TabHeader';
 import { AppText, Badge, Button, Card, CurrencyText, DonutChart, EmptyState, Skeleton } from '@/components/ui';
 import { BucketSection } from '@/features/budget/BucketSection';
+import { BudgetPlanCard } from '@/features/budget/BudgetPlan';
+import { MissingRatesBanner } from '@/features/fx/MissingRatesBanner';
 import { PlanningEntries } from '@/features/planning/PlanningEntries';
 import { SplitSheet } from '@/features/budget/SplitSheet';
 import { useI18n } from '@/i18n';
@@ -79,7 +81,17 @@ export default function AnggaranScreen() {
             ? t('budget.untouched')
             : t('budget.remaining', { amount: formatMoney(Math.max(0, b.flexLimit - b.flexSpent), mainCurrency), days: b.period.daysLeft })}
         </AppText>
+        {b.flexLimit > 0 && (
+          <AppText variant="caption" tone="muted" style={styles.paceNote}>
+            {t('budget.paceExplain', {
+              used: Math.round((b.flexSpent / b.flexLimit) * 100),
+              elapsed: Math.round((b.period.elapsedDays / b.period.totalDays) * 100),
+            })}
+          </AppText>
+        )}
       </Card>
+      <MissingRatesBanner />
+      <BudgetPlanCard />
       <Card padding="xl">
         <DonutChart
           currency={mainCurrency}
@@ -119,4 +131,5 @@ const styles = StyleSheet.create({
   safeHead: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   safeRow: { flexDirection: 'row', alignItems: 'baseline', gap: space.sm, marginVertical: space.sm },
   note: { marginTop: space.md },
+  paceNote: { marginTop: space.xs },
 });

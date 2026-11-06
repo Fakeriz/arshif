@@ -146,6 +146,13 @@ const capture: Messages['capture'] = {
     failed: 'Could not load the receipt photo. Try again later.',
     a11y: 'Receipt photo for {merchant}',
   },
+  docScan: {
+    button: 'Scan document',
+    unavailableTitle: "Document scan isn't available yet",
+    needNewBuild: 'Document scan needs the latest app version on Android. For now, take a photo of the receipt.',
+    needServices: 'The document scanner needs Google Play services. For now, take a photo of the receipt.',
+    useCamera: 'Use camera',
+  },
 };
 
 export default capture;

@@ -16,12 +16,14 @@ import { usePlanning } from '@/state/planning';
 import { space } from '@/theme/tokens';
 
 type Filter = 'unpaid' | 'paid';
+type View_ = 'list' | 'calendar';
 
 export default function BillsScreen() {
   const { t, lang } = useI18n();
   const { bills } = usePlanning();
   const limits = useLimits();
   const [filter, setFilter] = useState<Filter>('unpaid');
+  const [view, setView] = useState<View_>('list');
   const [form, setForm] = useState(false);
   const [openId, setOpenId] = useState<string | null>(null);
   const today = todayYmd();
@@ -44,7 +46,15 @@ export default function BillsScreen() {
         <EmptyState title={t('plan.bills.emptyTitle')} message={t('plan.bills.emptyMessage')} actionLabel={t('plan.bills.create')} onAction={() => setForm(true)} />
       ) : (
         <>
-          <BillCalendar bills={bills} today={today} onPressBill={(b) => setOpenId(b.id)} />
+          <Tabs
+            accessibilityLabel={t('plan.bills.viewLabel')}
+            value={view}
+            onChange={setView}
+            items={[
+              { key: 'list', label: t('plan.bills.view.list') },
+              { key: 'calendar', label: t('plan.bills.view.calendar') },
+            ]}
+          />
           <Tabs
             accessibilityLabel={t('plan.bills.title')}
             value={filter}
@@ -54,7 +64,9 @@ export default function BillsScreen() {
               { key: 'paid', label: t('plan.bills.filter.paid') },
             ]}
           />
-          {groups.length === 0 ? (
+          {view === 'calendar' ? (
+            <BillCalendar bills={bills} today={today} filter={filter} onPressBill={(b) => setOpenId(b.id)} />
+          ) : groups.length === 0 ? (
             <EmptyState compact title={filter === 'unpaid' ? t('plan.bills.emptyUnpaid') : t('plan.bills.emptyPaid')} />
           ) : (
             groups.map((g) => (

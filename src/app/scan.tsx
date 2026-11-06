@@ -1,8 +1,8 @@
 import * as ImagePicker from 'expo-image-picker';
-import { Images, X } from 'lucide-react-native';
-import { useRouter } from 'expo-router';
-import { useState } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { FileScan, Images, X } from 'lucide-react-native';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useEffect, useRef, useState } from 'react';
+import { Platform, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ForceDark } from '@/components/shell/ForceDark';
@@ -22,9 +22,23 @@ import { haptic } from '@/theme/motion';
 import { useTheme } from '@/theme/ThemeProvider';
 import { radius, space } from '@/theme/tokens';
 
+import { DocScannerNative } from '../../modules/doc-scanner';
 import { FUNCTIONS, ScanResult } from '../../supabase/functions/_shared/contracts';
 
-type Phase = { kind: 'ready' } | { kind: 'uploading' } | { kind: 'processing' } | { kind: 'failed'; failure: CaptureFailure };
+type Phase = { kind: 'ready' } | { kind: 'uploading' } | { kind: 'processing' } | { kind: 'failed'; failure: CaptureFailure } | { kind: 'noScanner'; reason: 'module' | 'services' };
+
+/**
+ * ML Kit Document Scanner (FR-OCR-6) hanya ada di development build baru (modul native `doc-scanner`) di Android
+ * dengan Google Play services. Expo Go, iOS, web, dan build lama: 'module'.
+ */
+function docScannerState(): 'ok' | 'module' | 'services' {
+  if (Platform.OS !== 'android' || !DocScannerNative) return 'module';
+  try {
+    return DocScannerNative.isAvailable() ? 'ok' : 'services';
+  } catch {
+    return 'services';
+  }
+}
 
 export default function ScanScreen() {
   return (
@@ -43,21 +57,16 @@ function ScanInner() {
   const limits = useLimits();
   const paywall = usePaywall();
   const [phase, setPhase] = useState<Phase>({ kind: 'ready' });
+  const { mode } = useLocalSearchParams<{ mode?: string }>();
+  const scanner = docScannerState();
 
-  const take = async (source: 'camera' | 'gallery') => {
+  /** Gambar yang sudah dipilih/dipindai masuk pipeline OCR yang sama: kompres, unggah, Gemini di server. */
+  const process = async (asset: { uri: string; width?: number }) => {
     let receiptPath: string | null = null;
     try {
-      if (source === 'camera') {
-        const perm = await ImagePicker.requestCameraPermissionsAsync();
-        if (!perm.granted) return setPhase({ kind: 'failed', failure: 'permission' });
-      }
-      const opts: ImagePicker.ImagePickerOptions = { mediaTypes: ['images'], quality: 1 };
-      const picked = source === 'camera' ? await ImagePicker.launchCameraAsync(opts) : await ImagePicker.launchImageLibraryAsync(opts);
-      if (picked.canceled || !picked.assets[0]) return;
       if (!userId) return setPhase({ kind: 'failed', failure: 'session' });
       haptic('success');
       setPhase({ kind: 'uploading' });
-      const asset = picked.assets[0];
       const uri = await compressReceipt(asset.uri, asset.width);
       receiptPath = await uploadPrivate({ bucket: 'receipts', userId, uri, ext: 'jpg', contentType: 'image/jpeg', maxBytes: MAX_RECEIPT_BYTES });
       setPhase({ kind: 'processing' });
@@ -76,11 +85,56 @@ function ScanInner() {
     }
   };
 
+  const take = async (source: 'camera' | 'gallery') => {
+    try {
+      if (source === 'camera') {
+        const perm = await ImagePicker.requestCameraPermissionsAsync();
+        if (!perm.granted) return setPhase({ kind: 'failed', failure: 'permission' });
+      }
+      const opts: ImagePicker.ImagePickerOptions = { mediaTypes: ['images'], quality: 1 };
+      const picked = source === 'camera' ? await ImagePicker.launchCameraAsync(opts) : await ImagePicker.launchImageLibraryAsync(opts);
+      if (picked.canceled || !picked.assets[0]) return;
+      await process(picked.assets[0]);
+    } catch (e) {
+      setPhase({ kind: 'failed', failure: failureOf(e) });
+    }
+  };
+
+  /** Scan dokumen: pemindai ML Kit (deteksi tepi + auto-crop), lalu pipeline OCR yang sama. */
+  const scanDocument = async () => {
+    if (scanner !== 'ok' || !DocScannerNative) return setPhase({ kind: 'noScanner', reason: scanner === 'ok' ? 'module' : scanner });
+    try {
+      const uri = await DocScannerNative.scan(true);
+      if (!uri) return; // dibatalkan
+      await process({ uri });
+    } catch {
+      setPhase({ kind: 'noScanner', reason: 'services' });
+    }
+  };
+
+  // Dibuka dari "Scan dokumen" (+ Catat): pemindai langsung terbuka sekali.
+  const autoLaunched = useRef(false);
+  useEffect(() => {
+    if (mode !== 'doc' || autoLaunched.current || limits.scan) return;
+    autoLaunched.current = true;
+    void scanDocument();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mode, limits.scan]);
+
   let center;
   if (limits.scan) {
     center = <EmptyState kind="limit" title={t('capture.scan.limitTitle')} message={t('capture.scan.limitMessage')} actionLabel={t('capture.seePremium')} onAction={() => paywall(t('capture.scan.limitReason'))} />;
   } else if (phase.kind === 'uploading' || phase.kind === 'processing') {
     center = <ProcessingView title={phase.kind === 'uploading' ? t('capture.scan.uploading') : t('capture.scan.processingTitle')} message={t('capture.scan.processingMessage')} />;
+  } else if (phase.kind === 'noScanner') {
+    center = (
+      <EmptyState
+        title={t('capture.docScan.unavailableTitle')}
+        message={phase.reason === 'module' ? t('capture.docScan.needNewBuild') : t('capture.docScan.needServices')}
+        actionLabel={t('capture.docScan.useCamera')}
+        onAction={() => setPhase({ kind: 'ready' })}
+      />
+    );
   } else if (phase.kind === 'failed') {
     const retry = phase.failure === 'permission' ? () => take('gallery') : () => setPhase({ kind: 'ready' });
     center = <CaptureError flow="scan" failure={phase.failure} actionLabel={phase.failure === 'permission' ? t('capture.scan.gallery') : t('capture.scan.retake')} onAction={retry} />;
@@ -116,7 +170,7 @@ function ScanInner() {
             <View style={[styles.shutter, { backgroundColor: colors.text }]} />
           </View>
         </PressableScale>
-        <View style={styles.spacer} />
+        <RoundButton label={t('capture.docScan.button')} onPress={() => void scanDocument()} icon={FileScan} disabled={!canShoot} />
       </View>
     </View>
   );

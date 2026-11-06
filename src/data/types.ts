@@ -13,7 +13,32 @@ export type Account = {
   /** Minor units. Saldo sekarang = opening + efek semua transaksi (lib/transactions). */
   openingBalance: number;
   last4?: string;
+  /** Limit kartu kredit/paylater (minor units mata uang akun, FR-ACC-3/8). */
+  creditLimit?: number;
+  /** Grup limit gabungan (FR-ACC-6): utilisasi dihitung dari grup, bukan limit kartu ini. */
+  limitGroupId?: string;
+  /** Iuran tahunan kartu kredit (FR-ACC-7). */
+  annualFee?: AnnualFee;
 };
+
+export type AnnualFee = {
+  /** Minor units mata uang akun. */
+  amount: number;
+  /** 1-12 */
+  month: number;
+  /** 1-31; bulan pendek memakai hari terakhir. */
+  day: number;
+  /** Belanja minimal setahun agar iuran dihapus. */
+  waiverThreshold?: number;
+  /** Tanggal tagih iuran yang sudah dibayar ("YYYY-MM-DD"). */
+  paid: string[];
+};
+
+/** Grup limit gabungan: dua kartu atau lebih berbagi satu limit (FR-ACC-6). */
+export type LimitGroup = { id: string; name: string; currency: string; sharedLimit: number };
+
+/** Anggaran satu periode budget (FR-BDG-5). Nominal dalam mata uang utama. */
+export type BudgetRecord = { id: string; periodStart: string; total: number; categoryLimits: Record<string, number> };
 
 export type TxType = 'income' | 'expense' | 'transfer';
 export type TxSource = 'manual' | 'scan' | 'voice' | 'import' | 'smartlog' | 'invoice';
@@ -65,6 +90,10 @@ export type Transaction = {
   receiptPath?: string;
   items?: ReceiptItem[];
   receipt?: ReceiptDetails;
+  /** Reimbursement (FR-TRX-4, hanya pengeluaran): pending sampai pemasukan pengganti ditautkan. */
+  reimburseStatus?: 'pending' | 'reimbursed';
+  /** id pemasukan pengganti. */
+  reimbursedBy?: string;
 };
 
 export type NotificationType = 'bill_due' | 'budget_alert' | 'weekly_recap' | 'quota_warning' | 'goal_reached' | 'subscription_renewal' | 'system';

@@ -38,11 +38,11 @@ describe('batas bucket 50/30/20', () => {
 });
 
 describe('laju belanja dan aman dibelanjakan', () => {
-  it('3 tingkat laju dari porsi terpakai vs porsi waktu', () => {
-    expect(pace(500, 1000, 10, 20)).toBe('sesuai');
-    expect(pace(540, 1000, 10, 20)).toBe('sesuai');
-    expect(pace(580, 1000, 10, 20)).toBe('agak_cepat');
-    expect(pace(700, 1000, 10, 20)).toBe('terlalu_cepat');
+  it('3 tingkat laju dari porsi terpakai vs porsi waktu (ambang 1 dan 1,2)', () => {
+    expect(pace(500, 1000, 10, 20)).toBe('sesuai'); // rasio 1,0
+    expect(pace(540, 1000, 10, 20)).toBe('agak_cepat'); // 1,08
+    expect(pace(600, 1000, 10, 20)).toBe('agak_cepat'); // 1,2
+    expect(pace(700, 1000, 10, 20)).toBe('terlalu_cepat'); // 1,4
     expect(pace(10, 0, 10, 20)).toBe('sesuai');
   });
 

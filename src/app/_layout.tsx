@@ -152,6 +152,9 @@ function Routes() {
         <Stack.Screen name="alat/pajak" />
         <Stack.Screen name="alat/laporan" />
         <Stack.Screen name="alat/ekspor" />
+        <Stack.Screen name="akun/[id]" />
+        <Stack.Screen name="akun/grup" />
+        <Stack.Screen name="kurs-saya" />
         <Stack.Screen name="admin" />
       </Stack.Protected>
     </Stack>

@@ -48,6 +48,28 @@ const coach = {
     example2: 'Berapa yang bisa kusisihkan untuk liburan?',
     example3: 'Mana yang lebih dulu dilunasi, laptop atau kartu kredit?',
   },
+  replay: {
+    weekLabel: 'Minggu replay',
+    thisWeek: 'Minggu ini',
+    lastWeek: 'Minggu lalu',
+    heroThis: 'Belanjamu {days} hari pertama minggu ini',
+    fairCompare: 'Dibandingkan dengan hari yang sama minggu lalu.',
+    achievements: 'Pencapaian minggu ini',
+    biggestSaving: 'Hemat terbesar',
+    savedVsLast: '{amount} lebih hemat dari minggu lalu',
+    noSaving: 'Belum ada kategori yang lebih hemat dari minggu lalu.',
+    noSpendOf: 'hari tanpa jajan dari {days}',
+    emptyThisTitle: 'Minggu ini masih kosong',
+    emptyThisMessage: 'Replay terisi setelah kamu mencatat transaksi minggu ini.',
+    seeLast: 'Lihat minggu lalu',
+    achievement: {
+      noSpend: '{count} hari tanpa jajan',
+      spentLess: 'Belanja turun {pct}% dari minggu lalu',
+      saved: 'Menabung {amount}',
+      debtPaid: 'Membayar utang {amount}',
+      cooked: 'Lebih jarang makan di luar daripada minggu lalu',
+    },
+  },
 };
 
 export default coach;

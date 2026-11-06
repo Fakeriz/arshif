@@ -146,6 +146,13 @@ const capture: Messages['capture'] = {
     failed: 'Gambar resit gagal dimuatkan. Cuba buka semula nanti.',
     a11y: 'Gambar resit {merchant}',
   },
+  docScan: {
+    button: 'Imbas dokumen',
+    unavailableTitle: 'Imbas dokumen belum tersedia',
+    needNewBuild: 'Imbas dokumen memerlukan versi aplikasi terkini di Android. Buat masa ini, ambil gambar resit dengan kamera.',
+    needServices: 'Pengimbas dokumen memerlukan Google Play services yang aktif. Buat masa ini, ambil gambar resit dengan kamera.',
+    useCamera: 'Guna kamera',
+  },
 };
 
 export default capture;

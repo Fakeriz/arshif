@@ -43,7 +43,15 @@ export function TransactionRow({ tx, accountName, mainCurrency, divider, onPress
           tone={transfer ? 'secondary' : undefined}
         />
       }
-      trailingCaption={foreign ? `≈ ${formatMoney(amountIn(tx, mainCurrency), mainCurrency)}` : transfer ? t('common.transfer') : undefined}
+      trailingCaption={
+        tx.reimburseStatus
+          ? t(tx.reimburseStatus === 'pending' ? 'tx.reimb.rowPending' : 'tx.reimb.rowDone')
+          : foreign
+            ? `≈ ${formatMoney(amountIn(tx, mainCurrency), mainCurrency)}`
+            : transfer
+              ? t('common.transfer')
+              : undefined
+      }
       divider={divider}
       onPress={onPress}
       accessibilityLabel={`${tx.merchant}, ${formatMoney(tx.amount, tx.currency)}, ${accountName}`}

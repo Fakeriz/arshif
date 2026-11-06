@@ -5,7 +5,7 @@ import { usePaywall } from '@/components/shell/Paywall';
 import { BottomSheet, Button, useToast } from '@/components/ui';
 import { insertAccount, RemoteError } from '@/data/remote/api';
 import { StepAccount } from '@/features/setup/StepAccount';
-import type { SetupDraft } from '@/features/setup/draft';
+import { accountFromDraft, type SetupDraft } from '@/features/setup/draft';
 import { useT } from '@/i18n';
 import { useStore } from '@/state/AppStore';
 import { space } from '@/theme/tokens';
@@ -19,7 +19,7 @@ export function AddAccountSheet({ visible, onClose }: { visible: boolean; onClos
   const paywall = usePaywall();
   const { state, dispatch } = useStore();
   const { height } = useWindowDimensions();
-  const blank = (): Draft => ({ name: '', type: 'tabungan', bank: 'cash', currency: state.mainCurrency, opening: null });
+  const blank = (): Draft => ({ name: '', type: 'tabungan', bank: 'cash', currency: state.mainCurrency, opening: null, creditLimit: null });
   const [draft, setDraft] = useState<Draft>(blank);
   const [tried, setTried] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -30,7 +30,7 @@ export function AddAccountSheet({ visible, onClose }: { visible: boolean; onClos
     if (!nameOk || saving) return;
     setSaving(true);
     try {
-      const account = await insertAccount({ bank: draft.bank, name: draft.name.trim(), type: draft.type, currency: draft.currency, openingBalance: draft.opening ?? 0 });
+      const account = await insertAccount(accountFromDraft(draft));
       dispatch({ type: 'account/add', account });
       show({ tone: 'success', title: t('settings.accounts.added', { name: account.name }) });
       setDraft(blank());

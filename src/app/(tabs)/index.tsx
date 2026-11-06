@@ -9,6 +9,7 @@ import { Screen } from '@/components/shell/Screen';
 import { EmptyState, PromoCard, QuickActions } from '@/components/ui';
 import { AccountDeck } from '@/features/home/AccountDeck';
 import { BalanceBlock } from '@/features/home/BalanceBlock';
+import { MissingRatesBanner } from '@/features/fx/MissingRatesBanner';
 import { BudgetGlance } from '@/features/home/BudgetGlance';
 import { HealthGlance } from '@/features/home/HealthGlance';
 import { HomeHeader } from '@/features/home/HomeHeader';
@@ -76,7 +77,8 @@ export default function HomeScreen() {
           { key: 'more', label: t('home.quick.more'), icon: LayoutGrid, onPress: () => setMore(true) },
         ]}
       />
-      <CaptureSheet visible={more} onClose={() => setMore(false)} keys={['pdf', 'manual']} extras={moreOptions(limits, t)} title={t('home.more.title')} subtitle={t('home.more.subtitle')} />
+      <MissingRatesBanner />
+      <CaptureSheet visible={more} onClose={() => setMore(false)} keys={['docscan', 'pdf', 'manual']} extras={moreOptions(limits, t)} title={t('home.more.title')} subtitle={t('home.more.subtitle')} />
       {state.notifPrefs.weekly_recap && ledger.transactions.length > 0 && (
         <PromoCard icon={Sparkles} title={t('home.recapTitle')} message={t('home.recapMessage')} onPress={() => router.push('/coach')} />
       )}

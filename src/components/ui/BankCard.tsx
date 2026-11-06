@@ -21,6 +21,8 @@ export type BankCardProps = {
   onPress?: () => void;
   /** Lebar kartu; tinggi mengikuti rasio kartu. Bawaan 280 (pratinjau pemilih bank). */
   width?: number;
+  /** Keterangan singkat, mis. utilisasi limit kartu kredit/grup. */
+  footnote?: string;
 };
 
 export const BANK_CARD_RATIO = 280 / 168;
@@ -29,13 +31,13 @@ export const BANK_CARD_RATIO = 280 / 168;
  * Kartu akun per bank (FR-ACC-2): warna khas bank, nama bank sebagai teks (bukan logo).
  * Kaca hanya di tepi (border) agar warna bank tetap jadi identitas kartu.
  */
-export function BankCard({ bank, accountType, last4, balance, currency, hidden, onPress, width }: BankCardProps) {
+export function BankCard({ bank, accountType, last4, balance, currency, hidden, onPress, width, footnote }: BankCardProps) {
   const { colors } = useTheme();
   const t = useT();
   const b = getBank(bank);
   const name = bankName(t, bank);
   const amount = hidden ? '••••••' : formatMoney(balance, currency);
-  const a11y = t(last4 ? 'common.bankCardA11yLast4' : 'common.bankCardA11y', { bank: name, type: accountType, last4: last4 ?? '', amount: hidden ? t('common.balanceHidden') : amount });
+  const a11y = `${t(last4 ? 'common.bankCardA11yLast4' : 'common.bankCardA11y', { bank: name, type: accountType, last4: last4 ?? '', amount: hidden ? t('common.balanceHidden') : amount })}${footnote ? `, ${footnote}` : ''}`;
   const cardStyle = [styles.card, { backgroundColor: b.color, borderColor: colors.glassBorder }, width ? { width, height: width / BANK_CARD_RATIO } : null];
   const content = (
     <>
@@ -51,7 +53,7 @@ export function BankCard({ bank, accountType, last4, balance, currency, hidden, 
       </View>
       <View style={styles.foot}>
         <AppText variant="caption" style={{ color: b.onColor }} numberOfLines={1}>
-          {accountType}
+          {footnote ? `${accountType} · ${footnote}` : accountType}
         </AppText>
         <AppText variant="h2" numeric numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.6} style={{ color: b.onColor }}>
           {amount}

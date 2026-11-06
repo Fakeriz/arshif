@@ -54,6 +54,12 @@ const domain = {
     SAR: 'Riyal Saudi',
     JPY: 'Yen Jepang',
     AUD: 'Dolar Australia',
+    AED: 'Dirham Uni Emirat Arab',
+    BND: 'Dolar Brunei',
+    THB: 'Baht Thailand',
+    CNY: 'Yuan Tiongkok',
+    KRW: 'Won Korea Selatan',
+    VND: 'Dong Vietnam',
   },
   cashBank: 'Tunai',
   pace: {

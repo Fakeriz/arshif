@@ -50,6 +50,28 @@ const coach: Messages['coach'] = {
     example2: 'Tatil için ne kadar ayırabilirim?',
     example3: 'Önce hangisini kapatmalıyım, dizüstü bilgisayarı mı kredi kartını mı?',
   },
+  replay: {
+    weekLabel: 'Tekrar haftası',
+    thisWeek: 'Bu hafta',
+    lastWeek: 'Geçen hafta',
+    heroThis: 'Bu haftanın ilk {days} günündeki harcaman',
+    fairCompare: 'Geçen haftanın aynı günleriyle karşılaştırıldı.',
+    achievements: 'Bu haftanın başarıları',
+    biggestSaving: 'En büyük tasarruf',
+    savedVsLast: 'Geçen haftadan {amount} daha az',
+    noSaving: 'Henüz geçen haftadan daha düşük kategori yok.',
+    noSpendOf: '{days} günün harcamasız günleri',
+    emptyThisTitle: 'Bu hafta henüz boş',
+    emptyThisMessage: 'Bu hafta bir işlem kaydettiğinde tekrar dolacak.',
+    seeLast: 'Geçen haftayı gör',
+    achievement: {
+      noSpend: '{count} harcamasız gün',
+      spentLess: 'Harcama geçen haftadan %{pct} düştü',
+      saved: '{amount} biriktirdin',
+      debtPaid: '{amount} borç ödedin',
+      cooked: 'Geçen haftadan daha az dışarıda yedin',
+    },
+  },
 };
 
 export default coach;

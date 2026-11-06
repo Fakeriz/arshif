@@ -60,6 +60,13 @@ const settings: Messages['settings'] = {
     deleteDialogTitle: 'Delete account and all data?',
     deleteDialogMessage: 'Transactions, accounts, budgets, and receipt files will be permanently deleted and cannot be recovered. Export your data first if needed.',
   },
+  payday: {
+    title: 'Payday',
+    rowSub: 'Your budget month starts on this day',
+    sub: 'Pick 1 to 28 so it exists in every month',
+    value: 'Day {day}',
+    preview: 'Current period: {start} to {end}',
+  },
 };
 
 export default settings;

@@ -3,6 +3,7 @@ import { StyleSheet, View } from 'react-native';
 import { AmountInput, AppText, BankCard, Card, Chip, Input } from '@/components/ui';
 import type { AccountType } from '@/data/types';
 import { useT } from '@/i18n';
+import { isCreditType } from '@/lib/credit';
 import { PINNED_CURRENCIES } from '@/lib/money';
 import { space } from '@/theme/tokens';
 
@@ -18,10 +19,11 @@ export function StepAccount({ value, mainCurrency, nameError, onChange }: Props)
   const t = useT();
   const set = (patch: Partial<SetupDraft['account']>) => onChange({ ...value, ...patch });
   const currencies = [...new Set([mainCurrency, ...PINNED_CURRENCIES])];
+  const credit = isCreditType(value.type);
   return (
     <>
       <View style={styles.preview}>
-        <BankCard bank={value.bank} accountType={t(`domain.accountType.${value.type}`)} balance={value.opening ?? 0} currency={value.currency} />
+        <BankCard bank={value.bank} accountType={t(`domain.accountType.${value.type}`)} balance={credit ? -(value.opening ?? 0) : (value.opening ?? 0)} currency={value.currency} />
       </View>
       <Card>
         <View style={styles.block}>
@@ -43,7 +45,17 @@ export function StepAccount({ value, mainCurrency, nameError, onChange }: Props)
               <Chip key={c} label={c} selected={value.currency === c} onPress={() => set({ currency: c })} />
             ))}
           </Field>
-          <AmountInput label={t('auth.setup.account.opening')} value={value.opening} onChange={(opening) => set({ opening })} currency={value.currency} />
+          {credit ? (
+            <>
+              <AmountInput label={t('auth.setup.account.creditLimit')} value={value.creditLimit} onChange={(creditLimit) => set({ creditLimit })} currency={value.currency} />
+              <AmountInput label={t('auth.setup.account.owed')} value={value.opening} onChange={(opening) => set({ opening })} currency={value.currency} />
+              <AppText variant="caption" tone="muted">
+                {t('auth.setup.account.owedHint')}
+              </AppText>
+            </>
+          ) : (
+            <AmountInput label={t('auth.setup.account.opening')} value={value.opening} onChange={(opening) => set({ opening })} currency={value.currency} />
+          )}
         </View>
       </Card>
       <Card>

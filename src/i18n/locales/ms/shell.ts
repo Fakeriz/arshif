@@ -14,6 +14,11 @@ const shell: Messages['shell'] = {
       subLimited: 'Kuota imbasan bulan ini sudah habis',
       reason: 'Kuota imbas resit Free ({free}/bulan) sudah habis. Set semula pada 1 haribulan, atau naik taraf untuk {premium} imbasan/bulan.',
     },
+    docscan: {
+      title: 'Imbas dokumen',
+      short: 'Dokumen',
+      sub: 'Tepi resit dikesan dan dipotong secara automatik',
+    },
     voice: {
       title: 'Voice Log',
       short: 'Voice Log',

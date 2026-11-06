@@ -8,6 +8,7 @@
 /** Jumlah digit desimal per mata uang. Harus sama dengan src/lib/money.ts CURRENCIES (dicek tes). */
 export const EXPONENTS: Record<string, number> = {
   IDR: 0, MYR: 2, TRY: 2, USD: 2, EUR: 2, SGD: 2, GBP: 2, SAR: 2, JPY: 0, AUD: 2,
+  AED: 2, BND: 2, THB: 2, CNY: 2, KRW: 0, VND: 0,
 };
 
 export function exponentOf(code: string): number {

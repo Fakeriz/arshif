@@ -9,6 +9,7 @@ import { AppText, BankCard, GlassView, Icon, PressableScale } from '@/components
 import { BANK_CARD_RATIO } from '@/components/ui/BankCard';
 import { useT } from '@/i18n';
 import type { AccountWithBalance } from '@/state/AppStore';
+import { useCreditUtilization } from '@/state/derived';
 import { haptic, useMotion } from '@/theme/motion';
 import { useTheme } from '@/theme/ThemeProvider';
 import { layout, radius, space, stripTint } from '@/theme/tokens';
@@ -38,9 +39,17 @@ const VIEWABILITY = { itemVisiblePercentThreshold: 50 };
  * Ketuk kartu untuk menutup kembali.
  */
 export function AccountDeck({ accounts, hidden, limitReached, activeId, onActiveChange }: AccountDeckProps) {
+
   const { colors, scheme } = useTheme();
   const t = useT();
-  const paywall = usePaywall();
+  const utilization = useCreditUtilization();
+  // Kartu kredit/paylater: persen terpakai dari limit kartu, atau dari limit gabungan grupnya (FR-ACC-6).
+  const footnote = (id: string) => {
+    const u = utilization(id);
+    if (!u || hidden) return undefined;
+    const pct = Math.round(u.ratio * 100);
+    return u.scope === 'group' ? t('acct.limit.cardGroupShort', { pct, name: u.groupName ?? '' }) : t('acct.limit.cardShort', { pct });
+  };  const paywall = usePaywall();
   const { spring } = useMotion();
   const { width: windowWidth } = useWindowDimensions();
   const [measured, setMeasured] = useState(0);
@@ -107,6 +116,7 @@ export function AccountDeck({ accounts, hidden, limitReached, activeId, onActive
             currency={item.account.currency}
             hidden={hidden}
             width={cardW}
+            footnote={footnote(item.account.id)}
             onPress={() => setOpen(false)}
           />
         ) : (
@@ -126,7 +136,7 @@ export function AccountDeck({ accounts, hidden, limitReached, activeId, onActive
         )}
       </View>
     ),
-    [itemWidth, itemPadding, cardW, cardH, hidden, t, colors.accentSoft, colors.accentText, paywall, setOpen],
+    [itemWidth, itemPadding, cardW, cardH, hidden, t, colors.accentSoft, colors.accentText, paywall, setOpen, footnote],
   );
 
   if (items.length === 0) return null;

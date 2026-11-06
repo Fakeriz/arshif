@@ -4,9 +4,11 @@ import { ImageManipulator, SaveFormat } from 'expo-image-manipulator';
 export const MAX_RECEIPT_WIDTH = 1600;
 export const MAX_RECEIPT_BYTES = 8 * 1024 * 1024;
 
-export async function compressReceipt(uri: string, width: number): Promise<string> {
+/** `width` tidak diketahui (hasil pemindai dokumen): diukur dulu dari gambarnya. */
+export async function compressReceipt(uri: string, width?: number): Promise<string> {
+  const w = width ?? (await ImageManipulator.manipulate(uri).renderAsync()).width;
   const ctx = ImageManipulator.manipulate(uri);
-  if (width > MAX_RECEIPT_WIDTH) ctx.resize({ width: MAX_RECEIPT_WIDTH });
+  if (w > MAX_RECEIPT_WIDTH) ctx.resize({ width: MAX_RECEIPT_WIDTH });
   const image = await ctx.renderAsync();
   const out = await image.saveAsync({ compress: 0.8, format: SaveFormat.JPEG });
   return out.uri;

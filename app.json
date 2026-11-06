@@ -68,6 +68,14 @@
         "projectId": "cb2a9ff2-2ae6-40f2-87cd-cd6b4707116d"
       }
     },
-    "owner": "fakeriz152s-team"
+    "owner": "fakeriz152s-team",
+    "runtimeVersion": {
+      "policy": "fingerprint"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/cb2a9ff2-2ae6-40f2-87cd-cd6b4707116d",
+      "checkAutomatically": "ON_LOAD",
+      "fallbackToCacheTimeout": 0
+    }
   }
 }

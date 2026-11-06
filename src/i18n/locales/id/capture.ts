@@ -145,6 +145,13 @@ const capture = {
     failed: 'Foto struk gagal dimuat. Coba buka lagi nanti.',
     a11y: 'Foto struk {merchant}',
   },
+  docScan: {
+    button: 'Scan dokumen',
+    unavailableTitle: 'Scan dokumen belum tersedia',
+    needNewBuild: 'Scan dokumen butuh versi aplikasi terbaru di Android. Untuk sekarang, foto struk dengan kamera.',
+    needServices: 'Pemindai dokumen butuh Google Play services yang aktif. Untuk sekarang, foto struk dengan kamera.',
+    useCamera: 'Pakai kamera',
+  },
 };
 
 export default capture;

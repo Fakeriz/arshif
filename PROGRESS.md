@@ -31,6 +31,8 @@ R-10 membatasi glassmorphism ke 1–2 elemen. Ahmad memutuskan **kaca tetap di s
 - [ ] Fase 3 — Monetisasi (RevenueCat + Xendit + Paddle) & rilis
 - [ ] Fase 5 — Smart Log: migrasi 10 + 11 live 2026-11-06 (uji live 11/11); uji di HP lewat development build menunggu. Detail: `docs/fase5-smartlog.md`
 - [ ] Fase 6 — Invoice & penawaran + Money & Tax Tools: migrasi 12 live 2026-11-06, dipush ke main; PDF di HP menunggu build EAS baru. Detail: `docs/fase6-invoice-alat.md`
+- [ ] Fase 7 — Enhancements v1 (Bab 13): dibangun + diuji lokal 2026-11-06, migrasi 13 BELUM diterapkan, build EAS development baru menunggu login Expo pemilik. Detail: `docs/fase7-enhancements.md`
+- [ ] Fase 8 — Panel Admin web (menunggu keputusan host + APP_URL)
 
 ## Fase 0 — yang sudah ada
 
@@ -78,7 +80,7 @@ R-10 membatasi glassmorphism ke 1–2 elemen. Ahmad memutuskan **kaca tetap di s
 
 - **Tab "Anggaran" menggantikan "Planning"** di nav sampai hub Planning (Goals, Tagihan, Utang, Langganan, Split Bill) dibangun. Tidak ada layar placeholder.
 - **Rumus Health Score** (PRD hanya memberi bobot): tabungan target 20% penghasilan; kepatuhan = kategori di bawah batas; utang nol poin di cicilan >= 40% penghasilan, penuh <= 10%; dana darurat target 6 bulan; tagihan = rasio tepat waktu. Kalibrasi di `lib/health.ts`.
-- **Laju belanja**: porsi anggaran terpakai / porsi waktu berjalan; <= 1,1 "Sesuai laju", <= 1,3 "Agak cepat", selebihnya "Terlalu cepat". Bucket Tabungan tidak memakai laju (menabung cepat itu baik), diganti "% dari target".
+- **Laju belanja**: porsi anggaran terpakai / porsi waktu berjalan; <= 1 "Sesuai laju", <= 1,2 "Agak cepat", selebihnya "Terlalu cepat" (diubah di Fase 7, dulu 1,1 / 1,3). Bucket Tabungan tidak memakai laju (menabung cepat itu baik), diganti "% dari target".
 - **Kategori yang punya batas** (`DEMO_CATEGORY_LIMITS`) konstanta contoh; layar pengaturan batas per kategori belum ada.
 - **Modul Tagihan belum ada**: skor "tagihan tepat waktu" memakai konstanta contoh (`DEMO_BILLS`).
 - Narasi Coach, hasil scan/voice/import adalah **contoh berlabel** ("Contoh narasi", teks di layar). AI sungguhan di Fase 2.
@@ -225,3 +227,18 @@ Detail, tarif pajak 2026 yang dipakai, dan langkah deploy: `docs/fase6-invoice-a
 - **expo-print** ditambahkan: modul native, dev build lama di Xiaomi belum punya (PDF menampilkan pesan, tidak crash).
 - `CurrencySheet` sekarang menghitung daftar mata uang saat dibuka (sebelumnya dihitung saat modul dimuat, bisa
   hanya USD bila kurs belum termuat).
+
+
+## Fase 7: Enhancements v1 (lokal, belum deploy)
+
+Detail, rumus, dan langkah build/OTA: `docs/fase7-enhancements.md`.
+
+- **Migrasi 13** `20261111000013_enhancements.sql`: payday 1-28, `budgets`, `limit_groups`, kolom kartu (limit, grup,
+  iuran tahunan), `user_rates`, reimbursement di `transactions`. Harus diterapkan sebelum aplikasi baru dipakai.
+- **Kurs**: `lib/fx.ts` sekarang punya riwayat harian (belanja = kurs harinya, saldo = kurs hari ini) + "Kurs saya" +
+  `MissingRateError` (tidak ada tebakan kurs). Agregat memakai `tryConvert`.
+- **Layar baru**: `/akun/[id]` (detail akun: desain, limit, grup, iuran), `/akun/grup`, `/kurs-saya`. Pengaturan:
+  Tanggal gajian, Kurs saya; Akun & kartu membuka detail akun.
+- **Native**: modul lokal `modules/doc-scanner` (ML Kit Document Scanner, Kotlin belum dikompilasi) + `expo-updates`
+  (runtime fingerprint, channel development/preview/production).
+- Ambang laju berubah ke 1 / 1,2. Tab Tagihan: Daftar / Kalender. Coach Recap: Minggu ini / Minggu lalu.

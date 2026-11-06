@@ -60,6 +60,13 @@ const settings: Messages['settings'] = {
     deleteDialogTitle: 'Hesap ve tüm veriler silinsin mi?',
     deleteDialogMessage: 'İşlemler, hesaplar, bütçeler ve fiş dosyaları kalıcı olarak silinir ve geri alınamaz. Gerekirse önce verilerini dışa aktar.',
   },
+  payday: {
+    title: 'Maaş günü',
+    rowSub: 'Bütçe ayın bu günde başlar',
+    sub: 'Her ayda olması için 1 ile 28 arasında seç',
+    value: 'Ayın {day}. günü',
+    preview: 'Şu anki dönem: {start} - {end}',
+  },
 };
 
 export default settings;

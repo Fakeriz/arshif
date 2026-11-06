@@ -13,6 +13,7 @@ import { failureOf } from '@/features/capture/CaptureError';
 import { putHandoff } from '@/features/capture/handoff';
 import { ReceiptPhoto } from '@/features/capture/ReceiptPhoto';
 import { InfoRow } from '@/features/transactions/InfoRow';
+import { ReimbursementCard } from '@/features/transactions/ReimbursementCard';
 import { ReceiptCard, ReceiptDetailsCard } from '@/features/transactions/ReceiptSections';
 import { dayLong } from '@/lib/dates';
 import { currencyMeta, formatMoney } from '@/lib/money';
@@ -99,6 +100,7 @@ export default function TransactionDetail() {
       )}
       {tx.receipt && <ReceiptDetailsCard receipt={tx.receipt} />}
       {tx.receiptPath && <ReceiptPhoto path={tx.receiptPath} merchant={tx.merchant} />}
+      <ReimbursementCard tx={tx} />
       {tx.type === 'expense' && (
         <Button
           label={t('plan.split.fromReceipt')}

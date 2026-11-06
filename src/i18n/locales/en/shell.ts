@@ -14,6 +14,11 @@ const shell: Messages['shell'] = {
       subLimited: 'Scan quota used up this month',
       reason: 'Your Free receipt scans ({free}/month) are used up. They reset on the 1st, or upgrade for {premium} scans/month.',
     },
+    docscan: {
+      title: 'Scan document',
+      short: 'Document',
+      sub: 'Receipt edges are detected and cropped automatically',
+    },
     voice: {
       title: 'Voice Log',
       short: 'Voice Log',

@@ -8,13 +8,14 @@ import { Screen } from '@/components/shell/Screen';
 import { TabHeader } from '@/components/shell/TabHeader';
 import { AppText, Chip, CurrencyText, EmptyState, Input } from '@/components/ui';
 import { ReviewBanner } from '@/features/smartlog/ReviewBanner';
+import { MissingRatesBanner } from '@/features/fx/MissingRatesBanner';
 import { FilterSheet } from '@/features/transactions/FilterSheet';
 import { TransactionList } from '@/features/transactions/TransactionList';
 import { TransactionListSkeleton } from '@/features/transactions/TransactionListSkeleton';
 import { useLoadState } from '@/state/loadState';
 import { useLedger } from '@/state/derived';
 import { useRetry } from '@/state/useRetry';
-import { filterTransactions, isFilterActive, totals, type TxFilter } from '@/lib/transactions';
+import { filterTransactions, isFilterActive, reimbursementIncomeIds, totals, type TxFilter } from '@/lib/transactions';
 import { space } from '@/theme/tokens';
 
 const TYPES: { key: NonNullable<TxFilter['type']>; label: MsgKey }[] = [
@@ -35,7 +36,9 @@ export default function TransaksiScreen() {
   const [sheet, setSheet] = useState(false);
 
   const shown = useMemo(() => filterTransactions(ledger.transactions, filter, (k) => categoryLabel(t, k)), [ledger.transactions, filter, t]);
-  const sum = useMemo(() => totals(shown, ledger.mainCurrency), [shown, ledger.mainCurrency]);
+  // Pemasukan pengganti reimbursement dicari dari SEMUA transaksi (pengeluarannya bisa tidak ikut tersaring).
+  const repayments = useMemo(() => reimbursementIncomeIds(ledger.transactions), [ledger.transactions]);
+  const sum = useMemo(() => totals(shown, ledger.mainCurrency, repayments), [shown, ledger.mainCurrency, repayments]);
   const extra = (filter.accountId ? 1 : 0) + (filter.categoryKey ? 1 : 0);
   const active = isFilterActive(filter);
 
@@ -65,6 +68,7 @@ export default function TransaksiScreen() {
     <Screen tabs>
       <TabHeader title={t('tx.title')} subtitle={ready ? t('tx.count', { shown: shown.length, total: ledger.transactions.length }) : undefined} />
       <ReviewBanner />
+      <MissingRatesBanner />
       {ready && (
         <>
           <Input

@@ -50,6 +50,28 @@ const coach: Messages['coach'] = {
     example2: 'Berapa yang boleh saya simpan untuk bercuti?',
     example3: 'Mana yang patut dilunaskan dahulu, laptop atau kad kredit?',
   },
+  replay: {
+    weekLabel: 'Minggu replay',
+    thisWeek: 'Minggu ini',
+    lastWeek: 'Minggu lalu',
+    heroThis: 'Perbelanjaan anda {days} hari pertama minggu ini',
+    fairCompare: 'Dibandingkan dengan hari yang sama minggu lalu.',
+    achievements: 'Pencapaian minggu ini',
+    biggestSaving: 'Penjimatan terbesar',
+    savedVsLast: '{amount} lebih jimat daripada minggu lalu',
+    noSaving: 'Belum ada kategori yang lebih jimat daripada minggu lalu.',
+    noSpendOf: 'hari tanpa belanja daripada {days}',
+    emptyThisTitle: 'Minggu ini masih kosong',
+    emptyThisMessage: 'Replay terisi selepas anda merekod transaksi minggu ini.',
+    seeLast: 'Lihat minggu lalu',
+    achievement: {
+      noSpend: '{count} hari tanpa belanja',
+      spentLess: 'Perbelanjaan turun {pct}% daripada minggu lalu',
+      saved: 'Menyimpan {amount}',
+      debtPaid: 'Membayar hutang {amount}',
+      cooked: 'Kurang makan di luar berbanding minggu lalu',
+    },
+  },
 };
 
 export default coach;

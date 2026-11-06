@@ -1,11 +1,18 @@
 import { getLocales } from 'expo-localization';
 
 import type { AccountType } from '@/data/types';
-import { DEFAULT_SPLIT, splitIsValid, type Split } from '@/lib/budget';
+import { DEFAULT_SPLIT, PAYDAY_MAX, PAYDAY_MIN, splitIsValid, type Split } from '@/lib/budget';
+import { isCreditType } from '@/lib/credit';
 
 export type SetupDraft = {
   mainCurrency: string;
-  account: { name: string; type: AccountType; bank: string; currency: string; opening: number | null };
+  account: {
+    name: string; type: AccountType; bank: string; currency: string;
+    /** Kartu kredit/paylater: tagihan berjalan (positif di form, disimpan sebagai saldo negatif). */
+    opening: number | null;
+    /** Kartu kredit/paylater: limit (FR-ACC-3/8). */
+    creditLimit: number | null;
+  };
   income: number | null;
   payday: string;
   split: Split;
@@ -30,7 +37,7 @@ export function initialDraft(): SetupDraft {
   const currency = regionCurrency();
   return {
     mainCurrency: currency,
-    account: { name: '', type: 'tabungan', bank: REGION_BANK[currency] ?? 'cash', currency, opening: null },
+    account: { name: '', type: 'tabungan', bank: REGION_BANK[currency] ?? 'cash', currency, opening: null, creditLimit: null },
     income: null,
     payday: '25',
     split: DEFAULT_SPLIT,
@@ -40,7 +47,20 @@ export function initialDraft(): SetupDraft {
 
 export function parsePayday(s: string): number | null {
   const n = Number(s);
-  return /^\d{1,2}$/.test(s.trim()) && n >= 1 && n <= 31 ? n : null;
+  return /^\d{1,2}$/.test(s.trim()) && n >= PAYDAY_MIN && n <= PAYDAY_MAX ? n : null;
+}
+
+/** Draft akun -> kolom akun. Kartu kredit/paylater: tagihan berjalan = saldo negatif, plus limit. */
+export function accountFromDraft(a: SetupDraft['account']) {
+  const credit = isCreditType(a.type);
+  return {
+    bank: a.bank,
+    name: a.name.trim(),
+    type: a.type,
+    currency: a.currency,
+    openingBalance: credit ? -(a.opening ?? 0) : (a.opening ?? 0),
+    creditLimit: credit && a.creditLimit ? a.creditLimit : undefined,
+  };
 }
 
 export const splitTotal = (s: Split) => s.needs + s.wants + s.savings;

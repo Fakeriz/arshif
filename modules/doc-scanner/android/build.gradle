@@ -1,0 +1,24 @@
+plugins {
+  id 'com.android.library'
+  id 'expo-module-gradle-plugin'
+}
+
+group = 'app.arshif'
+version = '1.0.0'
+
+expoModule {
+  v2 true
+}
+
+android {
+  namespace "expo.modules.docscanner"
+  defaultConfig {
+    versionCode 1
+    versionName "1.0.0"
+  }
+}
+
+dependencies {
+  // ML Kit Document Scanner (FR-OCR-6): UI pindai dari Google Play services, model diunduh otomatis.
+  implementation 'com.google.android.gms:play-services-mlkit-document-scanner:16.0.0'
+}

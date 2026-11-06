@@ -27,7 +27,8 @@ export default function CoachScreen() {
   const { transactions, mainCurrency } = useLedger();
   const health = useHealth();
   const budget = useBudget();
-  const recap = weeklyRecap(transactions, todayYmd(), mainCurrency);
+  // Narasi Coach merangkum minggu lalu yang sudah selesai.
+  const recap = weeklyRecap(transactions, todayYmd(), mainCurrency, 'last');
   const t = useT();
   const [tab, setTab] = useState<Tab>('score');
 
@@ -62,7 +63,7 @@ export default function CoachScreen() {
       );
     body = <ScoreTab score={health.score} delta={health.delta} pillars={health.pillars} narration={narration} />;
   } else if (tab === 'recap') {
-    body = <RecapTab recap={recap} currency={mainCurrency} />;
+    body = <RecapTab transactions={transactions} currency={mainCurrency} />;
   } else {
     body = <AskTab />;
   }

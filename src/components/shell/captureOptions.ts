@@ -1,11 +1,11 @@
 import type { Href } from 'expo-router';
-import { Calculator, FileText, Mic, PenLine, ReceiptText, ScanLine, type LucideIcon } from 'lucide-react-native';
+import { Calculator, FileScan, FileText, Mic, PenLine, ReceiptText, ScanLine, type LucideIcon } from 'lucide-react-native';
 
 import type { TFunction } from '@/i18n';
 import { QUOTAS } from '@/lib/quota';
 import type { useLimits } from '@/state/limits';
 
-export type CaptureKey = 'scan' | 'voice' | 'pdf' | 'manual';
+export type CaptureKey = 'scan' | 'docscan' | 'voice' | 'pdf' | 'manual';
 
 export type CaptureOption = {
   key: CaptureKey;
@@ -13,7 +13,7 @@ export type CaptureOption = {
   short: string;
   sub: string;
   icon: LucideIcon;
-  href: '/scan' | '/voice' | '/import' | '/tambah';
+  href: '/scan' | '/scan?mode=doc' | '/voice' | '/import' | '/tambah';
   limited: boolean;
   /** Alasan spesifik untuk sheet Premium bila kuota habis. */
   reason: string;
@@ -27,6 +27,12 @@ export function captureOptions(limits: ReturnType<typeof useLimits>, t: TFunctio
     {
       key: 'scan', title: t('shell.capture.scan.title'), short: t('shell.capture.scan.short'), icon: ScanLine, href: '/scan', limited: limits.scan,
       sub: limits.scan ? t('shell.capture.scan.subLimited') : t('shell.capture.scan.sub', { count: limits.scanLeft ?? 0 }),
+      reason: t('shell.capture.scan.reason', { free: free.scan ?? 0, premium: premium.scan ?? 0 }),
+    },
+    {
+      // ML Kit Document Scanner (FR-OCR-6): auto-crop + deteksi tepi; kuota sama dengan Scan struk.
+      key: 'docscan', title: t('shell.capture.docscan.title'), short: t('shell.capture.docscan.short'), icon: FileScan, href: '/scan?mode=doc', limited: limits.scan,
+      sub: limits.scan ? t('shell.capture.scan.subLimited') : t('shell.capture.docscan.sub'),
       reason: t('shell.capture.scan.reason', { free: free.scan ?? 0, premium: premium.scan ?? 0 }),
     },
     {

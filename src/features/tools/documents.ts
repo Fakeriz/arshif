@@ -2,7 +2,8 @@ import type { Account, Transaction } from '@/data/types';
 import { categoryLabel, type MsgKey, type TFunction } from '@/i18n';
 import type { Lang } from '@/i18n/types';
 import { monthName, shortDate } from '@/lib/dates';
-import { convert, hasRate, usdRatesDate } from '@/lib/fx';
+import { tryConvert, usdRatesDate } from '@/lib/fx';
+import { isReimbursable, reimbursementIncomeIds } from '@/lib/transactions';
 import { invoiceTotals, qtyText, type Invoice } from '@/lib/invoice';
 import { formatMoney } from '@/lib/money';
 import { invoiceHtml, reportHtml, type ReportBlock } from '@/lib/pdf/html';
@@ -88,17 +89,20 @@ export function annualReportDocument(r: AnnualReport, c: Ctx): string {
 
 /** Ringkasan satu bulan (YYYY-MM) dalam mata uang utama. */
 export function monthlySummary(txs: Transaction[], month: string, main: string) {
-  const inMonth = txs.filter((x) => x.date.startsWith(month) && x.type !== 'transfer');
+  // Reimbursement bukan belanja dan penggantinya bukan pemasukan (FR-TRX-4).
+  const repayments = reimbursementIncomeIds(txs);
+  const inMonth = txs.filter((x) => x.date.startsWith(month) && x.type !== 'transfer' && !isReimbursable(x) && !repayments.has(x.id));
   let income = 0;
   let expense = 0;
   let skipped = 0;
   const byCat = new Map<string, { income: number; expense: number }>();
   for (const x of inMonth) {
-    if (x.currency !== main && (!hasRate(x.currency) || !hasRate(main))) {
+    // Kurs pada tanggal transaksi (FR-FX-4).
+    const v = tryConvert(x.amount, x.currency, main, x.date);
+    if (v === null) {
       skipped++;
       continue;
     }
-    const v = convert(x.amount, x.currency, main);
     const row = byCat.get(x.categoryKey) ?? { income: 0, expense: 0 };
     if (x.type === 'income') {
       income += v;

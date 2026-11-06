@@ -58,6 +58,13 @@ const settings = {
     deleteDialogTitle: 'Hapus akun dan semua data?',
     deleteDialogMessage: 'Transaksi, akun, anggaran, dan berkas struk akan dihapus permanen dan tidak bisa dikembalikan. Ekspor datamu dulu bila perlu.',
   },
+  payday: {
+    title: 'Tanggal gajian',
+    rowSub: 'Bulan anggaran dimulai di tanggal ini',
+    sub: 'Pilih 1 sampai 28 supaya ada di setiap bulan',
+    value: 'Tgl {day}',
+    preview: 'Periode sekarang: {start} sampai {end}',
+  },
 };
 
 export default settings;

@@ -60,6 +60,13 @@ const settings: Messages['settings'] = {
     deleteDialogTitle: 'Padam akaun dan semua data?',
     deleteDialogMessage: 'Transaksi, akaun, belanjawan, dan fail resit akan dipadam secara kekal dan tidak boleh dipulihkan. Eksport data anda dahulu jika perlu.',
   },
+  payday: {
+    title: 'Tarikh gaji',
+    rowSub: 'Bulan belanjawan bermula pada tarikh ini',
+    sub: 'Pilih 1 hingga 28 supaya ada dalam setiap bulan',
+    value: 'Hb {day}',
+    preview: 'Tempoh sekarang: {start} hingga {end}',
+  },
 };
 
 export default settings;

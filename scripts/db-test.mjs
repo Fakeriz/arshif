@@ -620,8 +620,82 @@ await test('smartlog: kuota automation Free 30/bulan; habis = tidak diproses + d
   eq((await ingest(C, { time: '19:00' })).status, 'applied', 'Premium tanpa batas');
 });
 
+// ---------------------------------------------------------------- Fase 7 (migrasi 13)
+const E = '00000000-0000-4000-8000-00000000000e';
+await sys(`insert into auth.users (id, email) values ('${E}', 'e@example.com')`);
+let dCard1, dCard2, dSave;
+
+await test('payday: 1-28 diterima, 29 ditolak', async () => {
+  await as(E, `update public.profiles set payday = 25`);
+  eq(await as(E, 'select payday from public.profiles'), [{ payday: 25 }]);
+  await rejects(as(E, `update public.profiles set payday = 29`), /payday_check/);
+});
+
+await test('anggaran per periode: satu baris per periode, limit kategori divalidasi, RLS', async () => {
+  await as(E, `insert into public.budgets (period_start, total, category_limits) values ('2026-10-25', 5000000, '{"food": 1500000, "transport": 500000}')`);
+  await rejects(as(E, `insert into public.budgets (period_start, total) values ('2026-10-25', 1)`), /duplicate key/);
+  await rejects(as(E, `insert into public.budgets (period_start, total, category_limits) values ('2026-09-25', 1, '{"food": -5}')`), /budget_limit_invalid/);
+  await rejects(as(E, `insert into public.budgets (period_start, total, category_limits) values ('2026-09-25', 1, '{"food": 1.5}')`), /budget_limit_invalid/);
+  await as(E, `update public.budgets set total = 6000000 where period_start = '2026-10-25'`);
+  eq(await as(E, `select total::int as total, category_limits->>'food' as food from public.budgets`), [{ total: 6000000, food: '1500000' }]);
+  eq(await as(B, 'select count(*)::int as n from public.budgets'), [{ n: 0 }], 'pengguna lain');
+});
+
+await test('kartu kredit + paylater: limit tersimpan; tabungan tidak bisa punya limit/grup/iuran', async () => {
+  [{ id: dCard1 }] = await as(E, `insert into public.accounts (bank, name, type, currency, credit_limit) values ('bca', 'BCA Visa', 'kartu_kredit', 'IDR', 10000000) returning id`);
+  [{ id: dCard2 }] = await as(E, `insert into public.accounts (bank, name, type, currency, credit_limit) values ('kredivo', 'Kredivo', 'paylater', 'IDR', 5000000) returning id`);
+  [{ id: dSave }] = await as(E, `insert into public.accounts (bank, name, type, currency, credit_limit, annual_fee, annual_fee_month, annual_fee_day) values ('bca', 'BCA', 'tabungan', 'IDR', 999, 100, 1, 1) returning id`);
+  eq(await as(E, 'select credit_limit::int as l, annual_fee from public.accounts where id = $1', [dSave]), [{ l: null, annual_fee: null }]);
+  eq(await as(E, 'select type, credit_limit::int as l from public.accounts where id = $1', [dCard2]), [{ type: 'paylater', l: 5000000 }]);
+});
+
+await test('grup limit: kartu ditautkan ke grup sendiri; grup orang lain ditolak; hapus grup melepas kartu', async () => {
+  const [{ id: g }] = await as(E, `insert into public.limit_groups (name, currency, shared_limit) values ('BCA gabungan', 'IDR', 12000000) returning id`);
+  await as(E, `update public.accounts set limit_group_id = $1 where id in ($2, $3)`, [g, dCard1, dCard2]);
+  eq(await as(E, 'select count(*)::int as n from public.accounts where limit_group_id = $1', [g]), [{ n: 2 }]);
+  const [{ id: other }] = await as(B, `insert into public.limit_groups (name, currency, shared_limit) values ('Milik B', 'IDR', 1) returning id`);
+  await rejects(as(E, `update public.accounts set limit_group_id = $1 where id = $2`, [other, dCard1]), /limit_group_not_owned|row-level/);
+  await as(E, `delete from public.limit_groups where id = $1`, [g]);
+  eq(await as(E, 'select count(*)::int as n from public.accounts where limit_group_id is not null'), [{ n: 0 }]);
+});
+
+await test('iuran tahunan: nominal + tanggal tagih + riwayat bayar tersimpan; bentuk setengah ditolak', async () => {
+  await as(E, `update public.accounts set annual_fee = 300000, annual_fee_month = 3, annual_fee_day = 15, fee_waiver_threshold = 20000000, annual_fee_paid = '{2026-03-15}' where id = $1`, [dCard1]);
+  eq(await as(E, `select annual_fee::int as fee, annual_fee_month as m, annual_fee_day as d, annual_fee_paid::text as paid from public.accounts where id = $1`, [dCard1]),
+    [{ fee: 300000, m: 3, d: 15, paid: '{2026-03-15}' }]);
+  await rejects(as(E, `update public.accounts set annual_fee_month = null where id = $1`, [dCard1]), /accounts_annual_fee_shape/);
+  await as(E, `update public.accounts set annual_fee = 1, annual_fee_month = 1, annual_fee_day = 1 where id = $1`, [dCard2]);
+  eq(await as(E, 'select annual_fee from public.accounts where id = $1', [dCard2]), [{ annual_fee: null }], 'paylater tanpa iuran');
+});
+
+await test('kurs saya: satu per kode, milik sendiri, kode = basis ditolak', async () => {
+  await as(E, `insert into public.user_rates (code, base, rate) values ('SAR', 'IDR', 4350)`);
+  await as(E, `update public.user_rates set rate = 4400 where code = 'SAR'`);
+  eq(await as(E, `select code, base, rate::float as rate from public.user_rates`), [{ code: 'SAR', base: 'IDR', rate: 4400 }]);
+  await rejects(as(E, `insert into public.user_rates (code, base, rate) values ('IDR', 'IDR', 1)`), /check/);
+  eq(await as(B, 'select count(*)::int as n from public.user_rates'), [{ n: 0 }]);
+});
+
+await test('reimbursement: pending -> reimbursed lewat tautan pemasukan; hapus pengganti = pending lagi', async () => {
+  const [{ id: e }] = await as(E, `insert into public.transactions (type, merchant, category_key, account_id, date, amount, currency, reimburse_status) values ('expense', 'Makan bareng', 'food', $1, '2026-11-05', 300000, 'IDR', 'pending') returning id`, [dCard1]);
+  eq(await as(E, 'select reimburse_status from public.transactions where id = $1', [e]), [{ reimburse_status: 'pending' }]);
+  const [{ id: inc }] = await as(E, `insert into public.transactions (type, merchant, category_key, account_id, date, amount, currency) values ('income', 'Ani transfer', 'other', $1, '2026-11-06', 300000, 'IDR') returning id`, [dSave]);
+  await as(E, `update public.transactions set reimbursed_by = $1 where id = $2`, [inc, e]);
+  eq(await as(E, 'select reimburse_status from public.transactions where id = $1', [e]), [{ reimburse_status: 'reimbursed' }]);
+  await rejects(as(E, `update public.transactions set type = 'expense' where id = $1`, [inc]), /reimbursement_linked/);
+  await rejects(as(E, `update public.transactions set reimbursed_by = $1 where id = $1`, [e]), /reimbursement_link_invalid/);
+  await as(E, `delete from public.transactions where id = $1`, [inc]);
+  eq(await as(E, 'select reimburse_status, reimbursed_by from public.transactions where id = $1', [e]), [{ reimburse_status: 'pending', reimbursed_by: null }]);
+  const [{ id: bInc }] = await as(B, `select id from public.transactions where user_id = $1 and type = 'income' limit 1`, [B]).then((r) => (r.length ? r : [{ id: e }]));
+  if (bInc !== e) await rejects(as(E, `update public.transactions set reimbursed_by = $1 where id = $2`, [bInc, e]), /reimbursement_link_invalid/);
+  const [{ id: i2 }] = await as(E, `insert into public.transactions (type, merchant, category_key, account_id, date, amount, currency, reimburse_status) values ('income', 'Bonus', 'salary', $1, '2026-11-06', 1, 'IDR', 'pending') returning id`, [dSave]);
+  eq(await as(E, 'select reimburse_status from public.transactions where id = $1', [i2]), [{ reimburse_status: null }], 'hanya pengeluaran');
+});
+
 await test('hapus pengguna: semua data ikut terhapus (cascade)', async () => {
   await sys(`delete from auth.users where id = $1`, [A]);
+  await sys(`delete from auth.users where id = $1`, [E]);
+  for (const id of [A, E]) for (const t of ['budgets', 'limit_groups', 'user_rates']) eq((await sys(`select count(*)::int as n from public.${t} where user_id = $1`, [id]))[0].n, 0, t);
   for (const t of ['profiles', 'accounts', 'transactions', 'transaction_items', 'notifications', 'usage_counters', 'orders', 'smartlog_links', 'smartlog_items', 'invoices', 'invoice_counters']) {
     const col = t === 'profiles' ? 'id' : 'user_id';
     eq((await sys(`select count(*)::int as n from public.${t} where ${col} = $1`, [A]))[0].n, 0, t);

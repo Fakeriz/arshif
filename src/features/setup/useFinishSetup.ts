@@ -4,7 +4,7 @@ import { insertAccount, updateProfile } from '@/data/remote/api';
 import type { Account } from '@/data/types';
 import { useStore } from '@/state/AppStore';
 
-import { parsePayday, type SetupDraft } from './draft';
+import { accountFromDraft, parsePayday, type SetupDraft } from './draft';
 
 /**
  * Simpan hasil setup (FR-AUTH-2): akun pertama, lalu profil (mata uang, penghasilan, gajian, pembagian,
@@ -24,13 +24,7 @@ export function useFinishSetup() {
     try {
       let account = created;
       if (!account) {
-        account = await insertAccount({
-          bank: d.account.bank,
-          name: d.account.name.trim(),
-          type: d.account.type,
-          currency: d.account.currency,
-          openingBalance: d.account.opening ?? 0,
-        });
+        account = await insertAccount(accountFromDraft(d.account));
         setCreated(account);
         dispatch({ type: 'account/add', account });
       }

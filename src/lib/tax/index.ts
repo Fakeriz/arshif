@@ -1,5 +1,6 @@
 import type { Transaction } from '@/data/types';
-import { convert, hasRate } from '@/lib/fx';
+import { convert, hasRate, tryConvert } from '@/lib/fx';
+import { isReimbursable, reimbursementIncomeIds } from '@/lib/transactions';
 
 import { TAX_CURRENCY, type TaxCountry } from './common';
 import { annualId, type PtkpStatus } from './id';
@@ -41,13 +42,18 @@ export function annualReport(transactions: Transaction[], year: number, country:
   let income = 0;
   let expense = 0;
   let skipped = 0;
+  // Reimbursement dan pemasukan penggantinya tidak dihitung (FR-TRX-4).
+  const repayments = reimbursementIncomeIds(transactions);
   for (const t of transactions) {
-    if (t.type === 'transfer' || !t.date.startsWith(prefix)) continue;
-    if (t.currency !== currency && (!hasRate(t.currency, table) || !hasRate(currency, table))) {
+    if (t.type === 'transfer' || !t.date.startsWith(prefix) || isReimbursable(t) || repayments.has(t.id)) continue;
+    // Tanpa tabel: kurs pada tanggal transaksi (FR-FX-4).
+    const v = table
+      ? t.currency === currency || (hasRate(t.currency, table) && hasRate(currency, table)) ? convert(t.amount, t.currency, currency, table) : null
+      : tryConvert(t.amount, t.currency, currency, t.date);
+    if (v === null) {
       skipped++;
       continue;
     }
-    const v = convert(t.amount, t.currency, currency, table);
     const m = Number(t.date.slice(5, 7)) - 1;
     if (t.type === 'income') {
       income += v;

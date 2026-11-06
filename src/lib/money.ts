@@ -35,6 +35,13 @@ export const CURRENCIES: Record<string, CurrencyMeta> = {
   SAR: meta('SAR', 'SAR', 2, '.', ',', true, 'Riyal Saudi'),
   JPY: meta('JPY', '¥', 0, '.', ',', false, 'Yen Jepang'),
   AUD: meta('AUD', 'A$', 2, '.', ',', false, 'Dolar Australia'),
+  // Tanpa kurs harian ECB (AED, BND, VND, SAR): dipakai lewat "Kurs saya" (FR-FX-4).
+  AED: meta('AED', 'AED', 2, '.', ',', true, 'Dirham Uni Emirat Arab'),
+  BND: meta('BND', 'B$', 2, '.', ',', false, 'Dolar Brunei'),
+  THB: meta('THB', '฿', 2, '.', ',', false, 'Baht Thailand'),
+  CNY: meta('CNY', 'CN¥', 2, '.', ',', false, 'Yuan Tiongkok'),
+  KRW: meta('KRW', '₩', 0, '.', ',', false, 'Won Korea Selatan'),
+  VND: meta('VND', '₫', 0, ',', '.', true, 'Dong Vietnam'),
 };
 
 /** IDR/MYR/TRY/USD dipin di atas pemilih mata uang (FR-FX-1). */

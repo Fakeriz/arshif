@@ -1,4 +1,5 @@
-import type { Account, AppNotification, Plan, Transaction } from '@/data/types';
+import type { Account, AppNotification, BudgetRecord, LimitGroup, Plan, Transaction } from '@/data/types';
+import type { RateRow, UserRate } from '@/lib/fx';
 import type { Lang } from '@/i18n/types';
 import type { Split } from '@/lib/budget';
 import { EMPTY_USAGE, isQuotaKey, type Usage } from '@/lib/quota';
@@ -6,7 +7,10 @@ import { supabase } from '@/lib/supabase';
 import type { AccentKey } from '@/theme/tokens';
 import type { ThemeMode } from '@/theme/ThemeProvider';
 
-import { fromTransaction, toAccount, toNotification, toTransaction, type AccountRow, type NotificationRow, type TransactionRow } from './mappers';
+import {
+  creditColumns, fromTransaction, toAccount, toBudget, toLimitGroup, toNotification, toTransaction,
+  type AccountRow, type BudgetRow, type LimitGroupRow, type NotificationRow, type TransactionRow,
+} from './mappers';
 
 /** Gagal dari Supabase dijadikan Error biasa dengan kode PostgREST/Postgres bila ada. */
 export class RemoteError extends Error {
@@ -139,13 +143,95 @@ export async function ratesOn(date: string | null): Promise<{ table: Record<stri
   return { table, date: rows[0]?.rate_date ?? null };
 }
 
+/**
+ * Riwayat kurs harian untuk kode yang dipakai pengguna sejak `since` (FR-FX-4: transaksi lama tetap memakai
+ * kurs harinya). Diambil per 1000 baris.
+ */
+export async function loadRateHistory(codes: string[], since: string): Promise<RateRow[]> {
+  const list = codes.filter((c) => c !== 'USD');
+  if (list.length === 0) return [];
+  const out: RateRow[] = [];
+  for (let from = 0; ; from += PAGE) {
+    const rows = must(
+      await supabase
+        .from('fx_rates')
+        .select('rate_date, code, per_usd')
+        .in('code', list)
+        .gte('rate_date', since)
+        .order('rate_date')
+        .order('code')
+        .range(from, from + PAGE - 1)
+        .returns<{ rate_date: string; code: string; per_usd: string | number }[]>(),
+    );
+    out.push(...rows.map((r) => ({ date: r.rate_date, code: r.code, perUsd: String(r.per_usd) })));
+    if (rows.length < PAGE) return out;
+  }
+}
+
+// ------------------------------------------------------------------ Fase 7: anggaran, grup limit, kurs saya
+
+export async function loadBudgets(): Promise<BudgetRecord[]> {
+  const rows = must(await supabase.from('budgets').select('id, period_start, total, category_limits').order('period_start', { ascending: false }).limit(24).returns<BudgetRow[]>());
+  return rows.map(toBudget);
+}
+
+/**
+ * Simpan anggaran satu periode. Update dulu lalu insert: upsert PostgREST ikut menulis id/period_start, padahal
+ * hak update hanya untuk total dan category_limits.
+ */
+export async function saveBudget(b: BudgetRecord): Promise<void> {
+  const updated = check(
+    await supabase.from('budgets').update({ total: b.total, category_limits: b.categoryLimits }).eq('period_start', b.periodStart).select('id'),
+  ) as { id: string }[] | null;
+  if (updated?.length) return;
+  check(await supabase.from('budgets').insert({ id: b.id, period_start: b.periodStart, total: b.total, category_limits: b.categoryLimits }));
+}
+
+export async function loadLimitGroups(): Promise<LimitGroup[]> {
+  const rows = must(await supabase.from('limit_groups').select('id, name, currency, shared_limit').order('created_at').returns<LimitGroupRow[]>());
+  return rows.map(toLimitGroup);
+}
+
+export async function insertLimitGroup(g: LimitGroup): Promise<void> {
+  check(await supabase.from('limit_groups').insert({ id: g.id, name: g.name, currency: g.currency, shared_limit: g.sharedLimit }));
+}
+
+export async function updateLimitGroup(g: LimitGroup): Promise<void> {
+  check(await supabase.from('limit_groups').update({ name: g.name, currency: g.currency, shared_limit: g.sharedLimit }).eq('id', g.id));
+}
+
+export async function deleteLimitGroup(id: string): Promise<void> {
+  check(await supabase.from('limit_groups').delete().eq('id', id));
+}
+
+/** Limit, grup, dan iuran tahunan kartu. */
+export async function updateAccountCredit(id: string, a: Pick<Account, 'creditLimit' | 'limitGroupId' | 'annualFee'>): Promise<void> {
+  check(await supabase.from('accounts').update(creditColumns(a)).eq('id', id));
+}
+
+export async function loadUserRates(): Promise<UserRate[]> {
+  const rows = must(await supabase.from('user_rates').select('code, base, rate').returns<{ code: string; base: string; rate: string | number }[]>());
+  return rows.map((r) => ({ code: r.code, base: r.base, rate: String(r.rate) }));
+}
+
+/** Update dulu lalu insert (kode tidak punya hak update). */
+export async function saveUserRate(r: UserRate): Promise<void> {
+  const updated = check(await supabase.from('user_rates').update({ base: r.base, rate: r.rate }).eq('code', r.code).select('code')) as { code: string }[] | null;
+  if (updated?.length) return;
+  check(await supabase.from('user_rates').insert({ code: r.code, base: r.base, rate: r.rate }));
+}
+
+export async function deleteUserRate(code: string): Promise<void> {
+  check(await supabase.from('user_rates').delete().eq('code', code));
+}
+
 // ------------------------------------------------------------------ mutasi
 
 export async function insertAccount(a: Omit<Account, 'id'>): Promise<Account> {
   const row = must(
     await supabase
       .from('accounts')
-      .insert({ bank: a.bank, name: a.name, type: a.type, currency: a.currency, opening_balance: a.openingBalance, last4: a.last4 ?? null })
+      .insert({ bank: a.bank, name: a.name, type: a.type, currency: a.currency, opening_balance: a.openingBalance, last4: a.last4 ?? null, ...creditColumns(a) })
       .select('*')
       .single<AccountRow>(),
   );
@@ -181,6 +267,11 @@ export async function updateTransaction(t: Transaction): Promise<void> {
   const { id, source: _s, receipt_path: _r, ...patch } = fromTransaction(t);
   check(await supabase.from('transactions').update(patch).eq('id', id));
   await replaceItems([t]);
+}
+
+/** Status reimbursement + tautan pemasukan pengganti. Server menormalkan status dari tautan. */
+export async function setReimbursement(id: string, status: 'pending' | 'reimbursed' | null, reimbursedBy: string | null): Promise<void> {
+  check(await supabase.from('transactions').update({ reimburse_status: status, reimbursed_by: reimbursedBy }).eq('id', id));
 }
 
 export async function deleteTransaction(id: string): Promise<void> {

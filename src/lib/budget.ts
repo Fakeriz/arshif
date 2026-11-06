@@ -1,8 +1,9 @@
 import { getCategory, type Bucket } from '@/constants/categories';
-import type { Transaction } from '@/data/types';
+import type { BudgetRecord, Transaction } from '@/data/types';
 
 import { addDays, daysInMonth, diffDays, parseYMD, ymd } from './dates';
-import { amountIn, txInRange } from './transactions';
+import { currencyMeta } from './money';
+import { amountIn, countsAsSpending, txInRange } from './transactions';
 
 export type Split = Record<Bucket, number>;
 export const DEFAULT_SPLIT: Split = { needs: 50, wants: 30, savings: 20 };
@@ -24,11 +25,18 @@ export function bucketLimits(income: number, split: Split): Record<Bucket, numbe
 
 export type BudgetPeriod = { start: string; end: string; totalDays: number; elapsedDays: number; daysLeft: number };
 
+/** Tanggal gajian yang bisa dipilih: 1-28 (ada di setiap bulan). */
+export const PAYDAY_MIN = 1;
+export const PAYDAY_MAX = 28;
+
 function paydayIn(y: number, m: number, payday: number): string {
   return ymd(y, m, Math.min(payday, daysInMonth(y, m)));
 }
 
-/** Bulan budget mengikuti tanggal gajian (FR-BDG-6). Hari ini ikut dihitung sebagai hari berjalan. */
+/**
+ * Bulan budget mengikuti tanggal gajian (FR-BDG-6): periode = tanggal gajian sampai sehari sebelum gajian
+ * berikutnya (gajian 25: 25 Okt - 24 Nov). Gajian 1 = bulan kalender. Hari ini ikut dihitung sebagai hari berjalan.
+ */
 export function budgetPeriod(today: string, payday: number): BudgetPeriod {
   const { y, m } = parseYMD(today);
   const thisMonth = paydayIn(y, m, payday);
@@ -45,12 +53,21 @@ export function budgetPeriod(today: string, payday: number): BudgetPeriod {
 /** Label: `domain.pace.<pace>`. */
 export type Pace = 'sesuai' | 'agak_cepat' | 'terlalu_cepat';
 
-/** Laju belanja = porsi anggaran terpakai dibanding porsi waktu berjalan. <=1,1 sesuai; <=1,3 agak cepat. */
+/** Ambang laju (FR-BDG-5). Dicatat juga di docs/fase7-enhancements.md. */
+export const PACE_ON_TRACK_MAX = 1;
+export const PACE_FAST_MAX = 1.2;
+
+/** Rasio laju = (terpakai / anggaran) / (hari berjalan / total hari periode). null bila anggaran 0. */
+export function paceRatio(spent: number, limit: number, elapsedDays: number, totalDays: number): number | null {
+  if (limit <= 0 || totalDays <= 0 || elapsedDays <= 0) return null;
+  return spent / limit / (elapsedDays / totalDays);
+}
+
+/** Rasio <= 1 Sesuai laju; 1 < rasio <= 1,2 Agak cepat; > 1,2 Terlalu cepat. */
 export function pace(spent: number, limit: number, elapsedDays: number, totalDays: number): Pace {
-  if (limit <= 0 || totalDays <= 0) return 'sesuai';
-  const ratio = spent / limit / (elapsedDays / totalDays);
-  if (ratio <= 1.1) return 'sesuai';
-  if (ratio <= 1.3) return 'agak_cepat';
+  const ratio = paceRatio(spent, limit, elapsedDays, totalDays);
+  if (ratio === null || ratio <= PACE_ON_TRACK_MAX) return 'sesuai';
+  if (ratio <= PACE_FAST_MAX) return 'agak_cepat';
   return 'terlalu_cepat';
 }
 
@@ -65,7 +82,8 @@ export type CategorySpend = { categoryKey: string; spent: number };
 export function spendByCategory(txs: Transaction[], period: BudgetPeriod, main: string): CategorySpend[] {
   const map = new Map<string, number>();
   for (const tx of txInRange(txs, period.start, period.end)) {
-    if (tx.type !== 'expense') continue;
+    // Reimbursement bukan belanja pengguna (FR-TRX-4).
+    if (!countsAsSpending(tx)) continue;
     map.set(tx.categoryKey, (map.get(tx.categoryKey) ?? 0) + amountIn(tx, main));
   }
   return [...map.entries()].map(([categoryKey, spent]) => ({ categoryKey, spent }));
@@ -78,4 +96,52 @@ export function spendByBucket(byCategory: CategorySpend[]): Record<Bucket, numbe
     if (bucket) out[bucket] += c.spent;
   }
   return out;
+}
+
+// ---------------------------------------------------------------- anggaran per periode (FR-BDG-5)
+
+/** Anggaran periode berjalan: baris tersimpan untuk periode ini, atau null (pakai penghasilan profil). */
+export function budgetFor(records: BudgetRecord[], periodStart: string): BudgetRecord | null {
+  return records.find((r) => r.periodStart === periodStart) ?? null;
+}
+
+/** Anggaran periode sebelum `periodStart`, terbaru dulu. */
+export function previousBudgets(records: BudgetRecord[], periodStart: string, n: number): BudgetRecord[] {
+  return records
+    .filter((r) => r.periodStart < periodStart)
+    .sort((a, b) => b.periodStart.localeCompare(a.periodStart))
+    .slice(0, n);
+}
+
+export type BudgetDraft = { total: number; categoryLimits: Record<string, number> };
+
+/** Salin anggaran periode lalu (total + per kategori) apa adanya. */
+export function copyBudget(prev: BudgetRecord): BudgetDraft {
+  return { total: prev.total, categoryLimits: { ...prev.categoryLimits } };
+}
+
+/** Pembulatan saran: Rp ke ribuan terdekat, mata uang berdesimal ke satuan utuh terdekat. */
+export function roundSuggestion(minor: number, currency: string): number {
+  const step = currencyMeta(currency).exponent === 0 ? 1000 : 100;
+  return Math.round(minor / step) * step;
+}
+
+/**
+ * Saran rata-rata 3 bulan: rata-rata anggaran (bukan belanja) dari hingga 3 periode terakhir yang tersimpan.
+ * Kategori dirata-rata dari periode yang memberi batas pada kategori itu. null bila belum ada periode lalu.
+ */
+export function averageBudget(previous: BudgetRecord[], currency: string): BudgetDraft | null {
+  const list = previous.slice(0, 3);
+  if (list.length === 0) return null;
+  const total = roundSuggestion(list.reduce((s, r) => s + r.total, 0) / list.length, currency);
+  const sums = new Map<string, { sum: number; n: number }>();
+  for (const r of list) {
+    for (const [k, v] of Object.entries(r.categoryLimits)) {
+      const cur = sums.get(k) ?? { sum: 0, n: 0 };
+      sums.set(k, { sum: cur.sum + v, n: cur.n + 1 });
+    }
+  }
+  const categoryLimits: Record<string, number> = {};
+  for (const [k, { sum, n }] of sums) categoryLimits[k] = roundSuggestion(sum / n, currency);
+  return { total, categoryLimits };
 }

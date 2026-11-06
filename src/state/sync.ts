@@ -1,8 +1,8 @@
 import * as api from '@/data/remote/api';
 import type { Transaction } from '@/data/types';
-import { convert } from '@/lib/fx';
+import { convert, withUserRates } from '@/lib/fx';
 
-import type { Action, AppState } from './reducer';
+import { keepReimbursement, type Action, type AppState } from './reducer';
 
 /**
  * Nominal di mata uang akun memakai kurs PADA TANGGAL transaksi (FR-FX-4: belanja memakai kurs harinya).
@@ -14,7 +14,9 @@ async function withRatesOfDay(tx: Transaction, state: AppState): Promise<Transac
   const needFrom = acc && acc.currency !== tx.currency;
   const needTo = to && to.currency !== tx.currency;
   if (!needFrom && !needTo) return { ...tx, accountAmount: undefined, toAmount: tx.type === 'transfer' ? undefined : tx.toAmount };
-  const { table } = await api.ratesOn(tx.date);
+  // Kurs harian server pada tanggal itu, dilengkapi "Kurs saya" untuk kode tanpa kurs harian.
+  const { table: daily } = await api.ratesOn(tx.date);
+  const table = withUserRates(daily, tx.date);
   const rated = (code: string) => code in table;
   return {
     ...tx,
@@ -37,7 +39,7 @@ export async function syncAction(action: Action, state: AppState, userId: string
       return rated;
     }
     case 'tx/update': {
-      const rated = await withRatesOfDay(action.tx, state);
+      const rated = await withRatesOfDay(keepReimbursement(action.tx, state.transactions.find((t) => t.id === action.tx.id)), state);
       await api.updateTransaction(rated);
       return [rated];
     }
@@ -67,6 +69,37 @@ export async function syncAction(action: Action, state: AppState, userId: string
       return [];
     case 'account/setActive':
       await api.updateProfile(userId, { active_account_id: action.id });
+      return [];
+    case 'account/credit':
+      await api.updateAccountCredit(action.id, action.patch);
+      return [];
+    case 'prefs/payday':
+      await api.updateProfile(userId, { payday: action.payday });
+      return [];
+    case 'budget/save':
+      await api.saveBudget(action.budget);
+      return [];
+    case 'limitGroup/add':
+    case 'limitGroup/update': {
+      await (action.type === 'limitGroup/add' ? api.insertLimitGroup(action.group) : api.updateLimitGroup(action.group));
+      // Kartu yang berubah keanggotaannya saja yang ditulis.
+      const members = new Set(action.members);
+      const changed = state.accounts.filter((a) => members.has(a.id) !== (a.limitGroupId === action.group.id));
+      await Promise.all(changed.map((a) => api.updateAccountCredit(a.id, { ...a, limitGroupId: members.has(a.id) ? action.group.id : undefined })));
+      return [];
+    }
+    case 'limitGroup/delete':
+      // Kartu anggota dilepas oleh FK on delete set null.
+      await api.deleteLimitGroup(action.id);
+      return [];
+    case 'tx/reimburse':
+      await api.setReimbursement(action.id, action.reimbursedBy ? 'reimbursed' : action.status, action.reimbursedBy);
+      return [];
+    case 'userRate/save':
+      await api.saveUserRate(action.rate);
+      return [];
+    case 'userRate/delete':
+      await api.deleteUserRate(action.code);
       return [];
     default:
       return []; // aksi lokal saja (load/*, usage/set, plan/set, notif/add, account/add, profile/set)

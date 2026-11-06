@@ -1,6 +1,6 @@
 import type { Account, Transaction, TxType } from '@/data/types';
 
-import { convert } from './fx';
+import { tryConvert } from './fx';
 
 /** Efek transaksi pada saldo satu akun (minor units, dalam mata uang akun). */
 export function effectOn(tx: Transaction, accountId: string): number {
@@ -17,14 +17,40 @@ export function accountBalance(account: Account, txs: Transaction[]): number {
   return txs.reduce((sum, tx) => sum + effectOn(tx, account.id), account.openingBalance);
 }
 
-/** Total kekayaan bersih dalam mata uang utama (kartu kredit bersaldo negatif = utang). */
+/**
+ * Total kekayaan bersih dalam mata uang utama (kartu kredit bersaldo negatif = utang). Saldo memakai kurs
+ * hari ini (FR-FX-4). Akun tanpa kurs tidak dihitung; layar menampilkan permintaan isi kurs (MissingRates).
+ */
 export function netWorth(accounts: Account[], txs: Transaction[], main: string): number {
-  return accounts.reduce((sum, a) => sum + convert(accountBalance(a, txs), a.currency, main), 0);
+  return accounts.reduce((sum, a) => sum + (tryConvert(accountBalance(a, txs), a.currency, main) ?? 0), 0);
 }
 
-/** Nominal transaksi dalam mata uang utama, memakai kurs hari ini (Fase 1). */
+/**
+ * Nominal transaksi dalam mata uang utama memakai kurs PADA TANGGAL transaksi (FR-FX-4: belanja terkunci
+ * pada kurs harinya). Kurs hilang = 0 (dikecualikan dari agregat, layar meminta kurs).
+ */
 export function amountIn(tx: Transaction, main: string): number {
-  return convert(tx.amount, tx.currency, main);
+  return tryConvert(tx.amount, tx.currency, main, tx.date) ?? 0;
+}
+
+/**
+ * Reimbursement (FR-TRX-4): pengeluaran yang ditandai diganti teman bukan belanja pengguna, dan pemasukan
+ * penggantinya bukan pemasukan. Saldo akun tetap mengikuti uang yang benar-benar keluar/masuk.
+ */
+export function isReimbursable(tx: Transaction): boolean {
+  return tx.type === 'expense' && !!tx.reimburseStatus;
+}
+
+/** id pemasukan yang menjadi pengganti reimbursement. */
+export function reimbursementIncomeIds(txs: Transaction[]): Set<string> {
+  const out = new Set<string>();
+  for (const t of txs) if (t.type === 'expense' && t.reimbursedBy) out.add(t.reimbursedBy);
+  return out;
+}
+
+/** Pengeluaran yang dihitung sebagai belanja (budget, recap, total). */
+export function countsAsSpending(tx: Transaction): boolean {
+  return tx.type === 'expense' && !tx.reimburseStatus;
 }
 
 export type TxFilter = {
@@ -69,12 +95,13 @@ export function groupByDay(txs: Transaction[]): DayGroup[] {
   return groups;
 }
 
-export function totals(txs: Transaction[], main: string): { income: number; expense: number } {
+/** `repaymentIds`: pemasukan pengganti reimbursement (dari SEMUA transaksi, bukan hanya yang difilter). */
+export function totals(txs: Transaction[], main: string, repaymentIds: Set<string> = reimbursementIncomeIds(txs)): { income: number; expense: number } {
   let income = 0;
   let expense = 0;
   for (const tx of txs) {
-    if (tx.type === 'income') income += amountIn(tx, main);
-    if (tx.type === 'expense') expense += amountIn(tx, main);
+    if (tx.type === 'income' && !repaymentIds.has(tx.id)) income += amountIn(tx, main);
+    if (countsAsSpending(tx)) expense += amountIn(tx, main);
   }
   return { income, expense };
 }

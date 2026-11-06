@@ -146,6 +146,13 @@ const capture: Messages['capture'] = {
     failed: 'Fiş fotoğrafı yüklenemedi. Daha sonra tekrar dene.',
     a11y: '{merchant} fiş fotoğrafı',
   },
+  docScan: {
+    button: 'Belge tara',
+    unavailableTitle: 'Belge tarama henüz kullanılamıyor',
+    needNewBuild: 'Belge tarama Android’de uygulamanın en yeni sürümünü gerektirir. Şimdilik fişin fotoğrafını çek.',
+    needServices: 'Belge tarayıcı etkin Google Play hizmetleri gerektirir. Şimdilik fişin fotoğrafını çek.',
+    useCamera: 'Kamerayı kullan',
+  },
 };
 
 export default capture;
