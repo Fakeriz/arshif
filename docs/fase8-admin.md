@@ -1,7 +1,8 @@
 # Fase 8: admin web (PRD FR-ADM-1..4)
 
-Status: backend **live 2026-11-06** (migrasi 14, semua Edge Functions, `admin-grant` dihapus, secret `APP_URL`,
-hafizhxcv@gmail.com di `admin_users`). **Web Vercel belum**: menunggu pengaturan dashboard + push ke `main`.
+Status: **live 2026-11-06**. Backend: migrasi 14, semua Edge Functions, `admin-grant` dihapus, secret `APP_URL`,
+hafizhxcv@gmail.com di `admin_users`. Web: Vercel arshifstudio (https://arshifstudio.vercel.app) membangun ulang
+otomatis dari `main`; deploy pertama dari commit `d07d496`.
 
 ## Host: Vercel, proyek arshifstudio
 
@@ -12,7 +13,7 @@ Diputuskan Ahmad 2026-11-06. Admin web, `/harga`, dan checkout web tinggal di Ve
 - `vercel.json` di repo hanya berisi rewrite SPA (`/(.*)` -> `/index.html`). Ekspor web Expo `output: single` hanya
   menghasilkan `index.html`, jadi tanpa rewrite `/admin` dan `/harga` menjawab 404 di Vercel. File statis tetap
   dilayani lebih dulu.
-- Pengaturan proyek di dashboard Vercel (langkah pemilik; sesi ini tidak punya token Vercel):
+- Pengaturan proyek di dashboard Vercel (diatur pemilik 2026-11-06):
 
   | Pengaturan | Nilai |
   |---|---|
@@ -29,7 +30,7 @@ Diputuskan Ahmad 2026-11-06. Admin web, `/harga`, dan checkout web tinggal di Ve
 ## Urutan deploy
 
 1. Selesai: `./scripts/deploy-supabase.sh` (migrasi 14 + semua function), `npx supabase functions delete admin-grant`.
-2. Belum: pengaturan dashboard Vercel di atas, lalu push ke `main` -> Vercel build.
+2. Selesai: pengaturan dashboard Vercel di atas, push ke `main` -> Vercel build (sekitar 3 menit).
 
 Migrasi harus lebih dulu dari web. Web yang lebih baru tetap aman di atas skema lama (layar ditangguhkan memakai
 cek truthy, panggilan `touch_last_seen` gagal diam-diam), tapi panel admin baru butuh RPC migrasi 14.
@@ -80,4 +81,8 @@ dari RevenueCat belum terhubung (kunci kosong), panel menyebutkannya, tidak mene
 Hasil LIVE 2026-11-06: e2e admin 10/10 + Premium web USD lolos tanpa error konsol tak terduga; regresi e2e lain
 35/35 (langkah Gemini LIVE dilewati). Visual: 6 bagian x 390/1280 px x gelap/terang, tanpa overflow horizontal.
 Keyboard: Tab mengikuti urutan visual, Enter pindah bagian, Escape menutup dialog.
+
+Hasil di URL Vercel 2026-11-06: `/harga` tampil tanpa login; `/admin` tanpa login mengajak masuk lalu ke `/masuk`;
+admin melihat dasbor dengan angka nyata; non-admin ditolak; checkout IDR berhenti di pesan "belum aktif" (503
+`not_configured` yang diharapkan selama kunci pembayaran kosong).
 

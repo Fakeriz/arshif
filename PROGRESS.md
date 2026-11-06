@@ -244,12 +244,12 @@ Detail, rumus, dan langkah build/OTA: `docs/fase7-enhancements.md`.
 - Ambang laju berubah ke 1 / 1,2. Tab Tagihan: Daftar / Kalender. Coach Recap: Minggu ini / Minggu lalu.
 
 
-## Fase 8: Admin web (backend live 2026-11-06, web Vercel belum)
+## Fase 8: Admin web (live 2026-11-06: backend Supabase + web Vercel)
 
 Detail, pengaturan Vercel, dan urutan deploy: `docs/fase8-admin.md`.
 
-- **Host**: Vercel arshifstudio. `vercel.json` = rewrite SPA saja; preset/build/output diatur di dashboard Vercel
-  (langkah pemilik). Secret `APP_URL` sudah diset. hafizhxcv@gmail.com sudah ditandai admin di `admin_users`.
+- **Host**: Vercel arshifstudio (https://arshifstudio.vercel.app), build otomatis dari `main`. `vercel.json` = rewrite
+  SPA saja; preset/build/output diatur di dashboard Vercel. Secret `APP_URL` sudah diset. hafizhxcv@gmail.com sudah ditandai admin di `admin_users`.
 - **Migrasi 14** `20261112000014_admin.sql`: last seen + `user_activity_days` (DAU), `suspended_at`, `fx_sync_runs`,
   RPC dasbor/pengguna/detail/kurs/broadcast (semua `assert_admin`).
 - **Functions**: `admin-user` menggantikan `admin-grant` (grant, cabut, tangguhkan, pulihkan). Grant manual jalan
