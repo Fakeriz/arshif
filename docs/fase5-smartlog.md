@@ -1,7 +1,7 @@
 # Fase 5: Smart Log (notifikasi bank, review-first)
 
-Status: dibangun dan diuji lokal. **Belum di-deploy** (menunggu izin pemilik). Development build Android **belum dibuat**:
-EAS butuh login akun Expo (langkah pemilik, lihat bagian "Development build").
+Status: migrasi 10 **live** (2026-11-06, izin pemilik), `npm run test:live` 11/11 termasuk Smart Log. Migrasi 11
+(cron bersih 60 hari) **belum diterapkan**. Development build Android: EAS dijalankan pemilik.
 
 PRD Bab 4.22, FR-SLOG-1..5. Android saja; iOS (Shortcuts) di luar fase ini.
 
@@ -130,7 +130,10 @@ lewat Metro.
 Belum diuji: perangkat nyata (listener, izin, MIUI autostart, format notifikasi asli tiap bank). Contoh notifikasi
 di tes adalah perkiraan; kumpulkan teks notifikasi asli (tanpa data pribadi) saat uji di HP untuk melengkapi parser.
 
-## Deploy (setelah izin)
+## Deploy
 
-1. Migrasi 10 dan 11 (`scripts/deploy-supabase.sh` menerapkan yang belum ada). Tidak ada Edge Function baru.
-2. Aplikasi baru membutuhkan migrasi 10 (kolom `smartlog_enabled`, tabel, RPC); deploy migrasi dulu.
+1. Migrasi 10: **sudah** (diterapkan sendiri lewat Management API, tanpa menjalankan seluruh `deploy-supabase.sh`
+   yang juga men-deploy functions dan mengubah Auth). Tidak ada Edge Function baru.
+2. Migrasi 11 (cron): menunggu izin. `scripts/deploy-supabase.sh` akan menerapkannya bersama langkah lain.
+3. Tautan kartu ditulis lewat update lalu insert, bukan upsert: hak update `smartlog_links` hanya kolom `account_id`
+   (ditemukan oleh uji live).

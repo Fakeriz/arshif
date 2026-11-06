@@ -130,6 +130,39 @@ await test('struk orang lain tidak bisa dibaca/diunduh', async () => {
   assert(list.length === 0, 'B melihat berkas A');
 });
 
+await test('Smart Log live: auto-apply, duplikat ke To Review, konfirmasi, undo, RLS', async () => {
+  const ingest = async (key, fp, time, pkg = 'com.bca.mybca.omni.android') => must(await A.c.rpc('smartlog_ingest', {
+    p_capture_key: `${key}-${Date.now()}`, p_package: pkg, p_bank: 'bca', p_posted_at: new Date().toISOString(), p_date: '2026-11-06',
+    p_time: time, p_type: 'expense', p_amount: 45000, p_currency: 'IDR', p_merchant: 'KOPI SENJA', p_excerpt: 'Pembayaran QRIS Rp 45.000 di KOPI SENJA',
+    p_fingerprint: `${fp}-${Date.now()}`, p_doubts: [],
+  }));
+  assert((await ingest('off', 'off', '10:00')).status === 'disabled', 'OFF harus disabled');
+  must(await A.c.from('profiles').update({ smartlog_enabled: true }).eq('id', A.userId));
+  // Sama dengan setLink di aplikasi: update dulu, insert bila belum ada.
+  const linked = must(await A.c.from('smartlog_links').update({ account_id: ids['a-bca'] }).eq('package', 'com.bca.mybca.omni.android').select('package'));
+  if (!linked.length) must(await A.c.from('smartlog_links').insert({ package: 'com.bca.mybca.omni.android', account_id: ids['a-bca'] }));
+  const again = must(await A.c.from('smartlog_links').update({ account_id: ids['a-gopay'] }).eq('package', 'com.bca.mybca.omni.android').select('package'));
+  assert(again.length === 1, 'ganti kartu tautan gagal');
+  must(await A.c.from('smartlog_links').update({ account_id: ids['a-bca'] }).eq('package', 'com.bca.mybca.omni.android'));
+  const used0 = await usageOf(A.c, 'automation');
+  const applied = await ingest('a', 'a', '10:00');
+  assert(applied.status === 'applied', JSON.stringify(applied));
+  const tx = must(await A.c.from('transactions').select('source, amount').eq('id', applied.id).single());
+  assert(tx.source === 'smartlog' && Number(tx.amount) === 45000, JSON.stringify(tx));
+  const dup = await ingest('b', 'b', '10:05');
+  assert(dup.status === 'review' && dup.reasons.includes('duplicate'), JSON.stringify(dup));
+  must(await A.c.from('transactions').insert({ id: dup.id, type: 'expense', merchant: 'KOPI SENJA', category_key: 'food', account_id: ids['a-bca'], date: '2026-11-06', time: '10:05', amount: 45000, currency: 'IDR', source: 'smartlog' }));
+  must(await A.c.rpc('smartlog_confirm', { p_item: dup.id }));
+  must(await A.c.rpc('smartlog_undo', { p_item: applied.id }));
+  const gone = must(await A.c.from('transactions').select('id').eq('id', applied.id));
+  assert(gone.length === 0, 'undo tidak menghapus transaksi');
+  assert((await usageOf(A.c, 'automation')) === used0 + 2, 'kuota automation tidak terpotong 2');
+  assert(must(await B.c.from('smartlog_items').select('id')).length === 0, 'B melihat baris A');
+  const forged = await A.c.from('smartlog_items').update({ status: 'confirmed' }).eq('id', applied.id);
+  assert(forged.error, 'klien bisa menulis smartlog_items');
+  return `kuota automation ${used0} → ${used0 + 2}`;
+});
+
 await test('hapus akun: delete-account menghapus pengguna + data (cascade)', async () => {
   const r = await invoke(B.c, 'delete-account', { confirm: 'DELETE' });
   assert(r.status === 200 && r.data.deleted === true, `HTTP ${r.status} ${JSON.stringify(r.data)}`);

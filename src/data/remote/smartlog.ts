@@ -81,8 +81,12 @@ export async function setEnabled(userId: string, enabled: boolean): Promise<void
   fail((await supabase.from('profiles').update({ smartlog_enabled: enabled }).eq('id', userId)).error);
 }
 
+/** Update dulu lalu insert: upsert PostgREST ikut menulis kolom package, padahal hak update hanya untuk account_id. */
 export async function setLink(pkg: string, accountId: string): Promise<void> {
-  fail((await supabase.from('smartlog_links').upsert({ package: pkg, account_id: accountId }, { onConflict: 'user_id,package' })).error);
+  const updated = await supabase.from('smartlog_links').update({ account_id: accountId }).eq('package', pkg).select('package');
+  fail(updated.error);
+  if (updated.data?.length) return;
+  fail((await supabase.from('smartlog_links').insert({ package: pkg, account_id: accountId })).error);
 }
 
 export async function removeLink(pkg: string): Promise<void> {
