@@ -1,4 +1,5 @@
 import { PRICE_KEY_RE, runPriceSync, type PriceProvider } from '../../supabase/functions/_shared/asset-sync';
+import { quoteMatches, tvCandidates } from '../../supabase/functions/_shared/tradingview-symbols';
 
 import type { Asset, AssetPrice } from '@/data/assets';
 import type { Debt } from '@/data/planning';
@@ -153,5 +154,21 @@ describe('runPriceSync', () => {
   it('penyedia mati total: semua gagal, tidak ada baris yang ditimpa', async () => {
     const dead: PriceProvider = { name: 'uji', fetch: async () => { throw new Error('protocol_changed'); } };
     expect(await runPriceSync(['IDX:BBCA'], dead, at)).toEqual({ rows: [], failed: ['IDX:BBCA'], error: 'protocol_changed' });
+  });
+});
+
+describe('simbol TradingView', () => {
+  it('kunci netral -> simbol yang diverifikasi', () => {
+    expect(['IDX:BBCA', 'US:AAPL', 'CRYPTO:BTC', 'GOLD:XAU', 'GOLD:XAG', 'FOO:X'].map(tvCandidates)).toEqual([
+      ['IDX:BBCA'], ['AAPL'], ['BINANCE:BTCUSDT'], ['OANDA:XAUUSD', 'TVC:GOLD'], [], [],
+    ]);
+  });
+  it('hasil dari pasar atau mata uang lain ditolak', () => {
+    expect(quoteMatches('US:AAPL', 'NASDAQ:AAPL', 'USD')).toBe(true);
+    expect(quoteMatches('US:BBCA', 'CBOE:BBCA', 'USD')).toBe(true);
+    expect(quoteMatches('US:XYZ', 'LSE:XYZ', 'GBP')).toBe(false);
+    expect(quoteMatches('IDX:BBCA', 'IDX:BBCA', 'IDR')).toBe(true);
+    expect(quoteMatches('CRYPTO:BTC', 'BINANCE:BTCUSDT', 'USDT')).toBe(true);
+    expect(quoteMatches('GOLD:XAU', 'OANDA:XAUUSD', 'EUR')).toBe(false);
   });
 });

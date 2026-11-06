@@ -17,7 +17,7 @@ import { useStore } from '@/state/AppStore';
 import { useAssets } from '@/state/assets';
 import { space } from '@/theme/tokens';
 
-/** Detail aset (brief §6). Grafik harga belum ada: sumber harga live masih menunggu keputusan pemilik. */
+/** Detail aset (brief §6). Grafik harga (opsional di brief) belum dibuat. */
 export default function AssetDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();

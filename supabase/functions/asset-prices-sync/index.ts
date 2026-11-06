@@ -1,9 +1,10 @@
 /**
  * Sinkron harga aset live tiap jam (brief Fase Aset §5). Dipanggil pg_cron (x-cron-secret) atau admin.
- * Penyedia harga belum dipasang: sumber TradingView menunggu keputusan pemilik soal ketentuan penggunaannya.
- * Tanpa penyedia, setiap percobaan dicatat gagal (`no_provider`) dan aplikasi memakai harga beli / nilai manual.
+ * Penyedia: TradingView (disetujui pemilik 2026-11-06, risiko ketentuan diterima). Kode yang gagal tetap memakai
+ * harga terakhirnya; aplikasi jatuh ke harga beli / nilai manual bila belum pernah ada harga.
  */
 import { runPriceSync, type PriceProvider } from '../_shared/asset-sync.ts';
+import { tradingViewProvider } from '../_shared/tradingview.ts';
 import { adminClient, requireUser } from '../_shared/auth.ts';
 import { CRON_SECRET } from '../_shared/env.ts';
 import { HttpError, json, serve } from '../_shared/http.ts';
@@ -16,9 +17,9 @@ function safeEqual(a: string, b: string): boolean {
   return diff === 0;
 }
 
-/** Penyedia yang aktif. null sampai sumber harga disetujui pemilik. */
+/** Penyedia yang aktif. Ganti di sini untuk berpindah sumber harga (kunci netral tidak berubah). */
 function resolveProvider(): PriceProvider | null {
-  return null;
+  return tradingViewProvider;
 }
 
 serve(async (req) => {

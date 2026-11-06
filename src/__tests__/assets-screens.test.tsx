@@ -91,6 +91,25 @@ describe('tab Aset', () => {
     expect(screen.getByLabelText(formatMoney(520_000, 'IDR'))).toBeTruthy();
   });
 
+  it('harga hasil sync TradingView (2026-11-06) tampil sebagai harga live untuk keempat jenis', async () => {
+    const synced: Record<string, AssetPrice> = {
+      'IDX:BBCA': { symbol: 'IDX:BBCA', price: 5200, currency: 'IDR', fetchedAt: fresh },
+      'US:AAPL': { symbol: 'US:AAPL', price: 344.17, currency: 'USD', fetchedAt: fresh },
+      'CRYPTO:BTC': { symbol: 'CRYPTO:BTC', price: 75996, currency: 'USD', fetchedAt: fresh },
+      'GOLD:XAU': { symbol: 'GOLD:XAU', price: 4066.315, currency: 'USD', fetchedAt: fresh },
+    };
+    const list: Asset[] = [
+      bbca,
+      { id: 'aapl', type: 'stock_us', symbol: 'AAPL', name: 'Apple', quantity: 2, currency: 'USD', priceKey: 'US:AAPL', createdAt: fresh },
+      { id: 'btc', type: 'crypto', symbol: 'BTC', name: 'Bitcoin', quantity: 0.5, currency: 'USD', priceKey: 'CRYPTO:BTC', createdAt: fresh },
+      { id: 'xau', type: 'gold', symbol: 'XAU', name: 'Emas', quantity: 10, currency: 'IDR', priceKey: 'GOLD:XAU', createdAt: fresh },
+    ];
+    await wrap(<AsetScreen />, { assets: { assets: list, prices: synced } });
+    expect(screen.getAllByText(/ · Harga per /)).toHaveLength(4);
+    expect(screen.queryByText(/Memakai harga beli|Harga live belum tersedia/)).toBeNull();
+    expect(screen.queryByText('Harga live tidak tersedia saat ini')).toBeNull();
+  });
+
   it('belum ada aset: ajakan menambah aset', async () => {
     await wrap(<AsetScreen />);
     expect(screen.getByText('Belum ada aset yang dilacak')).toBeTruthy();
