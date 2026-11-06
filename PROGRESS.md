@@ -29,7 +29,7 @@ R-10 membatasi glassmorphism ke 1–2 elemen. Ahmad memutuskan **kaca tetap di s
 - [x] **Fase 1 — UI layar inti dengan data contoh** (2026-11-05), dilengkapi i18n ID/MS/TR/EN + pemilih desain kartu bank
 - [ ] **Fase 2 — Backend Supabase, LIVE** (2026-11-05): scan dan kurs sungguhan lolos; login sungguhan lolos di level Auth/API, tapi **login dari aplikasi oleh pengguna nyata masih terblokir** keputusan email OTP (lihat "Keputusan terbuka"). Fase 2 belum dinyatakan selesai.
 - [ ] Fase 3 — Monetisasi (RevenueCat + Xendit + Paddle) & rilis
-- [ ] Fase 5 — Smart Log: migrasi 10 live 2026-11-06 (uji live 11/11), migrasi 11 (cron) belum; uji di HP lewat development build menunggu. Detail: `docs/fase5-smartlog.md`
+- [ ] Fase 5 — Smart Log: migrasi 10 + 11 live 2026-11-06 (uji live 11/11); uji di HP lewat development build menunggu. Detail: `docs/fase5-smartlog.md`
 
 ## Fase 0 — yang sudah ada
 
@@ -190,7 +190,7 @@ Detail, daftar kunci, dan checklist dashboard: `docs/fase3-pembayaran.md`.
 - Hardening: cabut token akses Supabase dan kunci Gemini yang pernah ditempel di percakapan, buat ulang.
 - Host web (untuk `/harga`, checkout web, `/admin`) dan `APP_URL` belum ditentukan.
 
-## Fase 5: Smart Log (migrasi 10 live 2026-11-06; migrasi 11 belum)
+## Fase 5: Smart Log (migrasi 10 + 11 live 2026-11-06)
 
 Detail lengkap, langkah development build, pemasangan di Xiaomi, dan Metro: `docs/fase5-smartlog.md`.
 

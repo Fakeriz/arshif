@@ -1,7 +1,7 @@
 # Fase 5: Smart Log (notifikasi bank, review-first)
 
-Status: migrasi 10 **live** (2026-11-06, izin pemilik), `npm run test:live` 11/11 termasuk Smart Log. Migrasi 11
-(cron bersih 60 hari) **belum diterapkan**. Development build Android: EAS dijalankan pemilik.
+Status: migrasi 10 dan 11 **live** (2026-11-06, izin pemilik), `npm run test:live` 11/11 termasuk Smart Log. Cron
+`smartlog-cleanup` aktif tiap hari 03.20 UTC. Development build Android: EAS dijalankan pemilik.
 
 PRD Bab 4.22, FR-SLOG-1..5. Android saja; iOS (Shortcuts) di luar fase ini.
 
@@ -134,6 +134,6 @@ di tes adalah perkiraan; kumpulkan teks notifikasi asli (tanpa data pribadi) saa
 
 1. Migrasi 10: **sudah** (diterapkan sendiri lewat Management API, tanpa menjalankan seluruh `deploy-supabase.sh`
    yang juga men-deploy functions dan mengubah Auth). Tidak ada Edge Function baru.
-2. Migrasi 11 (cron): menunggu izin. `scripts/deploy-supabase.sh` akan menerapkannya bersama langkah lain.
+2. Migrasi 11 (cron `smartlog-cleanup`, `20 3 * * *`): **sudah**, dengan cara yang sama.
 3. Tautan kartu ditulis lewat update lalu insert, bukan upsert: hak update `smartlog_links` hanya kolom `account_id`
    (ditemukan oleh uji live).
