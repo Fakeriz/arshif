@@ -30,7 +30,7 @@ R-10 membatasi glassmorphism ke 1–2 elemen. Ahmad memutuskan **kaca tetap di s
 - [ ] **Fase 2 — Backend Supabase, LIVE** (2026-11-05): scan dan kurs sungguhan lolos; login sungguhan lolos di level Auth/API, tapi **login dari aplikasi oleh pengguna nyata masih terblokir** keputusan email OTP (lihat "Keputusan terbuka"). Fase 2 belum dinyatakan selesai.
 - [ ] Fase 3 — Monetisasi (RevenueCat + Xendit + Paddle) & rilis
 - [ ] Fase 5 — Smart Log: migrasi 10 + 11 live 2026-11-06 (uji live 11/11); uji di HP lewat development build menunggu. Detail: `docs/fase5-smartlog.md`
-- [ ] Fase 6 — Invoice & penawaran + Money & Tax Tools: dibangun dan diuji lokal 2026-11-06, **belum deploy** (migrasi 12). Detail: `docs/fase6-invoice-alat.md`
+- [ ] Fase 6 — Invoice & penawaran + Money & Tax Tools: migrasi 12 live 2026-11-06, dipush ke main; PDF di HP menunggu build EAS baru. Detail: `docs/fase6-invoice-alat.md`
 
 ## Fase 0 — yang sudah ada
 
@@ -212,7 +212,7 @@ Detail lengkap, langkah development build, pemasangan di Xiaomi, dan Metro: `doc
 - **Kotlin belum pernah dikompilasi** (mesin ini aarch64 tanpa Android SDK). Build EAS pertama = cek kompilasi.
 
 
-## Fase 6: Invoice + Alat (dibangun lokal, BELUM di-deploy)
+## Fase 6: Invoice + Alat (migrasi 12 live 2026-11-06)
 
 Detail, tarif pajak 2026 yang dipakai, dan langkah deploy: `docs/fase6-invoice-alat.md`.
 

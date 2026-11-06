@@ -1,6 +1,7 @@
 # Fase 6: Invoice & Quotation + Money & Tax Tools
 
-Status: dibangun dan diuji lokal. **Belum di-deploy** (menunggu izin pemilik).
+Status: **migrasi 12 live 2026-11-06** (uji asap live dalam transaksi rollback: nomor INV/QUO, jumlah server, kuota,
+`quota_taxFull` untuk Free, anon ditolak). PDF di HP menunggu build EAS development baru.
 
 Akses: Home -> aksi cepat **Lainnya** -> "Invoice & penawaran" (`/invoice`) dan "Alat" (`/alat`). Bottom nav tidak
 berubah.
