@@ -3,7 +3,7 @@ import type { BudgetRecord, Transaction } from '@/data/types';
 
 import { addDays, daysInMonth, diffDays, parseYMD, ymd } from './dates';
 import { currencyMeta } from './money';
-import { amountIn, countsAsSpending, txInRange } from './transactions';
+import { amountIn, countsAsSpending, reimbursementIncomeIds, totals, txInRange } from './transactions';
 
 export type Split = Record<Bucket, number>;
 export const DEFAULT_SPLIT: Split = { needs: 50, wants: 30, savings: 20 };
@@ -144,4 +144,39 @@ export function averageBudget(previous: BudgetRecord[], currency: string): Budge
   const categoryLimits: Record<string, number> = {};
   for (const [k, { sum, n }] of sums) categoryLimits[k] = roundSuggestion(sum / n, currency);
   return { total, categoryLimits };
+}
+
+export type PeriodSeries = {
+  /** Awal periode, terlama → terbaru (terakhir = periode berjalan). */
+  starts: string[];
+  income: number[];
+  expense: number[];
+  /** Jumlah hari yang dibandingkan di tiap periode (= hari berjalan periode ini). */
+  days: number;
+};
+
+/**
+ * Pemasukan & pengeluaran per periode gajian, dibandingkan setara (like-for-like): tiap periode lalu hanya
+ * dihitung sampai hari ke-N yang sama dengan hari berjalan periode ini. Tanpa ini, periode berjalan yang baru
+ * separuh jalan selalu tampak "turun" dibanding periode lalu yang sudah penuh.
+ */
+export function periodSeries(txs: Transaction[], today: string, payday: number, main: string, count = 6): PeriodSeries {
+  const current = budgetPeriod(today, payday);
+  const days = current.elapsedDays;
+  const periods: BudgetPeriod[] = [current];
+  while (periods.length < count) periods.unshift(budgetPeriod(addDays(periods[0].start, -1), payday));
+  const starts: string[] = [];
+  const income: number[] = [];
+  const expense: number[] = [];
+  const repaymentIds = reimbursementIncomeIds(txs);
+  for (const p of periods) {
+    const windowEnd = addDays(p.start, days - 1);
+    const end = windowEnd < p.end ? windowEnd : p.end;
+    // Penanda reimbursement dihitung dari semua transaksi, sama dengan layar Transaksi.
+    const sum = totals(txInRange(txs, p.start, end), main, repaymentIds);
+    starts.push(p.start);
+    income.push(sum.income);
+    expense.push(sum.expense);
+  }
+  return { starts, income, expense, days };
 }

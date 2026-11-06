@@ -1,11 +1,15 @@
-import type { ReactNode } from 'react';
+import { useEffect, type ReactNode } from 'react';
 import { StyleSheet, View } from 'react-native';
+import Animated, { useAnimatedProps, useSharedValue } from 'react-native-reanimated';
 import Svg, { Circle } from 'react-native-svg';
 
 import { useI18n } from '@/i18n';
 import { ringDash } from '@/lib/chart';
 import { useTheme } from '@/theme/ThemeProvider';
-import { space } from '@/theme/tokens';
+import { useMotion } from '@/theme/motion';
+import { motion, space } from '@/theme/tokens';
+
+const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 
 import { AppText } from './AppText';
 import { formatPct } from './TrendBadge';
@@ -28,11 +32,19 @@ export type GoalRingProps = {
 export function GoalRing({ value, label, size = 96, thickness = 8, children }: GoalRingProps) {
   const { colors } = useTheme();
   const { t, lang } = useI18n();
+  const { timing, reduced } = useMotion();
   const r = (size - thickness) / 2;
   const { circumference, filled } = ringDash(value, r);
   const done = value >= 1;
   const pct = formatPct(t, lang, Math.min(Math.max(value, 0), 1), 0);
   const stroke = done ? colors.positive : colors.accent;
+
+  // Cincin terisi dari jam 12 ke nilainya; perubahan nilai beranimasi dari posisi sebelumnya.
+  const progress = useSharedValue(reduced ? filled : 0);
+  useEffect(() => {
+    progress.value = timing(filled, motion.slow * 3);
+  }, [filled, progress, timing]);
+  const ringProps = useAnimatedProps(() => ({ strokeDashoffset: circumference - progress.value }));
 
   return (
     <View
@@ -45,7 +57,7 @@ export function GoalRing({ value, label, size = 96, thickness = 8, children }: G
       <Svg width={size} height={size} style={StyleSheet.absoluteFill}>
         <Circle cx={size / 2} cy={size / 2} r={r} stroke={colors.track} strokeWidth={thickness} fill="none" />
         {filled > 0 && (
-          <Circle
+          <AnimatedCircle
             cx={size / 2}
             cy={size / 2}
             r={r}
@@ -53,7 +65,8 @@ export function GoalRing({ value, label, size = 96, thickness = 8, children }: G
             strokeWidth={thickness}
             fill="none"
             strokeLinecap="round"
-            strokeDasharray={`${filled} ${circumference}`}
+            strokeDasharray={`${circumference} ${circumference}`}
+            animatedProps={ringProps}
             // Mulai dari jam 12, searah jarum jam.
             transform={`rotate(-90 ${size / 2} ${size / 2})`}
           />

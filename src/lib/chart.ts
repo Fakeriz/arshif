@@ -144,3 +144,10 @@ export function ringDash(ratio: number, r: number): { circumference: number; fil
   const clamped = Number.isFinite(ratio) ? Math.min(Math.max(ratio, 0), 1) : 0;
   return { circumference, filled: circumference * clamped };
 }
+
+/** Panjang garis lewat titik-titik (batas bawah panjang kurva halus); untuk animasi "menggambar" garis. */
+export function polylineLength(points: Point[]): number {
+  let len = 0;
+  for (let i = 1; i < points.length; i++) len += Math.hypot(points[i].x - points[i - 1].x, points[i].y - points[i - 1].y);
+  return len;
+}

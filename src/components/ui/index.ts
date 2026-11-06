@@ -23,7 +23,7 @@ export { Icon } from './Icon';
 export { GoalRing } from './GoalRing';
 export { Input } from './Input';
 export { ListItem, ListItemSkeleton } from './ListItem';
-export { NumberPad, useNumberPad } from './NumberPad';
+export { NumberPad, NumberPadDisplay, useNumberPad } from './NumberPad';
 export { PressableScale } from './PressableScale';
 export { ProgressBar } from './ProgressBar';
 export { PromoCard } from './PromoCard';

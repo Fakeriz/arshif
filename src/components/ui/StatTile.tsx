@@ -80,7 +80,7 @@ export function StatTile({
           </AppText>
         </View>
 
-        <CurrencyText amount={amount} currency={currency} variant={wide ? 'amountHero' : 'h2'} hidden={hidden} />
+        <CurrencyText amount={amount} currency={currency} variant={wide ? 'amountHero' : 'h2'} hidden={hidden} countUp />
         <View style={[styles.foot, wide && styles.footWide]}>
           <TrendBadge value={change} invert={invert} suffix={changeSuffix} size={wide ? 'md' : 'sm'} />
           {hasSeries && !hidden && (

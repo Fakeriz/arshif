@@ -18,6 +18,10 @@ const home = {
   recapTitle: 'Recap mingguanmu sudah siap',
   recapMessage: 'Lihat ke mana uangmu pergi minggu lalu.',
   recapDismiss: 'Tutup recap mingguan',
+  stats: {
+    caption: 'Dibanding {days} hari pertama periode lalu',
+  },
+  netWorthVs: 'vs 30 hari lalu',
   quick: { scan: 'Struk OCR', coach: 'Coach', more: 'Lainnya' },
   more: {
     sectionLog: 'Catat',

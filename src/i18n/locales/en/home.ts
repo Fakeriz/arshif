@@ -19,6 +19,10 @@ const home: Messages['home'] = {
   recapTitle: 'Your weekly recap is ready',
   recapMessage: 'See where your money went last week.',
   recapDismiss: 'Dismiss weekly recap',
+  stats: {
+    caption: 'Compared with the first {days} days of last period',
+  },
+  netWorthVs: 'vs 30 days ago',
   quick: { scan: 'Receipt OCR', coach: 'Coach', more: 'More' },
   more: {
     sectionLog: 'Log',

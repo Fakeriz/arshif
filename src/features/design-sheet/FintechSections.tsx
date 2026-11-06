@@ -6,12 +6,13 @@ import {
   Card,
   GoalRing,
   NumberPad,
+  NumberPadDisplay,
   Sparkline,
   StatTile,
   TrendBadge,
   useNumberPad,
 } from '@/components/ui';
-import { currencyMeta, formatCompact } from '@/lib/money';
+import { formatCompact } from '@/lib/money';
 import { space } from '@/theme/tokens';
 
 import { Row, Section, StateLabel } from './Section';
@@ -113,15 +114,9 @@ export function GoalSection() {
 
 function PadDemo({ currency }: { currency: string }) {
   const pad = useNumberPad(currency);
-  const m = currencyMeta(currency);
   return (
     <Card style={styles.padCard}>
-      <View style={styles.padDisplay}>
-        <AppText variant="h2" tone="muted">{m.symbol}</AppText>
-        <AppText variant="balanceHero" numeric numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.5}>
-          {pad.display}
-        </AppText>
-      </View>
+      <NumberPadDisplay display={pad.display} currency={currency} rejects={pad.rejects} />
       <NumberPad currency={currency} onKey={pad.onKey} />
     </Card>
   );
@@ -132,7 +127,7 @@ export function NumberPadSection() {
     <Section
       index="Fintech"
       title="NumberPad"
-      note="Keypad nominal ala aplikasi pembayaran. IDR mendapat tombol 000, mata uang berdesimal mendapat pemisah desimalnya sendiri. Tahan hapus untuk mengosongkan."
+      note="Keypad nominal ala aplikasi pembayaran. IDR mendapat tombol 000, mata uang berdesimal mendapat pemisah desimalnya sendiri. Tahan hapus untuk mengosongkan. Nominal sedikit membesar tiap ketukan dan bergoyang + getar bila ketukan ditolak (mis. digit desimal ketiga)."
     >
       <View style={styles.pair}>
         <PadDemo currency="IDR" />
@@ -150,5 +145,4 @@ const styles = StyleSheet.create({
   rateFig: { alignItems: 'flex-end', gap: space.xs },
   goalRow: { flexDirection: 'row', alignItems: 'center', gap: space.lg },
   padCard: { flexGrow: 1, flexBasis: 0, minWidth: 240, gap: space.lg },
-  padDisplay: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'center', gap: space.sm, paddingVertical: space.md },
 });

@@ -12,6 +12,7 @@ import { BalanceBlock } from '@/features/home/BalanceBlock';
 import { MissingRatesBanner } from '@/features/fx/MissingRatesBanner';
 import { HomeHeader } from '@/features/home/HomeHeader';
 import { HomeSkeleton } from '@/features/home/HomeSkeleton';
+import { PeriodStats } from '@/features/home/PeriodStats';
 import { RecentTransactions } from '@/features/home/RecentTransactions';
 import { useSessionDismiss } from '@/features/home/sessionDismiss';
 import { useT } from '@/i18n';
@@ -63,7 +64,7 @@ export default function HomeScreen() {
   return (
     <Screen tabs onRefresh={retry} refreshing={refreshing}>
       <HomeHeader />
-      <BalanceBlock amount={netWorth.total} currency={netWorth.currency} accountCount={ledger.accounts.length} />
+      <BalanceBlock amount={netWorth.total} currency={netWorth.currency} accountCount={ledger.accounts.length} complete={netWorth.complete} />
       <AccountDeck
         accounts={ledger.accounts}
         hidden={state.hideBalance}
@@ -80,6 +81,9 @@ export default function HomeScreen() {
         ]}
       />
       <MissingRatesBanner />
+      {ledger.transactions.length > 0 && (
+        <PeriodStats transactions={ledger.transactions} currency={ledger.mainCurrency} hidden={state.hideBalance} />
+      )}
       <CaptureSheet
         visible={more}
         onClose={() => setMore(false)}

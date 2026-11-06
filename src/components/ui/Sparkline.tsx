@@ -1,11 +1,16 @@
-import { useId } from 'react';
+import { useEffect, useId } from 'react';
 import { View } from 'react-native';
+import Animated, { useAnimatedProps, useSharedValue, withDelay } from 'react-native-reanimated';
 import Svg, { Circle, Defs, LinearGradient, Path, Stop } from 'react-native-svg';
 
 import { useI18n } from '@/i18n';
-import { areaUnder, linePoints, smoothPath } from '@/lib/chart';
+import { areaUnder, linePoints, polylineLength, smoothPath } from '@/lib/chart';
+import { useMotion } from '@/theme/motion';
 import { useTheme } from '@/theme/ThemeProvider';
-import { chartArea } from '@/theme/tokens';
+import { chartArea, motion } from '@/theme/tokens';
+
+const AnimatedPath = Animated.createAnimatedComponent(Path);
+const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 
 export type SparklineTone = 'auto' | 'neutral' | 'positive' | 'negative' | 'accent';
 
@@ -39,6 +44,7 @@ export function Sparkline({
 }: SparklineProps) {
   const { colors, scheme } = useTheme();
   const { t } = useI18n();
+  const { timing, reduced } = useMotion();
   // useId bisa berisi ":" yang merusak url(#id) di web.
   const gradId = `spark-${useId().replace(/[^a-zA-Z0-9_-]/g, '')}`;
 
@@ -57,6 +63,22 @@ export function Sparkline({
   const inset = endDot ? 4 : strokeWidth;
   const pts = linePoints(values, width - inset * 2, height, inset).map((p) => ({ x: p.x + inset, y: p.y }));
   const line = smoothPath(pts);
+  // Kurva sedikit lebih panjang dari poligonnya; lebihkan agar ujung garis tidak terpotong saat animasi.
+  const length = polylineLength(pts) * 1.15 + 4;
+
+  // Garis "tergambar" kiri → kanan, lalu isian dan titik akhir muncul. Diputar ulang saat data berubah.
+  const draw = useSharedValue(reduced ? 1 : 0);
+  const reveal = useSharedValue(reduced ? 1 : 0);
+  const key = values.join(',');
+  useEffect(() => {
+    draw.value = 0;
+    reveal.value = 0;
+    draw.value = timing(1, motion.slow * 2);
+    reveal.value = withDelay(reduced ? 0 : motion.slow, timing(1, motion.base));
+  }, [key, draw, reveal, timing, reduced]);
+  const lineProps = useAnimatedProps(() => ({ strokeDashoffset: length * (1 - draw.value) }));
+  const areaProps = useAnimatedProps(() => ({ fillOpacity: reveal.value }));
+  const dotProps = useAnimatedProps(() => ({ r: 3 * reveal.value, opacity: reveal.value }));
 
   const label =
     values.length > 1
@@ -75,12 +97,28 @@ export function Sparkline({
                   <Stop offset="1" stopColor={stroke} stopOpacity={0} />
                 </LinearGradient>
               </Defs>
-              <Path d={areaUnder(line, pts, height)} fill={`url(#${gradId})`} />
+              <AnimatedPath d={areaUnder(line, pts, height)} fill={`url(#${gradId})`} animatedProps={areaProps} />
             </>
           )}
-          <Path d={line} stroke={stroke} strokeWidth={strokeWidth} fill="none" strokeLinecap="round" strokeLinejoin="round" />
+          <AnimatedPath
+            d={line}
+            stroke={stroke}
+            strokeWidth={strokeWidth}
+            fill="none"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeDasharray={`${length} ${length}`}
+            animatedProps={lineProps}
+          />
           {endDot && (
-            <Circle cx={pts[pts.length - 1].x} cy={pts[pts.length - 1].y} r={3} fill={stroke} stroke={colors.surface} strokeWidth={1.5} />
+            <AnimatedCircle
+              cx={pts[pts.length - 1].x}
+              cy={pts[pts.length - 1].y}
+              fill={stroke}
+              stroke={colors.surface}
+              strokeWidth={1.5}
+              animatedProps={dotProps}
+            />
           )}
         </Svg>
       )}

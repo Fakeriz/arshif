@@ -1,6 +1,6 @@
 import { StyleSheet, View } from 'react-native';
 
-import { AppText, Badge, Card, ProgressBar } from '@/components/ui';
+import { AppText, Badge, Card, GoalRing } from '@/components/ui';
 import type { Goal } from '@/data/planning';
 import { useI18n } from '@/i18n';
 import { diffDays, shortDate, todayYmd } from '@/lib/dates';
@@ -25,21 +25,25 @@ export function GoalCard({ goal: g, onPress }: { goal: Goal; onPress?: () => voi
           : t('plan.goals.noDeadline');
   return (
     <Card onPress={onPress} accessibilityLabel={`${g.name}. ${t('plan.goals.progress', { collected: formatMoney(g.collected, g.currency), target: formatMoney(g.target, g.currency) })}. ${note}`}>
-      <View style={styles.head}>
-        <AppText variant="bodyStrong" numberOfLines={1} style={styles.flex}>
-          {g.name}
-        </AppText>
-        {g.status === 'completed' && <Badge label={t('plan.goals.completed')} tone="positive" />}
+      <View style={styles.main}>
+        <GoalRing value={p} label={g.name} size={60} thickness={6} />
+        <View style={styles.flex}>
+          <View style={styles.head}>
+            <AppText variant="bodyStrong" numberOfLines={1} style={styles.flex}>
+              {g.name}
+            </AppText>
+            {g.status === 'completed' && <Badge label={t('plan.goals.completed')} tone="positive" />}
+          </View>
+          <View style={styles.amounts}>
+            <AppText variant="h3" numeric>
+              {formatMoney(g.collected, g.currency)}
+            </AppText>
+            <AppText variant="caption" tone="secondary" numeric>
+              {`/ ${formatMoney(g.target, g.currency)}`}
+            </AppText>
+          </View>
+        </View>
       </View>
-      <View style={styles.amounts}>
-        <AppText variant="h3" numeric>
-          {formatMoney(g.collected, g.currency)}
-        </AppText>
-        <AppText variant="caption" tone="secondary" numeric>
-          {`/ ${formatMoney(g.target, g.currency)}`}
-        </AppText>
-      </View>
-      <ProgressBar value={p} tone={g.status === 'completed' ? 'positive' : 'accent'} accessibilityLabel={`${Math.round(p * 100)}%`} />
       <AppText variant="caption" tone={late ? 'warning' : 'secondary'} style={styles.note}>
         {note}
       </AppText>
@@ -48,8 +52,9 @@ export function GoalCard({ goal: g, onPress }: { goal: Goal; onPress?: () => voi
 }
 
 const styles = StyleSheet.create({
+  main: { flexDirection: 'row', alignItems: 'center', gap: space.lg },
   head: { flexDirection: 'row', alignItems: 'center', gap: space.sm },
   flex: { flex: 1, minWidth: 0 },
-  amounts: { flexDirection: 'row', alignItems: 'baseline', gap: space.xs, marginTop: space.sm, marginBottom: space.sm },
-  note: { marginTop: space.sm },
+  amounts: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'baseline', gap: space.xs, marginTop: space.xs },
+  note: { marginTop: space.md },
 });

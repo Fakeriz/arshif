@@ -19,6 +19,10 @@ const home: Messages['home'] = {
   recapTitle: 'Rekap mingguan anda sudah sedia',
   recapMessage: 'Lihat ke mana wang anda pergi minggu lepas.',
   recapDismiss: 'Tutup rekap mingguan',
+  stats: {
+    caption: 'Berbanding {days} hari pertama tempoh lalu',
+  },
+  netWorthVs: 'berbanding 30 hari lalu',
   quick: { scan: 'Resit OCR', coach: 'Coach', more: 'Lagi' },
   more: {
     sectionLog: 'Rekod',

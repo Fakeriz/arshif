@@ -1,13 +1,14 @@
 import { Delete } from 'lucide-react-native';
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
+import Animated, { useAnimatedStyle, useSharedValue, withSequence } from 'react-native-reanimated';
 
 import { useT } from '@/i18n';
 import { pressKey, typedDisplay, typedToMinor, type KeypadKey } from '@/lib/keypad';
 import { currencyMeta } from '@/lib/money';
-import { haptic } from '@/theme/motion';
+import { haptic, useMotion } from '@/theme/motion';
 import { useTheme } from '@/theme/ThemeProvider';
-import { radius, space } from '@/theme/tokens';
+import { motion, radius, space } from '@/theme/tokens';
 
 import { AppText } from './AppText';
 import { Icon } from './Icon';
@@ -100,19 +101,80 @@ export function NumberPad({ onKey, currency, disabled }: NumberPadProps) {
 /** State keypad siap pakai: teks ketikan, nilai minor units, dan teks tampilan. */
 export function useNumberPad(currency: string, initial = '') {
   const [typed, setTyped] = useState(initial);
-  const onKey = useCallback((key: KeypadKey) => setTyped((prev) => pressKey(prev, key, currency)), [currency]);
+  // Bertambah tiap ketukan yang ditolak (digit melewati batas, desimal kedua): pemicu animasi goyang.
+  const [rejects, setRejects] = useState(0);
+  const onKey = useCallback(
+    (key: KeypadKey) =>
+      setTyped((prev) => {
+        const next = pressKey(prev, key, currency);
+        if (next === prev && key !== 'back' && key !== 'clear') setRejects((n) => n + 1);
+        return next;
+      }),
+    [currency],
+  );
   return {
     typed,
     setTyped,
     onKey,
+    rejects,
     minor: typedToMinor(typed, currency),
     display: typedDisplay(typed, currency),
   };
+}
+
+export type NumberPadDisplayProps = {
+  /** Teks tampilan dari useNumberPad().display. */
+  display: string;
+  currency: string;
+  /** useNumberPad().rejects: tiap kenaikan menggoyang tampilan + getar peringatan. */
+  rejects?: number;
+};
+
+/** Nominal besar di atas keypad: "pop" halus tiap ketukan, goyang saat ketukan ditolak. */
+export function NumberPadDisplay({ display, currency, rejects = 0 }: NumberPadDisplayProps) {
+  const { timing, spring, reduced } = useMotion();
+  const m = currencyMeta(currency);
+  const scale = useSharedValue(1);
+  const shake = useSharedValue(0);
+  const first = useRef(true);
+
+  useEffect(() => {
+    if (first.current) return;
+    if (reduced) return;
+    scale.value = withSequence(timing(1.04, motion.fast / 2), spring(1));
+  }, [display, scale, timing, spring, reduced]);
+
+  useEffect(() => {
+    if (first.current) return;
+    haptic('warning');
+    if (reduced) return;
+    const d = motion.fast / 3;
+    shake.value = withSequence(timing(-8, d), timing(8, d), timing(-5, d), timing(5, d), timing(0, d));
+  }, [rejects, shake, timing, reduced]);
+
+  useEffect(() => {
+    first.current = false;
+  }, []);
+
+  const style = useAnimatedStyle(() => ({ transform: [{ translateX: shake.value }, { scale: scale.value }] }));
+
+  return (
+    <Animated.View style={[styles.display, style]} accessibilityLiveRegion="polite">
+      <AppText variant="h2" tone="muted">
+        {m.symbol}
+      </AppText>
+      <AppText variant="balanceHero" numeric numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.5} style={styles.displayText}>
+        {display}
+      </AppText>
+    </Animated.View>
+  );
 }
 
 const styles = StyleSheet.create({
   grid: { gap: space.xs },
   row: { flexDirection: 'row', gap: space.xs },
   cell: { flex: 1 },
+  display: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'center', gap: space.sm, paddingVertical: space.md },
+  displayText: { flexShrink: 1 },
   key: { height: 60, alignItems: 'center', justifyContent: 'center', borderRadius: radius.lg },
 });

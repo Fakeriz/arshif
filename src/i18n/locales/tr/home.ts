@@ -19,6 +19,10 @@ const home: Messages['home'] = {
   recapTitle: 'Haftalık özetin hazır',
   recapMessage: 'Geçen hafta paranın nereye gittiğine bak.',
   recapDismiss: 'Haftalık özeti kapat',
+  stats: {
+    caption: 'Önceki dönemin ilk {days} günüyle karşılaştırıldı',
+  },
+  netWorthVs: '30 gün öncesine göre',
   quick: { scan: 'Fiş OCR', coach: 'Coach', more: 'Diğer' },
   more: {
     sectionLog: 'Kayıt',

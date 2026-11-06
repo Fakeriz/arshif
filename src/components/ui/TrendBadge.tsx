@@ -1,9 +1,12 @@
 import { ArrowDownRight, ArrowUpRight, Minus } from 'lucide-react-native';
+import { useEffect } from 'react';
 import { StyleSheet, View } from 'react-native';
+import Animated, { useAnimatedStyle, useSharedValue, withDelay } from 'react-native-reanimated';
 
 import { useI18n, type Lang, type TFunction } from '@/i18n';
+import { useMotion } from '@/theme/motion';
 import { useTheme } from '@/theme/ThemeProvider';
-import { fonts, radius, space } from '@/theme/tokens';
+import { fonts, motion, radius, space } from '@/theme/tokens';
 
 import { AppText, type TextTone } from './AppText';
 import { Icon } from './Icon';
@@ -33,6 +36,7 @@ export type TrendBadgeProps = {
 export function TrendBadge({ value, invert, suffix, size = 'md' }: TrendBadgeProps) {
   const { colors } = useTheme();
   const { t, lang } = useI18n();
+  const { timing, reduced } = useMotion();
 
   // Perubahan < 0,05% dibulatkan jadi datar agar tidak muncul "naik 0%".
   const dir = value === null ? 'none' : Math.abs(value) < 0.0005 ? 'flat' : value > 0 ? 'up' : 'down';
@@ -54,6 +58,14 @@ export function TrendBadge({ value, invert, suffix, size = 'md' }: TrendBadgePro
   const glyph = dir === 'up' ? ArrowUpRight : dir === 'down' ? ArrowDownRight : Minus;
   const iconSize = size === 'sm' ? 12 : 14;
 
+  // Muncul setelah angka utama: pudar + naik 4px. Diputar ulang bila arah tren berubah.
+  const shown = useSharedValue(reduced ? 1 : 0);
+  useEffect(() => {
+    shown.value = 0;
+    shown.value = withDelay(reduced ? 0 : motion.fast, timing(1, motion.base));
+  }, [dir, shown, timing, reduced]);
+  const appear = useAnimatedStyle(() => ({ opacity: shown.value, transform: [{ translateY: (1 - shown.value) * 4 }] }));
+
   return (
     <View
       accessible
@@ -61,14 +73,14 @@ export function TrendBadge({ value, invert, suffix, size = 'md' }: TrendBadgePro
       accessibilityLabel={suffix ? `${label} ${suffix}` : label}
       style={styles.row}
     >
-      <View style={[styles.pill, size === 'sm' && styles.pillSm, { backgroundColor: look.bg }]}>
+      <Animated.View style={[styles.pill, size === 'sm' && styles.pillSm, { backgroundColor: look.bg }, appear]}>
         <Icon icon={glyph} color={look.fg} size={iconSize} />
         {dir !== 'none' && (
           <AppText variant={size === 'sm' ? 'overline' : 'caption'} tone={look.tone} numeric style={styles.strong}>
             {dir === 'flat' ? formatPct(t, lang, 0) : pct}
           </AppText>
         )}
-      </View>
+      </Animated.View>
       {suffix && (
         <AppText variant="caption" tone="muted" numberOfLines={1} style={styles.suffix}>
           {suffix}

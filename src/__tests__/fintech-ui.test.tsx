@@ -144,6 +144,7 @@ function PadHarness({ currency }: { currency: string }) {
     <>
       <Text testID="display">{pad.display}</Text>
       <Text testID="minor">{String(pad.minor)}</Text>
+      <Text testID="rejects">{String(pad.rejects)}</Text>
       <NumberPad currency={currency} onKey={pad.onKey} />
     </>
   );
@@ -169,7 +170,34 @@ describe('NumberPad', () => {
     await fireEvent.press(screen.getByLabelText('5'));
     expect(screen.getByTestId('display').props.children).toBe('1.5');
     expect(screen.getByTestId('minor').props.children).toBe('150');
+    // Pecahan MYR maksimal 2 digit: digit ketiga ditolak dan dihitung untuk animasi goyang.
+    await fireEvent.press(screen.getByLabelText('0'));
+    await fireEvent.press(screen.getByLabelText('9'));
+    expect(screen.getByTestId('display').props.children).toBe('1.50');
+    expect(screen.getByTestId('rejects').props.children).toBe('1');
     await fireEvent(screen.getByLabelText('Hapus satu digit'), 'longPress');
     expect(screen.getByTestId('minor').props.children).toBe('null');
+  });
+});
+
+describe('periodSeries — perbandingan setara per periode gajian', () => {
+  const { periodSeries } = jest.requireActual('@/lib/budget') as typeof import('@/lib/budget');
+  const tx = (id: string, date: string, type: 'income' | 'expense', amount: number) =>
+    ({ id, date, type, amount, currency: 'IDR', accountId: 'a', categoryKey: type === 'income' ? 'salary' : 'food', merchant: id }) as never;
+
+  it('periode lalu dipotong ke hari ke-N yang sama', () => {
+    // Gajian 25, hari ini 4 Nov → periode 25 Okt – 24 Nov, hari ke-11.
+    const txs = [
+      tx('a', '2026-09-26', 'expense', 100), // periode Sep, hari ke-2: dihitung
+      tx('b', '2026-10-20', 'expense', 999), // periode Sep, hari ke-26: di luar jendela
+      tx('c', '2026-10-25', 'income', 5000),
+      tx('d', '2026-10-30', 'expense', 300),
+      tx('e', '2026-11-04', 'expense', 200),
+    ];
+    const s = periodSeries(txs, '2026-11-04', 25, 'IDR', 3);
+    expect(s.days).toBe(11);
+    expect(s.starts).toEqual(['2026-08-25', '2026-09-25', '2026-10-25']);
+    expect(s.expense).toEqual([0, 100, 500]);
+    expect(s.income).toEqual([0, 0, 5000]);
   });
 });
