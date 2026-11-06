@@ -210,3 +210,29 @@ Supabase live. Terjemahan MS/TR/EN baru ditulis tanpa penutur asli.
   - Daftar transaksi dirender bertahap: 60 baris dulu, 60 berikutnya saat scroll mendekati bawah.
   - Mengukur FPS di development build: JS mode dev jauh lebih lambat dari rilis. Ukur dengan
     `npx expo start --dev-client --port 8082 --no-dev --minify`.
+
+## Tanya Coach (FR-COACH-3/4, live 2026-11-06)
+
+- **Edge Function `coach-ask`** (deploy 2026-11-06). Kuota `coachAsk` dari migrasi 5: Free 0 (ditolak `quota`, 402),
+  Premium 20/hari. Kuota diambil sebelum Gemini dan dikembalikan bila gagal (`runAiJob`); rate limit 10/menit.
+- **Privasi (FR-COACH-4)**: klien mengirim ringkasan angka saja (`src/lib/coachAsk.ts`, kontrak `AskContext`): mata
+  uang, penghasilan, kekayaan bersih, periode, anggaran + bucket, belanja per kategori (kunci kategori), minggu ini,
+  skor + pilar. Tanpa nama toko, catatan, nama akun, atau transaksi satu per satu. Pertanyaan maks 300 karakter,
+  riwayat maks 6 giliran. Server tidak menyimpan percakapan.
+- **Prompt**: hanya pakai angka dari konteks, tidak mengarang, menolak topik di luar keuangan pribadi, tanpa saran
+  investasi/pajak/hukum spesifik, pertanyaan diperlakukan sebagai data (bukan instruksi), nama kategori ditulis dalam
+  bahasa pengguna (bukan kunci mentah). Jawaban dibersihkan dari em dash.
+- **Layar**: Coach -> Tanya Coach. Premium: sisa pertanyaan hari ini, contoh pertanyaan, chat, state memuat/gagal/
+  kuota habis, catatan "Jawaban AI bisa keliru. Percakapan tidak disimpan." Free: state terkunci + Premium.
+- **Uji**: jest (konteks tanpa data mentah, kontrak, prompt, normalizer, layar Free/Premium/kuota habis);
+  `npm run test:live` skenario baru: Free 402, input salah 400, Premium dijawab Gemini (~2-5 detik), kuota +1.
+
+## Perbaikan rute + e2e (2026-11-06)
+
+- **Bug**: pengguna baru yang belum setup (mis. setelah verifikasi OTP) mendarat di halaman Harga, bukan Setup.
+  Penyebab: fallback guard expo-router memilih rute tak-terkunci pertama menurut nama berkas ("harga"). Perbaikan:
+  `redirectTo` eksplisit di tiap `Stack.Protected` (`src/app/_layout.tsx`).
+- `scripts/e2e-web.mjs` disesuaikan dengan Fase 4-7 (detail akun -> Desain kartu, Recap Minggu ini/Minggu lalu/
+  Bulan lalu, seksi Lainnya, kartu batas akun) + langkah baru: tanggal gajian + Kurs saya, anggaran periode dengan
+  batas kategori (tersimpan setelah muat ulang), tampilan Daftar/Kalender tagihan. Error 503 checkout
+  `not_configured` (kunci Xendit/Paddle belum diisi) dicatat sebagai error yang diharapkan. Hasil: 37/37 lolos.

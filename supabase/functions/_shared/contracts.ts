@@ -133,6 +133,41 @@ export const CoachRequest = z.object({
 export const CoachResult = z.object({ narration: z.string().min(1).max(800), actions: z.array(z.string().min(1).max(160)).length(3), cached: z.boolean() });
 export type CoachResult = z.infer<typeof CoachResult>;
 
+// ------------------------------------------------------------------ Tanya Coach (FR-COACH-3/4, Premium 20/hari)
+/** Nominal dalam unit BESAR mata uang utama (Rp 45.000 = 45000, RM 12,50 = 12.5), dibulatkan. Tanpa merchant/catatan. */
+const Major = z.number().finite().min(-1e13).max(1e13);
+const Pct = z.number().int().min(-1000).max(1000);
+export const AskContext = z.object({
+  currency: Currency,
+  monthlyIncome: Major,
+  netWorth: Major,
+  period: z.object({ elapsedPct: z.number().int().min(0).max(100), daysLeft: z.number().int().min(0).max(31) }),
+  budget: z.object({
+    total: Major,
+    flexSpent: Major,
+    flexLimit: Major,
+    safePerDay: Major,
+    pace: z.enum(['sesuai', 'agak_cepat', 'terlalu_cepat']),
+    buckets: z.array(z.object({ key: z.enum(['needs', 'wants', 'savings']), spent: Major, limit: Major })).length(3),
+  }),
+  /** Belanja periode ini per kategori (terbesar dulu) + batasnya bila ada. */
+  categories: z.array(z.object({ key: CategoryKey, spent: Major, limit: Major.nullable() })).max(21),
+  week: z.object({ spent: Major, changePct: Pct.nullable(), noSpendDays: z.number().int().min(0).max(7) }),
+  score: z.number().int().min(0).max(100).nullable(),
+  pillars: z.array(z.object({ key: z.enum(['savings', 'budget', 'debt', 'emergency', 'bills']), points: z.number(), max: z.number() })).max(5),
+});
+export type AskContext = z.infer<typeof AskContext>;
+export const AskTurn = z.object({ role: z.enum(['user', 'coach']), text: z.string().min(1).max(1500) });
+export const AskRequest = z.object({
+  lang: Lang,
+  question: z.string().trim().min(2).max(300),
+  /** Giliran sebelumnya di sesi ini (paling banyak 6), supaya pertanyaan lanjutan dimengerti. */
+  history: z.array(AskTurn).max(6),
+  context: AskContext,
+});
+export const AskResult = z.object({ answer: z.string().min(1).max(1500) });
+export type AskResult = z.infer<typeof AskResult>;
+
 // ------------------------------------------------------------------ delete-account (FR-SET-3)
 export const DeleteAccountRequest = z.object({ confirm: z.literal('DELETE') });
 
@@ -170,6 +205,7 @@ export const FUNCTIONS = {
   voice: 'voice-log',
   import: 'import-statement',
   coach: 'coach',
+  coachAsk: 'coach-ask',
   fxSync: 'fx-sync',
   deleteAccount: 'delete-account',
   checkout: 'checkout-create',

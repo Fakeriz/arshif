@@ -162,3 +162,21 @@ export function normalizeCoach(raw: unknown): Omit<CoachResult, 'cached'> | null
   if (!narration || actions.length !== 3) return null;
   return { narration, actions };
 }
+
+/** Jawaban Tanya Coach: teks dibersihkan (tanpa em dash), dibatasi panjangnya. */
+export function normalizeAsk(raw: unknown): { answer: string } | null {
+  const r = (raw ?? {}) as Raw;
+  const answer = cleanAnswer(str(r.answer)).slice(0, 1500);
+  return answer ? { answer } : null;
+}
+
+/** Seperti cleanText, tapi baris baru dipertahankan (daftar singkat). */
+function cleanAnswer(s: string): string {
+  return s
+    .replace(/\s*[—–]\s*/g, ', ')
+    .split('\n')
+    .map((l) => l.replace(/[ \t]+/g, ' ').trim())
+    .filter((l, i, a) => l || (i > 0 && a[i - 1]))
+    .join('\n')
+    .trim();
+}

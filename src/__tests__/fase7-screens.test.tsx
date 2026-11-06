@@ -25,6 +25,11 @@ import type { AppState } from '@/state/reducer';
 import { ThemeProvider } from '@/theme/ThemeProvider';
 
 const mockPush = jest.fn();
+const mockInvoke = jest.fn();
+jest.mock('@/data/remote/functions', () => ({
+  ...jest.requireActual('@/data/remote/functions'),
+  invokeFn: (...a: unknown[]) => mockInvoke(...a),
+}));
 let mockParams: Record<string, string> = {};
 jest.mock('expo-router', () => ({
   useRouter: () => ({ push: mockPush, back: jest.fn(), navigate: mockPush, replace: mockPush }),
@@ -183,12 +188,35 @@ describe('perbaikan uji HP', () => {
     expect(inScroll).toBe(true);
   });
 
-  it('Premium: Tanya Coach tidak membuka paywall; recap bulanan terbuka', async () => {
+  it('Free: Tanya Coach terkunci, tombol membuka Premium', async () => {
+    await act(async () => {
+      wrap(<AskTab />, { plan: 'free' });
+    });
+    expect(screen.getByText('Tanya Coach khusus Premium')).toBeTruthy();
+    expect(screen.queryByLabelText('Kirim pertanyaan')).toBeNull();
+  });
+
+  it('Premium: kirim pertanyaan -> jawaban Coach; hanya ringkasan angka yang dikirim', async () => {
+    mockInvoke.mockResolvedValueOnce({ answer: 'Makan & Minum paling besar periode ini.' });
     await act(async () => {
       wrap(<AskTab />, { plan: 'premium' });
     });
-    expect(screen.getByText('Tanya Coach sedang disiapkan')).toBeTruthy();
-    expect(screen.queryByText('Lihat Premium')).toBeNull();
+    expect(screen.getByText('Sisa 20 pertanyaan hari ini')).toBeTruthy();
+    await act(async () => fireEvent.changeText(screen.getByLabelText('Pertanyaanmu'), 'Kategori mana yang paling boros?'));
+    await act(async () => fireEvent.press(screen.getByLabelText('Kirim pertanyaan')));
+    expect(screen.getByText('Makan & Minum paling besar periode ini.')).toBeTruthy();
+    const [name, body] = mockInvoke.mock.calls[0]!;
+    expect(name).toBe('coach-ask');
+    expect(body).toMatchObject({ lang: 'id', question: 'Kategori mana yang paling boros?', history: [] });
+    const sent = JSON.stringify(body);
+    for (const merchant of base.transactions.map((x) => x.merchant).filter((m) => m.length > 3)) expect(sent).not.toContain(merchant);
+  });
+
+  it('Premium: kuota 20/hari habis -> input dimatikan dengan pesan', async () => {
+    await act(async () => {
+      wrap(<AskTab />, { plan: 'premium', usage: { ...base.usage, coachAsk: 20 } });
+    });
+    expect(screen.getByText('Batas 20 pertanyaan hari ini tercapai. Coba lagi besok.')).toBeTruthy();
   });
 
   const octTx: Transaction[] = [{ id: 'm', type: 'expense', merchant: 'Toko', categoryKey: 'food', accountId: 'a-bca', date: '2026-10-10', time: '10:00', amount: 50_000, currency: 'IDR', source: 'manual' }];

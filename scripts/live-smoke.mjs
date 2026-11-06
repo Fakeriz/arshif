@@ -163,6 +163,34 @@ await test('Smart Log live: auto-apply, duplikat ke To Review, konfirmasi, undo,
   return `kuota automation ${used0} → ${used0 + 2}`;
 });
 
+await test('Tanya Coach live: Free ditolak (kuota), Premium dijawab Gemini, kuota coachAsk +1', async () => {
+  const context = {
+    currency: 'IDR', monthlyIncome: 14250000, netWorth: 30000000, period: { elapsedPct: 40, daysLeft: 19 },
+    budget: { total: 14250000, flexSpent: 4000000, flexLimit: 11400000, safePerDay: 390000, pace: 'sesuai',
+      buckets: [{ key: 'needs', spent: 2500000, limit: 7125000 }, { key: 'wants', spent: 1500000, limit: 4275000 }, { key: 'savings', spent: 500000, limit: 2850000 }] },
+    categories: [{ key: 'food', spent: 1200000, limit: 1500000 }, { key: 'shopping', spent: 900000, limit: null }],
+    week: { spent: 600000, changePct: -10, noSpendDays: 2 }, score: 72, pillars: [{ key: 'savings', points: 18, max: 25 }],
+  };
+  const body = { lang: 'id', question: 'Kategori mana yang paling besar periode ini?', history: [], context };
+  const free = await invoke(A.c, 'coach-ask', body);
+  assert(free.status === 402 && free.data?.error === 'quota', `Free: HTTP ${free.status} ${JSON.stringify(free.data)}`);
+  const bad = await invoke(A.c, 'coach-ask', { ...body, question: 'x' });
+  assert(bad.status === 400, `input salah: HTTP ${bad.status}`);
+  must(await admin.from('profiles').update({ plan: 'premium' }).eq('id', A.userId));
+  try {
+    const before = await usageOf(A.c, 'coachAsk');
+    const t0 = Date.now();
+    const r = await invoke(A.c, 'coach-ask', body);
+    assert(r.status === 200 && typeof r.data?.answer === 'string' && r.data.answer.length > 5, `Premium: HTTP ${r.status} ${JSON.stringify(r.data)}`);
+    assert(!/—/.test(r.data.answer), 'em dash di jawaban');
+    const after = await usageOf(A.c, 'coachAsk');
+    assert(after === before + 1, `kuota ${before} -> ${after}`);
+    return `${Date.now() - t0} ms, kuota ${before} → ${after}: "${r.data.answer.slice(0, 90)}"`;
+  } finally {
+    must(await admin.from('profiles').update({ plan: 'free' }).eq('id', A.userId));
+  }
+});
+
 await test('hapus akun: delete-account menghapus pengguna + data (cascade)', async () => {
   const r = await invoke(B.c, 'delete-account', { confirm: 'DELETE' });
   assert(r.status === 200 && r.data.deleted === true, `HTTP ${r.status} ${JSON.stringify(r.data)}`);

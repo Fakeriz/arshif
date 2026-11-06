@@ -109,14 +109,16 @@ function Routes() {
           dan "/" tetap milik (tabs)/index. */}
       {/* Pricing publik: bisa dibuka dengan atau tanpa login. */}
       <Stack.Screen name="harga" />
-      <Stack.Protected guard={!signedIn}>
+      {/* redirectTo eksplisit di tiap grup: tanpa itu expo-router jatuh ke rute tak-terkunci pertama menurut
+          nama berkas, yaitu "harga", sehingga pengguna baru setelah verifikasi mendarat di Harga, bukan Setup. */}
+      <Stack.Protected guard={!signedIn} redirectTo={onboarded ? '/' : '/setup'}>
         <Stack.Screen name="(auth)/masuk" />
         <Stack.Screen name="(auth)/verifikasi" />
       </Stack.Protected>
-      <Stack.Protected guard={signedIn && !onboarded}>
+      <Stack.Protected guard={signedIn && !onboarded} redirectTo={signedIn ? '/' : '/masuk'}>
         <Stack.Screen name="setup" />
       </Stack.Protected>
-      <Stack.Protected guard={onboarded}>
+      <Stack.Protected guard={onboarded} redirectTo={signedIn ? '/setup' : '/masuk'}>
         <Stack.Screen name="(tabs)" />
         <Stack.Screen name="pengaturan" />
         <Stack.Screen name="coach" />

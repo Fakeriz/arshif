@@ -440,6 +440,10 @@ import_map = "./functions/import_map.json"
 verify_jwt = false
 import_map = "./functions/import_map.json"
 
+[functions.coach-ask]
+verify_jwt = false
+import_map = "./functions/import_map.json"
+
 [functions.fx-sync]
 verify_jwt = false
 import_map = "./functions/import_map.json"
