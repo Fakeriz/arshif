@@ -1,12 +1,13 @@
 /**
- * Arshif design tokens: "Kaca & Aksen" (PRD Bab 11, FR-SET-4).
- * Netral + semantik per tema ada di `palettes`; warna aksen pilihan pengguna ada di `accents`.
- * Semua pasangan teks/latar (termasuk teks di atas kaca + glow) diverifikasi WCAG AA
- * di __tests__/contrast.test.ts.
+ * Arshif design tokens: "Monokrom" (docs/design.md, revisi dari "Kaca & Aksen").
+ * Kartu solid di atas kanvas netral, primary terbalik (terang di gelap, gelap di terang),
+ * kontrol berbentuk pill. Warna hanya untuk makna (naik/turun/peringatan) dan kategori.
+ * Kunci token "glass*" dipertahankan demi kompatibilitas komponen; nilainya kini solid.
+ * Semua pasangan teks/latar diverifikasi WCAG AA di __tests__/contrast.test.ts.
  */
 
 export type ColorScheme = 'dark' | 'light';
-export type AccentKey = 'merah' | 'kuningan' | 'zamrud' | 'biru' | 'ungu';
+export type AccentKey = 'netral' | 'merah' | 'kuningan' | 'zamrud' | 'biru' | 'ungu';
 
 export type BasePalette = {
   bg: string;
@@ -57,89 +58,93 @@ export type Palette = BasePalette & AccentTokens;
 
 export const palettes: Record<ColorScheme, BasePalette> = {
   dark: {
-    bg: '#0D0C0A',
-    surface: '#171512',
-    surfaceRaised: '#211E1A',
-    surfaceSunken: '#100F0D',
-    border: 'rgba(255, 255, 255, 0.08)',
-    borderStrong: 'rgba(255, 255, 255, 0.16)',
-    text: '#F4EFE6',
-    textSecondary: '#BDB5A8',
-    textMuted: '#A59E91',
-    positive: '#66D4A6',
-    positiveSoft: 'rgba(91, 199, 154, 0.14)',
-    negative: '#FF8A7E',
-    negativeSoft: 'rgba(240, 116, 104, 0.14)',
-    warning: '#E8B43C',
-    warningSoft: 'rgba(232, 180, 60, 0.14)',
-    info: '#86AEE0',
-    infoSoft: 'rgba(134, 174, 224, 0.14)',
+    bg: '#0A0A0A',
+    surface: '#171717',
+    surfaceRaised: '#1F1F1F',
+    surfaceSunken: '#262626',
+    border: 'rgba(255, 255, 255, 0.06)',
+    borderStrong: 'rgba(255, 255, 255, 0.12)',
+    text: '#FAFAFA',
+    textSecondary: '#ABABAB',
+    textMuted: '#8F8F8F',
+    positive: '#5BD69A',
+    positiveSoft: 'rgba(91, 214, 154, 0.12)',
+    negative: '#F87171',
+    negativeSoft: 'rgba(248, 113, 113, 0.12)',
+    warning: '#E5B54A',
+    warningSoft: 'rgba(229, 181, 74, 0.12)',
+    info: '#8AB4F8',
+    infoSoft: 'rgba(138, 180, 248, 0.12)',
     track: 'rgba(255, 255, 255, 0.10)',
-    skeleton: 'rgba(255, 255, 255, 0.08)',
-    overlay: 'rgba(5, 4, 3, 0.62)',
-    glass: 'rgba(255, 255, 255, 0.05)',
-    glassStrong: 'rgba(28, 26, 23, 0.72)',
-    glassBorder: 'rgba(255, 255, 255, 0.08)',
-    glassFallback: 'rgba(30, 28, 25, 0.88)',
-    glassStrongFallback: 'rgba(30, 28, 25, 0.96)',
+    skeleton: 'rgba(255, 255, 255, 0.06)',
+    overlay: 'rgba(0, 0, 0, 0.64)',
+    glass: '#171717',
+    glassStrong: '#1F1F1F',
+    glassBorder: 'rgba(255, 255, 255, 0.06)',
+    glassFallback: '#171717',
+    glassStrongFallback: '#1F1F1F',
   },
   light: {
-    bg: '#F4F1EA',
-    surface: '#FFFDF8',
+    bg: '#F3F3F3',
+    surface: '#FFFFFF',
     surfaceRaised: '#FFFFFF',
-    surfaceSunken: '#ECE8DF',
-    border: 'rgba(26, 23, 18, 0.10)',
-    borderStrong: 'rgba(26, 23, 18, 0.20)',
-    text: '#1A1712',
-    textSecondary: '#554E43',
-    textMuted: '#655E52',
-    positive: '#17794E',
-    positiveSoft: 'rgba(23, 121, 78, 0.10)',
-    negative: '#B8352A',
-    negativeSoft: 'rgba(184, 53, 42, 0.10)',
+    surfaceSunken: '#F4F4F4',
+    border: 'rgba(0, 0, 0, 0.06)',
+    borderStrong: 'rgba(0, 0, 0, 0.12)',
+    text: '#0A0A0A',
+    textSecondary: '#525252',
+    textMuted: '#636363',
+    positive: '#15803D',
+    positiveSoft: 'rgba(21, 128, 61, 0.08)',
+    negative: '#B91C1C',
+    negativeSoft: 'rgba(185, 28, 28, 0.08)',
     warning: '#8A5A00',
-    warningSoft: 'rgba(138, 90, 0, 0.10)',
-    info: '#2B63A8',
-    infoSoft: 'rgba(43, 99, 168, 0.10)',
-    track: 'rgba(26, 23, 18, 0.10)',
-    skeleton: 'rgba(26, 23, 18, 0.08)',
-    overlay: 'rgba(26, 23, 18, 0.40)',
-    glass: 'rgba(255, 255, 255, 0.62)',
-    glassStrong: 'rgba(255, 255, 255, 0.80)',
-    glassBorder: 'rgba(255, 255, 255, 0.70)',
-    glassFallback: 'rgba(255, 253, 248, 0.94)',
-    glassStrongFallback: 'rgba(255, 253, 248, 0.98)',
+    warningSoft: 'rgba(138, 90, 0, 0.08)',
+    info: '#1D4ED8',
+    infoSoft: 'rgba(29, 78, 216, 0.08)',
+    track: 'rgba(0, 0, 0, 0.08)',
+    skeleton: 'rgba(0, 0, 0, 0.06)',
+    overlay: 'rgba(0, 0, 0, 0.32)',
+    glass: '#FFFFFF',
+    glassStrong: '#FFFFFF',
+    glassBorder: 'rgba(0, 0, 0, 0.06)',
+    glassFallback: '#FFFFFF',
+    glassStrongFallback: '#FFFFFF',
   },
 };
 
-/** Aksen pilihan pengguna (FR-SET-4). Merah = default, mengikuti referensi. */
+/** Aksen pilihan pengguna (FR-SET-4). Netral = default (primary terbalik, tanpa glow). */
 export const accents: Record<AccentKey, Record<ColorScheme, AccentTokens>> = {
+  netral: {
+    dark: { accent: '#EDEDED', onAccent: '#0A0A0A', accentText: '#FAFAFA', accentSoft: 'rgba(255, 255, 255, 0.08)', accentGlow: 'rgba(0, 0, 0, 0)', focus: '#D4D4D4' },
+    light: { accent: '#0A0A0A', onAccent: '#FFFFFF', accentText: '#0A0A0A', accentSoft: 'rgba(0, 0, 0, 0.05)', accentGlow: 'rgba(0, 0, 0, 0)', focus: '#525252' },
+  },
   merah: {
     dark: { accent: '#D42A45', onAccent: '#FFFFFF', accentText: '#FF8595', accentSoft: 'rgba(212, 42, 69, 0.14)', accentGlow: 'rgba(212, 42, 69, 0.30)', focus: '#FF8595' },
-    light: { accent: '#C0233C', onAccent: '#FFFFFF', accentText: '#B01F37', accentSoft: 'rgba(192, 35, 60, 0.10)', accentGlow: 'rgba(212, 42, 69, 0.12)', focus: '#B01F37' },
+    light: { accent: '#C0233C', onAccent: '#FFFFFF', accentText: '#B01F37', accentSoft: 'rgba(192, 35, 60, 0.10)', accentGlow: 'rgba(212, 42, 69, 0.06)', focus: '#B01F37' },
   },
   kuningan: {
     dark: { accent: '#D6B072', onAccent: '#1B1508', accentText: '#E0BE86', accentSoft: 'rgba(214, 176, 114, 0.12)', accentGlow: 'rgba(214, 176, 114, 0.18)', focus: '#E0BE86' },
-    light: { accent: '#8A6424', onAccent: '#FFFDF8', accentText: '#7D5A1E', accentSoft: 'rgba(138, 100, 36, 0.12)', accentGlow: 'rgba(214, 176, 114, 0.12)', focus: '#7D5A1E' },
+    light: { accent: '#8A6424', onAccent: '#FFFDF8', accentText: '#7D5A1E', accentSoft: 'rgba(138, 100, 36, 0.12)', accentGlow: 'rgba(214, 176, 114, 0.06)', focus: '#7D5A1E' },
   },
   zamrud: {
     dark: { accent: '#0B7F5E', onAccent: '#FFFFFF', accentText: '#4DD6C1', accentSoft: 'rgba(11, 127, 94, 0.22)', accentGlow: 'rgba(16, 150, 112, 0.24)', focus: '#4DD6C1' },
-    light: { accent: '#0B7F5E', onAccent: '#FFFFFF', accentText: '#0A6E52', accentSoft: 'rgba(11, 127, 94, 0.10)', accentGlow: 'rgba(16, 150, 112, 0.12)', focus: '#0A6E52' },
+    light: { accent: '#0B7F5E', onAccent: '#FFFFFF', accentText: '#0A6E52', accentSoft: 'rgba(11, 127, 94, 0.10)', accentGlow: 'rgba(16, 150, 112, 0.06)', focus: '#0A6E52' },
   },
   biru: {
     dark: { accent: '#2F6FE0', onAccent: '#FFFFFF', accentText: '#8AB2F7', accentSoft: 'rgba(47, 111, 224, 0.20)', accentGlow: 'rgba(47, 111, 224, 0.30)', focus: '#8AB2F7' },
-    light: { accent: '#2457B8', onAccent: '#FFFFFF', accentText: '#2457B8', accentSoft: 'rgba(36, 87, 184, 0.10)', accentGlow: 'rgba(47, 111, 224, 0.12)', focus: '#2457B8' },
+    light: { accent: '#2457B8', onAccent: '#FFFFFF', accentText: '#2457B8', accentSoft: 'rgba(36, 87, 184, 0.10)', accentGlow: 'rgba(47, 111, 224, 0.06)', focus: '#2457B8' },
   },
   ungu: {
     dark: { accent: '#7B4FE0', onAccent: '#FFFFFF', accentText: '#B9A0FF', accentSoft: 'rgba(123, 79, 224, 0.20)', accentGlow: 'rgba(123, 79, 224, 0.30)', focus: '#B9A0FF' },
-    light: { accent: '#6B3FD1', onAccent: '#FFFFFF', accentText: '#5F36BF', accentSoft: 'rgba(107, 63, 209, 0.10)', accentGlow: 'rgba(123, 79, 224, 0.12)', focus: '#5F36BF' },
+    light: { accent: '#6B3FD1', onAccent: '#FFFFFF', accentText: '#5F36BF', accentSoft: 'rgba(107, 63, 209, 0.10)', accentGlow: 'rgba(123, 79, 224, 0.06)', focus: '#5F36BF' },
   },
 };
 
 /** Urutan pilihan aksen. Label: `domain.accent.<key>`. */
-export const ACCENT_OPTIONS: { key: AccentKey }[] = [{ key: 'merah' }, { key: 'kuningan' }, { key: 'zamrud' }, { key: 'biru' }, { key: 'ungu' }];
+export const ACCENT_OPTIONS: { key: AccentKey }[] = [{ key: 'netral' }, { key: 'merah' }, { key: 'kuningan' }, { key: 'zamrud' }, { key: 'biru' }, { key: 'ungu' }];
 
-export const DEFAULT_ACCENT: AccentKey = 'merah';
+export const DEFAULT_ACCENT: AccentKey = 'netral';
 
 /**
  * Over budget saat aksen = Merah: rona dibedakan (oranye-vermilion) agar tidak tertukar
@@ -199,14 +204,24 @@ export type CategoryHue =
   | 'clay'
   | 'slate';
 
-/** PRD Bab 11: card 16, button/input 12, chip/badge full, sheet 24. */
+/** Skala radius. Pakai alias semantik di bawah, bukan angka langsung. */
 export const radius = {
   xs: 6,
   sm: 8,
-  md: 12,
-  lg: 16,
-  xl: 24,
+  md: 14,
+  lg: 20,
+  xl: 28,
   full: 999,
+  /** Kartu utama di kanvas. */
+  card: 20,
+  /** Panel di dalam kartu (ringkasan, baris daftar berlatar, textarea). */
+  inset: 14,
+  /** Tombol, input satu baris, select, chip, badge, toggle. */
+  control: 999,
+  /** Batang grafik. */
+  bar: 6,
+  /** Bottom sheet & dialog. */
+  sheet: 28,
 } as const;
 
 export const space = {
@@ -232,18 +247,21 @@ export const fonts = {
 } as const;
 
 export const type = {
-  display: { fontFamily: fonts.extrabold, fontSize: 32, lineHeight: 38, letterSpacing: -0.8 },
-  h1: { fontFamily: fonts.bold, fontSize: 28, lineHeight: 34, letterSpacing: -0.6 },
-  h2: { fontFamily: fonts.bold, fontSize: 22, lineHeight: 28, letterSpacing: -0.3 },
-  h3: { fontFamily: fonts.semibold, fontSize: 17, lineHeight: 24, letterSpacing: -0.1 },
+  display: { fontFamily: fonts.bold, fontSize: 30, lineHeight: 36, letterSpacing: -0.9 },
+  h1: { fontFamily: fonts.bold, fontSize: 24, lineHeight: 30, letterSpacing: -0.6 },
+  h2: { fontFamily: fonts.semibold, fontSize: 19, lineHeight: 26, letterSpacing: -0.3 },
+  /** Judul kartu. */
+  h3: { fontFamily: fonts.semibold, fontSize: 16, lineHeight: 22, letterSpacing: -0.2 },
   body: { fontFamily: fonts.regular, fontSize: 15, lineHeight: 22 },
   bodyStrong: { fontFamily: fonts.semibold, fontSize: 15, lineHeight: 22 },
-  caption: { fontFamily: fonts.medium, fontSize: 13, lineHeight: 18 },
-  overline: { fontFamily: fonts.semibold, fontSize: 12, lineHeight: 16, letterSpacing: 0.2 },
-  amountHero: { fontFamily: fonts.bold, fontSize: 36, lineHeight: 44, letterSpacing: -1 },
-  balanceHero: { fontFamily: fonts.bold, fontSize: 44, lineHeight: 52, letterSpacing: -1.4 },
-  amount: { fontFamily: fonts.semibold, fontSize: 17, lineHeight: 24 },
-  button: { fontFamily: fonts.semibold, fontSize: 16, lineHeight: 20 },
+  /** Subjudul kartu, deskripsi baris, label sumbu. */
+  caption: { fontFamily: fonts.regular, fontSize: 13, lineHeight: 18 },
+  /** Label seksi huruf kapital ("UPCOMING", "RETIREMENT"). Teks ditulis kapital di sumber. */
+  overline: { fontFamily: fonts.semibold, fontSize: 11, lineHeight: 14, letterSpacing: 0.8 },
+  amountHero: { fontFamily: fonts.bold, fontSize: 32, lineHeight: 38, letterSpacing: -1 },
+  balanceHero: { fontFamily: fonts.bold, fontSize: 40, lineHeight: 46, letterSpacing: -1.4 },
+  amount: { fontFamily: fonts.semibold, fontSize: 15, lineHeight: 22 },
+  button: { fontFamily: fonts.semibold, fontSize: 14, lineHeight: 18 },
 } as const;
 
 export type TypeVariant = keyof typeof type;
@@ -259,11 +277,55 @@ export const motion = {
 
 export const layout = {
   hairline: 1,
-  buttonHeight: { lg: 52, md: 44, sm: 36 },
-  inputHeight: 52,
+  buttonHeight: { lg: 48, md: 40, sm: 32 },
+  inputHeight: 44,
+  /** Jarak tepi layar dan padding dalam kartu. */
+  screenGutter: 16,
+  cardPadding: 16,
+  insetPadding: 12,
+  /** Jarak vertikal antar kartu. */
+  cardGap: 12,
   iconStroke: 1.75,
   iconSize: { sm: 16, md: 20, lg: 24 },
   maxContentWidth: 560,
-  /** Intensitas blur kaca (expo-blur 1–100). */
-  blur: { panel: 40, floating: 60 },
+  /** Blur hanya untuk tab bar mengambang; panel/kartu tidak lagi blur. */
+  blur: { panel: 0, floating: 50 },
+} as const;
+
+/**
+ * Ramp abu untuk grafik batang/area: urut dari data terlama → terbaru / terkecil → sorotan.
+ * Titik sorotan (bulan berjalan, nilai terpilih) memakai indeks terakhir.
+ */
+export const chartRamp: Record<ColorScheme, readonly string[]> = {
+  dark: ['#3A3A3A', '#525252', '#737373', '#A3A3A3', '#E5E5E5'],
+  light: ['#D4D4D4', '#A3A3A3', '#737373', '#404040', '#171717'],
+};
+
+/** Area grafik garis: isian di bawah garis dan garisnya. */
+export const chartArea: Record<ColorScheme, { fill: string; line: string }> = {
+  dark: { fill: 'rgba(255, 255, 255, 0.14)', line: '#A3A3A3' },
+  light: { fill: 'rgba(0, 0, 0, 0.06)', line: '#A3A3A3' },
+};
+
+/**
+ * Elevasi. Gelap: tanpa bayangan, kedalaman dari selisih nada permukaan.
+ * Terang: bayangan sangat tipis agar kartu putih terangkat dari kanvas #F3F3F3.
+ */
+export const elevation = {
+  dark: {
+    card: {},
+    floating: { shadowColor: '#000000', shadowOpacity: 0.5, shadowRadius: 24, shadowOffset: { width: 0, height: 8 }, elevation: 8 },
+  },
+  light: {
+    card: { shadowColor: '#000000', shadowOpacity: 0.04, shadowRadius: 12, shadowOffset: { width: 0, height: 2 }, elevation: 1 },
+    floating: { shadowColor: '#000000', shadowOpacity: 0.12, shadowRadius: 24, shadowOffset: { width: 0, height: 8 }, elevation: 8 },
+  },
+} as const;
+
+/** Opasitas status. */
+export const opacity = {
+  disabled: 0.4,
+  /** Item daftar yang memudar di tepi bawah kartu (fade-out). */
+  faded: 0.5,
+  pressed: 0.85,
 } as const;

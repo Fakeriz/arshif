@@ -37,6 +37,7 @@ const domain = {
     paylater: 'Paylater',
   },
   accent: {
+    netral: 'Netral',
     merah: 'Merah',
     kuningan: 'Kuningan',
     zamrud: 'Zamrud',

@@ -33,7 +33,7 @@ const domain: Messages['domain'] = {
     kartu_kredit: 'Kredi Kartı',
     paylater: 'Sonra Öde',
   },
-  accent: { merah: 'Kırmızı', kuningan: 'Pirinç', zamrud: 'Zümrüt', biru: 'Mavi', ungu: 'Mor' },
+  accent: { netral: 'Nötr', merah: 'Kırmızı', kuningan: 'Pirinç', zamrud: 'Zümrüt', biru: 'Mavi', ungu: 'Mor' },
   currencyName: {
     IDR: 'Endonezya Rupisi',
     MYR: 'Malezya Ringgiti',

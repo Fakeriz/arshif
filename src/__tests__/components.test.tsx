@@ -166,14 +166,14 @@ describe('AccentPicker', () => {
     return <Text testID="accent">{`${accent}:${colors.accent}`}</Text>;
   }
 
-  it('default Merah, mengganti aksen memperbarui token tema', async () => {
+  it('default Netral, mengganti aksen memperbarui token tema', async () => {
     await wrap(
       <>
         <AccentPicker />
         <CurrentAccent />
       </>,
     );
-    expect(screen.getByTestId('accent').props.children).toBe('merah:#D42A45');
+    expect(screen.getByTestId('accent').props.children).toBe('netral:#EDEDED');
     await fireEvent.press(screen.getByLabelText('Biru'));
     expect(screen.getByTestId('accent').props.children).toBe('biru:#2F6FE0');
     expect(screen.getByLabelText('Biru').props.accessibilityState.checked).toBe(true);
