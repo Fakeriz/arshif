@@ -15,6 +15,7 @@ export function useLimits() {
     goals: isLimited(plan, 'goals', usage.goals),
     billsDebts: isLimited(plan, 'billsDebts', usage.billsDebts),
     subscriptions: isLimited(plan, 'subscriptions', usage.subscriptions),
+    assets: isLimited(plan, 'assets', usage.assets),
     scanLeft: remaining(plan, 'scan', usage.scan),
     importLeft: remaining(plan, 'importPdf', usage.importPdf),
   };

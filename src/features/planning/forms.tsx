@@ -16,7 +16,7 @@ import { space } from '@/theme/tokens';
 import { ChoiceRow, DateField, FormSheet, isYmd, useSaveError } from './kit';
 
 /** Mata uang: chip yang membuka daftar mata uang. */
-function CurrencyField({ value, onChange, locked }: { value: string; onChange: (c: string) => void; locked?: boolean }) {
+export function CurrencyField({ value, onChange, locked }: { value: string; onChange: (c: string) => void; locked?: boolean }) {
   const t = useT();
   const [open, setOpen] = useState(false);
   return (

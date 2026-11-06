@@ -2,7 +2,7 @@ import type { Messages } from '../id';
 
 const shell: Messages['shell'] = {
   tab: { home: 'Utama', transactions: 'Transaksi', budget: 'Bajet', coach: 'Coach', assets: 'Aset' },
-  assets: { title: 'Aset', subtitle: 'Saham dan aset lain', soonTitle: 'Akan datang', soonMessage: 'Ciri saham dan aset lain sedang kami sediakan. Buat masa ini, baki akaun anda kekal di Utama.' },
+  assets: { title: 'Aset', subtitle: 'Nilai bersih dan butirannya' },
   capture: {
     title: 'Rekod transaksi',
     subtitle: 'Pilih cara paling pantas untuk anda',

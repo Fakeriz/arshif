@@ -71,6 +71,7 @@ const domain: Messages['domain'] = {
     goals: 'Active savings goals',
     billsDebts: 'Bills + debts',
     subscriptions: 'Subscriptions',
+    assets: 'Assets',
     coachAsk: 'Ask Coach',
     coachMonthly: 'Monthly Coach recap',
     taxFull: 'Full tax tools',

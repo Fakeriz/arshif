@@ -1,7 +1,7 @@
 /** Kerangka aplikasi: nav, sheet Catat, mata uang, notifikasi, Premium. */
 const shell = {
   tab: { home: 'Home', transactions: 'Transaksi', budget: 'Anggaran', coach: 'Coach', assets: 'Aset' },
-  assets: { title: 'Aset', subtitle: 'Saham dan aset lainnya', soonTitle: 'Segera hadir', soonMessage: 'Fitur saham dan aset lainnya sedang kami siapkan. Untuk sekarang, saldo akunmu tetap ada di Home.' },
+  assets: { title: 'Aset', subtitle: 'Kekayaan bersih dan rinciannya' },
   capture: {
     title: 'Catat transaksi',
     subtitle: 'Pilih cara tercepat untukmu',

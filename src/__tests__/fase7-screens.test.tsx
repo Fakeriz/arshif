@@ -283,7 +283,7 @@ describe('perbaikan uji HP', () => {
 
 /** Sheet Lainnya dengan seksi yang sama seperti Home. */
 function MoreSheet() {
-  const limits = { scan: false, automation: false, importPdf: false, invoice: false, accounts: false, goals: false, billsDebts: false, subscriptions: false, scanLeft: 20, importLeft: 3 };
+  const limits = { scan: false, automation: false, importPdf: false, invoice: false, accounts: false, goals: false, billsDebts: false, subscriptions: false, assets: false, scanLeft: 20, importLeft: 3 };
   const t = useI18nT();
   const items = moreOptions(limits, t);
   return (

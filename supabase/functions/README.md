@@ -7,6 +7,7 @@
 | `import-statement` | klien | `importPdf` | PDF dari bucket `statements`, dihapus setelah diproses |
 | `coach` | klien | tanpa kuota (rate limit) | hanya ringkasan angka, di-cache per minggu + bahasa |
 | `fx-sync` | pg_cron (`x-cron-secret`) atau admin (token, `admin_users`) | - | Frankfurter/ECB, backfill 365 hari bila riwayat < 30 hari; tiap percobaan dicatat di `fx_sync_runs` |
+| `asset-prices-sync` | pg_cron tiap jam (`x-cron-secret`) atau admin | - | harga aset live per kunci netral (`IDX:BBCA`, `US:AAPL`, `CRYPTO:BTC`, `GOLD:XAU`) ke `asset_prices`; satu kode gagal tidak menggagalkan yang lain; tiap percobaan dicatat di `asset_price_runs`. Penyedia harga belum dipasang (`no_provider`) |
 | `delete-account` | klien | - | hapus storage + pengguna Auth (cascade) |
 | `checkout-create` | klien | maks 5 pesanan/10 menit | harga dari tabel `prices`; IDR/MYR -> Xendit Invoice, USD -> transaksi Paddle |
 | `xendit-webhook` | Xendit (`x-callback-token`) | - | invoice PAID/SETTLED/EXPIRED, `refund.succeeded`; idempoten |

@@ -6,25 +6,25 @@ import type { Plan } from '@/data/types';
  * Label: `domain.quota.<key>`.
  */
 export type QuotaKey =
-  | 'accounts' | 'goals' | 'billsDebts' | 'subscriptions'
+  | 'accounts' | 'goals' | 'billsDebts' | 'subscriptions' | 'assets'
   | 'scan' | 'automation' | 'importPdf' | 'invoice'
   | 'coachAsk' | 'coachMonthly' | 'taxFull' | 'pdfExport';
 
 /** month = reset tanggal 1, day = reset tiap hari, total = jumlah yang aktif, feature = Premium saja. */
 export const QUOTA_WINDOW: Record<QuotaKey, 'month' | 'day' | 'total' | 'feature'> = {
-  accounts: 'total', goals: 'total', billsDebts: 'total', subscriptions: 'total',
+  accounts: 'total', goals: 'total', billsDebts: 'total', subscriptions: 'total', assets: 'total',
   scan: 'month', automation: 'month', importPdf: 'month', invoice: 'month',
   coachAsk: 'day', coachMonthly: 'feature', taxFull: 'feature', pdfExport: 'feature',
 };
 
 export const QUOTAS: Record<Plan, Record<QuotaKey, number | null>> = {
   free: {
-    accounts: 4, goals: 3, billsDebts: 3, subscriptions: 5,
+    accounts: 4, goals: 3, billsDebts: 3, subscriptions: 5, assets: 5,
     scan: 20, automation: 30, importPdf: 1, invoice: 5,
     coachAsk: 0, coachMonthly: 0, taxFull: 0, pdfExport: 0,
   },
   premium: {
-    accounts: null, goals: null, billsDebts: null, subscriptions: null,
+    accounts: null, goals: null, billsDebts: null, subscriptions: null, assets: null,
     scan: 300, automation: null, importPdf: 10, invoice: null,
     coachAsk: 20, coachMonthly: null, taxFull: null, pdfExport: null,
   },
@@ -33,7 +33,7 @@ export const QUOTAS: Record<Plan, Record<QuotaKey, number | null>> = {
 export type Usage = Record<QuotaKey, number>;
 
 export const EMPTY_USAGE: Usage = {
-  accounts: 0, goals: 0, billsDebts: 0, subscriptions: 0,
+  accounts: 0, goals: 0, billsDebts: 0, subscriptions: 0, assets: 0,
   scan: 0, automation: 0, importPdf: 0, invoice: 0,
   coachAsk: 0, coachMonthly: 0, taxFull: 0, pdfExport: 0,
 };

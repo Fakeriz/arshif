@@ -66,7 +66,7 @@ Aksen berwarna lama (Merah, Kuningan, Zamrud, Biru, Ungu) tetap tersedia di Peng
 - **`chartRamp`**: 5 tingkat abu, dari data lama/kecil (paling pudar) ke sorotan (paling kontras). Bulan berjalan atau batang terpilih = indeks terakhir.
   - Gelap: `#3A3A3A → #525252 → #737373 → #A3A3A3 → #E5E5E5`
   - Terang: `#D4D4D4 → #A3A3A3 → #737373 → #404040 → #171717`
-- **`chartArea`**: grafik garis, isian tipis di bawah garis abu `#A3A3A3`, tanpa titik data kecuali disentuh.
+- **`chartArea`**: grafik garis, isian tipis di bawah garis abu (`#A3A3A3` gelap, `#737373` terang agar garis tetap 3:1 di kartu putih), tanpa titik data kecuali disentuh.
 - Batang memakai radius atas `radius.bar` (6), jarak antar batang ≈ 25% lebar batang.
 - **`categoryHues`** tetap dipakai untuk donut kategori dan ikon kategori, satu-satunya tempat warna bebas muncul.
 

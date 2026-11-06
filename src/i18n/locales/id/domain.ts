@@ -90,6 +90,7 @@ const domain = {
     goals: 'Savings Goals aktif',
     billsDebts: 'Tagihan + utang',
     subscriptions: 'Langganan',
+    assets: 'Aset',
     coachAsk: 'Tanya Coach',
     coachMonthly: 'Recap bulanan Coach',
     taxFull: 'Alat pajak lengkap',

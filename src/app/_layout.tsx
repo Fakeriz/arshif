@@ -20,6 +20,7 @@ import { BlurTargetArea, BlurTargetScope, ToastProvider } from '@/components/ui'
 import { I18nProvider } from '@/i18n';
 import { AppStoreProvider, useStore } from '@/state/AppStore';
 import { InvoicesProvider } from '@/state/invoices';
+import { AssetsProvider } from '@/state/assets';
 import { PlanningProvider } from '@/state/planning';
 import { PurchasesBridge } from '@/state/billing';
 import { SmartLogProvider } from '@/state/smartlog';
@@ -65,18 +66,20 @@ function Shell() {
       <ToastProvider>
         <AppStoreProvider>
           <PlanningProvider>
-            <InvoicesProvider>
-              <PaywallProvider>
-                <SmartLogProvider>
-                  <PurchasesBridge />
-                  <StatusBar style={scheme === 'dark' ? 'light' : 'dark'} />
-                  {/* Android: konten Stack = sumber blur untuk toast (di luar area) serta sheet/dialog (Modal). */}
-                  <BlurTargetArea style={styles.fill}>
-                    <Routes />
-                  </BlurTargetArea>
-                </SmartLogProvider>
-              </PaywallProvider>
-            </InvoicesProvider>
+            <AssetsProvider>
+              <InvoicesProvider>
+                <PaywallProvider>
+                  <SmartLogProvider>
+                    <PurchasesBridge />
+                    <StatusBar style={scheme === 'dark' ? 'light' : 'dark'} />
+                    {/* Android: konten Stack = sumber blur untuk toast (di luar area) serta sheet/dialog (Modal). */}
+                    <BlurTargetArea style={styles.fill}>
+                      <Routes />
+                    </BlurTargetArea>
+                  </SmartLogProvider>
+                </PaywallProvider>
+              </InvoicesProvider>
+            </AssetsProvider>
           </PlanningProvider>
         </AppStoreProvider>
       </ToastProvider>
@@ -167,6 +170,7 @@ function Routes() {
         <Stack.Screen name="alat/laporan" />
         <Stack.Screen name="alat/ekspor" />
         <Stack.Screen name="akun/[id]" />
+        <Stack.Screen name="aset/[id]" />
         <Stack.Screen name="akun/grup" />
         <Stack.Screen name="kurs-saya" />
       </Stack.Protected>

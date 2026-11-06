@@ -448,6 +448,10 @@ import_map = "./functions/import_map.json"
 verify_jwt = false
 import_map = "./functions/import_map.json"
 
+[functions.asset-prices-sync]
+verify_jwt = false
+import_map = "./functions/import_map.json"
+
 [functions.delete-account]
 verify_jwt = false
 import_map = "./functions/import_map.json"

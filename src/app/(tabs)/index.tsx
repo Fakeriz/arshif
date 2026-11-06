@@ -19,6 +19,7 @@ import { useT } from '@/i18n';
 import { useStore } from '@/state/AppStore';
 import { useLoadState } from '@/state/loadState';
 import { useBudget, useHealth, useLedger } from '@/state/derived';
+import { useNetWorth, useNetWorthSnapshot } from '@/state/netWorth';
 import { useLimits } from '@/state/limits';
 import { useRetry } from '@/state/useRetry';
 
@@ -31,6 +32,8 @@ export default function HomeScreen() {
   const limits = useLimits();
   const { state, dispatch } = useStore();
   const ledger = useLedger();
+  const netWorth = useNetWorth();
+  useNetWorthSnapshot(netWorth);
   const budget = useBudget();
   const health = useHealth();
   const t = useT();
@@ -62,7 +65,7 @@ export default function HomeScreen() {
   return (
     <Screen tabs onRefresh={retry} refreshing={refreshing}>
       <HomeHeader />
-      <BalanceBlock amount={ledger.netWorth} currency={ledger.mainCurrency} accountCount={ledger.accounts.length} />
+      <BalanceBlock amount={netWorth.total} currency={netWorth.currency} accountCount={ledger.accounts.length} />
       <AccountDeck
         accounts={ledger.accounts}
         hidden={state.hideBalance}

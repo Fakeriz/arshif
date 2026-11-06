@@ -84,3 +84,20 @@ export function niceCeil(max: number): number {
   const step = steps.find((s) => s * exp >= max)!;
   return step * exp;
 }
+
+/**
+ * Titik grafik garis: nilai pertama di kiri, terakhir di kanan, dengan ruang `pad` di atas dan bawah.
+ * Nilai yang sama semua digambar di tengah (garis datar).
+ */
+export function linePoints(values: number[], width: number, height: number, pad = 8): { x: number; y: number }[] {
+  if (values.length === 0 || width <= 0 || height <= 0) return [];
+  const min = Math.min(...values);
+  const max = Math.max(...values);
+  const span = max - min;
+  const inner = Math.max(0, height - pad * 2);
+  const step = values.length > 1 ? width / (values.length - 1) : 0;
+  return values.map((v, i) => ({
+    x: values.length > 1 ? i * step : width / 2,
+    y: span === 0 ? height / 2 : pad + inner - ((v - min) / span) * inner,
+  }));
+}

@@ -71,6 +71,7 @@ const domain: Messages['domain'] = {
     goals: 'Savings Goals aktif',
     billsDebts: 'Bil + hutang',
     subscriptions: 'Langganan',
+    assets: 'Aset',
     coachAsk: 'Tanya Coach',
     coachMonthly: 'Recap bulanan Coach',
     taxFull: 'Alat cukai penuh',

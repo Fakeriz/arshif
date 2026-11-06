@@ -737,11 +737,63 @@ await test('admin: status kurs membaca log sinkronisasi', async () => {
   eq([s.runs.length, s.runs[0].trigger, s.runs[0].ok], [1, 'admin', true]);
 });
 
+await test('aset: aturan kolom per jenis + kunci harga netral', async () => {
+  const [{ price_key: k }] = await as(A, `insert into public.assets (type, symbol, name, quantity, currency) values ('stock_id', 'BBCA', 'Bank Central Asia', 100, 'IDR') returning price_key`);
+  eq(k, 'IDX:BBCA');
+  // Jenis live tanpa jumlah, emas selain XAU, dan aset manual tanpa nilai ditolak.
+  await rejects(as(A, `insert into public.assets (type, symbol, name, currency) values ('stock_us', 'AAPL', 'Apple', 'USD')`), /assets_live_fields/);
+  await rejects(as(A, `insert into public.assets (type, symbol, name, quantity, currency) values ('gold', 'XAG', 'Perak', 10, 'IDR')`), /assets_live_fields/);
+  await rejects(as(A, `insert into public.assets (type, name, currency) values ('property', 'Rumah', 'IDR')`), /assets_live_fields/);
+  await rejects(as(A, `insert into public.assets (type, symbol, name, quantity, currency) values ('crypto', 'btc', 'Bitcoin', 0.5, 'USD')`), /assets_symbol_check/);
+  const [{ price_key: m }] = await as(A, `insert into public.assets (type, name, currency, value_override) values ('property', 'Rumah', 'IDR', 900000000) returning price_key`);
+  eq(m, null);
+  // Jenis tidak bisa diubah; nilai lain bisa.
+  await rejects(as(A, `update public.assets set type = 'other' where name = 'Rumah'`), /permission denied/);
+  await as(A, `update public.assets set value_override = 950000000 where name = 'Rumah'`);
+  eq((await as(B, `select count(*)::int as n from public.assets`))[0].n, 0, 'aset A tidak terlihat B');
+});
+
+await test('aset: Free maksimal 5, Premium tanpa batas', async () => {
+  const add = (u, n) => as(u, `insert into public.assets (type, name, currency, value_override) values ('other', $1, 'IDR', 1000)`, [n]);
+  // A sudah punya 2 aset dari tes sebelumnya.
+  await add(A, 'Tiga');
+  await add(A, 'Empat');
+  await add(A, 'Lima');
+  await rejects(add(A, 'Enam'), /quota_assets/);
+  eq((await as(A, `select used from public.my_usage() where key = 'assets'`))[0].used, 5);
+  await as(A, `delete from public.assets where name = 'Lima'`);
+  await add(A, 'Enam');
+  for (let i = 0; i < 7; i++) await add(B, `B${i}`);
+  await as(B, `delete from public.assets`);
+});
+
+await test('aset: harga publik hanya-baca, log sync tertutup', async () => {
+  await sys(`insert into public.asset_prices (symbol, price, currency, source) values ('IDX:BBCA', 5200, 'IDR', 'uji')`);
+  eq((await as(B, `select price::float as p from public.asset_prices where symbol = 'IDX:BBCA'`))[0].p, 5200);
+  await rejects(as(A, `insert into public.asset_prices (symbol, price, currency, source) values ('US:AAPL', 1, 'USD', 'x')`), /permission denied/);
+  await rejects(as(A, `update public.asset_prices set price = 1`), /permission denied/);
+  await rejects(sys(`insert into public.asset_prices (symbol, price, currency, source) values ('NASDAQ:AAPL', 1, 'USD', 'x')`), /asset_prices_symbol_check/);
+  await sys(`insert into public.asset_price_runs (trigger, ok, source, symbols, updated) values ('cron', true, 'uji', 1, 1)`);
+  await rejects(as(A, `select * from public.asset_price_runs`), /permission denied/);
+});
+
+await test('aset: snapshot kekayaan bersih satu per hari, milik sendiri', async () => {
+  const snap = (u, total) =>
+    as(u, `insert into public.net_worth_snapshots (date, total, assets_total, liabilities_total, currency) values ('2026-11-14', $1, $1, 0, 'IDR')
+           on conflict (user_id, date) do update set date = excluded.date, total = excluded.total, assets_total = excluded.assets_total,
+             liabilities_total = excluded.liabilities_total, currency = excluded.currency`, [total]);
+  await snap(A, 1000);
+  await snap(A, 2500);
+  eq((await as(A, `select total::int as t from public.net_worth_snapshots`)).map((r) => r.t), [2500]);
+  eq((await as(B, `select count(*)::int as n from public.net_worth_snapshots`))[0].n, 0);
+  await rejects(as(A, `insert into public.net_worth_snapshots (user_id, date, total, assets_total, liabilities_total, currency) values ($1, '2026-11-13', 1, 1, 0, 'IDR')`, [B]), /permission denied/);
+});
+
 await test('hapus pengguna: semua data ikut terhapus (cascade)', async () => {
   await sys(`delete from auth.users where id = $1`, [A]);
   await sys(`delete from auth.users where id = $1`, [E]);
   for (const id of [A, E]) for (const t of ['budgets', 'limit_groups', 'user_rates']) eq((await sys(`select count(*)::int as n from public.${t} where user_id = $1`, [id]))[0].n, 0, t);
-  for (const t of ['profiles', 'accounts', 'transactions', 'transaction_items', 'notifications', 'usage_counters', 'orders', 'smartlog_links', 'smartlog_items', 'invoices', 'invoice_counters']) {
+  for (const t of ['profiles', 'accounts', 'transactions', 'transaction_items', 'notifications', 'usage_counters', 'orders', 'smartlog_links', 'smartlog_items', 'invoices', 'invoice_counters', 'assets', 'net_worth_snapshots']) {
     const col = t === 'profiles' ? 'id' : 'user_id';
     eq((await sys(`select count(*)::int as n from public.${t} where ${col} = $1`, [A]))[0].n, 0, t);
   }

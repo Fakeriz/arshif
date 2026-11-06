@@ -1,6 +1,7 @@
 import type { Messages } from '../id';
 
 import acct from './acct';
+import assets from './assets';
 import auth from './auth';
 import billing from './billing';
 import budget from './budget';
@@ -17,4 +18,4 @@ import inv from './inv';
 import tools from './tools';
 import tx from './tx';
 
-export const en: Messages = { acct, auth, billing, common, domain, shell, home, tx, capture, budget, plan, coach, settings, slog, inv, tools };
+export const en: Messages = { acct, assets, auth, billing, common, domain, shell, home, tx, capture, budget, plan, coach, settings, slog, inv, tools };

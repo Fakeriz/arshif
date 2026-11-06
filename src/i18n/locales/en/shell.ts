@@ -2,7 +2,7 @@ import type { Messages } from '../id';
 
 const shell: Messages['shell'] = {
   tab: { home: 'Home', transactions: 'Activity', budget: 'Budget', coach: 'Coach', assets: 'Assets' },
-  assets: { title: 'Assets', subtitle: 'Stocks and other assets', soonTitle: 'Coming soon', soonMessage: 'We are building stocks and other assets. For now, your account balances stay on Home.' },
+  assets: { title: 'Assets', subtitle: 'Net worth and what makes it up' },
   capture: {
     title: 'Add transaction',
     subtitle: 'Pick the fastest way for you',

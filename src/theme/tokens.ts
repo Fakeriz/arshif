@@ -304,7 +304,8 @@ export const chartRamp: Record<ColorScheme, readonly string[]> = {
 /** Area grafik garis: isian di bawah garis dan garisnya. */
 export const chartArea: Record<ColorScheme, { fill: string; line: string }> = {
   dark: { fill: 'rgba(255, 255, 255, 0.14)', line: '#A3A3A3' },
-  light: { fill: 'rgba(0, 0, 0, 0.06)', line: '#A3A3A3' },
+  // Terang: #A3A3A3 hanya 2,5:1 di kartu putih; garis data butuh 3:1 (WCAG 1.4.11).
+  light: { fill: 'rgba(0, 0, 0, 0.06)', line: '#737373' },
 };
 
 /**

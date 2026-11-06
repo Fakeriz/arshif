@@ -3,6 +3,7 @@ import {
   ACCENT_OPTIONS,
   buildPalette,
   categoryHues,
+  chartArea,
   palettes,
   stripTint,
   type AccentKey,
@@ -84,6 +85,11 @@ describe.each(schemes)('kontras tema %s', (scheme) => {
       expect(contrastRatio(p.text, promo)).toBeGreaterThanOrEqual(AA_TEXT);
       expect(contrastRatio(p.accentText, promo)).toBeGreaterThanOrEqual(AA_TEXT);
     });
+  });
+
+  it('garis grafik kekayaan bersih >= 3:1 di kartu', () => {
+    const card = composite(palettes[scheme].glass, palettes[scheme].bg);
+    expect(contrastRatio(chartArea[scheme].line, card)).toBeGreaterThanOrEqual(AA_GRAPHIC);
   });
 
   it('aksen Merah: over budget memakai rona berbeda (>= 15°) dari aksen', () => {

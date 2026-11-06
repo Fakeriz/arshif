@@ -71,6 +71,7 @@ const domain: Messages['domain'] = {
     goals: 'Aktif birikim hedefleri',
     billsDebts: 'Faturalar + borçlar',
     subscriptions: 'Abonelikler',
+    assets: 'Varlıklar',
     coachAsk: 'Coach\'a Sor',
     coachMonthly: 'Aylık Coach özeti',
     taxFull: 'Tam vergi araçları',
