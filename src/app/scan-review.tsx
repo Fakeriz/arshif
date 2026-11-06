@@ -32,7 +32,7 @@ export default function ScanReviewScreen() {
   }, [data]);
 
   return (
-    <Screen glow={false}>
+    <Screen>
       <ScreenHeader title={t('capture.scanReview.title')} />
       {data ? (
         <ScanReview

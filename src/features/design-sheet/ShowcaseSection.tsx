@@ -43,7 +43,7 @@ export function ShowcaseSection() {
   const amount = convertMinor(NET_WORTH_IDR, 'IDR', cur, SAMPLE_RATES[cur]);
 
   return (
-    <Section index="Penerapan" title="Satu layar, semua lapisan" note="Pola referensi (kaca, glow aksen, saldo besar, nav pill) dengan isi Arshif. Ganti aksen dan tema di atas untuk melihat semuanya ikut berubah.">
+    <Section index="Penerapan" title="Satu layar, semua lapisan" note="Pola referensi (kartu solid, saldo besar, nav pill) dengan isi Arshif. Ganti aksen dan tema di atas untuk melihat semuanya ikut berubah.">
       <View style={styles.header}>
         <IconButton icon={User} label="Profil" onPress={demo('Profil')} />
         <AppText variant="h3">Arshif</AppText>

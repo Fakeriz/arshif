@@ -72,7 +72,7 @@ export default function LimitGroups() {
   }
 
   return (
-    <Screen glow={false}>
+    <Screen>
       <ScreenHeader
         title={t('acct.group.title')}
         right={load === 'ready' && cards.length >= 2 && state.limitGroups.length > 0 ? <Button label={t('acct.group.add')} icon={Plus} size="sm" variant="secondary" onPress={() => setEditing('new')} /> : undefined}

@@ -19,7 +19,7 @@ export default function TambahScreen() {
   const initial = id ? state.transactions.find((t) => t.id === id) : undefined;
 
   return (
-    <Screen glow={false}>
+    <Screen>
       <ScreenHeader title={initial ? t('tx.form.titleEdit') : t('tx.form.titleNew')} />
       {id && !initial ? (
         <EmptyState title={t('tx.form.notFound')} actionLabel={t('common.back')} onAction={() => router.back()} />

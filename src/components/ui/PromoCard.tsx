@@ -18,15 +18,15 @@ export type PromoCardProps = {
 };
 
 /**
- * Kartu bertinta aksen untuk satu ajakan kontekstual Arshif (tips fitur, sisa kuota,
- * tagihan terdekat). Satu per layar: inilah "momen aksen" di luar tombol utama.
+ * Kartu ajakan kontekstual Arshif (tips fitur, sisa kuota, tagihan terdekat). Satu per layar:
+ * latar kartu biasa, ubin ikon bertinta aksen menjadi "momen aksen" di luar tombol utama.
  */
 export function PromoCard({ icon, title, message, onPress, accessibilityHint }: PromoCardProps) {
   const { colors } = useTheme();
   return (
     <PressableScale onPress={onPress} accessibilityLabel={`${title}. ${message}`} accessibilityHint={accessibilityHint} focusRadius={radius.lg} scaleTo={0.985}>
       <GlassView radius={radius.lg}>
-        <View style={[styles.row, { backgroundColor: colors.accentSoft }]}>
+        <View style={styles.row}>
           <View style={[styles.icon, { backgroundColor: colors.accentSoft, borderColor: colors.glassBorder }]}>
             <Icon icon={icon} color={colors.accentText} size={layout.iconSize.lg} />
           </View>

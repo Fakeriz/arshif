@@ -3,10 +3,10 @@ import type { ReactElement } from 'react';
 
 import {
   AccentPicker,
-  AmbientGlow,
   BalanceText,
   BankCard,
   Button,
+  Card,
   CashflowChart,
   CurrencyText,
   DonutChart,
@@ -16,8 +16,12 @@ import {
   Tabs,
 } from '@/components/ui';
 import { progressTone } from '@/components/ui/ProgressBar';
+import { BootScreen } from '@/components/shell/BootScreen';
+import { Screen } from '@/components/shell/Screen';
 import { ThemeProvider, useTheme } from '@/theme/ThemeProvider';
-import { Text } from 'react-native';
+import { ACCENT_OPTIONS } from '@/theme/tokens';
+import { StyleSheet, Text } from 'react-native';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 const wrap = (ui: ReactElement, mode: 'dark' | 'light' = 'dark') =>
   render(<ThemeProvider initialMode={mode}>{ui}</ThemeProvider>);
@@ -180,18 +184,6 @@ describe('AccentPicker', () => {
     expect(screen.getByLabelText('Biru').props.accessibilityState.checked).toBe(true);
   });
 
-  it('AmbientGlow tidak dirender saat aksen netral, muncul saat aksen berwarna', async () => {
-    await wrap(
-      <>
-        <AccentPicker />
-        <AmbientGlow />
-      </>,
-    );
-    expect(screen.queryByTestId('ambient-glow', { includeHiddenElements: true })).toBeNull();
-    await fireEvent.press(screen.getByLabelText('Merah'));
-    expect(screen.getByTestId('ambient-glow', { includeHiddenElements: true })).toBeTruthy();
-  });
-
   it('memanggil onAccentChange agar bisa disimpan per pengguna', async () => {
     const onAccentChange = jest.fn();
     await render(
@@ -210,5 +202,34 @@ describe('BankCard', () => {
     expect(screen.getByText('BCA')).toBeTruthy();
     expect(screen.getByText('Rp 21.480.000')).toBeTruthy();
     expect(screen.getByLabelText('BCA Tabungan, akhiran 2153, saldo Rp 21.480.000')).toBeTruthy();
+  });
+});
+
+describe('Monokrom: tanpa glow, kartu solid', () => {
+  const metrics = { frame: { x: 0, y: 0, width: 390, height: 844 }, insets: { top: 0, left: 0, right: 0, bottom: 0 } };
+  const hostTypes = (node: unknown, out = new Set<string>()): Set<string> => {
+    if (Array.isArray(node)) node.forEach((n) => hostTypes(n, out));
+    else if (node && typeof node === 'object' && 'type' in node) {
+      out.add(String(node.type));
+      hostTypes((node as { children?: unknown }).children, out);
+    }
+    return out;
+  };
+
+  it.each(ACCENT_OPTIONS.map((a) => a.key))('aksen %s: tidak ada glow, kartu gelap #121214', async (accent) => {
+    await render(
+      <SafeAreaProvider initialMetrics={metrics}>
+        <ThemeProvider initialMode="dark" initialAccent={accent}>
+          <Screen>
+            <Card accessibilityLabel="kartu">
+              <Text>isi</Text>
+            </Card>
+          </Screen>
+          <BootScreen />
+        </ThemeProvider>
+      </SafeAreaProvider>,
+    );
+    expect(hostTypes(screen.toJSON()).has('RNSVGRadialGradient')).toBe(false);
+    expect(StyleSheet.flatten(screen.getByLabelText('kartu').props.style).backgroundColor).toBe('#121214');
   });
 });

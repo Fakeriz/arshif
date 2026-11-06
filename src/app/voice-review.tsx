@@ -19,7 +19,7 @@ export default function VoiceReviewScreen() {
   const [data] = useState(() => peekHandoff('voice'));
 
   return (
-    <Screen glow={false}>
+    <Screen>
       <ScreenHeader title={t('capture.voiceReview.title')} />
       {data ? (
         <VoiceReview

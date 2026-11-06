@@ -2,7 +2,6 @@ import { createContext, useContext, useState, type ReactNode } from 'react';
 import { RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { AmbientGlow, BackdropSurface } from '@/components/ui';
 import { useTheme } from '@/theme/ThemeProvider';
 import { layout, space } from '@/theme/tokens';
 
@@ -28,7 +27,6 @@ export type ScreenProps = {
   children: ReactNode;
   /** Layar tab: beri ruang untuk pill nav. */
   tabs?: boolean;
-  glow?: boolean;
   /** Tarik untuk muat ulang (state error/loading di Fase 2). */
   onRefresh?: () => void;
   refreshing?: boolean;
@@ -41,7 +39,7 @@ export type ScreenProps = {
 /** Jarak dari bawah (px) yang memicu onEndReached. */
 const END_THRESHOLD = 600;
 
-export function Screen({ children, tabs, glow = true, onRefresh, refreshing, onEndReached, maxWidth }: ScreenProps) {
+export function Screen({ children, tabs, onRefresh, refreshing, onEndReached, maxWidth }: ScreenProps) {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
   const { footprint } = useNavFootprint();
@@ -67,12 +65,7 @@ export function Screen({ children, tabs, glow = true, onRefresh, refreshing, onE
         <View style={[styles.column, maxWidth ? { maxWidth } : null]}>{children}</View>
     </ScrollView>
   );
-  // Latar (glow) = target blur terpisah, sehingga semua panel di layar ini blur seperti modal.
-  return (
-    <View style={[styles.root, { backgroundColor: colors.bg }]}>
-      <BackdropSurface background={glow ? <AmbientGlow /> : null}>{scroll}</BackdropSurface>
-    </View>
-  );
+  return <View style={[styles.root, { backgroundColor: colors.bg }]}>{scroll}</View>;
 }
 
 const styles = StyleSheet.create({

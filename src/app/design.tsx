@@ -2,7 +2,7 @@ import { Redirect } from 'expo-router';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { AccentPicker, AmbientGlow, AppText, GlassView, Tabs } from '@/components/ui';
+import { AccentPicker, AppText, GlassView, Tabs } from '@/components/ui';
 import { CashflowSection, DonutSection, GaugeSection } from '@/features/design-sheet/ChartSections';
 import { BadgeChipSection, ButtonSection, InputSection, TabsSection } from '@/features/design-sheet/ControlSections';
 import { ListSection, MoneySection, ProgressSection } from '@/features/design-sheet/DataSections';
@@ -30,7 +30,6 @@ function DesignSheet() {
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.bg }]} edges={['top', 'left', 'right']}>
       <ScrollView contentContainerStyle={styles.scroll}>
-        <AmbientGlow />
         <View style={styles.column}>
           <View style={styles.hero}>
             <AppText variant="display">Arshif</AppText>

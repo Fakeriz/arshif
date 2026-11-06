@@ -105,7 +105,7 @@ export default function MyRates() {
   }
 
   return (
-    <Screen glow={false}>
+    <Screen>
       <ScreenHeader title={t('acct.rates.title')} />
       <AppText variant="caption" tone="secondary">
         {t('acct.rates.explain')}

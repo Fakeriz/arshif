@@ -52,7 +52,7 @@ export default function TransactionDetail() {
 
   if (!tx) {
     return (
-      <Screen glow={false}>
+      <Screen>
         <ScreenHeader title={t('tx.detail.title')} />
         <EmptyState title={t('tx.detail.notFoundTitle')} message={t('tx.detail.notFoundMessage')} actionLabel={t('tx.detail.toList')} onAction={() => router.replace('/transaksi')} />
       </Screen>

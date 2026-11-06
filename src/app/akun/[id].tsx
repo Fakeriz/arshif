@@ -37,7 +37,7 @@ export default function AccountDetail() {
 
   if (load !== 'ready') {
     return (
-      <Screen glow={false}>
+      <Screen>
         <ScreenHeader title={t('acct.detail.title')} />
         {load === 'error' ? (
           <EmptyState kind="error" title={t('acct.common.loadErrorTitle')} message={t('acct.common.loadErrorMessage')} actionLabel={t('common.retry')} onAction={retry} />
@@ -52,7 +52,7 @@ export default function AccountDetail() {
   }
   if (!account) {
     return (
-      <Screen glow={false}>
+      <Screen>
         <ScreenHeader title={t('acct.detail.title')} />
         <EmptyState title={t('acct.detail.notFoundTitle')} message={t('acct.detail.notFoundMessage')} actionLabel={t('acct.detail.toSettings')} onAction={() => router.replace('/pengaturan')} />
       </Screen>
@@ -66,7 +66,7 @@ export default function AccountDetail() {
     dispatch({ type: 'account/credit', id: account.id, patch: { creditLimit: account.creditLimit, limitGroupId: account.limitGroupId, annualFee: account.annualFee, ...p } });
 
   return (
-    <Screen glow={false}>
+    <Screen>
       <ScreenHeader title={account.name} />
       <View style={styles.preview}>
         <BankCard bank={account.bank} accountType={t(`domain.accountType.${account.type}`)} last4={account.last4} balance={account.balance} currency={account.currency} hidden={state.hideBalance} />

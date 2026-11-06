@@ -43,7 +43,7 @@ export default function ImportReviewScreen() {
   }
 
   return (
-    <Screen glow={false}>
+    <Screen>
       <ScreenHeader title={t('capture.importReview.title')} />
       {body}
     </Screen>

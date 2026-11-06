@@ -22,7 +22,7 @@ export default function ReviewEditScreen() {
   const [saving, setSaving] = useState(false);
 
   return (
-    <Screen glow={false}>
+    <Screen>
       <ScreenHeader title={t('slog.review.editTitle')} />
       {!item ? (
         <EmptyState title={t('slog.review.notFound')} actionLabel={t('common.back')} onAction={() => router.back()} />

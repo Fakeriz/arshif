@@ -51,7 +51,7 @@ Setiap token punya pasangan `*Soft` (tinta 8–12%) untuk latar badge status. Ba
 ### 2.3 Aksen
 
 `netral` adalah **default baru**: `accent` = warna teks, `onAccent` = warna kanvas, tanpa glow.
-Aksen berwarna lama (Merah, Kuningan, Zamrud, Biru, Ungu) tetap tersedia di Pengaturan (FR-SET-4). Glow-nya di tema terang diturunkan ke 6% agar tidak melawan kesan monokrom.
+Aksen berwarna lama (Merah, Kuningan, Zamrud, Biru, Ungu) tetap tersedia di Pengaturan (FR-SET-4). Tidak ada aksen yang memakai glow: `AmbientGlow` sudah dihapus.
 
 | | Gelap | Terang |
 |---|---|---|
@@ -177,7 +177,7 @@ Sudah dilakukan di token:
 
 Langkah lanjutan di komponen:
 1. `Button`, `Input`, `Chip`, `Badge`, `Toggle` → `radius.control`.
-2. `Card` → `radius.card`, tambah `elevation[scheme].card`; `GlassView` boleh render `View` biasa bila `layout.blur.panel === 0`.
-3. `AmbientGlow` → tidak dirender saat aksen `netral` (glow transparan). Selesai: cek ada di `AmbientGlow` sendiri, berlaku di semua layar.
+2. `Card` → `radius.card`, tambah `elevation[scheme].card`; `GlassView` boleh render `View` biasa bila `layout.blur.panel === 0`. Bagian `GlassView` selesai: panel selalu solid `glass` (`#121214` gelap), tanpa blur; hanya lapisan `floating` yang memakai `glassStrong`.
+3. `AmbientGlow` → dihapus total untuk semua aksen. Selesai: komponen, ekspornya, dan pemakaiannya di `Screen`, `BootScreen`, `design.tsx` sudah dihapus.
 4. `CashflowChart`, `HealthGauge`, `ProgressBar` → `chartRamp` / `text` sebagai isi.
 5. Visual check tiap layar lawan referensi (aturan PRD), dua tema.

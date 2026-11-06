@@ -1,6 +1,6 @@
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
 
-import { AmbientGlow, AppText, EmptyState } from '@/components/ui';
+import { AppText, EmptyState } from '@/components/ui';
 import { useT } from '@/i18n';
 import { supabase } from '@/lib/supabase';
 import { useTheme } from '@/theme/ThemeProvider';
@@ -15,7 +15,6 @@ export function BootScreen({ onRetry }: { onRetry?: () => void }) {
   const t = useT();
   return (
     <View style={[styles.root, { backgroundColor: colors.bg }]}>
-      <AmbientGlow />
       {onRetry ? (
         <EmptyState kind="error" title={t('common.bootErrorTitle')} message={t('common.bootErrorMessage')} actionLabel={t('common.retry')} onAction={onRetry} />
       ) : (
@@ -36,7 +35,6 @@ export function SuspendedScreen() {
   const t = useT();
   return (
     <View style={[styles.root, { backgroundColor: colors.bg }]}>
-      <AmbientGlow />
       <EmptyState
         kind="error"
         title={t('common.suspendedTitle')}
