@@ -16,7 +16,7 @@ export default function TabsLayout() {
       <Tabs style={styles.root}>
         {/* Konten tab = sumber blur nav pill di Android (pill berada di luar target). */}
         <BlurTarget style={styles.root} floating={<AppTabBar />}>
-          <TabSlot />
+          <TabSlot style={styles.slot} />
         </BlurTarget>
         <TabList style={styles.hidden}>
           <TabTrigger name="index" href="/" />
@@ -31,5 +31,9 @@ export default function TabsLayout() {
 
 const styles = StyleSheet.create({
   root: { flex: 1 },
+  // TabSlot memberi container layar tab flexShrink: 0. Di web itu membuatnya setinggi isinya, sehingga
+  // ScrollView di Screen tidak pernah lebih pendek dari kontennya dan halaman tidak bisa digulir.
+  // Boleh menyusut = tinggi mengikuti layar, ScrollView yang menggulir. Native (Yoga) tidak terpengaruh.
+  slot: { flexShrink: 1, minHeight: 0 },
   hidden: { display: 'none' },
 });
