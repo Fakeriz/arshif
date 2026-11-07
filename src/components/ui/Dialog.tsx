@@ -10,7 +10,7 @@ import { layout, motion, radius, space } from '@/theme/tokens';
 
 import { AppText } from './AppText';
 import { Button } from './Button';
-import { GlassView, ModalGlassBoundary } from './GlassView';
+import { ModalGlassBoundary } from './GlassView';
 import { Icon } from './Icon';
 
 export type DialogTone = 'info' | 'warning' | 'danger';
@@ -76,7 +76,8 @@ export function Dialog({
           accessibilityRole="alert"
           style={[styles.cardWrap, card]}
         >
-          <GlassView level="floating" radius={radius.lg} style={styles.card}>
+          {/* Solid (tanpa blur): latar = bg, tepi borderStrong supaya tetap terlihat di atas overlay gelap. */}
+          <View style={[styles.card, { backgroundColor: colors.bg, borderColor: colors.borderStrong }]}>
           <View style={[styles.icon, { backgroundColor: look[tone].bg }]}>
             <Icon icon={look[tone].icon} color={look[tone].fg} size={22} />
           </View>
@@ -99,7 +100,7 @@ export function Dialog({
               fullWidth
             />
           </View>
-          </GlassView>
+          </View>
         </Animated.View>
       </View>
       </ModalGlassBoundary>
@@ -110,7 +111,7 @@ export function Dialog({
 const styles = StyleSheet.create({
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: space.xxl },
   cardWrap: { width: '100%', maxWidth: 400 },
-  card: { padding: space.xxl, gap: space.lg },
+  card: { padding: space.xxl, gap: space.lg, borderRadius: radius.lg, borderWidth: layout.hairline, overflow: 'hidden' },
   icon: { width: 44, height: 44, borderRadius: radius.full, alignItems: 'center', justifyContent: 'center' },
   text: { gap: space.xs + 2 },
   actions: { gap: space.sm },

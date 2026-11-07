@@ -9,7 +9,7 @@ import { useTheme } from '@/theme/ThemeProvider';
 import { layout, motion, radius, space } from '@/theme/tokens';
 
 import { AppText } from './AppText';
-import { GlassView, ModalGlassBoundary } from './GlassView';
+import { ModalGlassBoundary } from './GlassView';
 
 export type BottomSheetProps = {
   visible: boolean;
@@ -86,7 +86,8 @@ export function BottomSheet({ visible, onClose, title, subtitle, children, scrol
           }}
           style={[styles.sheetWrap, scrollable && styles.sheetWrapScroll, sheet]}
         >
-          <GlassView level="floating" radius={0} style={[styles.sheet, scrollable && styles.sheetScroll, { paddingBottom: insets.bottom + space.xl }]}>
+          {/* Solid (tanpa blur): latar = bg, tepi borderStrong memisahkan lembar dari overlay. Kartu di dalamnya tetap surface. */}
+          <View style={[styles.sheet, scrollable && styles.sheetScroll, { backgroundColor: colors.bg, borderColor: colors.borderStrong, paddingBottom: insets.bottom + space.xl }]}>
             <View {...pan.panHandlers} style={styles.handleArea}>
               <View style={[styles.handle, { backgroundColor: colors.borderStrong }]} />
             </View>
@@ -109,7 +110,7 @@ export function BottomSheet({ visible, onClose, title, subtitle, children, scrol
             ) : (
               children
             )}
-          </GlassView>
+          </View>
         </Animated.View>
       </View>
       </ModalGlassBoundary>
@@ -123,7 +124,10 @@ const styles = StyleSheet.create({
   sheet: {
     borderTopLeftRadius: radius.xl,
     borderTopRightRadius: radius.xl,
-    borderBottomWidth: 0,
+    borderTopWidth: layout.hairline,
+    borderLeftWidth: layout.hairline,
+    borderRightWidth: layout.hairline,
+    overflow: 'hidden',
     paddingHorizontal: space.xl,
   },
   // Rantai flex agar ScrollView menyusut di dalam batas 90% tinggi layar.
