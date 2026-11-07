@@ -12,6 +12,7 @@ import { remaining } from '@/lib/quota';
 import { weeklyRecap } from '@/lib/recap';
 import { useStore } from '@/state/AppStore';
 import { useBudget, useHealth, useLedger } from '@/state/derived';
+import { useNetWorth } from '@/state/netWorth';
 import { useTheme } from '@/theme/ThemeProvider';
 import { radius, space } from '@/theme/tokens';
 
@@ -65,6 +66,8 @@ function AskChat() {
   const ledger = useLedger();
   const budget = useBudget();
   const health = useHealth();
+  // Angka yang sama dengan Beranda/tab Aset (rekening + aset + piutang − utang), bukan hanya saldo rekening.
+  const netWorth = useNetWorth();
   const [turns, setTurns] = useState<Turn[]>([]);
   const [draft, setDraft] = useState('');
   const [pending, setPending] = useState<string | null>(null);
@@ -81,7 +84,7 @@ function AskChat() {
     try {
       const recap = weeklyRecap(ledger.transactions, todayYmd(), ledger.mainCurrency, 'this');
       const context = buildAskContext({
-        currency: ledger.mainCurrency, income: budget.income, netWorth: ledger.netWorth, period: budget.period, total: budget.total,
+        currency: ledger.mainCurrency, income: budget.income, netWorth: netWorth.total, period: budget.period, total: budget.total,
         flexSpent: budget.flexSpent, flexLimit: budget.flexLimit, safePerDay: budget.safePerDay, pace: budget.flexPace,
         limits: budget.limits, spent: budget.spent, byCategory: budget.byCategory, categoryLimits: budget.categoryLimits,
         week: recap, score: health.score, pillars: health.pillars,

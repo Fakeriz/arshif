@@ -87,6 +87,7 @@ const assets = {
     currentPrice: 'Harga saat ini',
     value: 'Nilai total',
     gain: 'Untung/rugi',
+    vsBuy: 'vs harga beli',
     buyDate: 'Tanggal beli',
     notes: 'Catatan',
     priceCurrency: 'Mata uang harga',

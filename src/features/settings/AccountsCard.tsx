@@ -8,7 +8,8 @@ import { AppText, Button, Card, ListItem } from '@/components/ui';
 import { getBank } from '@/constants/banks';
 import { bankName, useT } from '@/i18n';
 import { isCreditType } from '@/lib/credit';
-import { useAccounts, useStore } from '@/state/AppStore';
+import { useStore } from '@/state/AppStore';
+import { useLedger } from '@/state/derived';
 import { radius, space } from '@/theme/tokens';
 
 import { AddAccountSheet } from './AddAccountSheet';
@@ -18,7 +19,7 @@ export function AccountsCard() {
   const t = useT();
   const router = useRouter();
   const { state } = useStore();
-  const accounts = useAccounts();
+  const accounts = useLedger().accounts;
   const [adding, setAdding] = useState(false);
   const credits = accounts.filter((a) => isCreditType(a.type)).length;
 

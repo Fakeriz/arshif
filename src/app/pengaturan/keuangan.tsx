@@ -2,10 +2,11 @@ import { useRouter } from 'expo-router';
 import { useState } from 'react';
 
 import { CurrencySheet } from '@/components/shell/CurrencySheet';
-import { Card, ListItem, Toggle } from '@/components/ui';
+import { Card, ListItem, Toggle, useToast } from '@/components/ui';
 import { SettingsScreen } from '@/features/settings/kit';
 import { PaydaySheet } from '@/features/settings/PaydaySheet';
 import { useT } from '@/i18n';
+import { rebaseBudget } from '@/lib/budget';
 import { currencyMeta } from '@/lib/money';
 import { useStore } from '@/state/AppStore';
 
@@ -13,6 +14,7 @@ export default function KeuanganScreen() {
   const t = useT();
   const router = useRouter();
   const { state, dispatch } = useStore();
+  const { show } = useToast();
   const [currencyOpen, setCurrencyOpen] = useState(false);
   const [paydayOpen, setPaydayOpen] = useState(false);
   return (
@@ -50,10 +52,24 @@ export default function KeuanganScreen() {
           subtitle={t('settings.hideBalanceSub')}
           subtitleLines={2}
           trailing={<Toggle value={state.hideBalance} onChange={(value) => dispatch({ type: 'prefs/hideBalance', value })} accessibilityLabel={t('settings.hideBalance')} />}
+          divider
+        />
+        <ListItem
+          title={t('settings.includeAssets')}
+          subtitle={t('settings.includeAssetsSub')}
+          subtitleLines={2}
+          trailing={<Toggle value={state.includeAssets} onChange={(value) => dispatch({ type: 'prefs/includeAssets', value })} accessibilityLabel={t('settings.includeAssets')} />}
         />
       </Card>
       <PaydaySheet visible={paydayOpen} value={state.payday} onClose={() => setPaydayOpen(false)} onChange={(payday) => dispatch({ type: 'prefs/payday', payday })} />
-      <CurrencySheet visible={currencyOpen} value={state.mainCurrency} onClose={() => setCurrencyOpen(false)} onSelect={(code) => dispatch({ type: 'prefs/mainCurrency', code })} />
+      <CurrencySheet visible={currencyOpen} value={state.mainCurrency} onClose={() => setCurrencyOpen(false)} onSelect={(code) => {
+          const rebased = rebaseBudget(state.income, state.budgets, state.mainCurrency, code);
+          if (!rebased) {
+            show({ tone: 'error', title: t('settings.mainCurrencyNoRate', { code }) });
+            return;
+          }
+          dispatch({ type: 'prefs/mainCurrency', code, ...rebased });
+        }} />
     </SettingsScreen>
   );
 }

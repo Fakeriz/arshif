@@ -88,6 +88,7 @@ const assets: Messages['assets'] = {
     currentPrice: 'Güncel fiyat',
     value: 'Toplam değer',
     gain: 'Kâr/zarar',
+    vsBuy: 'alış fiyatına göre',
     buyDate: 'Alış tarihi',
     notes: 'Not',
     priceCurrency: 'Fiyat para birimi',

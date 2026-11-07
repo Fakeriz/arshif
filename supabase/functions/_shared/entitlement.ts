@@ -2,11 +2,13 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 
 import { nextStatus, type BillingPeriod, type OrderStatus } from './billing.ts';
 import { configured } from './env.ts';
+import { json } from './http.ts';
 import * as rc from './revenuecat.ts';
 
 export type OrderRow = {
   id: string;
-  user_id: string;
+  /** null = akun pemesan sudah dihapus; pesanan tetap disimpan untuk riwayat pembayaran. */
+  user_id: string | null;
   provider: 'xendit' | 'paddle' | 'manual';
   period: BillingPeriod;
   status: OrderStatus;
@@ -47,6 +49,10 @@ const revokeGrants = (userId: string) => (revenueCatReady() ? rc.revokeGrants(us
  * RevenueCat, setelah beli/pulihkan di aplikasi, dan oleh cron untuk Premium yang sudah lewat masa aktif.
  */
 export async function syncPlan(db: SupabaseClient, userId: string): Promise<{ plan: 'free' | 'premium'; premiumUntil: string | null }> {
+  // Tiket berurutan diambil SEBELUM membaca: dua sinkron bersamaan (mis. webhook expiry + renewal) tidak bisa
+  // saling menimpa terbalik; tulisan dengan tiket lebih lama diabaikan di plan_sync_apply.
+  const { data: ticket, error: ticketError } = await db.rpc('plan_sync_ticket');
+  if (ticketError || ticket == null) throw new Error(`plan_sync_ticket_${ticketError?.code ?? 'empty'}`);
   const until = await premiumUntil(db, userId);
   const plan = until ? 'premium' : 'free';
   const premiumUntilIso = until && Number.isFinite(until) ? new Date(until).toISOString() : null;
@@ -67,9 +73,11 @@ export async function syncPlan(db: SupabaseClient, userId: string): Promise<{ pl
     source = match ? (data.provider === 'manual' ? 'manual' : 'web') : 'store';
   }
 
-  const { error } = await db.from('profiles').update({ plan, premium_until: premiumUntilIso, premium_source: source }).eq('id', userId);
+  const { data: rows, error } = await db.rpc('plan_sync_apply', { p_user: userId, p_ticket: ticket, p_plan: plan, p_until: premiumUntilIso, p_source: source });
   if (error) throw new Error(`profile_update_${error.code}`);
-  return { plan, premiumUntil: premiumUntilIso };
+  // Sinkron yang lebih baru sudah menulis: kembalikan paket yang benar-benar tersimpan.
+  const saved = (rows as { o_plan: 'free' | 'premium'; o_premium_until: string | null }[] | null)?.[0];
+  return saved ? { plan: saved.o_plan, premiumUntil: saved.o_premium_until } : { plan, premiumUntil: premiumUntilIso };
 }
 
 /**
@@ -103,23 +111,26 @@ export async function transitionOrder(db: SupabaseClient, orderId: string, incom
  * webhook tetap dijawab 200, cron entitlement-sync mencoba ulang.
  */
 export async function grantOrder(db: SupabaseClient, order: OrderRow): Promise<string | null> {
+  // Akun sudah dihapus: tidak ada yang bisa diberi Premium. Pesanan tetap tercatat lunas untuk audit.
+  const userId = order.user_id;
+  if (!userId) return null;
   try {
-    const current = await premiumUntil(db, order.user_id);
+    const current = await premiumUntil(db, userId);
     if (current === Infinity) {
       // Sudah Premium tanpa tanggal akhir: tidak ada yang perlu diperpanjang.
       await db.from('orders').update({ grant_error: null, updated_at: new Date().toISOString() }).eq('id', order.id);
-      await syncPlan(db, order.user_id);
+      await syncPlan(db, userId);
       return null;
     }
     const { data: reserved, error } = await db.rpc('reserve_grant', { p_order: order.id, p_current: current ? new Date(current).toISOString() : null });
     const target = (reserved as { granted_until: string }[] | null)?.[0]?.granted_until;
     if (error || !target) throw new Error(`reserve_grant_${error?.code ?? 'empty'}`);
-    await grantPremium(order.user_id, Date.parse(target));
+    await grantPremium(userId, Date.parse(target));
     const { error: doneError } = await db.from('orders').update({ grant_error: null, updated_at: new Date().toISOString() }).eq('id', order.id);
     if (doneError) throw new Error(`order_update_${doneError.code}`);
-    const { premiumUntil: until } = await syncPlan(db, order.user_id);
+    const { premiumUntil: until } = await syncPlan(db, userId);
     await db.from('notifications').insert({
-      user_id: order.user_id,
+      user_id: userId,
       type: 'system',
       title_key: 'domain.notif.premiumTitle',
       message_key: 'domain.notif.premiumMessage',
@@ -145,7 +156,8 @@ export async function refundOrder(db: SupabaseClient, orderId: string): Promise<
   await transitionOrder(db, orderId, 'refunded');
   const { data: order, error } = await db.from('orders').select('user_id, status').eq('id', orderId).maybeSingle();
   if (error) throw new Error(`order_read_${error.code}`);
-  if (!order || order.status !== 'refunded') return;
+  // Akun sudah dihapus: status refund tetap tercatat, tidak ada grant yang perlu dicabut.
+  if (!order || order.status !== 'refunded' || !order.user_id) return;
   const { data: end, error: shiftError } = await db.rpc('refund_shift', { p_order: orderId });
   if (shiftError) throw new Error(`refund_shift_${shiftError.code}`);
   await revokeGrants(order.user_id);
@@ -153,14 +165,28 @@ export async function refundOrder(db: SupabaseClient, orderId: string): Promise<
   await syncPlan(db, order.user_id);
 }
 
-/** Catat event webhook sekali. false = sudah pernah diproses (balas 200 tanpa memproses ulang). */
-export async function claimEvent(db: SupabaseClient, provider: 'revenuecat' | 'xendit' | 'paddle', eventId: string): Promise<boolean> {
-  const { data, error } = await db.from('webhook_events').upsert({ provider, event_id: eventId.slice(0, 200) }, { onConflict: 'provider,event_id', ignoreDuplicates: true }).select('event_id');
-  if (error) throw new Error(`webhook_events_${error.code}`);
-  return (data?.length ?? 0) > 0;
-}
+type Provider = 'revenuecat' | 'xendit' | 'paddle';
 
-/** Proses gagal: lepas klaim supaya pengiriman ulang dari penyedia bisa diproses. */
-export async function releaseEvent(db: SupabaseClient, provider: 'revenuecat' | 'xendit' | 'paddle', eventId: string): Promise<void> {
-  await db.from('webhook_events').delete().eq('provider', provider).eq('event_id', eventId.slice(0, 200));
+/**
+ * Proses event webhook sekali. Event dianggap duplikat hanya bila sudah selesai (processed_at), atau bila klaim
+ * lain masih berjalan (< 5 menit). Fungsi yang mati di tengah (batas waktu, deploy) meninggalkan klaim yang
+ * kedaluwarsa, jadi kiriman ulang penyedia tetap diproses. Gagal = klaim dilepas, penyedia mengirim ulang.
+ */
+export async function handleEventOnce(db: SupabaseClient, provider: Provider, eventId: string, work: () => Promise<Response>): Promise<Response> {
+  const id = eventId.slice(0, 200);
+  const { data: claimed, error } = await db.rpc('webhook_claim', { p_provider: provider, p_event: id });
+  if (error) throw new Error(`webhook_events_${error.code}`);
+  if (!claimed) return json({ ok: true, duplicate: true });
+  let res: Response;
+  try {
+    res = await work();
+  } catch (e) {
+    await db.from('webhook_events').delete().eq('provider', provider).eq('event_id', id).is('processed_at', null);
+    throw e;
+  }
+  const { error: doneError } = await db.rpc('webhook_done', { p_provider: provider, p_event: id });
+  // Tidak dilempar: pekerjaan sudah berhasil; klaim yang tidak ditandai selesai kedaluwarsa dalam 5 menit dan
+  // kiriman ulang diproses lagi tanpa efek ganda (transisi pesanan dan grant idempoten).
+  if (doneError) console.error('webhook_done_failed', provider, id, doneError.code);
+  return res;
 }

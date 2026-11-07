@@ -88,6 +88,7 @@ const assets: Messages['assets'] = {
     currentPrice: 'Current price',
     value: 'Total value',
     gain: 'Gain/loss',
+    vsBuy: 'vs buy price',
     buyDate: 'Purchase date',
     notes: 'Notes',
     priceCurrency: 'Price currency',

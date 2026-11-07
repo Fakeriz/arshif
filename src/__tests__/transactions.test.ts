@@ -1,7 +1,12 @@
 import { seedAccounts, seedTransactions } from '@/data/seed';
-import type { Transaction } from '@/data/types';
-import { accountBalance, filterTransactions, groupByDay, isFilterActive, netWorth, totals } from '@/lib/transactions';
+import type { Account, Transaction } from '@/data/types';
+import { computeNetWorth } from '@/lib/assets';
+import { accountBalance, filterTransactions, groupByDay, isFilterActive, totals } from '@/lib/transactions';
 import { convert } from '@/lib/fx';
+
+/** Kekayaan bersih rekening saja lewat satu-satunya rumus (computeNetWorth). */
+const accountsNetWorth = (accounts: Account[], txs: Transaction[], main: string) =>
+  computeNetWorth({ accounts: accounts.map((a) => ({ ...a, balance: accountBalance(a, txs) })), assets: [], prices: {}, debts: [], main, now: Date.now() }).total;
 
 const bal = (id: string) => accountBalance(seedAccounts.find((a) => a.id === id)!, seedTransactions);
 
@@ -15,13 +20,13 @@ describe('saldo akun dari transaksi', () => {
 
   it('kekayaan bersih = jumlah saldo yang dikonversi ke mata uang utama', () => {
     const expected = seedAccounts.reduce((s, a) => s + convert(bal(a.id), a.currency, 'IDR'), 0);
-    expect(netWorth(seedAccounts, seedTransactions, 'IDR')).toBe(expected);
+    expect(accountsNetWorth(seedAccounts, seedTransactions, 'IDR')).toBe(expected);
     expect(expected).toBeGreaterThan(43_000_000);
   });
 
   it('kartu kredit bersaldo negatif mengurangi kekayaan bersih', () => {
     const card = { ...seedAccounts[0], id: 'a-cc', type: 'kartu_kredit' as const, openingBalance: -3_000_000 };
-    expect(netWorth([...seedAccounts, card], seedTransactions, 'IDR') - netWorth(seedAccounts, seedTransactions, 'IDR')).toBe(-3_000_000);
+    expect(accountsNetWorth([...seedAccounts, card], seedTransactions, 'IDR') - accountsNetWorth(seedAccounts, seedTransactions, 'IDR')).toBe(-3_000_000);
   });
 });
 

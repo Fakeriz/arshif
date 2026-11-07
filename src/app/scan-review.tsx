@@ -46,6 +46,8 @@ export default function ScanReviewScreen() {
             else router.replace('/scan');
           }}
           onSave={(tx) => {
+            // Ketukan ganda sebelum navigasi selesai: tiap ketukan membuat id baru, jadi yang kedua diabaikan.
+            if (saved.current) return;
             // Kuota sudah dipotong server saat struk berhasil dibaca (angka di layar diambil ulang di layar Scan).
             saved.current = true;
             clearHandoff('scan');

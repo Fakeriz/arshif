@@ -22,6 +22,12 @@ import { I18nProvider, useT as useI18nT } from '@/i18n';
 import { AppStoreProvider, useStore } from '@/state/AppStore';
 import { SmartLogProvider } from '@/state/smartlog';
 import type { AppState } from '@/state/reducer';
+import type { Asset } from '@/data/assets';
+import { computeNetWorth } from '@/lib/assets';
+import { toMajor } from '@/lib/coachAsk';
+import { accountBalance } from '@/lib/transactions';
+import { AssetsProvider } from '@/state/assets';
+import { PlanningProvider } from '@/state/planning';
 import { ThemeProvider } from '@/theme/ThemeProvider';
 
 const mockPush = jest.fn();
@@ -44,17 +50,21 @@ function Probe() {
   return null;
 }
 
-function wrap(ui: ReactNode, state: Partial<AppState> = {}) {
+function wrap(ui: ReactNode, state: Partial<AppState> = {}, assets: Asset[] = []) {
   return render(
     <SafeAreaProvider initialMetrics={{ frame: { x: 0, y: 0, width: 390, height: 844 }, insets: { top: 0, left: 0, right: 0, bottom: 0 } }}>
       <I18nProvider initialLang="id">
         <ThemeProvider initialMode="dark">
           <ToastProvider>
             <AppStoreProvider preset={{ ...base, ...state }}>
-              <PaywallProvider>
-                <Probe />
-                {ui}
-              </PaywallProvider>
+              <PlanningProvider preset={{ goals: [], deposits: [], bills: [], debts: [], payments: [], subscriptions: [], splits: [] }}>
+                <AssetsProvider preset={{ assets, prices: {}, snapshots: [] }}>
+                  <PaywallProvider>
+                    <Probe />
+                    {ui}
+                  </PaywallProvider>
+                </AssetsProvider>
+              </PlanningProvider>
             </AppStoreProvider>
           </ToastProvider>
         </ThemeProvider>
@@ -199,8 +209,10 @@ describe('perbaikan uji HP', () => {
   it('Premium: kirim pertanyaan -> jawaban Coach; hanya ringkasan angka yang dikirim', async () => {
     let resolve: (v: unknown) => void = () => undefined;
     mockInvoke.mockReturnValueOnce(new Promise((r) => (resolve = r)));
+    // Rumah Rp900 juta: kekayaan bersih untuk Coach harus sama dengan Beranda (termasuk aset), bukan hanya rekening.
+    const house: Asset = { id: 'rumah', type: 'property', name: 'Rumah', currency: 'IDR', valueOverride: 900_000_000, createdAt: new Date().toISOString() };
     await act(async () => {
-      wrap(<AskTab />, { plan: 'premium' });
+      wrap(<AskTab />, { plan: 'premium' }, [house]);
     });
     expect(screen.getByText('Sisa 20 pertanyaan hari ini')).toBeTruthy();
     await act(async () => fireEvent.changeText(screen.getByLabelText('Pertanyaanmu'), 'Kategori mana yang paling boros?'));
@@ -216,6 +228,11 @@ describe('perbaikan uji HP', () => {
     const [name, body] = mockInvoke.mock.calls[0]!;
     expect(name).toBe('coach-ask');
     expect(body).toMatchObject({ lang: 'id', question: 'Kategori mana yang paling boros?', history: [] });
+    const home = computeNetWorth({
+      accounts: base.accounts.map((a) => ({ ...a, balance: accountBalance(a, base.transactions) })),
+      assets: [house], prices: {}, debts: [], main: base.mainCurrency, now: Date.now(),
+    }).total;
+    expect((body as { context: { netWorth: number } }).context.netWorth).toBe(toMajor(home, base.mainCurrency));
     const sent = JSON.stringify(body);
     for (const merchant of base.transactions.map((x) => x.merchant).filter((m) => m.length > 3)) expect(sent).not.toContain(merchant);
   });

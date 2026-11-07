@@ -82,6 +82,7 @@ const slog: Messages['slog'] = {
     needsCheck_one: 'Satu pemberitahuan perlu disemak',
     mixed: '{applied} direkod, {review} perlu disemak',
     undo: 'Batal',
+    saveFailed: 'Pemberitahuan bank gagal disimpan pada peranti. Pastikan ruang storan mencukupi.',
     edit: 'Ubah',
     view: 'Lihat',
     check: 'Semak',

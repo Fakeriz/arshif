@@ -1,6 +1,6 @@
 import * as api from '@/data/remote/api';
 import type { Transaction } from '@/data/types';
-import { convert, withUserRates } from '@/lib/fx';
+import { convert, MissingRateError, withUserRates } from '@/lib/fx';
 
 import { keepReimbursement, type Action, type AppState } from './reducer';
 
@@ -18,6 +18,11 @@ async function withRatesOfDay(tx: Transaction, state: AppState): Promise<Transac
   const { table: daily } = await api.ratesOn(tx.date);
   const table = withUserRates(daily, tx.date);
   const rated = (code: string) => code in table;
+  // Tanpa kurs dan tanpa nominal akun yang diberikan, jangan pakai nominal mentah: AED 1.000,00 (100000 minor)
+  // akan masuk ke rekening IDR sebagai Rp100.000. Gagalkan supaya pengguna diberi tahu (toast + muat ulang).
+  const unrated = (a: string) => [a, tx.currency].find((c) => !rated(c));
+  if (needFrom && tx.accountAmount === undefined && unrated(acc.currency)) throw new MissingRateError(unrated(acc.currency)!);
+  if (needTo && tx.toAmount === undefined && unrated(to.currency)) throw new MissingRateError(unrated(to.currency)!);
   return {
     ...tx,
     accountAmount: needFrom && rated(acc.currency) && rated(tx.currency) ? convert(tx.amount, tx.currency, acc.currency, table) : tx.accountAmount,
@@ -55,8 +60,12 @@ export async function syncAction(action: Action, state: AppState, userId: string
     case 'prefs/hideBalance':
       await api.updateProfile(userId, { hide_balance: action.value });
       return [];
+    case 'prefs/includeAssets':
+      await api.updateProfile(userId, { include_assets: action.value });
+      return [];
     case 'prefs/mainCurrency':
-      await api.updateProfile(userId, { main_currency: action.code });
+      await api.updateProfile(userId, { main_currency: action.code, monthly_income: action.income });
+      await Promise.all(action.budgets.map((b) => api.saveBudget(b)));
       return [];
     case 'prefs/notif':
       await api.updateProfile(userId, { notif_prefs: { ...state.notifPrefs, [action.key]: action.value } });

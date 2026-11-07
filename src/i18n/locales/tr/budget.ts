@@ -18,10 +18,8 @@ const budget: Messages['budget'] = {
   bucket: {
     ofIncomeTarget: 'Hedef: gelirden %{pct}',
     ofIncome: 'Gelirden %{pct}',
-    ofTarget: 'Hedefe göre %{pct}',
     target: 'hedef {amount}',
     of: '/ {amount}',
-    reached: '{label} ulaşılan',
     used: '{label} kullanılan',
     categoryPct: '{label} yüzde {pct}',
     empty: 'Bu grupta henüz harcama yok.',

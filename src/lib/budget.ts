@@ -2,6 +2,7 @@ import { getCategory, type Bucket } from '@/constants/categories';
 import type { BudgetRecord, Transaction } from '@/data/types';
 
 import { addDays, daysInMonth, diffDays, parseYMD, ymd } from './dates';
+import { tryConvert } from './fx';
 import { currencyMeta } from './money';
 import { amountIn, countsAsSpending, reimbursementIncomeIds, totals, txInRange } from './transactions';
 
@@ -179,4 +180,34 @@ export function periodSeries(txs: Transaction[], today: string, payday: number, 
     expense.push(sum.expense);
   }
   return { starts, income, expense, days };
+}
+
+/**
+ * Income dan anggaran disimpan tanpa kode mata uang (selalu dalam mata uang utama). Saat mata uang utama
+ * diganti, nominalnya harus ikut dikonversi; tanpa itu Rp10.000.000 terbaca RM100.000,00.
+ * null bila kurs salah satu mata uang belum tersedia (penggantian dibatalkan, bukan dikonversi asal).
+ */
+export function rebaseBudget(
+  income: number,
+  budgets: BudgetRecord[],
+  from: string,
+  to: string,
+): { income: number; budgets: BudgetRecord[] } | null {
+  if (from === to) return { income, budgets };
+  const c = (v: number) => (v === 0 ? 0 : tryConvert(v, from, to));
+  const nextIncome = c(income);
+  if (nextIncome === null) return null;
+  const next: BudgetRecord[] = [];
+  for (const b of budgets) {
+    const total = c(b.total);
+    if (total === null) return null;
+    const categoryLimits: Record<string, number> = {};
+    for (const [k, v] of Object.entries(b.categoryLimits)) {
+      const cv = c(v);
+      if (cv === null) return null;
+      categoryLimits[k] = cv;
+    }
+    next.push({ ...b, total, categoryLimits });
+  }
+  return { income: nextIncome, budgets: next };
 }

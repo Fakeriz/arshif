@@ -3,7 +3,7 @@
  * Penyedia: TradingView (disetujui pemilik 2026-11-06, risiko ketentuan diterima). Kode yang gagal tetap memakai
  * harga terakhirnya; aplikasi jatuh ke harga beli / nilai manual bila belum pernah ada harga.
  */
-import { runPriceSync, type PriceProvider } from '../_shared/asset-sync.ts';
+import { syncInBatches, type PriceProvider } from '../_shared/asset-sync.ts';
 import { tradingViewProvider } from '../_shared/tradingview.ts';
 import { adminClient, requireUser } from '../_shared/auth.ts';
 import { CRON_SECRET } from '../_shared/env.ts';
@@ -34,9 +34,10 @@ serve(async (req) => {
   const log = (run: { ok: boolean; source: string; symbols?: number; updated?: number; failed?: string[]; error?: string }) =>
     db.from('asset_price_runs').insert({ trigger, ...run }).then(({ error }) => error && console.error('asset log gagal', error.message));
 
-  const { data: keyRows, error: keyError } = await db.from('assets').select('price_key').not('price_key', 'is', null).limit(50_000);
+  // Satu array dari database: SELECT biasa terpotong di max_rows (1000) dan kunci setelahnya tidak pernah diperbarui.
+  const { data: keyList, error: keyError } = await db.rpc('asset_price_keys');
   if (keyError) throw new HttpError('server', 500);
-  const keys = [...new Set((keyRows ?? []).map((r: { price_key: string }) => r.price_key))];
+  const keys = (keyList as string[] | null) ?? [];
 
   const provider = resolveProvider();
   if (!provider) {
@@ -44,21 +45,23 @@ serve(async (req) => {
     return json({ error: 'no_provider', symbols: keys.length }, 503);
   }
 
-  const result = await runPriceSync(keys, provider, new Date());
-  if (result.rows.length > 0) {
-    const { error } = await db.from('asset_prices').upsert(result.rows);
-    if (error) {
-      await log({ ok: false, source: provider.name, symbols: keys.length, error: `asset_prices_${error.code}` });
-      throw new HttpError('server', 500);
-    }
+  let result;
+  try {
+    result = await syncInBatches(keys, provider, new Date(), async (rows) => {
+      const { error } = await db.from('asset_prices').upsert(rows);
+      if (error) throw new Error(`asset_prices_${error.code}`);
+    });
+  } catch (e) {
+    await log({ ok: false, source: provider.name, symbols: keys.length, error: e instanceof Error ? e.message : String(e) });
+    throw new HttpError('server', 500);
   }
   await log({
     ok: !result.error && result.failed.length === 0,
     source: provider.name,
     symbols: keys.length,
-    updated: result.rows.length,
+    updated: result.updated,
     failed: result.failed.slice(0, 200),
     error: result.error,
   });
-  return json({ symbols: keys.length, updated: result.rows.length, failed: result.failed });
+  return json({ symbols: keys.length, updated: result.updated, failed: result.failed });
 });

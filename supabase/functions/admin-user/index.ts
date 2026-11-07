@@ -5,8 +5,9 @@
  * + penanda profiles.suspended_at (aplikasi menampilkan layar akun ditangguhkan).
  */
 import { adminClient, requireUser } from '../_shared/auth.ts';
+import { adminGrant } from '../_shared/admin-grant.ts';
 import { AdminUserRequest } from '../_shared/contracts.ts';
-import { grantOrder, refundOrder, revenueCatReady, syncPlan, type OrderRow } from '../_shared/entitlement.ts';
+import { refundOrder, revenueCatReady, syncPlan } from '../_shared/entitlement.ts';
 import { HttpError, json, readJson, serve } from '../_shared/http.ts';
 
 const BAN_FOREVER = '876000h';
@@ -23,15 +24,8 @@ serve(async (req) => {
   const { data: target } = await db.from('profiles').select('id').eq('id', userId).maybeSingle();
   if (!target) throw new HttpError('not_found', 404);
 
-  if (action === 'grant') {
-    const { data: order, error } = await db
-      .from('orders')
-      .insert({ user_id: userId, provider: 'manual', period: 'custom', currency: 'USD', amount: 0, status: 'paid', paid_at: new Date().toISOString(), days: input.data.days, granted_by: admin.id })
-      .select('id, user_id, provider, period, status, days, granted_until, grant_error')
-      .single();
-    if (error || !order) throw new HttpError('server', 500);
-    if (!(await grantOrder(db, order as OrderRow))) throw new HttpError('provider_error', 502);
-  }
+  let grantQueued = false;
+  if (action === 'grant') grantQueued = (await adminGrant(db, admin.id, userId, input.data.days)).queued;
 
   if (action === 'revoke') {
     const { data: active, error } = await db
@@ -58,5 +52,5 @@ serve(async (req) => {
   }
 
   const { data: p } = await db.from('profiles').select('plan, premium_until, suspended_at').eq('id', userId).single();
-  return json({ plan: p?.plan ?? 'free', premiumUntil: p?.premium_until ?? null, suspendedAt: p?.suspended_at ?? null, revenueCat: revenueCatReady() });
+  return json({ plan: p?.plan ?? 'free', premiumUntil: p?.premium_until ?? null, suspendedAt: p?.suspended_at ?? null, revenueCat: revenueCatReady(), grantQueued });
 });

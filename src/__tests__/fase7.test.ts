@@ -11,7 +11,8 @@ import { buildAskContext, toMajor } from '@/lib/coachAsk';
 import { AskContext, AskRequest } from '../../supabase/functions/_shared/contracts';
 import { normalizeAsk } from '../../supabase/functions/_shared/normalize';
 import { askPrompt, askView, moneyExample } from '../../supabase/functions/_shared/prompts';
-import { amountIn, netWorth, reimbursementIncomeIds, totals } from '@/lib/transactions';
+import { computeNetWorth } from '@/lib/assets';
+import { amountIn, reimbursementIncomeIds, totals } from '@/lib/transactions';
 import { initialState, keepReimbursement, reducer } from '@/state/reducer';
 
 const tx = (o: Partial<Transaction> & Pick<Transaction, 'id' | 'date' | 'amount'>): Transaction => ({
@@ -213,7 +214,7 @@ describe('kurs per hari + "Kurs saya" (FR-FX-4)', () => {
     expect(amountIn(old, 'IDR')).toBe(150_000);
     // Saldo akun USD $10 memakai kurs hari ini.
     const acc: Account = { id: 'u', bank: 'cash', name: 'USD', type: 'cash', currency: 'USD', openingBalance: 1000 };
-    expect(netWorth([acc], [], 'IDR')).toBe(200_000);
+    expect(computeNetWorth({ accounts: [{ ...acc, balance: 1000 }], assets: [], prices: {}, debts: [], main: 'IDR', now: Date.now() }).total).toBe(200_000);
   });
 
   it('"Kurs saya" dipakai bila tidak ada kurs harian; kurs harian selalu menang', () => {

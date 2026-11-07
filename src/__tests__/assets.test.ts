@@ -1,4 +1,4 @@
-import { PRICE_KEY_RE, runPriceSync, type PriceProvider } from '../../supabase/functions/_shared/asset-sync';
+import { PRICE_KEY_RE, runPriceSync, syncInBatches, type PriceProvider } from '../../supabase/functions/_shared/asset-sync';
 import { quoteMatches, tvCandidates } from '../../supabase/functions/_shared/tradingview-symbols';
 
 import type { Asset, AssetPrice } from '@/data/assets';
@@ -6,11 +6,11 @@ import type { Debt } from '@/data/planning';
 import { seedAccounts, seedTransactions } from '@/data/seed';
 import type { Account } from '@/data/types';
 import {
-  changeSince, computeNetWorth, formatQuantity, gainOf, livePricesDown, parseQuantity, priceKeyOf, STALE_MS, TROY_OUNCE_GRAMS, valueAsset,
+  changeSince, computeNetWorth, snapshotTrend, formatQuantity, gainOf, livePricesDown, parseQuantity, priceKeyOf, STALE_MS, TROY_OUNCE_GRAMS, valueAsset,
 } from '@/lib/assets';
 import { linePoints } from '@/lib/chart';
-import { setUsdRates } from '@/lib/fx';
-import { accountBalance, netWorth } from '@/lib/transactions';
+import { setUsdRates, tryConvert } from '@/lib/fx';
+import { accountBalance } from '@/lib/transactions';
 
 const NOW = Date.parse('2026-11-14T10:00:00Z');
 const fresh = new Date(NOW - 60_000).toISOString();
@@ -65,9 +65,9 @@ describe('gainOf', () => {
 describe('computeNetWorth', () => {
   const withBalance = (list: Account[]) => list.map((a) => ({ ...a, balance: accountBalance(a, seedTransactions) }));
 
-  it('tanpa aset dan utang sama persis dengan rumus Home lama (hanya akun)', () => {
+  it('tanpa aset dan utang = jumlah saldo rekening yang dikonversi (tanpa kurs = tidak dihitung)', () => {
     const nw = computeNetWorth({ accounts: withBalance(seedAccounts), assets: [], prices: {}, debts: [], main: 'IDR', now: NOW });
-    expect(nw.total).toBe(netWorth(seedAccounts, seedTransactions, 'IDR'));
+    expect(nw.total).toBe(seedAccounts.reduce((s, a) => s + (tryConvert(accountBalance(a, seedTransactions), a.currency, 'IDR') ?? 0), 0));
   });
 
   it('(rekening + aset + piutang) − (kartu kredit + utang aktif)', () => {
@@ -105,6 +105,18 @@ describe('riwayat dan banner', () => {
     ];
     expect(changeSince(snaps, 250, '2026-11-14', 'IDR')).toEqual({ amount: 150, since: '2026-10-20' });
     expect(changeSince(snaps, 250, '2026-11-14', 'USD')).toBeNull();
+  });
+  it('snapshotTrend: deret 30 hari + nilai hari ini, delta vs titik tertua', () => {
+    const snaps = [
+      { date: '2026-10-01', total: 0, assetsTotal: 1, liabilitiesTotal: 0, currency: 'IDR' },
+      { date: '2026-10-20', total: 0, assetsTotal: 100, liabilitiesTotal: 0, currency: 'IDR' },
+      { date: '2026-11-01', total: 0, assetsTotal: 120, liabilitiesTotal: 50, currency: 'IDR' },
+      { date: '2026-11-14', total: 0, assetsTotal: 999, liabilitiesTotal: 999, currency: 'IDR' },
+    ];
+    expect(snapshotTrend(snaps, 'assetsTotal', 150, '2026-11-14', 'IDR')).toEqual({ series: [100, 120, 150], change: 0.5 });
+    // Pembanding 0 → tanpa delta, bukan +∞%.
+    expect(snapshotTrend(snaps, 'liabilitiesTotal', 40, '2026-11-14', 'IDR').change).toBeNull();
+    expect(snapshotTrend(snaps, 'assetsTotal', 150, '2026-11-14', 'USD')).toEqual({ series: [150], change: null });
   });
   it('banner muncul hanya bila semua aset live tanpa harga segar', () => {
     const live = [asset({ id: '1', type: 'stock_id', symbol: 'BBCA', quantity: 1 }), asset({ id: '2', type: 'crypto', symbol: 'BTC', quantity: 1 })];
@@ -154,6 +166,41 @@ describe('runPriceSync', () => {
   it('penyedia mati total: semua gagal, tidak ada baris yang ditimpa', async () => {
     const dead: PriceProvider = { name: 'uji', fetch: async () => { throw new Error('protocol_changed'); } };
     expect(await runPriceSync(['IDX:BBCA'], dead, at)).toEqual({ rows: [], failed: ['IDX:BBCA'], error: 'protocol_changed' });
+  });
+});
+
+describe('syncInBatches (audit 7)', () => {
+  const at = new Date('2026-11-14T10:00:00Z');
+  // 1.250 kunci: lebih dari batas 1000 baris PostgREST yang dulu memotong daftar.
+  const keys = Array.from({ length: 1250 }, (_, i) => `IDX:S${i}`);
+  const all: PriceProvider = { name: 'uji', fetch: async (ks) => ({ quotes: Object.fromEntries(ks.map((k) => [k, { price: 100, currency: 'IDR' }])) }) };
+
+  it('semua kunci diproses, disimpan per potongan 200 (bukan sekali di akhir)', async () => {
+    const saved: number[] = [];
+    const r = await syncInBatches(keys, all, at, async (rows) => void saved.push(rows.length));
+    expect(r).toEqual({ updated: 1250, failed: [] });
+    expect(saved).toEqual([200, 200, 200, 200, 200, 200, 50]);
+  });
+
+  it('satu potongan gagal di penyedia: potongan lain tetap tersimpan, error dicatat', async () => {
+    let call = 0;
+    const flaky: PriceProvider = { name: 'uji', fetch: async (ks) => (++call === 2 ? Promise.reject(new Error('timeout')) : all.fetch(ks)) };
+    const saved: number[] = [];
+    const r = await syncInBatches(keys.slice(0, 450), flaky, at, async (rows) => void saved.push(rows.length));
+    expect(saved).toEqual([200, 50]);
+    expect(r.updated).toBe(250);
+    expect(r.failed).toHaveLength(200);
+    expect(r.error).toBe('timeout');
+  });
+
+  it('penyimpanan gagal: berhenti dengan error; potongan sebelumnya sudah tersimpan', async () => {
+    const saved: number[] = [];
+    const save = async (rows: unknown[]) => {
+      if (saved.length === 1) throw new Error('asset_prices_500');
+      saved.push(rows.length);
+    };
+    await expect(syncInBatches(keys, all, at, save)).rejects.toThrow('asset_prices_500');
+    expect(saved).toEqual([200]);
   });
 });
 

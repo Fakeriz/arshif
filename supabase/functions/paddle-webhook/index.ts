@@ -7,7 +7,7 @@
 import { adminClient } from '../_shared/auth.ts';
 import { verifyPaddleSignature } from '../_shared/billing.ts';
 import { configured, PADDLE_PRICE_ID, PADDLE_WEBHOOK_SECRET } from '../_shared/env.ts';
-import { claimEvent, grantOrder, refundOrder, releaseEvent, transitionOrder } from '../_shared/entitlement.ts';
+import { grantOrder, handleEventOnce, refundOrder, transitionOrder } from '../_shared/entitlement.ts';
 import { HttpError, json, serve } from '../_shared/http.ts';
 
 type PaddleEvent = {
@@ -39,9 +39,7 @@ serve(async (req) => {
   }
   if (!event.event_id || !event.data?.id) throw new HttpError('bad_request', 400);
   const db = adminClient();
-  if (!(await claimEvent(db, 'paddle', event.event_id))) return json({ ok: true, duplicate: true });
-
-  try {
+  return handleEventOnce(db, 'paddle', event.event_id, async () => {
     if (event.event_type.startsWith('adjustment.')) {
       const d = event.data;
       if ((d.action === 'refund' || d.action === 'chargeback') && d.status === 'approved' && d.transaction_id) {
@@ -79,8 +77,5 @@ serve(async (req) => {
       await transitionOrder(db, order.id, 'failed', ref);
     }
     return json({ ok: true });
-  } catch (e) {
-    await releaseEvent(db, 'paddle', event.event_id);
-    throw e;
-  }
+  });
 });

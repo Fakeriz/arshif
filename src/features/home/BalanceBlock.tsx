@@ -30,7 +30,8 @@ export function BalanceBlock({
   // Kurs hanya disebut bila ada akun bermata uang lain (FR-FX-2: "Kurs per [waktu]").
   const { snapshots } = useAssets();
   // Tren 30 hari dari snapshot harian (sama dengan tab Aset). Tanpa snapshot lama: badge tidak tampil.
-  const since = complete ? changeSince(snapshots, amount, todayYmd(), currency) : null;
+  // Snapshot menyimpan total dengan aset; tanpa aset di saldo, pembandingnya tidak setara, jadi badge disembunyikan.
+  const since = complete && state.includeAssets ? changeSince(snapshots, amount, todayYmd(), currency) : null;
   const change = since ? pctChange(amount - since.amount, amount) : null;
   const converted = state.accounts.some((a) => a.currency !== currency) && state.ratesDate !== null;
   return (

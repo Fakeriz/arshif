@@ -9,7 +9,8 @@ import { AccountPicker, CategoryPicker } from '@/features/transactions/pickers';
 import { useT } from '@/i18n';
 import type { Frequency } from '@/lib/planning/schedule';
 import { SUBSCRIPTION_PRESETS } from '@/lib/planning/subscriptions';
-import { useAccounts, useStore } from '@/state/AppStore';
+import { useStore } from '@/state/AppStore';
+import { useLedger } from '@/state/derived';
 import { usePlanning } from '@/state/planning';
 import { space } from '@/theme/tokens';
 
@@ -50,7 +51,7 @@ export function GoalForm({ visible, onClose, goal }: { visible: boolean; onClose
   const t = useT();
   const { show } = useToast();
   const { state } = useStore();
-  const accounts = useAccounts();
+  const accounts = useLedger().accounts;
   const { addGoal, editGoal } = usePlanning();
   const saveError = useSaveError();
   const [name, setName] = useState(goal?.name ?? '');
@@ -97,7 +98,7 @@ export function BillForm({ visible, onClose, bill }: { visible: boolean; onClose
   const t = useT();
   const { show } = useToast();
   const { state } = useStore();
-  const accounts = useAccounts();
+  const accounts = useLedger().accounts;
   const { addBill, editBill } = usePlanning();
   const saveError = useSaveError();
   const [name, setName] = useState(bill?.name ?? '');
@@ -218,7 +219,7 @@ export function SubscriptionForm({ visible, onClose, sub }: { visible: boolean; 
   const t = useT();
   const { show } = useToast();
   const { state } = useStore();
-  const accounts = useAccounts();
+  const accounts = useLedger().accounts;
   const { addSub, editSub } = usePlanning();
   const saveError = useSaveError();
   const [preset, setPreset] = useState<string | undefined>(sub?.preset);

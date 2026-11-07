@@ -9,10 +9,9 @@ import { useI18n } from '@/i18n';
 import { addRateHistory, historyCodes, setRateHistory, setUsdRates, setUserRates } from '@/lib/fx';
 import { addDays } from '@/lib/dates';
 import { supabase } from '@/lib/supabase';
-import { accountBalance } from '@/lib/transactions';
 import { useTheme } from '@/theme/ThemeProvider';
 
-import { initialState, reducer, type Action, type AppState } from './reducer';
+import { initialState, keepReimbursement, mergePending, reducer, type Action, type AppState } from './reducer';
 import { useSession } from './session';
 import { syncAction } from './sync';
 
@@ -52,6 +51,8 @@ export function AppStoreProvider({ children, preset }: { children: ReactNode; pr
   const stateRef = useRef(state);
   const [refreshing, setRefreshing] = useState(false);
   stateRef.current = state;
+  // Transaksi yang penyimpanannya masih berjalan (id -> versi lokal terbaru). Muat ulang mempertahankannya.
+  const pending = useRef(new Map<string, Transaction>());
   // Kode mata uang yang riwayat kursnya sudah dicoba dimuat.
   const historyTried = useRef(new Set<string>());
   // "Kurs saya" dipasang ke modul kurs saat render, supaya agregat di render yang sama sudah memakainya.
@@ -105,8 +106,10 @@ export function AppStoreProvider({ children, preset }: { children: ReactNode; pr
       localDispatch({
         type: 'load/done',
         data: {
-          email: profile.email, displayName: profile.displayName, onboarded: profile.onboarded, suspended: profile.suspended, accounts, transactions, notifications,
-          plan: profile.plan, premiumUntil: profile.premiumUntil, premiumSource: profile.premiumSource, usage, hideBalance: profile.hideBalance, mainCurrency: profile.mainCurrency, income: profile.income,
+          email: profile.email, displayName: profile.displayName, onboarded: profile.onboarded, suspended: profile.suspended, accounts,
+          transactions: mergePending(transactions, [...pending.current.values()]),
+          notifications,
+          plan: profile.plan, premiumUntil: profile.premiumUntil, premiumSource: profile.premiumSource, usage, hideBalance: profile.hideBalance, includeAssets: profile.includeAssets, mainCurrency: profile.mainCurrency, income: profile.income,
           split: profile.split, payday: profile.payday, notifPrefs: profile.notifPrefs, activeAccountId: profile.activeAccountId, ratesDate: rates.date,
           budgets, limitGroups, userRates,
         },
@@ -193,14 +196,29 @@ export function AppStoreProvider({ children, preset }: { children: ReactNode; pr
     };
   }, [userId]);
 
+  const track = (txs: Transaction[]) => txs.forEach((x) => pending.current.set(x.id, x));
+  // Hanya dilepas bila belum ada versi lebih baru (edit setelah tambah) yang sedang disimpan.
+  const settle = (txs: Transaction[]) => txs.forEach((x) => pending.current.get(x.id) === x && pending.current.delete(x.id));
+
   const dispatch = useCallback(
     (action: Action) => {
       const before = stateRef.current;
       localDispatch(action);
       if (!userId) return;
+      const saving =
+        action.type === 'tx/add' ? [action.tx]
+          : action.type === 'tx/addMany' ? action.txs
+            : action.type === 'tx/update' ? [keepReimbursement(action.tx, before.transactions.find((x) => x.id === action.tx.id))]
+              : [];
+      track(saving);
       syncAction(action, before, userId)
-        .then((rated) => rated.forEach((tx) => localDispatch({ type: 'tx/update', tx })))
+        .then((rated) => {
+          settle(saving);
+          rated.forEach((tx) => localDispatch({ type: 'tx/rates', tx }));
+        })
         .catch(() => {
+          // Yang gagal dilepas dulu: muat ulang menampilkan versi server untuknya, simpan lain yang masih berjalan tetap.
+          settle(saving);
           show({ tone: 'error', title: t('common.syncFailed'), message: t('common.syncFailedMessage') });
           void reload();
         });
@@ -218,11 +236,14 @@ export function AppStoreProvider({ children, preset }: { children: ReactNode; pr
       const before = stateRef.current;
       localDispatch({ type: 'tx/add', tx });
       if (!userId) return tx;
+      track([tx]);
       try {
         const [rated] = await syncAction({ type: 'tx/add', tx }, before, userId);
-        localDispatch({ type: 'tx/update', tx: rated });
+        settle([tx]);
+        localDispatch({ type: 'tx/rates', tx: rated });
         return rated;
       } catch (e) {
+        settle([tx]);
         localDispatch({ type: 'tx/delete', id: tx.id });
         throw e;
       }
@@ -251,14 +272,6 @@ export function usedCodes(accounts: Account[], txs: Transaction[], main: string,
   for (const a of accounts) set.add(a.currency);
   for (const t of txs) set.add(t.currency);
   return [...set].sort();
-}
-
-export function useAccounts(): AccountWithBalance[] {
-  const { state } = useStore();
-  return useMemo(
-    () => state.accounts.map((a) => ({ ...a, balance: accountBalance(a, state.transactions) })),
-    [state.accounts, state.transactions],
-  );
 }
 
 /** Akun default untuk pencatatan: kartu aktif di Beranda, atau akun pertama. */

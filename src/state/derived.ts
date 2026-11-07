@@ -7,11 +7,11 @@ import {
 } from '@/lib/budget';
 import { cardUtilization } from '@/lib/credit';
 import { healthPillars, healthScore } from '@/lib/health';
-import { accountBalance, netWorth as computeNetWorth } from '@/lib/transactions';
+import { accountBalance } from '@/lib/transactions';
 
 import { usedCodes, useStore, type AccountWithBalance } from './AppStore';
 
-/** Akun (dengan saldo) + transaksi + kekayaan bersih dalam mata uang utama. */
+/** Akun (dengan saldo) + transaksi. Kekayaan bersih: useNetWorth (state/netWorth), satu rumus untuk semua layar. */
 export function useLedger() {
   const { state } = useStore();
   return useMemo(() => {
@@ -20,7 +20,6 @@ export function useLedger() {
       accounts,
       transactions: state.transactions,
       mainCurrency: state.mainCurrency,
-      netWorth: computeNetWorth(state.accounts, state.transactions, state.mainCurrency),
     };
     // ratesDate/ratesVersion/userRates: kurs berubah = konversi ke mata uang utama ikut berubah.
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -50,8 +49,10 @@ export function useCreditUtilization() {
 export function useBudget() {
   const { state } = useStore();
   const { transactions, mainCurrency } = useLedger();
+  // Tanggal ikut kunci cache: aplikasi yang terbuka melewati tengah malam (mis. masuk hari gajian) memakai periode baru.
+  const today = todayYmd();
   return useMemo(() => {
-    const period = budgetPeriod(todayYmd(), state.payday);
+    const period = budgetPeriod(today, state.payday);
     // Anggaran tersimpan untuk periode ini (FR-BDG-5); tanpa baris = penghasilan profil, tanpa batas kategori.
     const record = budgetFor(state.budgets, period.start);
     const previous = previousBudgets(state.budgets, period.start, 3);
@@ -83,7 +84,7 @@ export function useBudget() {
       bucketPace: (b: 'needs' | 'wants' | 'savings') => pace(spent[b], limits[b], period.elapsedDays, period.totalDays),
       safePerDay: safeToSpend(flexLimit, flexSpent, period.daysLeft),
     };
-  }, [state.payday, state.income, state.split, state.budgets, transactions, mainCurrency]);
+  }, [today, state.payday, state.income, state.split, state.budgets, transactions, mainCurrency]);
 }
 
 export function useHealth() {

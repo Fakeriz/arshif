@@ -64,7 +64,7 @@ export default function HomeScreen() {
   return (
     <Screen tabs onRefresh={retry} refreshing={refreshing}>
       <HomeHeader />
-      <BalanceBlock amount={netWorth.total} currency={netWorth.currency} accountCount={ledger.accounts.length} complete={netWorth.complete} />
+      <BalanceBlock amount={state.includeAssets ? netWorth.total : netWorth.total - netWorth.assets} currency={netWorth.currency} accountCount={ledger.accounts.length} complete={netWorth.complete} />
       <AccountDeck
         accounts={ledger.accounts}
         hidden={state.hideBalance}

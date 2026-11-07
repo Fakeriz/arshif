@@ -3,7 +3,7 @@ import { useMemo, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import { usePaywall } from '@/components/shell/Paywall';
-import { AppText, Card, CategoryIcon, CurrencyText, EmptyState, GlassView, Icon, PressableScale, ProBadge, Tabs } from '@/components/ui';
+import { AppText, Card, CategoryIcon, CurrencyText, EmptyState, GlassView, Icon, PressableScale, ProBadge, Tabs, TrendBadge } from '@/components/ui';
 import type { Transaction } from '@/data/types';
 import { categoryLabel, useI18n } from '@/i18n';
 import { shortDate, todayYmd } from '@/lib/dates';
@@ -79,7 +79,6 @@ function Replay({ recap, currency }: { recap: WeeklyRecap; currency: string }) {
   const { colors } = useTheme();
   const { t, lang } = useI18n();
   const range = t('coach.recap.range', { start: shortDate(recap.start, lang), end: shortDate(recap.end, lang) });
-  const down = recap.changePct !== null && recap.changePct < 0;
 
   return (
     <>
@@ -92,13 +91,7 @@ function Replay({ recap, currency }: { recap: WeeklyRecap; currency: string }) {
         </AppText>
         <CurrencyText amount={recap.spent} currency={currency} variant="amountHero" />
         {recap.changePct !== null && (
-          <AppText variant="bodyStrong" tone={down ? 'positive' : 'secondary'}>
-            {down
-              ? t(recap.week === 'month' ? 'coach.replay.monthDown' : 'coach.recap.down', { pct: Math.abs(recap.changePct) })
-              : recap.changePct === 0
-                ? t(recap.week === 'month' ? 'coach.replay.monthSame' : 'coach.recap.same')
-                : t(recap.week === 'month' ? 'coach.replay.monthUp' : 'coach.recap.up', { pct: recap.changePct })}
-          </AppText>
+          <TrendBadge value={recap.changePct / 100} invert suffix={t(recap.week === 'month' ? 'common.fin.vsLastMonth' : 'common.fin.vsLastWeek')} />
         )}
         {recap.week === 'this' && recap.changePct !== null && (
           <AppText variant="caption" tone="muted">

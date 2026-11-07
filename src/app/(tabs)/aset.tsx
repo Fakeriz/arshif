@@ -1,18 +1,19 @@
 import { useRouter } from 'expo-router';
-import { TriangleAlert, Wallet } from 'lucide-react-native';
+import { CreditCard, TriangleAlert, Wallet } from 'lucide-react-native';
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import { Screen } from '@/components/shell/Screen';
 import { TabHeader } from '@/components/shell/TabHeader';
-import { AppText, BalanceText, Card, CurrencyText, EmptyState, Icon, ListItem, Skeleton } from '@/components/ui';
+import { AppText, BalanceText, Card, CurrencyText, EmptyState, Icon, ListItem, Skeleton, StatTile, Toggle, TrendBadge } from '@/components/ui';
 import { AssetForm } from '@/features/assets/AssetForm';
 import { NetWorthChart } from '@/features/assets/NetWorthChart';
 import { priceLabel, quantityLabel } from '@/features/assets/view';
 import { MissingRatesBanner } from '@/features/fx/MissingRatesBanner';
 import { AddButton, SectionLabel } from '@/features/planning/kit';
 import { useI18n } from '@/i18n';
-import { changeSince, livePricesDown, valueAsset } from '@/lib/assets';
+import { changeSince, livePricesDown, snapshotTrend, valueAsset } from '@/lib/assets';
+import { pctChange } from '@/lib/chart';
 import { isCreditType } from '@/lib/credit';
 import { shortDate, todayYmd } from '@/lib/dates';
 import { tryConvert } from '@/lib/fx';
@@ -30,7 +31,7 @@ export default function AsetScreen() {
   const { t, lang } = useI18n();
   const router = useRouter();
   const { colors } = useTheme();
-  const { state } = useStore();
+  const { state, dispatch } = useStore();
   const limits = useLimits();
   const planning = usePlanning();
   const { assets, prices, snapshots, status, reload } = useAssets();
@@ -39,7 +40,10 @@ export default function AsetScreen() {
   const [form, setForm] = useState(false);
   const now = Date.now();
   const currency = nw.currency;
-  const change = changeSince(snapshots, nw.total, todayYmd(), currency);
+  const today = todayYmd();
+  const change = changeSince(snapshots, nw.total, today, currency);
+  const assetTrend = snapshotTrend(snapshots, 'assetsTotal', nw.assetsTotal, today, currency);
+  const debtTrend = snapshotTrend(snapshots, 'liabilitiesTotal', nw.liabilitiesTotal, today, currency);
   const activeDebts = planning.debts.filter((d) => d.status === 'active' && d.kind === 'debt');
   const hasCredit = state.accounts.some((a) => isCreditType(a.type));
   const cashCount = state.accounts.filter((a) => !isCreditType(a.type)).length;
@@ -68,11 +72,45 @@ export default function AsetScreen() {
             </AppText>
             <BalanceText amount={nw.total} currency={currency} hidden={state.hideBalance} />
             {change && !state.hideBalance && (
-              <AppText variant="caption" tone="muted" align="center">
-                {t('assets.change', { amount: formatMoney(change.amount, currency, 'always'), date: shortDate(change.since, lang) })}
-              </AppText>
+              <>
+                <TrendBadge value={pctChange(nw.total - change.amount, nw.total)} />
+                <AppText variant="caption" tone="muted" align="center">
+                  {t('assets.change', { amount: formatMoney(change.amount, currency, 'always'), date: shortDate(change.since, lang) })}
+                </AppText>
+              </>
             )}
           </View>
+
+          <View style={styles.tiles}>
+            <StatTile
+              label={t('assets.totalAssets')}
+              icon={Wallet}
+              amount={nw.assetsTotal}
+              currency={currency}
+              change={assetTrend.change}
+              series={assetTrend.series}
+              hidden={state.hideBalance}
+            />
+            <StatTile
+              label={t('assets.totalDebts')}
+              icon={CreditCard}
+              amount={nw.liabilitiesTotal}
+              currency={currency}
+              change={debtTrend.change}
+              series={debtTrend.series}
+              invert
+              hidden={state.hideBalance}
+            />
+          </View>
+
+          <Card padding="md">
+            <ListItem
+              title={t('settings.includeAssets')}
+              subtitle={t('settings.includeAssetsSub')}
+              subtitleLines={2}
+              trailing={<Toggle value={state.includeAssets} onChange={(value) => dispatch({ type: 'prefs/includeAssets', value })} accessibilityLabel={t('settings.includeAssets')} />}
+            />
+          </Card>
 
           <Card>
             <View style={styles.cardBody}>
@@ -142,7 +180,6 @@ export default function AsetScreen() {
               {t('assets.unvalued', { count: nw.unvalued })}
             </AppText>
           )}
-          <TotalRow label={t('assets.totalAssets')} amount={nw.assetsTotal} currency={currency} hidden={state.hideBalance} />
 
           <SectionLabel>{t('assets.sectionDebts')}</SectionLabel>
           <Card padding="md">
@@ -171,21 +208,11 @@ export default function AsetScreen() {
               </>
             )}
           </Card>
-          <TotalRow label={t('assets.totalDebts')} amount={nw.liabilitiesTotal} currency={currency} hidden={state.hideBalance} />
 
           <AssetForm key={form ? 'open' : 'closed'} visible={form} onClose={() => setForm(false)} />
         </>
       )}
     </Screen>
-  );
-}
-
-function TotalRow({ label, amount, currency, hidden }: { label: string; amount: number; currency: string; hidden: boolean }) {
-  return (
-    <View style={styles.total}>
-      <AppText variant="bodyStrong">{label}</AppText>
-      <CurrencyText amount={amount} currency={currency} kind="balance" variant="bodyStrong" hidden={hidden} />
-    </View>
   );
 }
 
@@ -196,5 +223,5 @@ const styles = StyleSheet.create({
   banner: { flexDirection: 'row', gap: space.md, alignItems: 'flex-start' },
   flex: { flex: 1, gap: space.xxs },
   sectionRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: space.sm },
-  total: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: space.xs },
+  tiles: { flexDirection: 'row', flexWrap: 'wrap', gap: space.md },
 });

@@ -88,6 +88,7 @@ const assets: Messages['assets'] = {
     currentPrice: 'Harga semasa',
     value: 'Jumlah nilai',
     gain: 'Untung/rugi',
+    vsBuy: 'berbanding harga beli',
     buyDate: 'Tarikh beli',
     notes: 'Catatan',
     priceCurrency: 'Mata wang harga',

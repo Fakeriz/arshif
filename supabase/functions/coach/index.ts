@@ -1,7 +1,7 @@
 /**
  * Narasi Coach (FR-COACH-2/4): AI hanya menerima ringkasan angka (bukan merchant/nominal mentah)
  * dan hasilnya di-cache per (pengguna, minggu, bahasa) agar AI tidak dipanggil tiap buka layar.
- * Tanpa kuota bulanan; rate limit 10/menit tetap berlaku.
+ * Kuota harian `coachNarration` (Free 10, Premium 30) + rate limit 10/menit; cache tidak memakai kuota.
  */
 import { generateJson } from '../_shared/ai.ts';
 import { adminClient, requireUser } from '../_shared/auth.ts';
@@ -28,7 +28,8 @@ serve(async (req) => {
   // Cache dipakai hanya bila skornya masih sama; data baru minggu ini = narasi baru.
   if (cached && cached.score === score) return json({ narration: cached.narration, actions: cached.actions, cached: true });
 
-  const result = await runAiJob(db, user.id, 'coach', null, async () => {
+  // Kuota harian narasi: cache di atas bisa dilewati dengan skor berbeda, jadi panggilan AI tetap dibatasi.
+  const result = await runAiJob(db, user.id, 'coach', 'coachNarration', async () => {
     const raw = await generateJson(coachPrompt(lang, { score, pillars, facts }), COACH_SCHEMA);
     const coach = normalizeCoach(raw);
     if (!coach) throw new HttpError('ai_failed', 502);

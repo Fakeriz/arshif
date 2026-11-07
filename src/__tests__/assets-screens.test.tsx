@@ -84,6 +84,23 @@ describe('tab Aset', () => {
     expect(screen.getByLabelText(label)).toBeTruthy();
   });
 
+  it('toggle "Gabungkan aset" mati: Home tanpa aset, tab Aset tetap penuh', async () => {
+    const opts = { assets: { assets: [bbca, house], prices: livePrice }, planning: { debts: [debt] }, state: { includeAssets: false } };
+    const full = formatMoney(expectedTotal([bbca, house], livePrice, [debt]), base.mainCurrency);
+    const noAssets = formatMoney(expectedTotal([], livePrice, [debt]), base.mainCurrency);
+    await wrap(<HomeScreen />, opts);
+    expect(screen.getByLabelText(noAssets)).toBeTruthy();
+    expect(screen.queryByLabelText(full)).toBeNull();
+    await screen.unmount();
+    await wrap(<AsetScreen />, opts);
+    expect(screen.getByLabelText(full)).toBeTruthy();
+    const toggle = screen.getByLabelText('Gabungkan aset ke saldo Beranda');
+    expect(toggle.props.accessibilityState?.checked ?? toggle.props['aria-checked']).toBe(false);
+    await fireEvent.press(toggle);
+    const after = screen.getByLabelText('Gabungkan aset ke saldo Beranda');
+    expect(after.props.accessibilityState?.checked ?? after.props['aria-checked']).toBe(true);
+  });
+
   it('baris aset: jumlah, harga live + waktu, nilai = jumlah × harga', async () => {
     await wrap(<AsetScreen />, { assets: { assets: [bbca], prices: livePrice } });
     expect(screen.getByText('Bank Central Asia')).toBeTruthy();
@@ -140,7 +157,8 @@ describe('detail aset', () => {
     mockParams = { id: 'bbca' };
     await wrap(<AssetDetail />, { assets: { assets: [bbca], prices: livePrice } });
     expect(screen.getByText('Rp 5.200 per lembar')).toBeTruthy();
-    expect(screen.getByText(/^\+Rp 40\.000 \(\+8,3%\)$/)).toBeTruthy();
+    expect(screen.getByText(/^\+Rp 40\.000$/)).toBeTruthy();
+    expect(screen.getByLabelText('Naik 8,3% vs harga beli')).toBeTruthy();
     await act(async () => {
       fireEvent.press(screen.getByLabelText('Hapus'));
     });

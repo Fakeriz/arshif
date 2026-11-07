@@ -1,6 +1,6 @@
 import { StyleSheet, View } from 'react-native';
 
-import { AppText, Badge, Card, CategoryIcon, CurrencyText, ProgressBar } from '@/components/ui';
+import { AppText, Badge, Card, CategoryIcon, CurrencyText, GoalRing, ProgressBar } from '@/components/ui';
 import { CATEGORIES, type Bucket } from '@/constants/categories';
 import { categoryLabel, useT } from '@/i18n';
 import type { Pace } from '@/lib/budget';
@@ -36,7 +36,7 @@ export function BucketSection({ bucket, label, percent, color, spent, limit, pac
           <AppText variant="caption" tone="muted">{t(saving ? 'budget.bucket.ofIncomeTarget' : 'budget.bucket.ofIncome', { pct: percent })}</AppText>
         </View>
         {saving ? (
-          <Badge label={t('budget.bucket.ofTarget', { pct: limit > 0 ? Math.round((spent / limit) * 100) : 0 })} tone="positive" />
+          <GoalRing value={limit > 0 ? spent / limit : 0} label={label} size={52} thickness={5} />
         ) : (
           <Badge label={t(`domain.pace.${pace}`)} tone={PACE_TONE[pace]} />
         )}
@@ -45,7 +45,7 @@ export function BucketSection({ bucket, label, percent, color, spent, limit, pac
         <CurrencyText amount={spent} currency={currency} kind={over ? 'over' : 'balance'} variant="h2" />
         <AppText variant="caption" tone="muted">{t(saving ? 'budget.bucket.target' : 'budget.bucket.of', { amount: formatCompact(limit, currency) })}</AppText>
       </View>
-      <ProgressBar value={limit > 0 ? spent / limit : 0} tone={saving ? 'positive' : 'auto'} accessibilityLabel={t(saving ? 'budget.bucket.reached' : 'budget.bucket.used', { label })} />
+      {!saving && <ProgressBar value={limit > 0 ? spent / limit : 0} accessibilityLabel={t('budget.bucket.used', { label })} />}
       <View style={styles.rows}>
         {rows.map((c) => {
           const s = categorySpent(c.key);

@@ -4,6 +4,7 @@ import type { Bill, Debt, Goal, SplitBill, Subscription } from '@/data/planning'
 import * as api from '@/data/remote/planning';
 import type { Transaction } from '@/data/types';
 import { localHm } from '@/features/capture/clock';
+import { RemoteError } from '@/data/remote/api';
 import { newId } from '@/lib/uuid';
 
 import { useStore } from './AppStore';
@@ -14,7 +15,14 @@ type PlanningState = api.PlanningData & { status: PlanningStatus };
 const EMPTY: PlanningState = { status: 'idle', goals: [], deposits: [], bills: [], debts: [], payments: [], subscriptions: [], splits: [] };
 
 /** Pembayaran dari akun: nominal dalam mata uang entitas, akun boleh beda mata uang (dikonversi store). */
-export type PayInput = { amount: number; accountId: string; date: string; note?: string };
+/**
+ * `id` dibuat sekali per lembar bayar (PaySheet) dan dipakai untuk transaksi + catatan setoran/pembayarannya.
+ * Coba ulang setelah gagal di tengah jalan memakai id yang sama, jadi rekening tidak terpotong dua kali.
+ */
+export type PayInput = { id: string; amount: number; accountId: string; date: string; note?: string };
+
+/** Catatan dengan id ini sudah tersimpan di percobaan sebelumnya (unique violation). */
+const alreadySaved = (e: unknown) => e instanceof RemoteError && e.code === '23505';
 
 type PlanningValue = PlanningState & {
   reload: () => Promise<void>;
@@ -86,9 +94,13 @@ export function PlanningProvider({ children, preset }: { children: ReactNode; pr
   }, [userId, app.status]);
 
   const tx = useCallback(
-    (p: PayInput, fields: Pick<Transaction, 'type' | 'merchant' | 'categoryKey' | 'currency'>): Promise<Transaction> =>
-      commitTx({ id: newId(), ...fields, accountId: p.accountId, date: p.date, time: localHm(), amount: p.amount, note: p.note, source: 'manual' }),
-    [commitTx],
+    async (p: PayInput, fields: Pick<Transaction, 'type' | 'merchant' | 'categoryKey' | 'currency'>): Promise<Transaction> => {
+      // Transaksi sudah tersimpan di percobaan sebelumnya (catatan keduanya yang gagal): jangan buat lagi.
+      const existing = app.transactions.find((t) => t.id === p.id);
+      if (existing) return existing;
+      return commitTx({ id: p.id, ...fields, accountId: p.accountId, date: p.date, time: localHm(), amount: p.amount, note: p.note, source: 'manual' });
+    },
+    [commitTx, app.transactions],
   );
 
   const value = useMemo<PlanningValue>(() => {
@@ -114,7 +126,15 @@ export function PlanningProvider({ children, preset }: { children: ReactNode; pr
       },
       depositGoal: async (goal, p) => {
         const t = await tx(p, { type: 'expense', merchant: goal.name, categoryKey: 'savings', currency: goal.currency });
-        const { deposit, goal: next } = await api.insertDeposit({ id: newId(), goalId: goal.id, amount: p.amount, date: p.date, accountId: p.accountId, transactionId: t.id });
+        let saved;
+        try {
+          saved = await api.insertDeposit({ id: p.id, goalId: goal.id, amount: p.amount, date: p.date, accountId: p.accountId, transactionId: t.id });
+        } catch (e) {
+          if (!alreadySaved(e)) throw e;
+          await reload();
+          return goal;
+        }
+        const { deposit, goal: next } = saved;
         set((s) => ({ ...s, goals: upsert(s.goals, next), deposits: [deposit, ...s.deposits] }));
         if (next.status !== goal.status) refreshUsage();
         return next;
@@ -161,7 +181,15 @@ export function PlanningProvider({ children, preset }: { children: ReactNode; pr
       payDebt: async (debt, p) => {
         // Utang: uang keluar. Piutang: uang masuk dari pihak lawan.
         const t = await tx(p, { type: debt.kind === 'debt' ? 'expense' : 'income', merchant: debt.counterparty, categoryKey: debt.kind === 'debt' ? 'debt' : 'other', currency: debt.currency });
-        const { payment, debt: next } = await api.insertPayment({ id: newId(), debtId: debt.id, amount: p.amount, date: p.date, transactionId: t.id });
+        let saved;
+        try {
+          saved = await api.insertPayment({ id: p.id, debtId: debt.id, amount: p.amount, date: p.date, transactionId: t.id });
+        } catch (e) {
+          if (!alreadySaved(e)) throw e;
+          await reload();
+          return debt;
+        }
+        const { payment, debt: next } = saved;
         set((s) => ({ ...s, debts: upsert(s.debts, next), payments: [payment, ...s.payments] }));
         if (next.status !== debt.status) refreshUsage();
         return next;

@@ -20,7 +20,7 @@ type Result = z.infer<typeof CoachResult>;
 export function CoachNarration({ input }: { input: Input }) {
   const { colors } = useTheme();
   const { t, lang } = useI18n();
-  const [state, setState] = useState<{ kind: 'loading' } | { kind: 'ready'; data: Result } | { kind: 'error'; rateLimited: boolean }>({ kind: 'loading' });
+  const [state, setState] = useState<{ kind: 'loading' } | { kind: 'ready'; data: Result } | { kind: 'error'; reason: 'narrError' | 'narrRateLimited' | 'narrQuota' }>({ kind: 'loading' });
   const [attempt, setAttempt] = useState(0);
   const key = JSON.stringify({ ...input, lang });
 
@@ -29,7 +29,11 @@ export function CoachNarration({ input }: { input: Input }) {
     setState({ kind: 'loading' });
     invokeFn(FUNCTIONS.coach, { ...input, lang }, CoachResult)
       .then((data) => alive && setState({ kind: 'ready', data }))
-      .catch((e: unknown) => alive && setState({ kind: 'error', rateLimited: e instanceof FnError && e.code === 'rate_limited' }));
+      .catch((e: unknown) => {
+        if (!alive) return;
+        const code = e instanceof FnError ? e.code : null;
+        setState({ kind: 'error', reason: code === 'rate_limited' ? 'narrRateLimited' : code === 'quota' ? 'narrQuota' : 'narrError' });
+      });
     return () => {
       alive = false;
     };
@@ -55,7 +59,7 @@ export function CoachNarration({ input }: { input: Input }) {
       {state.kind === 'error' && (
         <View style={styles.body}>
           <AppText variant="body" tone="secondary">
-            {t(state.rateLimited ? 'coach.score.narrRateLimited' : 'coach.score.narrError')}
+            {t(`coach.score.${state.reason}`)}
           </AppText>
           <Button label={t('common.retry')} variant="secondary" size="md" onPress={() => setAttempt((n) => n + 1)} />
         </View>

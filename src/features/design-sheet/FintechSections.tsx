@@ -127,7 +127,7 @@ export function NumberPadSection() {
     <Section
       index="Fintech"
       title="NumberPad"
-      note="Keypad nominal ala aplikasi pembayaran. IDR mendapat tombol 000, mata uang berdesimal mendapat pemisah desimalnya sendiri. Tahan hapus untuk mengosongkan. Nominal sedikit membesar tiap ketukan dan bergoyang + getar bila ketukan ditolak (mis. digit desimal ketiga)."
+      note="Keypad kalkulator nominal: ÷ × − + dan = menghitung (× ÷ lebih dulu). Mata uang tanpa desimal (IDR, JPY, KRW, VND) mendapat tombol 000, yang lain pemisah desimalnya sendiri. Tahan hapus untuk mengosongkan."
     >
       <View style={styles.pair}>
         <PadDemo currency="IDR" />

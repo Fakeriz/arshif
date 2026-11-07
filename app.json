@@ -21,6 +21,7 @@
       },
       "predictiveBackGestureEnabled": false,
       "package": "app.arshif",
+      "allowBackup": false,
       "permissions": [
         "android.permission.RECORD_AUDIO",
         "android.permission.MODIFY_AUDIO_SETTINGS",
@@ -49,9 +50,9 @@
       ],
       "expo-asset",
       "expo-localization",
-      "expo-secure-store",
       "expo-audio",
-      "expo-sharing"
+      "expo-sharing",
+      "./plugins/withNoDataExtraction"
     ],
     "experiments": {
       "typedRoutes": true,

@@ -55,6 +55,16 @@ async function readHeld(): Promise<Capture[]> {
   }
 }
 
+/** Simpan tangkapan yang ditahan di perangkat. false = gagal (mis. penyimpanan penuh), untuk ditampilkan ke pengguna. */
+async function saveHeld(list: Capture[]): Promise<boolean> {
+  try {
+    await AsyncStorage.setItem(HELD_KEY, JSON.stringify(list));
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 function drainNative(): Capture[] {
   if (!SmartLogNative) return [];
   try {
@@ -192,8 +202,12 @@ function SmartLogInner({ children }: { children: ReactNode }) {
       if (!fresh.length && !previous.length) return;
       const seen = new Set<string>();
       const captures = [...previous, ...fresh].filter((c) => (seen.has(c.key) ? false : (seen.add(c.key), true)));
+      // Antrean native sudah kosong: simpan dulu sebelum mengirim, supaya tangkapan tidak hilang bila aplikasi
+      // ditutup/dimatikan di tengah pengiriman. Kiriman ulang aman: server menandainya `repeat`.
+      // Bila penyimpanan awal gagal, tetap kirim dari memori; yang tersisa wajib tersimpan, kalau tidak beri tahu pengguna.
+      await saveHeld(captures);
       const sum = await processCaptures(captures, api.ingest);
-      await AsyncStorage.setItem(HELD_KEY, JSON.stringify(sum.held)).catch(() => undefined);
+      if (!(await saveHeld(sum.held))) show({ tone: 'error', title: t('slog.toast.saveFailed') });
       setHeld(sum.held.length);
       if (sum.applied.length || sum.review) {
         const next = await api.loadSmartLog(userId!);
@@ -210,7 +224,7 @@ function SmartLogInner({ children }: { children: ReactNode }) {
     } finally {
       busy.current = false;
     }
-  }, [active, userId, applyLocal, refreshUsage, announce]);
+  }, [active, userId, applyLocal, refreshUsage, announce, show, t]);
 
 
   // Aplikasi kembali aktif: izin bisa berubah di Pengaturan Android, dan antrean perlu dikuras.

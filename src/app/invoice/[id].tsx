@@ -17,7 +17,8 @@ import { lineTotal, qtyText, type Invoice } from '@/lib/invoice';
 import { formatMoney } from '@/lib/money';
 import { QUOTAS } from '@/lib/quota';
 import { bpText } from '@/lib/tax';
-import { useAccounts, useActiveAccountId, useStore } from '@/state/AppStore';
+import { useActiveAccountId, useStore } from '@/state/AppStore';
+import { useLedger } from '@/state/derived';
 import { useInvoices } from '@/state/invoices';
 import { useTheme } from '@/theme/ThemeProvider';
 import { space } from '@/theme/tokens';
@@ -188,7 +189,7 @@ type PaidSheetProps = { inv: Invoice; visible: boolean; onClose(): void; onSubmi
 
 function PaidSheet({ inv, visible, onClose, onSubmit }: PaidSheetProps) {
   const { t } = useI18n();
-  const accounts = useAccounts();
+  const accounts = useLedger().accounts;
   const activeId = useActiveAccountId();
   const [accountId, setAccountId] = useState<string | null>(accounts.find((a) => a.currency === inv.currency)?.id ?? activeId);
   const [date, setDate] = useState(localYmd());

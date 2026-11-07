@@ -18,14 +18,6 @@ export function accountBalance(account: Account, txs: Transaction[]): number {
 }
 
 /**
- * Total kekayaan bersih dalam mata uang utama (kartu kredit bersaldo negatif = utang). Saldo memakai kurs
- * hari ini (FR-FX-4). Akun tanpa kurs tidak dihitung; layar menampilkan permintaan isi kurs (MissingRates).
- */
-export function netWorth(accounts: Account[], txs: Transaction[], main: string): number {
-  return accounts.reduce((sum, a) => sum + (tryConvert(accountBalance(a, txs), a.currency, main) ?? 0), 0);
-}
-
-/**
  * Nominal transaksi dalam mata uang utama memakai kurs PADA TANGGAL transaksi (FR-FX-4: belanja terkunci
  * pada kurs harinya). Kurs hilang = 0 (dikecualikan dari agregat, layar meminta kurs).
  */

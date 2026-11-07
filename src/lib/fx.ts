@@ -10,8 +10,6 @@ export const SAMPLE_USD_RATES: Record<string, string> = {
   EUR: '0.86',
 };
 
-export const SAMPLE_RATES_AT = '5 Nov, 14.00';
-
 /**
  * Aturan kurs (FR-FX-4):
  * - Saldo dan kekayaan bersih memakai kurs hari ini (tabel terbaru, `setUsdRates`).
@@ -66,10 +64,6 @@ export function historyCodes(): string[] {
 
 export function setUserRates(list: UserRate[]): void {
   userRates = Object.fromEntries(list.map((r) => [r.code, r]));
-}
-
-export function getUserRates(): UserRate[] {
-  return Object.values(userRates);
 }
 
 /** Tanggal kurs yang sedang dipakai ("Kurs per …", FR-FX-2). null = belum ada kurs. */

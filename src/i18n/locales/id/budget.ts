@@ -16,10 +16,8 @@ const budget = {
   bucket: {
     ofIncomeTarget: '{pct}% dari penghasilan, target',
     ofIncome: '{pct}% dari penghasilan',
-    ofTarget: '{pct}% dari target',
     target: 'target {amount}',
     of: 'dari {amount}',
-    reached: '{label} tercapai',
     used: '{label} terpakai',
     categoryPct: '{label} {pct} persen',
     empty: 'Belum ada pengeluaran di bucket ini.',

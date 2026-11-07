@@ -1,6 +1,7 @@
 import type { Asset, AssetPrice, AssetType, NetWorthSnapshot } from '@/data/assets';
 import type { Debt } from '@/data/planning';
 import type { Account } from '@/data/types';
+import { pctChange } from '@/lib/chart';
 import { isCreditType } from '@/lib/credit';
 import { tryConvert } from '@/lib/fx';
 import type { Lang } from '@/i18n/types';
@@ -166,13 +167,29 @@ export function computeNetWorth({ accounts, assets, prices, debts, main, now }: 
   };
 }
 
+/** Snapshot dalam `days` hari terakhir (tanpa hari ini), terlama dulu. */
+function recentSnapshots(snapshots: NetWorthSnapshot[], today: string, currency: string, days: number): NetWorthSnapshot[] {
+  const from = new Date(Date.parse(`${today}T00:00:00Z`) - days * 86_400_000).toISOString().slice(0, 10);
+  return snapshots.filter((s) => s.date >= from && s.date < today && s.currency === currency).sort((a, b) => a.date.localeCompare(b.date));
+}
+
 /** Selisih kekayaan bersih hari ini terhadap snapshot tertua dalam `days` hari terakhir (tanpa hari ini). */
 export function changeSince(snapshots: NetWorthSnapshot[], total: number, today: string, currency: string, days = 30): { amount: number; since: string } | null {
-  const from = new Date(Date.parse(`${today}T00:00:00Z`) - days * 86_400_000).toISOString().slice(0, 10);
-  const base = snapshots
-    .filter((s) => s.date >= from && s.date < today && s.currency === currency)
-    .sort((a, b) => a.date.localeCompare(b.date))[0];
+  const base = recentSnapshots(snapshots, today, currency, days)[0];
   return base ? { amount: total - base.total, since: base.date } : null;
+}
+
+/** Deret harian satu kolom snapshot + nilai hari ini, dan perubahan relatif vs titik tertua (pembanding sama dengan changeSince). */
+export function snapshotTrend(
+  snapshots: NetWorthSnapshot[],
+  key: 'assetsTotal' | 'liabilitiesTotal',
+  current: number,
+  today: string,
+  currency: string,
+  days = 30,
+): { series: number[]; change: number | null } {
+  const series = [...recentSnapshots(snapshots, today, currency, days).map((s) => s[key]), current];
+  return { series, change: series.length > 1 ? pctChange(series[0], current) : null };
 }
 
 /** Ada aset live yang harganya tidak tersedia atau sudah basi: tampilkan banner. */

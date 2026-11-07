@@ -24,8 +24,11 @@ const settings: Messages['settings'] = {
   languagePick: 'Dil seç',
   mainCurrency: 'Ana para birimi',
   mainCurrencySub: 'Tüm toplamlar ve bütçeler bu birime çevrilir',
+  mainCurrencyNoRate: '{code} için henüz kur yok, bu yüzden gelir ve bütçeler çevrilemez. Ana para birimi değiştirilmedi.',
   hideBalance: 'Bakiyeleri gizle',
   hideBalanceSub: 'Bakiyeler Ana Sayfa’da nokta olarak görünür',
+  includeAssets: 'Varlıkları Ana Sayfa bakiyesine dahil et',
+  includeAssetsSub: 'Varlık değerleri Ana Sayfa bakiyesine eklenir. Varlıklar sekmesi her zaman hepsini gösterir.',
   notifications: 'Bildirimler',
   notif: {
     bill_due: { title: 'Fatura son günü', sub: '3 gün önce ve son ödeme gününde' },

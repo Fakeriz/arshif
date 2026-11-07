@@ -22,8 +22,11 @@ const settings = {
   languagePick: 'Pilih bahasa',
   mainCurrency: 'Mata uang utama',
   mainCurrencySub: 'Semua total dan anggaran dikonversi ke sini',
+  mainCurrencyNoRate: 'Kurs {code} belum tersedia, jadi pemasukan dan anggaran tidak bisa dikonversi. Mata uang utama tidak diubah.',
   hideBalance: 'Sembunyikan saldo',
   hideBalanceSub: 'Saldo tampil sebagai titik di Beranda',
+  includeAssets: 'Gabungkan aset ke saldo Beranda',
+  includeAssetsSub: 'Nilai aset ikut dihitung di saldo Beranda. Tab Aset tetap menampilkan semuanya.',
   notifications: 'Notifikasi',
   notif: {
     bill_due: { title: 'Tagihan jatuh tempo', sub: 'H-3 dan pada hari jatuh tempo' },

@@ -1,5 +1,5 @@
 import { useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 
 import { Screen } from '@/components/shell/Screen';
 import { ScreenHeader } from '@/components/shell/ScreenHeader';
@@ -16,6 +16,8 @@ export default function VoiceReviewScreen() {
   const { show } = useToast();
   const { dispatch } = useStore();
   const { accounts } = useLedger();
+  // Ketukan ganda sebelum navigasi selesai: tiap ketukan membuat id baru, jadi yang kedua diabaikan.
+  const saved = useRef(false);
   const [data] = useState(() => peekHandoff('voice'));
 
   return (
@@ -26,6 +28,8 @@ export default function VoiceReviewScreen() {
           result={data.result}
           accounts={accounts}
           onSave={(txs) => {
+            if (saved.current) return;
+            saved.current = true;
             // Kuota automation sudah dipotong server saat suara berhasil dipahami; ini hanya menyamakan angka di layar.
             dispatch({ type: 'tx/addMany', txs });
             clearHandoff('voice');

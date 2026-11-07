@@ -25,6 +25,8 @@ export type AppState = {
   premiumSource: 'store' | 'web' | 'manual' | null;
   usage: Usage;
   hideBalance: boolean;
+  /** Aset ikut dijumlahkan ke saldo Beranda (profiles.include_assets). */
+  includeAssets: boolean;
   mainCurrency: string;
   income: number;
   split: Split;
@@ -60,11 +62,15 @@ export type Action =
   | { type: 'tx/add'; tx: Transaction; consumes?: QuotaKey }
   | { type: 'tx/addMany'; txs: Transaction[]; consumes?: QuotaKey }
   | { type: 'tx/update'; tx: Transaction }
+  /** Hasil simpan: hanya nominal akun (kurs hari itu) yang diambil dari server, bukan seluruh transaksi. */
+  | { type: 'tx/rates'; tx: Transaction }
   | { type: 'tx/delete'; id: string }
   | { type: 'notif/read'; id: string }
   | { type: 'notif/readAll' }
   | { type: 'prefs/hideBalance'; value: boolean }
-  | { type: 'prefs/mainCurrency'; code: string }
+  | { type: 'prefs/includeAssets'; value: boolean }
+  /** income dan budgets sudah dikonversi ke `code` (lib/budget rebaseBudget). */
+  | { type: 'prefs/mainCurrency'; code: string; income: number; budgets: BudgetRecord[] }
   | { type: 'prefs/notif'; key: keyof NotifPrefs; value: boolean }
   | { type: 'budget/split'; split: Split }
   | { type: 'account/setBank'; id: string; bank: string }
@@ -98,6 +104,7 @@ export function initialState(): AppState {
     premiumSource: null,
     usage: EMPTY_USAGE,
     hideBalance: false,
+    includeAssets: true,
     mainCurrency: 'IDR',
     income: 0,
     split: DEFAULT_SPLIT,
@@ -116,6 +123,22 @@ export function initialState(): AppState {
  * Form ubah transaksi tidak membawa status reimbursement: status lama dipertahankan. Melepas status hanya
  * lewat aksi `tx/reimburse`.
  */
+/** Field yang menentukan nominal akun. Beda = transaksi sudah diedit sejak dihitung, hasil hitung lama dibuang. */
+function sameRatedFields(a: Transaction, b: Transaction): boolean {
+  return a.type === b.type && a.accountId === b.accountId && a.toAccountId === b.toAccountId && a.amount === b.amount && a.currency === b.currency && a.date === b.date;
+}
+
+/**
+ * Daftar dari server + transaksi lokal yang penyimpanannya masih berjalan. Muat ulang yang tiba sebelum simpan
+ * selesai tidak boleh menghilangkan transaksi baru atau mengembalikan editan ke versi server yang lama.
+ */
+export function mergePending(server: Transaction[], pending: Transaction[]): Transaction[] {
+  if (pending.length === 0) return server;
+  const local = new Map(pending.map((t) => [t.id, t]));
+  const onServer = new Set(server.map((t) => t.id));
+  return [...pending.filter((t) => !onServer.has(t.id)), ...server.map((t) => local.get(t.id) ?? t)];
+}
+
 export function keepReimbursement(next: Transaction, prev: Transaction | undefined): Transaction {
   if (!prev || next.reimburseStatus !== undefined || next.reimbursedBy !== undefined) return next;
   return next.type === 'expense' ? { ...next, reimburseStatus: prev.reimburseStatus, reimbursedBy: prev.reimbursedBy } : next;
@@ -158,6 +181,13 @@ export function reducer(state: AppState, action: Action): AppState {
       return { ...state, transactions: [...action.txs, ...state.transactions], usage: bump(state.usage, action.consumes) };
     case 'tx/update':
       return { ...state, transactions: state.transactions.map((t) => (t.id === action.tx.id ? keepReimbursement(action.tx, t) : t)) };
+    case 'tx/rates':
+      return {
+        ...state,
+        transactions: state.transactions.map((t) =>
+          t.id === action.tx.id && sameRatedFields(t, action.tx) ? { ...t, accountAmount: action.tx.accountAmount, toAmount: action.tx.toAmount } : t,
+        ),
+      };
     case 'tx/reimburse':
       return {
         ...state,
@@ -181,8 +211,10 @@ export function reducer(state: AppState, action: Action): AppState {
       return { ...state, notifications: state.notifications.map((n) => ({ ...n, read: true })) };
     case 'prefs/hideBalance':
       return { ...state, hideBalance: action.value };
+    case 'prefs/includeAssets':
+      return { ...state, includeAssets: action.value };
     case 'prefs/mainCurrency':
-      return { ...state, mainCurrency: action.code };
+      return { ...state, mainCurrency: action.code, income: action.income, budgets: action.budgets };
     case 'prefs/notif':
       return { ...state, notifPrefs: { ...state.notifPrefs, [action.key]: action.value } };
     case 'account/setBank':

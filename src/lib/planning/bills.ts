@@ -26,8 +26,6 @@ export function billGroup(bill: Pick<Bill, 'dueDate' | 'frequency' | 'anchorDay'
   return lastPeriodPaid(bill) ? 'paid' : 'later';
 }
 
-export const isPaidGroup = (g: BillGroup): boolean => g === 'paid';
-
 /**
  * Status tanggal jatuh tempo di kalender. Periode sebelum jatuh tempo sekarang yang tidak tercatat lunas
  * = sebelum tagihan dibuat: tidak ditampilkan (null).

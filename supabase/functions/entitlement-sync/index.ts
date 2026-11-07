@@ -26,6 +26,8 @@ serve(async (req) => {
       .not('grant_error', 'is', null)
       // Penanda untuk admin (refund sebagian) bukan grant yang gagal; jangan ditimpa percobaan ulang.
       .neq('grant_error', 'partial_refund')
+      // Pesanan milik akun yang sudah dihapus tidak bisa diberi grant; jangan dicoba ulang tiap jam.
+      .not('user_id', 'is', null)
       .limit(100);
     for (const o of stuck ?? []) await grantOrder(db, o as OrderRow);
     return json({ ok: true, expired: expired?.length ?? 0, retried: stuck?.length ?? 0 });

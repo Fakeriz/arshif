@@ -132,6 +132,11 @@ function DetailBody({ u, refreshing, onChanged }: { u: AdminUserDetail; refreshi
     try {
       const body = action === 'grant' ? { action, userId: u.id, days: daysNum } : { action, userId: u.id };
       const r = await invokeFn(FUNCTIONS.adminUser, body, AdminUserResponse);
+      if (action === 'grant' && r.grantQueued) {
+        setNotice({ tone: 'info', text: c.grantQueued });
+        onChanged();
+        return;
+      }
       const text =
         action === 'grant' ? c.granted(r.premiumUntil ? date(r.premiumUntil) : '-') : action === 'revoke' ? c.revoked(r.plan === 'premium' ? c.premium : c.free) : action === 'suspend' ? c.suspended_ : c.unsuspended;
       setNotice({ tone: 'positive', text: !r.revenueCat && action === 'grant' ? `${text} ${c.grantLocal}` : text });

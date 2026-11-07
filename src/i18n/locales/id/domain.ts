@@ -92,6 +92,7 @@ const domain = {
     subscriptions: 'Langganan',
     assets: 'Aset',
     coachAsk: 'Tanya Coach',
+    coachNarration: 'Narasi Coach',
     coachMonthly: 'Recap bulanan Coach',
     taxFull: 'Alat pajak lengkap',
     pdfExport: 'Ekspor PDF',

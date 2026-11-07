@@ -11,7 +11,9 @@ import { localYmd } from '@/features/capture/clock';
 import { AccountPicker } from '@/features/transactions/pickers';
 import { useT } from '@/i18n';
 import { formatMoney } from '@/lib/money';
-import { useActiveAccountId, useAccounts } from '@/state/AppStore';
+import { newId } from '@/lib/uuid';
+import { useActiveAccountId } from '@/state/AppStore';
+import { useLedger } from '@/state/derived';
 import { usePlanning, type PayInput } from '@/state/planning';
 import { radius, space } from '@/theme/tokens';
 
@@ -124,13 +126,15 @@ export function PaySheet({ visible, onClose, title, note, currency, initial, max
   onSubmit(p: PayInput): Promise<void>; defaultAccountId?: string;
 }) {
   const t = useT();
-  const accounts = useAccounts();
+  const accounts = useLedger().accounts;
   const activeId = useActiveAccountId();
   const [amount, setAmount] = useState<number | null>(initial);
   const [accountId, setAccountId] = useState<string | null>(defaultAccountId ?? activeId);
   const [date, setDate] = useState(localYmd());
   const [tried, setTried] = useState(false);
   const [saving, setSaving] = useState(false);
+  // Satu id per lembar: coba ulang setelah gagal memakai id yang sama (lihat PayInput).
+  const [payId] = useState(newId);
   const over = max !== undefined && amount !== null && amount > max;
   const amountError = tried && (!amount || amount <= 0) ? t('plan.common.amountError') : over ? t('plan.debts.overpay', { amount: formatMoney(max!, currency) }) : undefined;
 
@@ -139,7 +143,7 @@ export function PaySheet({ visible, onClose, title, note, currency, initial, max
     if (!amount || amount <= 0 || over || !accountId || !isYmd(date) || saving) return;
     setSaving(true);
     try {
-      await onSubmit({ amount, accountId, date });
+      await onSubmit({ id: payId, amount, accountId, date });
     } finally {
       setSaving(false);
     }

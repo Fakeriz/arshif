@@ -5,7 +5,7 @@ import { StyleSheet, View } from 'react-native';
 
 import { Screen } from '@/components/shell/Screen';
 import { ScreenHeader } from '@/components/shell/ScreenHeader';
-import { AppText, Button, Card, CurrencyText, Dialog, EmptyState, useToast } from '@/components/ui';
+import { AppText, Button, Card, CurrencyText, Dialog, EmptyState, TrendBadge, useToast } from '@/components/ui';
 import { AssetForm } from '@/features/assets/AssetForm';
 import { priceLabel, quantityLabel } from '@/features/assets/view';
 import { InfoRow } from '@/features/transactions/InfoRow';
@@ -17,7 +17,7 @@ import { useStore } from '@/state/AppStore';
 import { useAssets } from '@/state/assets';
 import { space } from '@/theme/tokens';
 
-/** Detail aset (brief §6). Grafik harga (opsional di brief) belum dibuat. */
+/** Detail aset (brief §6). Grafik harga (opsional di brief) belum dibuat: server hanya menyimpan harga terakhir, belum riwayat. */
 export default function AssetDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
@@ -49,10 +49,7 @@ export default function AssetDetail() {
     rows.push({ label: t('assets.detail.currentPrice'), value: t('assets.detail.perUnit', { price: formatMoney(toMinor(v.unitPrice, v.currency), v.currency), unit }) });
     rows.push({ label: t('assets.detail.priceCurrency'), value: v.currency });
   }
-  if (gain) {
-    const pct = gain.pct === null ? '' : ` (${gain.pct >= 0 ? '+' : '−'}${Math.abs(gain.pct * 100).toFixed(1).replace('.', lang === 'id' || lang === 'tr' ? ',' : '.')}%)`;
-    rows.push({ label: t('assets.detail.gain'), value: `${formatMoney(gain.amount, asset.currency, 'always')}${pct}` });
-  }
+  if (gain) rows.push({ label: t('assets.detail.gain'), value: formatMoney(gain.amount, asset.currency, 'always') });
   if (asset.buyDate) rows.push({ label: t('assets.detail.buyDate'), value: shortDate(asset.buyDate, lang) });
   if (asset.notes) rows.push({ label: t('assets.detail.notes'), value: asset.notes });
 
@@ -70,6 +67,7 @@ export default function AssetDetail() {
           ) : (
             <CurrencyText amount={v.value} currency={v.currency} kind="balance" variant="amountHero" hidden={state.hideBalance} />
           )}
+          {gain?.pct != null && !state.hideBalance && <TrendBadge value={gain.pct} suffix={t('assets.detail.vsBuy')} />}
           <AppText variant="caption" tone="muted">
             {priceLabel(v, t, lang)}
           </AppText>

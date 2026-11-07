@@ -6,7 +6,7 @@
 import { adminClient } from '../_shared/auth.ts';
 import { revenueCatUserIds, verifyStaticToken } from '../_shared/billing.ts';
 import { configured, RC_WEBHOOK_AUTH } from '../_shared/env.ts';
-import { claimEvent, releaseEvent, syncPlan } from '../_shared/entitlement.ts';
+import { handleEventOnce, syncPlan } from '../_shared/entitlement.ts';
 import { HttpError, json, readJson, serve } from '../_shared/http.ts';
 
 const NOTIFY_ON = new Set(['INITIAL_PURCHASE', 'NON_RENEWING_PURCHASE', 'UNCANCELLATION']);
@@ -19,9 +19,7 @@ serve(async (req) => {
   const event = body.event;
   if (!event || typeof event.id !== 'string') throw new HttpError('bad_request', 400);
   const db = adminClient();
-  if (!(await claimEvent(db, 'revenuecat', event.id))) return json({ ok: true, duplicate: true });
-
-  try {
+  return handleEventOnce(db, 'revenuecat', event.id, async () => {
     for (const userId of revenueCatUserIds(event)) {
       const { data: exists } = await db.from('profiles').select('id, plan').eq('id', userId).maybeSingle();
       if (!exists) continue;
@@ -38,8 +36,5 @@ serve(async (req) => {
       }
     }
     return json({ ok: true });
-  } catch (e) {
-    await releaseEvent(db, 'revenuecat', event.id);
-    throw e;
-  }
+  });
 });

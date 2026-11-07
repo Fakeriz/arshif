@@ -83,6 +83,7 @@ export const copy = {
     grantNote: 'Dicatat sebagai pesanan manual atas namamu dan ditambahkan ke masa Premium yang sedang berjalan.',
     grantLocal: 'Kunci RevenueCat belum diisi, jadi grant hanya tercatat di Arshif. Setelah kunci diisi, grant baru juga dikirim ke RevenueCat.',
     granted: (date: string) => `Premium aktif sampai ${date}.`,
+    grantQueued: 'Grant tersimpan, tapi aktivasi di RevenueCat gagal sesaat. Sistem mencoba ulang otomatis tiap jam. Jangan klik grant lagi: itu menambah hari dua kali.',
     revokeSubmit: 'Cabut grant manual',
     revokeConfirmTitle: 'Cabut semua grant manual?',
     revokeConfirm: (email: string) => `Grant manual ${email} yang masih aktif ditandai dikembalikan. Premium dari toko atau pembayaran web tidak tersentuh.`,

@@ -82,6 +82,7 @@ const slog: Messages['slog'] = {
     needsCheck_one: 'Bir bildirim kontrol bekliyor',
     mixed: '{applied} kaydedildi, {review} kontrol bekliyor',
     undo: 'Geri al',
+    saveFailed: 'Banka bildirimleri cihaza kaydedilemedi. Depolama alanının yeterli olduğundan emin ol.',
     edit: 'Düzenle',
     view: 'Gör',
     check: 'Kontrol et',

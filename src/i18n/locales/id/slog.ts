@@ -81,6 +81,7 @@ const slog = {
     needsCheck_one: 'Satu notifikasi perlu dicek',
     mixed: '{applied} tercatat, {review} perlu dicek',
     undo: 'Batalkan',
+    saveFailed: 'Notifikasi bank gagal disimpan di perangkat. Pastikan ruang penyimpanan cukup.',
     edit: 'Ubah',
     view: 'Lihat',
     check: 'Cek',

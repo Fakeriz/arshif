@@ -73,6 +73,7 @@ const domain: Messages['domain'] = {
     subscriptions: 'Subscriptions',
     assets: 'Assets',
     coachAsk: 'Ask Coach',
+    coachNarration: 'Coach notes',
     coachMonthly: 'Monthly Coach recap',
     taxFull: 'Full tax tools',
     pdfExport: 'PDF export',

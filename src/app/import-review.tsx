@@ -1,5 +1,5 @@
 import { useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 
 import { Screen } from '@/components/shell/Screen';
 import { ScreenHeader } from '@/components/shell/ScreenHeader';
@@ -16,6 +16,8 @@ export default function ImportReviewScreen() {
   const { show } = useToast();
   const { dispatch } = useStore();
   const { accounts, transactions } = useLedger();
+  // Ketukan ganda sebelum navigasi selesai: tiap ketukan membuat id baru, jadi yang kedua diabaikan.
+  const saved = useRef(false);
   const [data] = useState(() => peekHandoff('import'));
   const account = data ? accounts.find((a) => a.id === data.accountId) : undefined;
 
@@ -32,6 +34,8 @@ export default function ImportReviewScreen() {
         accountName={account.name}
         existing={transactions}
         onImport={(txs) => {
+          if (saved.current) return;
+          saved.current = true;
           // Kuota import sudah dipotong server saat PDF berhasil dibaca; ini hanya menyamakan angka di layar.
           dispatch({ type: 'tx/addMany', txs });
           clearHandoff('import');

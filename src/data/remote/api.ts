@@ -39,6 +39,8 @@ export type Profile = {
   accent: AccentKey;
   themeMode: ThemeMode;
   hideBalance: boolean;
+  /** Aset ikut dijumlahkan ke saldo Beranda. */
+  includeAssets: boolean;
   payday: number;
   income: number;
   split: Split;
@@ -52,7 +54,7 @@ export type Profile = {
 };
 
 type ProfileRow = {
-  display_name: string | null; main_currency: string; lang: Lang; accent: AccentKey; theme_mode: ThemeMode; hide_balance: boolean;
+  display_name: string | null; main_currency: string; lang: Lang; accent: AccentKey; theme_mode: ThemeMode; hide_balance: boolean; include_assets?: boolean;
   payday: number; monthly_income: number; split_needs: number; split_wants: number; split_savings: number;
   notif_prefs: Profile['notifPrefs']; active_account_id: string | null; plan: Plan; onboarded_at: string | null;
   premium_until: string | null; premium_source: 'store' | 'web' | 'manual' | null; suspended_at: string | null;
@@ -68,6 +70,8 @@ export async function loadProfile(userId: string, email: string): Promise<Profil
     accent: r.accent,
     themeMode: r.theme_mode,
     hideBalance: r.hide_balance,
+    // Kolom belum ada (migrasi 18 belum jalan) → perilaku lama: aset ikut.
+    includeAssets: r.include_assets ?? true,
     payday: r.payday,
     income: Number(r.monthly_income),
     split: { needs: r.split_needs, wants: r.split_wants, savings: r.split_savings },
@@ -89,7 +93,7 @@ export async function loadPlan(userId: string): Promise<{ plan: Plan; premiumUnt
 }
 
 export type ProfilePatch = Partial<{
-  display_name: string; main_currency: string; lang: Lang; accent: AccentKey; theme_mode: ThemeMode; hide_balance: boolean;
+  display_name: string; main_currency: string; lang: Lang; accent: AccentKey; theme_mode: ThemeMode; hide_balance: boolean; include_assets: boolean;
   payday: number; monthly_income: number; split_needs: number; split_wants: number; split_savings: number;
   notif_prefs: Profile['notifPrefs']; active_account_id: string | null; onboarded_at: string;
 }>;
@@ -108,6 +112,9 @@ const PAGE = 1000;
 /** Semua transaksi milik pengguna, dimuat per 1000 baris (urut terbaru). */
 export async function loadTransactions(): Promise<Transaction[]> {
   const out: Transaction[] = [];
+  // Halaman berdasarkan posisi: transaksi baru yang masuk di antara dua permintaan menggeser baris, dan baris
+  // terakhir halaman sebelumnya muncul lagi di halaman berikutnya. Tanpa ini ia terhitung dua kali di saldo.
+  const seen = new Set<string>();
   for (let from = 0; ; from += PAGE) {
     const rows = must(
       await supabase
@@ -119,7 +126,11 @@ export async function loadTransactions(): Promise<Transaction[]> {
         .range(from, from + PAGE - 1)
         .returns<TransactionRow[]>(),
     );
-    out.push(...rows.map(toTransaction));
+    for (const r of rows) {
+      if (seen.has(r.id)) continue;
+      seen.add(r.id);
+      out.push(toTransaction(r));
+    }
     if (rows.length < PAGE) return out;
   }
 }

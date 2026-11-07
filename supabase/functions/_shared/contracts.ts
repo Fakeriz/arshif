@@ -217,6 +217,8 @@ export const AdminUserResponse = z.object({
   suspendedAt: z.string().nullable(),
   /** false = kunci RevenueCat belum diisi; grant hanya tercatat di Arshif. */
   revenueCat: z.boolean(),
+  /** true = pesanan grant tersimpan tapi aktivasi gagal sesaat; cron mencoba ulang tiap jam. Jangan grant lagi. */
+  grantQueued: z.boolean().optional(),
 });
 
 /** Sinkron kurs manual dari panel admin (fx-sync dengan token admin, bukan secret cron). */

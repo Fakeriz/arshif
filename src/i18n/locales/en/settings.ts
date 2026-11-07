@@ -24,8 +24,11 @@ const settings: Messages['settings'] = {
   languagePick: 'Choose language',
   mainCurrency: 'Main currency',
   mainCurrencySub: 'All totals and budgets are converted to this',
+  mainCurrencyNoRate: 'No exchange rate for {code} yet, so income and budgets cannot be converted. Main currency was not changed.',
   hideBalance: 'Hide balances',
   hideBalanceSub: 'Balances show as dots on Home',
+  includeAssets: 'Include assets in Home balance',
+  includeAssetsSub: 'Asset values count toward the Home balance. The Assets tab always shows everything.',
   notifications: 'Notifications',
   notif: {
     bill_due: { title: 'Bills due', sub: '3 days before and on the due date' },

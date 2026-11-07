@@ -73,6 +73,7 @@ const domain: Messages['domain'] = {
     subscriptions: 'Abonelikler',
     assets: 'Varlıklar',
     coachAsk: 'Coach\'a Sor',
+    coachNarration: 'Coach notları',
     coachMonthly: 'Aylık Coach özeti',
     taxFull: 'Tam vergi araçları',
     pdfExport: 'PDF dışa aktarma',

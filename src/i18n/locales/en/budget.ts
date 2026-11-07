@@ -18,10 +18,8 @@ const budget: Messages['budget'] = {
   bucket: {
     ofIncomeTarget: 'Target: {pct}% of income',
     ofIncome: '{pct}% of income',
-    ofTarget: '{pct}% of target',
     target: 'target {amount}',
     of: 'of {amount}',
-    reached: '{label} reached',
     used: '{label} used',
     categoryPct: '{label} {pct} percent',
     empty: 'No spending in this bucket yet.',

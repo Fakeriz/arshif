@@ -82,6 +82,7 @@ const slog: Messages['slog'] = {
     needsCheck_one: 'Needs a check: one notification',
     mixed: '{applied} recorded, {review} need a check',
     undo: 'Undo',
+    saveFailed: 'Could not save bank notifications on this device. Check that storage has space.',
     edit: 'Edit',
     view: 'View',
     check: 'Check',

@@ -1,5 +1,6 @@
 import type { Transaction } from '@/data/types';
-import { BUCKETS, bucketLimits, budgetPeriod, pace, safeToSpend, spendByBucket, spendByCategory, splitIsValid } from '@/lib/budget';
+import { BUCKETS, bucketLimits, budgetPeriod, pace, rebaseBudget, safeToSpend, spendByBucket, spendByCategory, splitIsValid } from '@/lib/budget';
+import { setUsdRates } from '@/lib/fx';
 import { healthPillars, healthScore } from '@/lib/health';
 
 describe('periode anggaran mengikuti tanggal gajian', () => {
@@ -91,5 +92,29 @@ describe('Health Score deterministik', () => {
   it('tanpa penghasilan: tabungan dan utang nol, tidak error dibagi nol', () => {
     const empty = { ...base, income: 0, saved: 0, debtPayments: 0, monthlyExpense: 0, budgetedCategories: 0, billsDue: 0 };
     expect(healthScore(empty)).toBe(35);
+  });
+});
+
+describe('rebaseBudget — ganti mata uang utama', () => {
+  afterEach(() => setUsdRates({}, null));
+
+  it('mengonversi pemasukan, total, dan limit kategori (beda jumlah desimal IDR → MYR)', () => {
+    setUsdRates({ IDR: '16000', MYR: '4' }, '2026-11-07');
+    const budget = { id: 'b1', periodStart: '2026-11-01', total: 5_000_000, categoryLimits: { food: 1_600_000, fun: 0 } };
+    // Rp10.000.000 = 625 USD = RM2.500,00 (250000 minor), bukan RM100.000,00.
+    expect(rebaseBudget(10_000_000, [budget], 'IDR', 'MYR')).toEqual({
+      income: 250_000,
+      budgets: [{ ...budget, total: 125_000, categoryLimits: { food: 40_000, fun: 0 } }],
+    });
+    // Arah sebaliknya kembali ke nilai semula.
+    expect(rebaseBudget(250_000, [], 'MYR', 'IDR')?.income).toBe(10_000_000);
+  });
+
+  it('kurs tidak ada → null (penggantian dibatalkan, bukan dikonversi asal)', () => {
+    setUsdRates({ IDR: '16000' }, '2026-11-07');
+    expect(rebaseBudget(10_000_000, [], 'IDR', 'AED')).toBeNull();
+    // Nominal nol tidak butuh kurs.
+    expect(rebaseBudget(0, [], 'IDR', 'AED')).toEqual({ income: 0, budgets: [] });
+    expect(rebaseBudget(10_000_000, [], 'IDR', 'IDR')).toEqual({ income: 10_000_000, budgets: [] });
   });
 });

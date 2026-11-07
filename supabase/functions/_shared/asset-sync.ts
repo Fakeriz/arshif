@@ -44,3 +44,28 @@ export async function runPriceSync(keys: string[], provider: PriceProvider, now:
   const ok = new Set(rows.map((r) => r.symbol));
   return { rows, failed: valid.filter((k) => !ok.has(k)) };
 }
+
+/** Kunci per potongan: harga potongan selesai langsung disimpan, jadi batas waktu fungsi tidak menghapus semuanya. */
+export const SYNC_BATCH = 200;
+
+/**
+ * Sinkron bertahap: ambil harga per potongan lalu simpan sebelum lanjut. `save` melempar bila penyimpanan gagal
+ * (job berhenti, potongan sebelumnya sudah tersimpan). Hasil = gabungan semua potongan.
+ */
+export async function syncInBatches(
+  keys: string[],
+  provider: PriceProvider,
+  now: Date,
+  save: (rows: PriceRow[]) => Promise<void>,
+  size = SYNC_BATCH,
+): Promise<{ updated: number; failed: string[]; error?: string }> {
+  const out: { updated: number; failed: string[]; error?: string } = { updated: 0, failed: [] };
+  for (let i = 0; i < keys.length; i += size) {
+    const r = await runPriceSync(keys.slice(i, i + size), provider, now);
+    if (r.rows.length > 0) await save(r.rows);
+    out.updated += r.rows.length;
+    out.failed.push(...r.failed);
+    out.error ??= r.error;
+  }
+  return out;
+}

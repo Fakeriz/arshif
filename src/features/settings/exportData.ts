@@ -16,7 +16,15 @@ function decimal(minor: number, code: string): string {
   return neg ? `-${body}` : body;
 }
 
-const csvCell = (v: string) => (/[",\n]/.test(v) ? `"${v.replace(/"/g, '""')}"` : v);
+/**
+ * Sel CSV. Teks yang diawali = + - @ tab atau CR dijalankan Excel/Sheets sebagai formula (CSV injection):
+ * merchant berasal dari AI dan notifikasi bank, jadi diberi ' di depan agar tampil sebagai teks.
+ * Angka murni (mis. nominal "-12.50") tidak diubah supaya tetap terbaca sebagai angka.
+ */
+export function csvCell(v: string): string {
+  const safe = /^[=+\-@\t\r]/.test(v) && !/^-?\d+(\.\d+)?$/.test(v) ? `'${v}` : v;
+  return /[",\n\r]/.test(safe) ? `"${safe.replace(/"/g, '""')}"` : safe;
+}
 
 /** Ekspor data (FR-SET-3): semua akun + transaksi milik pengguna yang sedang dimuat. */
 export function buildExport(format: ExportFormat, accounts: Account[], transactions: Transaction[]): string {

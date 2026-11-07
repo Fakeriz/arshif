@@ -24,8 +24,11 @@ const settings: Messages['settings'] = {
   languagePick: 'Pilih bahasa',
   mainCurrency: 'Mata wang utama',
   mainCurrencySub: 'Semua jumlah dan belanjawan ditukar ke mata wang ini',
+  mainCurrencyNoRate: 'Kadar tukaran {code} belum tersedia, jadi pendapatan dan belanjawan tidak dapat ditukar. Mata wang utama tidak diubah.',
   hideBalance: 'Sembunyikan baki',
   hideBalanceSub: 'Baki dipaparkan sebagai titik di Laman Utama',
+  includeAssets: 'Gabungkan aset ke baki Laman Utama',
+  includeAssetsSub: 'Nilai aset dikira dalam baki Laman Utama. Tab Aset sentiasa memaparkan semuanya.',
   notifications: 'Pemberitahuan',
   notif: {
     bill_due: { title: 'Bil perlu dibayar', sub: '3 hari sebelum dan pada tarikh akhir' },

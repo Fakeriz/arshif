@@ -89,6 +89,32 @@ await test('trigger saldo: pengeluaran, pemasukan, transfer, mata uang asing, ub
   eq(await balance(bca), 1300000, 'setelah hapus');
 });
 
+await test('trigger saldo per pernyataan: impor 500 baris, pindah akun massal, hapus massal tetap benar', async () => {
+  // Tidak ada lagi trigger saldo per baris (FOR EACH ROW = bit 1 di tgtype).
+  const triggers = await sys(`select tgname, (tgtype & 1) = 1 as per_row from pg_trigger where tgrelid = 'public.transactions'::regclass and tgname like 'transactions_balance%' order by tgname`);
+  eq(triggers, [
+    { tgname: 'transactions_balance_del', per_row: false },
+    { tgname: 'transactions_balance_ins', per_row: false },
+    { tgname: 'transactions_balance_upd', per_row: false },
+  ]);
+  const [b0, j0] = [await balance(bca), await balance(jago)];
+  // Satu pernyataan, 500 baris: 499 pengeluaran Rp1.000 + satu transfer Rp50.000 BCA -> Jago.
+  await as(
+    A,
+    `insert into public.transactions (type, merchant, category_key, account_id, to_account_id, date, amount, currency, note)
+     select case when g = 500 then 'transfer' else 'expense' end, 'Impor ' || g, 'food', $1::uuid,
+            case when g = 500 then $2::uuid end, '2026-11-06', case when g = 500 then 50000 else 1000 end, 'IDR', 'bulk'
+     from generate_series(1, 500) g`,
+    [bca, jago],
+  );
+  eq([await balance(bca), await balance(jago)], [b0 - 499_000 - 50_000, j0 + 50_000], 'setelah impor');
+  // Satu UPDATE memindahkan 100 pengeluaran ke Jago: kedua akun (lama dan baru) dihitung ulang.
+  await as(A, `update public.transactions set account_id = $1 where note = 'bulk' and type = 'expense' and merchant ~ '^Impor ([1-9]|[1-9][0-9]|100)$'`, [jago]);
+  eq([await balance(bca), await balance(jago)], [b0 - 399_000 - 50_000, j0 + 50_000 - 100_000], 'setelah pindah akun');
+  await as(A, `delete from public.transactions where note = 'bulk'`);
+  eq([await balance(bca), await balance(jago)], [b0, j0], 'setelah hapus massal');
+});
+
 await test('ubah saldo awal menggeser saldo; saldo tidak bisa ditulis langsung', async () => {
   await as(A, `update public.accounts set opening_balance = 1100000 where id = $1`, [bca]);
   eq(await balance(bca), 1400000);
@@ -789,11 +815,99 @@ await test('aset: snapshot kekayaan bersih satu per hari, milik sendiri', async 
   await rejects(as(A, `insert into public.net_worth_snapshots (user_id, date, total, assets_total, liabilities_total, currency) values ($1, '2026-11-13', 1, 1, 0, 'IDR')`, [B]), /permission denied/);
 });
 
+await test('rate limit AI: hitung + catat sekaligus (ai_job_start), ke-11 dalam semenit ditolak', async () => {
+  await sys(`delete from public.ai_jobs where user_id = $1`, [B]);
+  for (let i = 0; i < 10; i++) {
+    const [{ id }] = await sys(`select public.ai_job_start($1, 'scan') as id`, [B]);
+    if (!id) throw new Error(`ke-${i + 1} seharusnya lolos`);
+  }
+  // Baris 'started' langsung terhitung: permintaan berikutnya tidak menunggu job sebelumnya selesai.
+  eq((await sys(`select count(*)::int as n from public.ai_jobs where user_id = $1 and status = 'started'`, [B]))[0].n, 10, 'started');
+  eq((await sys(`select public.ai_job_start($1, 'scan') as id`, [B]))[0].id, null, 'ke-11');
+  eq((await sys(`select status, error from public.ai_jobs where user_id = $1 and status = 'limited'`, [B])), [{ status: 'limited', error: 'rate_limited' }]);
+  // Di luar jendela semenit: lolos lagi.
+  await sys(`update public.ai_jobs set created_at = now() - interval '2 minutes' where user_id = $1`, [B]);
+  if (!(await sys(`select public.ai_job_start($1, 'coach') as id`, [B]))[0].id) throw new Error('setelah semenit seharusnya lolos');
+  await rejects(as(B, `select public.ai_job_start($1, 'scan')`, [B]), /permission denied/);
+});
+
+await test('kuota narasi Coach: harian, Free 10 / Premium 30, ke-(batas+1) ditolak', async () => {
+  eq(await sys(`select plan, monthly_limit, "window" from public.plan_limits where key = 'coachNarration' order by plan`), [
+    { plan: 'free', monthly_limit: 10, window: 'day' },
+    { plan: 'premium', monthly_limit: 30, window: 'day' },
+  ]);
+  const [{ plan }] = await sys(`select plan from public.profiles where id = $1`, [B]);
+  const limit = plan === 'premium' ? 30 : 10;
+  for (let i = 0; i < limit; i++) eq((await sys(`select public.quota_try_consume($1, 'coachNarration') as ok`, [B]))[0].ok, true, `ke-${i + 1}`);
+  eq((await sys(`select public.quota_try_consume($1, 'coachNarration') as ok`, [B]))[0].ok, false, `ke-${limit + 1}`);
+});
+
+await test('sinkron paket: tulisan dengan tiket lama tidak menimpa tulisan yang lebih baru', async () => {
+  const [{ t: older }] = await sys(`select public.plan_sync_ticket() as t`);
+  const [{ t: newer }] = await sys(`select public.plan_sync_ticket() as t`);
+  // Renewal (tiket baru) menulis premium lebih dulu; expiry (tiket lama, baca lebih awal) datang terakhir.
+  const [w1] = await sys(`select * from public.plan_sync_apply($1, $2, 'premium', now() + interval '30 days', 'store')`, [B, newer]);
+  eq([w1.o_plan, w1.o_applied], ['premium', true], 'renewal');
+  const [w2] = await sys(`select * from public.plan_sync_apply($1, $2, 'free', null, null)`, [B, older]);
+  eq([w2.o_plan, w2.o_applied], ['premium', false], 'expiry basi diabaikan');
+  eq((await sys(`select plan from public.profiles where id = $1`, [B]))[0].plan, 'premium');
+  const [{ t: latest }] = await sys(`select public.plan_sync_ticket() as t`);
+  eq((await sys(`select * from public.plan_sync_apply($1, $2, 'free', null, null)`, [B, latest]))[0].o_applied, true, 'sinkron lebih baru tetap bisa menurunkan');
+  await rejects(as(B, `select public.plan_sync_ticket()`), /permission denied/);
+  await rejects(as(B, `select * from public.plan_sync_apply($1, 999999, 'premium', null, null)`, [B]), /permission denied/);
+});
+
+await test('webhook: duplikat hanya bila selesai atau klaim < 5 menit; klaim macet bisa diambil ulang', async () => {
+  const claim = async (id) => (await sys(`select public.webhook_claim('xendit', $1) as ok`, [id]))[0].ok;
+  eq(await claim('inv-1:PAID'), true, 'klaim pertama');
+  eq(await claim('inv-1:PAID'), false, 'kiriman ulang saat masih diproses');
+  // Fungsi mati di tengah: klaim tidak pernah selesai. Setelah 5 menit, kiriman ulang diproses lagi.
+  await sys(`update public.webhook_events set claimed_at = now() - interval '6 minutes' where event_id = 'inv-1:PAID'`);
+  eq(await claim('inv-1:PAID'), true, 'klaim macet diambil ulang');
+  await sys(`select public.webhook_done('xendit', 'inv-1:PAID')`);
+  await sys(`update public.webhook_events set claimed_at = now() - interval '6 minutes' where event_id = 'inv-1:PAID'`);
+  eq(await claim('inv-1:PAID'), false, 'sudah selesai tetap duplikat');
+  await rejects(as(B, `select public.webhook_claim('xendit', 'x')`), /permission denied/);
+  await rejects(as(B, `select public.webhook_done('xendit', 'x')`), /permission denied/);
+});
+
+await test('harga aset: asset_price_keys mengembalikan SEMUA kunci unik (lebih dari 1000), terurut', async () => {
+  // Isi massal tanpa trigger batas Free (pengujian volume, bukan alur pengguna).
+  await db.exec(`set session_replication_role = replica`);
+  try {
+    await sys(
+      `insert into public.assets (user_id, type, symbol, name, quantity, currency)
+       select $1::uuid, 'stock_id', 'S' || g, 'Saham ' || g, 1, 'IDR' from generate_series(0, 1099) g
+       union all select $1::uuid, 'stock_id', 'S0', 'Duplikat', 1, 'IDR' from generate_series(1, 50)`,
+      [B],
+    );
+  } finally {
+    await db.exec(`set session_replication_role = origin`);
+  }
+  const [{ keys }] = await sys(`select public.asset_price_keys() as keys`);
+  const [{ n }] = await sys(`select count(distinct price_key)::int as n from public.assets where price_key is not null`);
+  eq(keys.length, n, 'semua kunci unik');
+  if (n < 1100) throw new Error(`seharusnya >= 1100 kunci, didapat ${n}`);
+  eq(keys, [...keys].sort(), 'terurut');
+  eq(new Set(keys).size, keys.length, 'tanpa duplikat');
+  if (!keys.includes('IDX:S1099')) throw new Error('kunci setelah baris ke-1000 hilang');
+  await rejects(as(B, `select public.asset_price_keys()`), /permission denied/);
+  await sys(`delete from public.assets where user_id = $1 and symbol ~ '^S[0-9]+$'`, [B]);
+});
+
 await test('hapus pengguna: semua data ikut terhapus (cascade)', async () => {
+  const kept = await sys(`select id from public.orders where user_id = $1`, [A]);
+  if (kept.length === 0) throw new Error('prasyarat: A punya pesanan');
   await sys(`delete from auth.users where id = $1`, [A]);
   await sys(`delete from auth.users where id = $1`, [E]);
+  // Riwayat pembayaran tetap ada (audit, refund/chargeback, pendapatan), tanpa pemilik.
+  eq(
+    (await sys(`select user_id from public.orders where id = any($1::uuid[])`, [kept.map((o) => o.id)])).map((o) => o.user_id),
+    kept.map(() => null),
+    'pesanan disimpan tanpa pemilik',
+  );
   for (const id of [A, E]) for (const t of ['budgets', 'limit_groups', 'user_rates']) eq((await sys(`select count(*)::int as n from public.${t} where user_id = $1`, [id]))[0].n, 0, t);
-  for (const t of ['profiles', 'accounts', 'transactions', 'transaction_items', 'notifications', 'usage_counters', 'orders', 'smartlog_links', 'smartlog_items', 'invoices', 'invoice_counters', 'assets', 'net_worth_snapshots']) {
+  for (const t of ['profiles', 'accounts', 'transactions', 'transaction_items', 'notifications', 'usage_counters', 'smartlog_links', 'smartlog_items', 'invoices', 'invoice_counters', 'assets', 'net_worth_snapshots']) {
     const col = t === 'profiles' ? 'id' : 'user_id';
     eq((await sys(`select count(*)::int as n from public.${t} where ${col} = $1`, [A]))[0].n, 0, t);
   }
