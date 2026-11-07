@@ -7,8 +7,11 @@ import { ChoiceRow, DateField, FormSheet, isYmd, useSaveError } from '@/features
 import { CurrencyField } from '@/features/planning/forms';
 import { useI18n } from '@/i18n';
 import { ASSET_TYPES, GOLD_SYMBOL, isLiveType, parseQuantity, SYMBOL_RE, unitOf } from '@/lib/assets';
+import { knownName, type SymbolMarket, type SymbolOption } from '@/lib/symbols';
 import { useStore } from '@/state/AppStore';
 import { useAssets } from '@/state/assets';
+
+import { SymbolPicker, type PickerType } from './SymbolPicker';
 
 /** Mata uang harga beli bawaan: saham Indo dalam Rupiah, saham US dan kripto dalam dolar. */
 function defaultCurrency(type: AssetType, main: string): string {
@@ -17,7 +20,14 @@ function defaultCurrency(type: AssetType, main: string): string {
   return main;
 }
 
-const defaultSymbol = (type: AssetType): string => (type === 'gold' ? GOLD_SYMBOL : type === 'crypto' ? 'BTC' : '');
+const MARKET_OF: Partial<Record<AssetType, SymbolMarket>> = { stock_id: 'IDX', stock_us: 'US', crypto: 'CRYPTO' };
+
+/** Kode tersimpan (mode ubah) dianggap sudah dipilih; nama dari daftar lokal bila ada, selain itu nama aset. */
+function initialPick(asset: Asset | undefined): SymbolOption | null {
+  const market = asset && MARKET_OF[asset.type];
+  if (!asset?.symbol || !market) return null;
+  return { code: asset.symbol, name: knownName(market, asset.symbol) ?? asset.name, market };
+}
 
 export function AssetForm({ visible, onClose, asset }: { visible: boolean; onClose: () => void; asset?: Asset }) {
   const { t, lang } = useI18n();
@@ -26,7 +36,8 @@ export function AssetForm({ visible, onClose, asset }: { visible: boolean; onClo
   const { addAsset, editAsset } = useAssets();
   const saveError = useSaveError();
   const [type, setType] = useState<AssetType>(asset?.type ?? 'stock_id');
-  const [symbol, setSymbol] = useState(asset?.symbol ?? defaultSymbol(asset?.type ?? 'stock_id'));
+  // Kode hanya bisa diisi lewat pemilih (daftar/pencarian), bukan diketik bebas.
+  const [picked, setPicked] = useState<SymbolOption | null>(() => initialPick(asset));
   const [name, setName] = useState(asset?.name ?? '');
   // Teks awal tanpa pemisah ribuan supaya bisa langsung diubah dan di-parse ulang.
   const [qtyText, setQtyText] = useState(asset?.quantity !== undefined ? asset.quantity.toFixed(10).replace(/\.?0+$/, '').replace('.', lang === 'id' || lang === 'tr' ? ',' : '.') : '');
@@ -42,13 +53,13 @@ export function AssetForm({ visible, onClose, asset }: { visible: boolean; onClo
   const unit = t(`assets.unit.${unitOf(type)}`);
   const quantity = qtyText.trim() === '' ? null : parseQuantity(qtyText);
   const qtyBad = live ? quantity === null : qtyText.trim() !== '' && quantity === null;
-  const symbolBad = live && type !== 'gold' && !SYMBOL_RE.test(symbol);
+  const symbolBad = live && type !== 'gold' && (!picked || !SYMBOL_RE.test(picked.code));
   const valueBad = !live && (value === null || value < 0);
   const dateBad = buyDate !== '' && !isYmd(buyDate);
 
   const pickType = (next: AssetType) => {
     setType(next);
-    setSymbol(defaultSymbol(next));
+    setPicked(null);
     setCurrency(defaultCurrency(next, state.mainCurrency));
     setBuyPrice(null);
   };
@@ -58,7 +69,7 @@ export function AssetForm({ visible, onClose, asset }: { visible: boolean; onClo
     if (!name.trim() || qtyBad || symbolBad || valueBad || dateBad || saving) return;
     setSaving(true);
     const input: AssetInput = {
-      symbol: live ? (type === 'gold' ? GOLD_SYMBOL : symbol) : undefined,
+      symbol: live ? (type === 'gold' ? GOLD_SYMBOL : picked!.code) : undefined,
       name: name.trim(),
       quantity: quantity ?? undefined,
       buyPrice: live ? (buyPrice ?? undefined) : undefined,
@@ -95,15 +106,17 @@ export function AssetForm({ visible, onClose, asset }: { visible: boolean; onClo
         <ChoiceRow label={t('assets.form.type')} options={ASSET_TYPES.map((k) => ({ key: k, label: t(`assets.type.${k}`) }))} value={type} onChange={pickType} />
       )}
       {live && type !== 'gold' && (
-        <Input
-          label={t('assets.form.symbol')}
-          value={symbol}
-          onChangeText={(s) => setSymbol(s.toUpperCase().replace(/\s/g, ''))}
-          autoCapitalize="characters"
-          autoCorrect={false}
-          maxLength={15}
-          hint={t(`assets.form.symbolHint.${type as 'stock_id' | 'stock_us' | 'crypto'}`)}
-          error={tried && symbolBad ? t('assets.form.symbolError') : undefined}
+        <SymbolPicker
+          key={type}
+          type={type as PickerType}
+          value={picked}
+          onPick={(o) => {
+            setPicked(o);
+            // Nama kosong diisi nama emiten/koin; kode darurat (server mati) tidak membawa nama.
+            if (!name.trim() && o.name !== o.code) setName(o.name);
+          }}
+          onClear={() => setPicked(null)}
+          showError={tried && symbolBad}
         />
       )}
       <Input

@@ -34,12 +34,14 @@ export type ScreenProps = {
   onEndReached?: () => void;
   /** Lebar kolom maksimum. Bawaan = kolom aplikasi; panel admin web memakai kolom lebih lebar. */
   maxWidth?: number;
+  /** Konten pendek (layar masuk): pusatkan vertikal, tetap bisa digulir saat keyboard/teks besar. */
+  centered?: boolean;
 };
 
 /** Jarak dari bawah (px) yang memicu onEndReached. */
 const END_THRESHOLD = 600;
 
-export function Screen({ children, tabs, onRefresh, refreshing, onEndReached, maxWidth }: ScreenProps) {
+export function Screen({ children, tabs, onRefresh, refreshing, onEndReached, maxWidth, centered }: ScreenProps) {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
   const { footprint } = useNavFootprint();
@@ -59,10 +61,11 @@ export function Screen({ children, tabs, onRefresh, refreshing, onEndReached, ma
         refreshControl={onRefresh ? <RefreshControl refreshing={!!refreshing} onRefresh={onRefresh} tintColor={colors.accentText} /> : undefined}
         contentContainerStyle={[
           styles.content,
+          centered && styles.centered,
           { paddingTop: insets.top + space.md, paddingBottom: tabs ? tabSpace : space.x4 + insets.bottom },
         ]}
       >
-        <View style={[styles.column, maxWidth ? { maxWidth } : null]}>{children}</View>
+        <View style={[styles.column, centered && styles.columnCentered, maxWidth ? { maxWidth } : null]}>{children}</View>
     </ScrollView>
   );
   return <View style={[styles.root, { backgroundColor: colors.bg }]}>{scroll}</View>;
@@ -72,4 +75,6 @@ const styles = StyleSheet.create({
   root: { flex: 1 },
   content: { paddingHorizontal: space.lg, alignItems: 'center' },
   column: { width: '100%', maxWidth: layout.maxContentWidth, gap: space.lg },
+  centered: { flexGrow: 1 },
+  columnCentered: { flexGrow: 1, justifyContent: 'center' },
 });

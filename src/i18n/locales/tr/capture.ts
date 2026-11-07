@@ -26,7 +26,6 @@ const capture: Messages['capture'] = {
     failedTitle: 'Fiş okunamadı',
     failedMessage: 'Tarama kotandan düşülmedi. Daha aydınlık bir yerde tekrar çek ve fişin tamamının çerçevede olduğundan emin ol.',
     retake: 'Tekrar çek',
-    guide: 'Fişi çerçevenin içine yerleştir. Tüm yazıların net göründüğünden emin ol.',
     cameraNote: 'Telefonunun kamerası açılacak. Fotoğraf gönderilmeden önce küçültülür.',
     gallery: 'Galeriden seç',
     shutter: 'Fişin fotoğrafını çek',
@@ -145,13 +144,6 @@ const capture: Messages['capture'] = {
     loading: 'Fiş fotoğrafı yükleniyor',
     failed: 'Fiş fotoğrafı yüklenemedi. Daha sonra tekrar dene.',
     a11y: '{merchant} fiş fotoğrafı',
-  },
-  docScan: {
-    button: 'Belge tara',
-    unavailableTitle: 'Belge tarama henüz kullanılamıyor',
-    needNewBuild: 'Belge tarama Android’de uygulamanın en yeni sürümünü gerektirir. Şimdilik fişin fotoğrafını çek.',
-    needServices: 'Belge tarayıcı etkin Google Play hizmetleri gerektirir. Şimdilik fişin fotoğrafını çek.',
-    useCamera: 'Kamerayı kullan',
   },
 };
 

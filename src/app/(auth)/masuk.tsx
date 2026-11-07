@@ -1,21 +1,35 @@
 import { useRouter } from 'expo-router';
-import { Mail } from 'lucide-react-native';
+import { FileText, Mail, Mic, Receipt, type LucideIcon } from 'lucide-react-native';
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { z } from 'zod';
 
 import { Screen } from '@/components/shell/Screen';
-import { AppText, Button, Card, Input } from '@/components/ui';
+import { AppText, Button, Card, Icon, Input } from '@/components/ui';
+import { AuthTheme } from '@/features/auth/AuthTheme';
 import { authErrorKey } from '@/features/auth/errors';
 import { useT, type MsgKey } from '@/i18n';
 import { supabase } from '@/lib/supabase';
-import { space } from '@/theme/tokens';
+import { useTheme } from '@/theme/ThemeProvider';
+import { radius, space } from '@/theme/tokens';
 
 const Email = z.string().trim().toLowerCase().email().max(254);
 
+/** Tiga cara mencatat yang disebut di tagline: struk, suara, rekening koran PDF. */
+const METHODS: LucideIcon[] = [Receipt, Mic, FileText];
+
+export default function MasukRoute() {
+  return (
+    <AuthTheme>
+      <MasukScreen />
+    </AuthTheme>
+  );
+}
+
 /** Masuk atau daftar dengan email + kode 6 digit (FR-AUTH-1, Fase 2: tanpa Google dulu). */
-export default function MasukScreen() {
+function MasukScreen() {
   const t = useT();
+  const { colors } = useTheme();
   const router = useRouter();
   const [email, setEmail] = useState('');
   const [sending, setSending] = useState(false);
@@ -39,9 +53,16 @@ export default function MasukScreen() {
   };
 
   return (
-    <Screen>
+    <Screen centered>
       <View style={styles.head}>
-        <AppText variant="h1" accessibilityRole="header">
+        <View style={styles.methods} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
+          {METHODS.map((glyph, i) => (
+            <View key={i} style={[styles.method, { backgroundColor: colors.surfaceSunken }]}>
+              <Icon icon={glyph} color={colors.textSecondary} />
+            </View>
+          ))}
+        </View>
+        <AppText variant="display" accessibilityRole="header">
           Arshif
         </AppText>
         <AppText variant="body" tone="secondary">
@@ -80,6 +101,8 @@ export default function MasukScreen() {
 }
 
 const styles = StyleSheet.create({
-  head: { gap: space.sm, marginTop: space.x4 },
+  head: { gap: space.sm, paddingHorizontal: space.xs, marginBottom: space.lg },
+  methods: { flexDirection: 'row', gap: space.sm, marginBottom: space.md },
+  method: { width: space.x4, height: space.x4, borderRadius: radius.control, alignItems: 'center', justifyContent: 'center' },
   form: { gap: space.lg },
 });

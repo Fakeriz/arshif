@@ -1,6 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 
-import type { Asset, AssetType, NetWorthSnapshot } from '@/data/assets';
+import type { Asset, AssetAlert, AssetType, NetWorthSnapshot } from '@/data/assets';
 import * as api from '@/data/remote/assets';
 import { newId } from '@/lib/uuid';
 
@@ -20,6 +20,9 @@ type AssetsValue = AssetsState & {
   removeAsset: (id: string) => Promise<void>;
   /** Simpan snapshot hari ini bila angkanya berubah (maksimal satu baris per hari di server). */
   recordSnapshot: (s: NetWorthSnapshot) => void;
+  /** Pasang alert harga (atau pasang lagi dengan ambang baru); patokan = harga terakhir di server. */
+  saveAlert: (assetId: string, pct: number) => Promise<AssetAlert>;
+  removeAlert: (id: string) => Promise<void>;
 };
 
 const AssetsContext = createContext<AssetsValue | null>(null);
@@ -73,7 +76,7 @@ export function AssetsProvider({ children, preset }: { children: ReactNode; pres
       editAsset: async (id, a) => withPrices(await api.updateAsset(id, a)),
       removeAsset: async (id) => {
         await api.deleteAsset(id);
-        setState((s) => ({ ...s, assets: s.assets.filter((x) => x.id !== id) }));
+        setState((s) => ({ ...s, assets: s.assets.filter((x) => x.id !== id), alerts: (s.alerts ?? []).filter((x) => x.assetId !== id) }));
         refreshUsage();
       },
       recordSnapshot: (snap) => {
@@ -81,6 +84,16 @@ export function AssetsProvider({ children, preset }: { children: ReactNode; pres
         if (today && today.total === snap.total && today.liabilitiesTotal === snap.liabilitiesTotal && today.currency === snap.currency) return;
         setState((s) => ({ ...s, snapshots: [...s.snapshots.filter((x) => x.date !== snap.date), snap].sort((a, b) => a.date.localeCompare(b.date)) }));
         if (!preset) api.saveSnapshot(snap).catch(() => undefined);
+      },
+      saveAlert: async (assetId, pct) => {
+        const existing = (state.alerts ?? []).find((x) => x.assetId === assetId);
+        const alert = await api.saveAlert(assetId, pct, existing?.id);
+        setState((s) => ({ ...s, alerts: [...(s.alerts ?? []).filter((x) => x.assetId !== assetId), alert] }));
+        return alert;
+      },
+      removeAlert: async (id) => {
+        await api.deleteAlert(id);
+        setState((s) => ({ ...s, alerts: (s.alerts ?? []).filter((x) => x.id !== id) }));
       },
     };
   }, [state, reload, refreshUsage, preset]);

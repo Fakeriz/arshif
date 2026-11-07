@@ -1,20 +1,19 @@
 import * as ImagePicker from 'expo-image-picker';
-import { FileScan, Images, X } from 'lucide-react-native';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { Camera, Images, X } from 'lucide-react-native';
+import { useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { Platform, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ForceDark } from '@/components/shell/ForceDark';
 import { usePaywall } from '@/components/shell/Paywall';
-import { AppText, EmptyState, GlassView, Icon, PressableScale } from '@/components/ui';
+import { AppText, Button, EmptyState, GlassView, Icon, PressableScale } from '@/components/ui';
 import { invokeFn } from '@/data/remote/functions';
 import { discardPrivate, uploadPrivate } from '@/data/remote/upload';
 import { CaptureError, failureOf, type CaptureFailure } from '@/features/capture/CaptureError';
 import { putHandoff } from '@/features/capture/handoff';
 import { compressReceipt, MAX_RECEIPT_BYTES } from '@/features/capture/image';
 import { ProcessingView } from '@/features/capture/ProcessingView';
-import { ScanFrame } from '@/features/capture/ScanFrame';
 import { useI18n } from '@/i18n';
 import { useStore } from '@/state/AppStore';
 import { useLimits } from '@/state/limits';
@@ -25,20 +24,24 @@ import { radius, space } from '@/theme/tokens';
 import { DocScannerNative } from '../../modules/doc-scanner';
 import { FUNCTIONS, ScanResult } from '../../supabase/functions/_shared/contracts';
 
-type Phase = { kind: 'ready' } | { kind: 'uploading' } | { kind: 'processing' } | { kind: 'failed'; failure: CaptureFailure } | { kind: 'noScanner'; reason: 'module' | 'services' };
+/** launching = kamera/pemindai sedang terbuka di atas layar ini; choose = tombol ambil foto / pilih dari galeri. */
+type Phase = { kind: 'launching' } | { kind: 'choose' } | { kind: 'uploading' } | { kind: 'processing' } | { kind: 'failed'; failure: CaptureFailure };
 
 /**
- * ML Kit Document Scanner (FR-OCR-6) hanya ada di development build baru (modul native `doc-scanner`) di Android
- * dengan Google Play services. Expo Go, iOS, web, dan build lama: 'module'.
+ * Pemindai dokumen (FR-OCR-6), deteksi tepi + potong otomatis lewat modul native `doc-scanner`:
+ * ML Kit di Android (butuh Google Play services), VisionKit di iOS. Tidak ada (web, Expo Go, build lama): kamera bawaan.
  */
-function docScannerState(): 'ok' | 'module' | 'services' {
-  if (Platform.OS !== 'android' || !DocScannerNative) return 'module';
+function scannerReady(): boolean {
+  if (Platform.OS === 'web' || !DocScannerNative) return false;
   try {
-    return DocScannerNative.isAvailable() ? 'ok' : 'services';
+    return DocScannerNative.isAvailable();
   } catch {
-    return 'services';
+    return false;
   }
 }
+
+/** Browser tidak mengizinkan membuka kamera/berkas tanpa ketukan pengguna, jadi web memakai tombol. */
+const autoLaunch = Platform.OS !== 'web';
 
 export default function ScanScreen() {
   return (
@@ -48,19 +51,22 @@ export default function ScanScreen() {
   );
 }
 
+/**
+ * Receipt OCR: ketuk = kamera langsung terbuka (pemindai ML Kit di Android, VisionKit di iOS, atau kamera bawaan). Tidak ada layar "kamera"
+ * perantara: layar ini hanya untuk mengunggah/memproses, error, dan tombol ambil foto / galeri (web, atau setelah batal
+ * di pemindai yang tidak punya galeri).
+ */
 function ScanInner() {
-  const { colors } = useTheme();
   const { t, lang } = useI18n();
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const { colors } = useTheme();
   const { userId, refreshUsage } = useStore();
   const limits = useLimits();
   const paywall = usePaywall();
-  const [phase, setPhase] = useState<Phase>({ kind: 'ready' });
-  const { mode } = useLocalSearchParams<{ mode?: string }>();
-  const scanner = docScannerState();
+  const [phase, setPhase] = useState<Phase>(autoLaunch ? { kind: 'launching' } : { kind: 'choose' });
 
-  /** Gambar yang sudah dipilih/dipindai masuk pipeline OCR yang sama: kompres, unggah, Gemini di server. */
+  /** Gambar yang sudah dipindai/dipilih masuk pipeline OCR yang sama: kompres, unggah, Gemini di server. */
   const process = async (asset: { uri: string; width?: number }) => {
     let receiptPath: string | null = null;
     try {
@@ -79,11 +85,17 @@ function ScanInner() {
       refreshUsage();
       const failure = failureOf(e);
       if (failure === 'quota') {
-        setPhase({ kind: 'ready' });
+        setPhase({ kind: 'choose' });
         paywall(t('capture.scan.limitReason'));
       } else setPhase({ kind: 'failed', failure });
     }
   };
+
+  /**
+   * Batal. Pemindai ML Kit (Android) sudah punya galeri di dalamnya, jadi batal = kembali ke layar sebelumnya.
+   * Pemindai iOS dan kamera bawaan tidak punya galeri: tampilkan pilihan ambil foto / galeri.
+   */
+  const cancelled = (hadGallery: boolean) => (autoLaunch && hadGallery ? router.back() : setPhase({ kind: 'choose' }));
 
   const take = async (source: 'camera' | 'gallery') => {
     try {
@@ -93,63 +105,56 @@ function ScanInner() {
       }
       const opts: ImagePicker.ImagePickerOptions = { mediaTypes: ['images'], quality: 1 };
       const picked = source === 'camera' ? await ImagePicker.launchCameraAsync(opts) : await ImagePicker.launchImageLibraryAsync(opts);
-      if (picked.canceled || !picked.assets[0]) return;
+      if (picked.canceled || !picked.assets[0]) return cancelled(false);
       await process(picked.assets[0]);
     } catch (e) {
       setPhase({ kind: 'failed', failure: failureOf(e) });
     }
   };
 
-  /** Scan dokumen: pemindai ML Kit (deteksi tepi + auto-crop), lalu pipeline OCR yang sama. */
-  const scanDocument = async () => {
-    if (scanner !== 'ok' || !DocScannerNative) return setPhase({ kind: 'noScanner', reason: scanner === 'ok' ? 'module' : scanner });
+  /** Kamera utama: pemindai dokumen; tanpa pemindai atau bila gagal dibuka, kamera bawaan. */
+  const openCamera = async () => {
+    setPhase({ kind: 'launching' });
+    if (!scannerReady() || !DocScannerNative) return take('camera');
+    let uri: string | null;
     try {
-      const uri = await DocScannerNative.scan(true);
-      if (!uri) return; // dibatalkan
-      await process({ uri });
+      uri = await DocScannerNative.scan(true);
     } catch {
-      setPhase({ kind: 'noScanner', reason: 'services' });
+      return take('camera');
     }
+    if (!uri) return cancelled(Platform.OS === 'android');
+    await process({ uri });
   };
 
-  // Dibuka dari "Scan dokumen" (+ Catat): pemindai langsung terbuka sekali.
-  const autoLaunched = useRef(false);
+  const launched = useRef(false);
   useEffect(() => {
-    if (mode !== 'doc' || autoLaunched.current || limits.scan) return;
-    autoLaunched.current = true;
-    void scanDocument();
+    if (!autoLaunch || launched.current || limits.scan) return;
+    launched.current = true;
+    void openCamera();
+    // Sekali saat layar dibuka; ketukan "Foto ulang" memanggil openCamera sendiri.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [mode, limits.scan]);
+  }, [limits.scan]);
 
   let center;
   if (limits.scan) {
     center = <EmptyState kind="limit" title={t('capture.scan.limitTitle')} message={t('capture.scan.limitMessage')} actionLabel={t('capture.seePremium')} onAction={() => paywall(t('capture.scan.limitReason'))} />;
   } else if (phase.kind === 'uploading' || phase.kind === 'processing') {
     center = <ProcessingView title={phase.kind === 'uploading' ? t('capture.scan.uploading') : t('capture.scan.processingTitle')} message={t('capture.scan.processingMessage')} />;
-  } else if (phase.kind === 'noScanner') {
-    center = (
-      <EmptyState
-        title={t('capture.docScan.unavailableTitle')}
-        message={phase.reason === 'module' ? t('capture.docScan.needNewBuild') : t('capture.docScan.needServices')}
-        actionLabel={t('capture.docScan.useCamera')}
-        onAction={() => setPhase({ kind: 'ready' })}
-      />
-    );
   } else if (phase.kind === 'failed') {
-    const retry = phase.failure === 'permission' ? () => take('gallery') : () => setPhase({ kind: 'ready' });
+    const retry = phase.failure === 'permission' ? () => take('gallery') : autoLaunch ? () => void openCamera() : () => setPhase({ kind: 'choose' });
     center = <CaptureError flow="scan" failure={phase.failure} actionLabel={phase.failure === 'permission' ? t('capture.scan.gallery') : t('capture.scan.retake')} onAction={retry} />;
-  } else {
+  } else if (phase.kind === 'choose') {
     center = (
-      <>
-        <ScanFrame active />
+      <View style={styles.choices}>
         <AppText variant="body" tone="secondary" align="center">
-          {t('capture.scan.guide')}
+          {t('capture.scan.cameraNote')}
         </AppText>
-      </>
+        <Button label={t('capture.scan.shutter')} icon={Camera} fullWidth onPress={() => void (autoLaunch ? openCamera() : take('camera'))} />
+        <Button label={t('capture.scan.gallery')} icon={Images} variant="secondary" fullWidth onPress={() => void take('gallery')} />
+      </View>
     );
-  }
+  } else center = null; // launching: kamera/pemindai sedang terbuka di atas layar ini
 
-  const canShoot = phase.kind === 'ready' && !limits.scan;
   return (
     <View style={[styles.root, { backgroundColor: colors.bg, paddingTop: insets.top + space.md, paddingBottom: insets.bottom + space.xl }]}>
       <View style={styles.top}>
@@ -160,26 +165,14 @@ function ScanInner() {
         <View style={styles.spacer} />
       </View>
       <View style={styles.center}>{center}</View>
-      <AppText variant="caption" tone="muted" align="center">
-        {t('capture.scan.cameraNote')}
-      </AppText>
-      <View style={styles.bottom}>
-        <RoundButton label={t('capture.scan.gallery')} onPress={() => take('gallery')} icon={Images} disabled={!canShoot} />
-        <PressableScale accessibilityLabel={t('capture.scan.shutter')} disabled={!canShoot} onPress={() => take('camera')} focusRadius={radius.full} scaleTo={0.94}>
-          <View style={[styles.shutterRing, { borderColor: colors.text }]}>
-            <View style={[styles.shutter, { backgroundColor: colors.text }]} />
-          </View>
-        </PressableScale>
-        <RoundButton label={t('capture.docScan.button')} onPress={() => void scanDocument()} icon={FileScan} disabled={!canShoot} />
-      </View>
     </View>
   );
 }
 
-function RoundButton({ label, onPress, icon, disabled }: { label: string; onPress: () => void; icon: typeof X; disabled?: boolean }) {
+function RoundButton({ label, onPress, icon }: { label: string; onPress: () => void; icon: typeof X }) {
   const { colors } = useTheme();
   return (
-    <PressableScale accessibilityLabel={label} aria-disabled={!!disabled} onPress={onPress} disabled={disabled} focusRadius={radius.full}>
+    <PressableScale accessibilityLabel={label} onPress={onPress} focusRadius={radius.full}>
       <GlassView level="floating" radius={radius.full} style={styles.round}>
         <Icon icon={icon} color={colors.text} />
       </GlassView>
@@ -192,9 +185,7 @@ const styles = StyleSheet.create({
   top: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: space.md },
   title: { flexShrink: 1 },
   center: { flex: 1, justifyContent: 'center', gap: space.xl },
-  bottom: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: space.md },
+  choices: { gap: space.md },
   round: { width: 48, height: 48, alignItems: 'center', justifyContent: 'center' },
-  shutterRing: { width: 80, height: 80, borderRadius: radius.full, borderWidth: 4, alignItems: 'center', justifyContent: 'center' },
-  shutter: { width: 62, height: 62, borderRadius: radius.full },
   spacer: { width: 48 },
 });

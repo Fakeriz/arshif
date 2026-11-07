@@ -54,7 +54,7 @@ export function Button({
       accessibilityLabel={label}
       accessibilityHint={accessibilityHint}
       aria-disabled={!!(disabled || loading)} aria-busy={!!loading}
-      focusRadius={radius.md}
+      focusRadius={radius.control}
       style={[
         styles.base,
         {
@@ -87,7 +87,7 @@ export function Button({
 
 const styles = StyleSheet.create({
   base: {
-    borderRadius: radius.md,
+    borderRadius: radius.control,
     borderWidth: layout.hairline,
     alignItems: 'center',
     justifyContent: 'center',

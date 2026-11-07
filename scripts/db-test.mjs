@@ -815,6 +815,50 @@ await test('aset: snapshot kekayaan bersih satu per hari, milik sendiri', async 
   await rejects(as(A, `insert into public.net_worth_snapshots (user_id, date, total, assets_total, liabilities_total, currency) values ($1, '2026-11-13', 1, 1, 0, 'IDR')`, [B]), /permission denied/);
 });
 
+await test('alert harga (Fase 5): ambang kecil 0,1% terlewati -> satu notifikasi, tidak berulang; pasang lagi pakai harga baru', async () => {
+  // A punya BBCA dari tes aset; harga IDX:BBCA 5200 dari tes harga publik.
+  const [{ id: bbca }] = await as(A, `select id from public.assets where symbol = 'BBCA'`);
+  const [al] = await as(A, `insert into public.asset_price_alerts (asset_id, pct) values ($1, 0.1) returning base_price::float as base, currency, triggered_at`, [bbca]);
+  eq([al.base, al.currency, al.triggered_at], [5200, 'IDR', null], 'patokan dari asset_prices');
+  // Klien tidak bisa memalsukan patokan atau status terkirim.
+  await rejects(as(A, `update public.asset_price_alerts set base_price = 1`), /permission denied/);
+  await rejects(as(A, `update public.asset_price_alerts set triggered_at = now()`), /permission denied/);
+  eq((await sys(`select public.price_alerts() n`))[0].n, 0, 'harga belum bergerak');
+  await sys(`update public.asset_prices set price = 5204 where symbol = 'IDX:BBCA'`);
+  eq((await sys(`select public.price_alerts() n`))[0].n, 0, '+0,077% di bawah ambang 0,1%');
+  await sys(`update public.asset_prices set price = 5206 where symbol = 'IDX:BBCA'`);
+  eq((await sys(`select public.price_alerts() n`))[0].n, 1, '+0,115% melewati ambang');
+  const [n] = await as(A, `select type, title_key, message_key, href, vars from public.notifications where type = 'price_alert'`);
+  eq([n.type, n.title_key, n.message_key, n.href], ['price_alert', 'domain.notif.priceUpTitle', 'domain.notif.priceAlertMessage', '/aset']);
+  eq([n.vars.symbol, Number(n.vars.change), Number(n.vars.threshold), Number(n.vars.price), n.vars.priceCurrency], ['BBCA', 0.1, 0.1, 5206, 'IDR']);
+  eq((await sys(`select public.price_alerts() n`))[0].n, 0, 'alert yang sudah terkirim tidak berulang tiap jam');
+  // Pasang lagi: patokan jadi harga sekarang, lalu turun melewati ambang.
+  eq((await as(A, `update public.asset_price_alerts set pct = 0.1 returning base_price::float as b, triggered_at`, []))[0], { b: 5206, triggered_at: null });
+  await sys(`update public.asset_prices set price = 5190 where symbol = 'IDX:BBCA'`);
+  eq((await sys(`select public.price_alerts() n`))[0].n, 1);
+  eq((await as(A, `select title_key from public.notifications where type = 'price_alert' order by created_at desc, title_key limit 2`)).map((r) => r.title_key).sort(), ['domain.notif.priceDownTitle', 'domain.notif.priceUpTitle']);
+  eq((await as(B, `select count(*)::int n from public.asset_price_alerts`))[0].n, 0, 'alert A tidak terlihat B');
+  await sys(`update public.asset_prices set price = 5200 where symbol = 'IDX:BBCA'`);
+});
+
+await test('alert harga: hanya aset sendiri, harus sudah ada harga live, ambang 0,1 sampai 50, ikut terhapus bersama aset', async () => {
+  const [{ id: bbca }] = await as(A, `select id from public.assets where symbol = 'BBCA'`);
+  await rejects(as(B, `insert into public.asset_price_alerts (asset_id, pct) values ($1, 5)`, [bbca]), /alert_not_owner/);
+  // A sudah di batas 5 aset Free: kasus berikut memakai B.
+  const [{ id: zq }] = await as(B, `insert into public.assets (type, symbol, name, quantity, currency) values ('stock_us', 'ZZZQ', 'Tanpa harga', 1, 'USD') returning id`);
+  await rejects(as(B, `insert into public.asset_price_alerts (asset_id, pct) values ($1, 5)`, [zq]), /alert_no_price/);
+  await sys(`insert into public.asset_prices (symbol, price, currency, source) values ('US:ZZZQ', 10, 'USD', 'uji')`);
+  await rejects(as(B, `insert into public.asset_price_alerts (asset_id, pct) values ($1, 0.05)`, [zq]), /pct_check/);
+  await rejects(as(B, `insert into public.asset_price_alerts (asset_id, pct) values ($1, 51)`, [zq]), /pct_check/);
+  await as(B, `insert into public.asset_price_alerts (asset_id, pct) values ($1, 5)`, [zq]);
+  await as(B, `delete from public.assets where id = $1`, [zq]);
+  eq((await sys(`select count(*)::int n from public.asset_price_alerts where asset_id = $1`, [zq]))[0].n, 0, 'cascade');
+  // Riwayat harga: publik hanya-baca.
+  await sys(`insert into public.asset_price_history (symbol, day, price, currency) values ('IDX:BBCA', '2026-11-01', 5000, 'IDR')`);
+  eq((await as(B, `select price::float p from public.asset_price_history where symbol = 'IDX:BBCA'`))[0].p, 5000);
+  await rejects(as(A, `insert into public.asset_price_history (symbol, day, price, currency) values ('IDX:BBCA', '2026-11-02', 1, 'IDR')`), /permission denied/);
+});
+
 await test('rate limit AI: hitung + catat sekaligus (ai_job_start), ke-11 dalam semenit ditolak', async () => {
   await sys(`delete from public.ai_jobs where user_id = $1`, [B]);
   for (let i = 0; i < 10; i++) {

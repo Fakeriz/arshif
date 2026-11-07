@@ -32,3 +32,10 @@ jest.mock('react-native-reanimated', () => {
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const fx = require('./src/lib/fx');
 fx.setUsdRates(fx.SAMPLE_USD_RATES, '2026-11-05');
+
+// WebView (grafik TradingView) tidak punya modul native di Jest: render View yang menyimpan props untuk diperiksa tes.
+jest.mock('react-native-webview', () => {
+  const { View } = require('react-native');
+  const WebView = (props: Record<string, unknown>) => require('react').createElement(View, { testID: 'webview', ...props });
+  return { __esModule: true, WebView, default: WebView };
+});

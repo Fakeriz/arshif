@@ -8,6 +8,8 @@ const home = {
   hideBalance: 'Sembunyikan saldo',
   balanceMeta: '{count} akun · dikonversi ke {currency} · kurs per {date}',
   balanceMeta_one: '{count} akun · dikonversi ke {currency} · kurs per {date}',
+  balanceMetaStale: '{count} akun · dikonversi ke {currency} · kurs terakhir {date}',
+  balanceMetaStale_one: '{count} akun · dikonversi ke {currency} · kurs terakhir {date}',
   balanceMetaSame: '{count} akun · {currency}',
   balanceMetaSame_one: '{count} akun · {currency}',
   accountLimitA11y: 'Batas 4 akun tercapai. Buka Premium untuk menambah akun',

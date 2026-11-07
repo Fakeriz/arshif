@@ -186,3 +186,31 @@ function cleanAnswer(s: string): string {
     .join('\n')
     .trim();
 }
+
+/** Desimal target mengikuti besaran harga: Rp 5.200 -> bulat, $342,37 -> 2 desimal, koin murah -> 6 desimal. */
+const priceDecimals = (live: number) => (live >= 1000 ? 0 : live >= 1 ? 2 : 6);
+
+/**
+ * Jawaban harga wajar yang aman ditampilkan. Kisaran wajib masuk akal terhadap harga live (0,5x sampai 2x); di luar itu
+ * dianggap AI salah baca angka dan ditolak (kuota dikembalikan oleh runAiJob). Vonis dihitung dari angka, bukan teks AI.
+ */
+export function normalizePrice(raw: unknown, live: number, currency: string):
+  | { verdict: 'cheap' | 'fair' | 'expensive'; targetLow: number; targetHigh: number; livePrice: number; currency: string; reasons: string[] }
+  | null {
+  const r = (raw ?? {}) as Raw;
+  let low = Number(r.targetLow);
+  let high = Number(r.targetHigh);
+  if (!Number.isFinite(low) || !Number.isFinite(high) || low <= 0 || high <= 0) return null;
+  if (low > high) [low, high] = [high, low];
+  if (low < live * 0.5 || high > live * 2) return null;
+  const d = priceDecimals(live);
+  low = Number(low.toFixed(d));
+  high = Number(high.toFixed(d));
+  const reasons = (Array.isArray(r.reasons) ? r.reasons : [])
+    .map((x) => cleanText(str(x)).replace(/\*\*/g, '').slice(0, 220))
+    .filter(Boolean)
+    .slice(0, 3);
+  if (reasons.length === 0) return null;
+  const verdict = live < low ? 'cheap' : live > high ? 'expensive' : 'fair';
+  return { verdict, targetLow: low, targetHigh: high, livePrice: live, currency, reasons };
+}

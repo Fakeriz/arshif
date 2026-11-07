@@ -26,7 +26,6 @@ const capture: Messages['capture'] = {
     failedTitle: 'Resit tidak dapat dibaca',
     failedMessage: 'Kuota imbasan tidak ditolak. Ambil gambar semula di tempat lebih terang dan pastikan seluruh resit dalam bingkai.',
     retake: 'Ambil semula',
-    guide: 'Letakkan resit di dalam bingkai. Pastikan semua tulisan jelas kelihatan.',
     cameraNote: 'Kamera telefon akan dibuka. Gambar dikecilkan dahulu sebelum dihantar.',
     gallery: 'Pilih dari galeri',
     shutter: 'Ambil gambar resit',
@@ -145,13 +144,6 @@ const capture: Messages['capture'] = {
     loading: 'Memuatkan gambar resit',
     failed: 'Gambar resit gagal dimuatkan. Cuba buka semula nanti.',
     a11y: 'Gambar resit {merchant}',
-  },
-  docScan: {
-    button: 'Imbas dokumen',
-    unavailableTitle: 'Imbas dokumen belum tersedia',
-    needNewBuild: 'Imbas dokumen memerlukan versi aplikasi terkini di Android. Buat masa ini, ambil gambar resit dengan kamera.',
-    needServices: 'Pengimbas dokumen memerlukan Google Play services yang aktif. Buat masa ini, ambil gambar resit dengan kamera.',
-    useCamera: 'Guna kamera',
   },
 };
 

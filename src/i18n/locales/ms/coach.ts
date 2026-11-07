@@ -68,6 +68,9 @@ const coach: Messages['coach'] = {
     example3: 'Kategori mana paling banyak perbelanjaan tempoh ini?',
   },
   replay: {
+    moversUp: 'Naik {amount} dalam 7 hari, terutamanya kerana {label} {pct}.',
+    moversDown: 'Turun {amount} dalam 7 hari, terutamanya kerana {label} {pct}.',
+    portfolio: 'Portfolio pada harga langsung',
     lastMonth: 'Bulan lalu',
     heroMonth: 'Perbelanjaan anda bulan lalu',
     monthRange: 'Rekap bulan {range}',

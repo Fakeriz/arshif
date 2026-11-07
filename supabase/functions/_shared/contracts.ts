@@ -176,6 +176,35 @@ export const AskResult = z.object({
 });
 export type AskResult = z.infer<typeof AskResult>;
 
+// ------------------------------------------------------------------ Tanya harga wajar (Live Market v2 Fase 5)
+/**
+ * HANYA angka ringkasan satu aset (FR-COACH-4): kode, pasar, harga live per unit dalam mata uang kutipannya,
+ * harga beli per unit (null bila satuan/mata uangnya beda), perubahan % vs harga beli. Tanpa nama, jumlah, catatan.
+ */
+export const PriceAskRequest = z.object({
+  lang: Lang,
+  asset: z.object({
+    market: z.enum(['IDX', 'US', 'CRYPTO', 'GOLD']),
+    symbol: z.string().regex(/^[A-Z0-9.]{1,15}$/),
+    currency: Currency,
+    livePrice: z.number().finite().positive().max(1e12),
+    buyPrice: z.number().finite().positive().max(1e12).nullable(),
+    changePct: z.number().finite().min(-100).max(100000).nullable(),
+  }).strict(),
+}).strict();
+export type PriceAskRequest = z.infer<typeof PriceAskRequest>;
+export const PriceVerdict = z.enum(['cheap', 'fair', 'expensive']);
+/** `verdict` dihitung server dari kisaran target vs harga live (bukan teks AI), jadi selalu konsisten dengan angka. */
+export const PriceAskResult = z.object({
+  verdict: PriceVerdict,
+  targetLow: z.number().finite().positive(),
+  targetHigh: z.number().finite().positive(),
+  livePrice: z.number().finite().positive(),
+  currency: Currency,
+  reasons: z.array(z.string().min(1).max(220)).min(1).max(3),
+});
+export type PriceAskResult = z.infer<typeof PriceAskResult>;
+
 // ------------------------------------------------------------------ delete-account (FR-SET-3)
 export const DeleteAccountRequest = z.object({ confirm: z.literal('DELETE') });
 
@@ -224,6 +253,15 @@ export const AdminUserResponse = z.object({
 /** Sinkron kurs manual dari panel admin (fx-sync dengan token admin, bukan secret cron). */
 export const FxSyncResponse = z.object({ date: z.string(), codes: z.number(), backfilledDays: z.number() });
 
+// ------------------------------------------------------------------ symbol-search (pemilih kode aset)
+/** Pasar yang dicari lewat server. Kripto memakai daftar statis di aplikasi, emas selalu XAU. */
+export const SymbolMarket = z.enum(['IDX', 'US']);
+export const SymbolSearchRequest = z.object({ market: SymbolMarket, q: z.string().trim().min(1).max(40) });
+/** `code` = kode netral seperti kolom assets.symbol (BBCA, AAPL, BRK.B), bukan simbol Yahoo. */
+export const SymbolHit = z.object({ code: z.string().regex(/^[A-Z0-9.]{1,15}$/), name: z.string().min(1).max(80), market: SymbolMarket });
+export const SymbolSearchResponse = z.object({ results: z.array(SymbolHit).max(10) });
+export type SymbolHit = z.infer<typeof SymbolHit>;
+
 /** Nama function = path di /functions/v1/<nama>. */
 export const FUNCTIONS = {
   scan: 'scan-receipt',
@@ -236,4 +274,6 @@ export const FUNCTIONS = {
   checkout: 'checkout-create',
   entitlementSync: 'entitlement-sync',
   adminUser: 'admin-user',
+  symbolSearch: 'symbol-search',
+  coachPrice: 'coach-price',
 } as const;

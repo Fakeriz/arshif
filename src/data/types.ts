@@ -96,7 +96,7 @@ export type Transaction = {
   reimbursedBy?: string;
 };
 
-export type NotificationType = 'bill_due' | 'budget_alert' | 'weekly_recap' | 'quota_warning' | 'goal_reached' | 'subscription_renewal' | 'system';
+export type NotificationType = 'bill_due' | 'budget_alert' | 'weekly_recap' | 'quota_warning' | 'goal_reached' | 'subscription_renewal' | 'system' | 'price_alert';
 
 export type AppNotification = {
   id: string;

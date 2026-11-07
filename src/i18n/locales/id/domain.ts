@@ -109,6 +109,9 @@ const domain = {
     date: 'Tanggal harus berformat TTTT-BB-HH.',
   },
   notif: {
+    priceUpTitle: '{name} naik {changeAbs}',
+    priceDownTitle: '{name} turun {changeAbs}',
+    priceAlertMessage: '{symbol} sekarang {price}, bergerak {change} dari {base} saat alert dipasang (ambang ±{threshold}). Alert ini sudah selesai; pasang lagi di detail aset bila perlu.',
     recapTitle: 'Recap mingguanmu sudah siap',
     recapMessage: 'Lihat ke mana uangmu pergi minggu lalu.',
     budgetTitle: 'Anggaran Hiburan {pct}%',

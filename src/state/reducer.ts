@@ -3,7 +3,8 @@ import { DEFAULT_SPLIT, PAYDAY_MAX, PAYDAY_MIN, splitIsValid, type Split } from 
 import type { UserRate } from '@/lib/fx';
 import { EMPTY_USAGE, type QuotaKey, type Usage } from '@/lib/quota';
 
-export type NotifPrefs = Record<Exclude<NotificationType, 'system' | 'monthly_recap' | 'goal_reached' | 'subscription_renewal'>, boolean>;
+// price_alert tidak punya saklar global: alert dipasang sendiri per aset, jadi sudah pilihan eksplisit pengguna.
+export type NotifPrefs = Record<Exclude<NotificationType, 'system' | 'monthly_recap' | 'goal_reached' | 'subscription_renewal' | 'price_alert'>, boolean>;
 
 /** idle = belum login, loading = memuat dari Supabase, ready = data siap, error = gagal memuat. */
 export type LoadStatus = 'idle' | 'loading' | 'ready' | 'error';
@@ -36,6 +37,8 @@ export type AppState = {
   activeAccountId: string | null;
   /** Tanggal kurs yang dipakai untuk agregat ("Kurs per …"). */
   ratesDate: string | null;
+  /** true = semua sumber kurs gagal, kurs dari cache lokal ("kurs terakhir"). */
+  ratesStale: boolean;
   /** Anggaran per periode (FR-BDG-5), terbaru dulu. */
   budgets: BudgetRecord[];
   /** Grup limit gabungan kartu (FR-ACC-6). */
@@ -112,6 +115,7 @@ export function initialState(): AppState {
     notifPrefs: { bill_due: true, budget_alert: true, weekly_recap: true, quota_warning: true },
     activeAccountId: null,
     ratesDate: null,
+    ratesStale: false,
     budgets: [],
     limitGroups: [],
     userRates: [],

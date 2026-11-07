@@ -6,6 +6,7 @@ import * as api from '@/data/remote/api';
 import { toNotification, type NotificationRow } from '@/data/remote/mappers';
 import type { Account, Transaction } from '@/data/types';
 import { useI18n } from '@/i18n';
+import { loadLatestRates } from '@/data/fxLatest';
 import { addRateHistory, historyCodes, setRateHistory, setUsdRates, setUserRates } from '@/lib/fx';
 import { addDays } from '@/lib/dates';
 import { supabase } from '@/lib/supabase';
@@ -77,7 +78,9 @@ export function AppStoreProvider({ children, preset }: { children: ReactNode; pr
     if (stateRef.current.status === 'ready') setRefreshing(true);
     try {
       const [profile, accounts, transactions, notifications, usage, rates, budgets, limitGroups, userRates] = await Promise.all([
-        api.loadProfile(userId, email), api.loadAccounts(), api.loadTransactions(), api.loadNotifications(), api.loadUsage(), api.loadLatestRates(),
+        api.loadProfile(userId, email), api.loadAccounts(), api.loadTransactions(), api.loadNotifications(), api.loadUsage(),
+        // Kurs hari ini dari klien (er-api -> jsDelivr -> pages.dev), server Frankfurter terakhir, lalu cache 7 hari.
+        loadLatestRates({ server: api.loadLatestRates }),
         api.loadBudgets(), api.loadLimitGroups(), api.loadUserRates(),
       ]);
       setUsdRates(rates.table, rates.date);
@@ -110,7 +113,7 @@ export function AppStoreProvider({ children, preset }: { children: ReactNode; pr
           transactions: mergePending(transactions, [...pending.current.values()]),
           notifications,
           plan: profile.plan, premiumUntil: profile.premiumUntil, premiumSource: profile.premiumSource, usage, hideBalance: profile.hideBalance, includeAssets: profile.includeAssets, mainCurrency: profile.mainCurrency, income: profile.income,
-          split: profile.split, payday: profile.payday, notifPrefs: profile.notifPrefs, activeAccountId: profile.activeAccountId, ratesDate: rates.date,
+          split: profile.split, payday: profile.payday, notifPrefs: profile.notifPrefs, activeAccountId: profile.activeAccountId, ratesDate: rates.date, ratesStale: rates.stale,
           budgets, limitGroups, userRates,
         },
       });

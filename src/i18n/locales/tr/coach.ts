@@ -68,6 +68,9 @@ const coach: Messages['coach'] = {
     example3: 'Bu dönem en çok hangi kategoride harcadım?',
   },
   replay: {
+    moversUp: '7 günde {amount} arttı, en çok {label} {pct} etkisiyle.',
+    moversDown: '7 günde {amount} azaldı, en çok {label} {pct} etkisiyle.',
+    portfolio: 'Canlı fiyatlarla portföy',
     lastMonth: 'Geçen ay',
     heroMonth: 'Geçen ayki harcaman',
     monthRange: '{range} ay özeti',

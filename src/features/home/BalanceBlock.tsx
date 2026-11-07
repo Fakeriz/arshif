@@ -53,7 +53,7 @@ export function BalanceBlock({
       {change !== null && <TrendBadge value={change} suffix={t('home.netWorthVs')} />}
       <AppText variant="caption" tone="muted" align="center">
         {converted
-          ? t('home.balanceMeta', { count: accountCount, currency, date: shortDate(state.ratesDate!, lang) })
+          ? t(state.ratesStale ? 'home.balanceMetaStale' : 'home.balanceMeta', { count: accountCount, currency, date: shortDate(state.ratesDate!, lang) })
           : t('home.balanceMetaSame', { count: accountCount, currency })}
       </AppText>
     </View>

@@ -66,6 +66,9 @@ const coach = {
     example3: 'Kategori mana yang paling boros periode ini?',
   },
   replay: {
+    moversUp: 'Naik {amount} dalam 7 hari, terutama karena {label} {pct}.',
+    moversDown: 'Turun {amount} dalam 7 hari, terutama karena {label} {pct}.',
+    portfolio: 'Portofolio di harga live',
     lastMonth: 'Bulan lalu',
     heroMonth: 'Belanjamu bulan lalu',
     monthRange: 'Recap bulan {range}',

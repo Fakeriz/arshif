@@ -1,4 +1,4 @@
-import type { Asset, AssetPrice, AssetType, NetWorthSnapshot } from '@/data/assets';
+import type { Asset, AssetPrice, AssetType, NetWorthSnapshot, PricePoint } from '@/data/assets';
 import type { Debt } from '@/data/planning';
 import type { Account } from '@/data/types';
 import { pctChange } from '@/lib/chart';
@@ -17,8 +17,12 @@ export const SYMBOL_RE = /^[A-Z0-9.]{1,15}$/;
 export const GOLD_SYMBOL = 'XAU';
 /** Harga emas dikutip per troy ounce; jumlah emas dicatat dalam gram. */
 export const TROY_OUNCE_GRAMS = 31.1034768;
-/** Harga live lebih tua dari ini ditandai "harga terakhir", bukan harga terkini. */
-export const STALE_MS = 6 * 60 * 60 * 1000;
+/**
+ * Sync terakhir yang berhasil untuk kode ini lebih tua dari ini = semua penyedia gagal: tandai "harga terakhir".
+ * Sync jalan tiap jam, jadi 2 jam = satu sync terlewat plus jeda. Diukur dari waktu sync, bukan waktu quote:
+ * harga Jumat sore yang masih disinkronkan saat akhir pekan tetap harga terbaru, bukan harga gagal.
+ */
+export const STALE_MS = 2 * 60 * 60 * 1000;
 
 const PREFIX: Partial<Record<AssetType, string>> = { stock_id: 'IDX', stock_us: 'US', crypto: 'CRYPTO', gold: 'GOLD' };
 
@@ -26,6 +30,19 @@ const PREFIX: Partial<Record<AssetType, string>> = { stock_id: 'IDX', stock_us: 
 export function priceKeyOf(type: AssetType, symbol: string | undefined): string | undefined {
   const prefix = PREFIX[type];
   return prefix && symbol ? `${prefix}:${symbol}` : undefined;
+}
+
+/**
+ * Simbol grafik TradingView (Live Market v2 §4): IDX:<KODE>, ticker US apa adanya (TradingView memilih bursa utama),
+ * kripto BINANCE:<KODE>USDT, emas OANDA:XAUUSD. Stablecoin tidak punya grafik bermakna. Hanya tampilan, bukan harga.
+ */
+export function chartSymbol(a: Pick<Asset, 'type' | 'symbol'>): string | null {
+  if (!a.symbol) return null;
+  if (a.type === 'stock_id') return `IDX:${a.symbol}`;
+  if (a.type === 'stock_us') return a.symbol;
+  if (a.type === 'crypto') return a.symbol === 'USDT' || a.symbol === 'USDC' ? null : `BINANCE:${a.symbol}USDT`;
+  if (a.type === 'gold') return 'OANDA:XAUUSD';
+  return null;
 }
 
 /** Stablecoin dolar dihitung sebagai USD supaya bisa dikonversi dengan kurs ECB. */
@@ -45,6 +62,8 @@ export type Valuation = {
   /** Harga per unit (satuan utama, mata uang `currency`). Emas: per gram. */
   unitPrice?: number;
   fetchedAt?: string;
+  /** Waktu harga menurut penyedia; tidak ada = hanya waktu sync yang diketahui. */
+  quotedAt?: string;
   stale?: boolean;
 };
 
@@ -64,6 +83,7 @@ export function valueAsset(a: Asset, prices: Record<string, AssetPrice>, now: nu
       source: 'live',
       unitPrice,
       fetchedAt: price.fetchedAt,
+      quotedAt: price.quotedAt,
       stale: now - Date.parse(price.fetchedAt) > STALE_MS,
     };
   }
@@ -80,6 +100,83 @@ export function gainOf(a: Asset, v: Valuation): { amount: number; pct: number | 
   if (value === null) return null;
   const cost = roundMinor(a.quantity * a.buyPrice);
   return { amount: value - cost, pct: cost > 0 ? (value - cost) / cost : null };
+}
+
+/**
+ * Untung/rugi portofolio di harga live terhadap harga beli, dalam mata uang utama. Hanya aset yang punya harga beli
+ * dan harga live (termasuk harga terakhir yang diketahui); aset harga beli/manual tidak ikut. null bila tidak ada.
+ */
+export function portfolioGain(assets: Asset[], prices: Record<string, AssetPrice>, now: number, main: string): { value: number; pct: number } | null {
+  let value = 0;
+  let cost = 0;
+  for (const a of assets) {
+    const v = valueAsset(a, prices, now);
+    if (v.source !== 'live' || v.value === null || a.buyPrice === undefined || a.quantity === undefined) continue;
+    const cur = tryConvert(v.value, v.currency, main);
+    const basis = tryConvert(roundMinor(a.quantity * a.buyPrice), a.currency, main);
+    if (cur === null || basis === null) continue;
+    value += cur;
+    cost += basis;
+  }
+  return cost > 0 ? { value, pct: (value - cost) / cost } : null;
+}
+
+export type Mover = { assetId: string; label: string; pct: number; delta: number };
+
+/**
+ * Penggerak portofolio (Weekly Replay, Fase 5): perubahan nilai aset live selama `days` hari terakhir dari riwayat
+ * harga harian, dalam mata uang utama. Patokan = harga hari terakhir yang <= hari ini - days (hari UTC). Aset tanpa
+ * riwayat sepanjang itu, nilai manual, atau mata uang riwayat yang beda dilewati. null bila belum ada data seminggu.
+ */
+export function portfolioMovers(
+  assets: Asset[],
+  prices: Record<string, AssetPrice>,
+  history: Record<string, PricePoint[]>,
+  now: number,
+  main: string,
+  days = 7,
+): { total: number; movers: Mover[] } | null {
+  const cutoff = new Date(now - days * 86_400_000).toISOString().slice(0, 10);
+  let total = 0;
+  const movers: Mover[] = [];
+  for (const a of assets) {
+    const p = a.priceKey ? prices[a.priceKey] : undefined;
+    if (!p || a.valueOverride !== undefined || a.quantity === undefined) continue;
+    const then = [...(history[a.priceKey!] ?? [])].reverse().find((h) => h.day <= cutoff);
+    if (!then || then.currency !== p.currency || then.price <= 0) continue;
+    const perUnit = (price: number) => (a.type === 'gold' ? price / TROY_OUNCE_GRAMS : price);
+    const currency = quoteCurrency(p.currency);
+    const delta = tryConvert(toMinor(a.quantity * (perUnit(p.price) - perUnit(then.price)), currency), currency, main);
+    if (delta === null) continue;
+    total += delta;
+    movers.push({ assetId: a.id, label: a.type === 'gold' || !a.symbol ? a.name : a.symbol, pct: (p.price - then.price) / then.price, delta });
+  }
+  if (movers.length === 0) return null;
+  return { total, movers: movers.sort((x, y) => Math.abs(y.delta) - Math.abs(x.delta)) };
+}
+
+const MARKET_OF: Partial<Record<AssetType, 'IDX' | 'US' | 'CRYPTO' | 'GOLD'>> = { stock_id: 'IDX', stock_us: 'US', crypto: 'CRYPTO', gold: 'GOLD' };
+
+/**
+ * Angka ringkasan untuk Tanya harga wajar (FR-COACH-4): kode, pasar, harga live per unit dalam mata uang kutipan,
+ * harga beli per unit, perubahan % vs harga beli. TIDAK ada nama, jumlah unit, catatan, atau nilai total.
+ * Harga beli hanya dikirim bila satuan dan mata uangnya sama dengan kutipan (emas dicatat per gram, kutipan per ons).
+ */
+export function priceAskInput(a: Asset, prices: Record<string, AssetPrice>, now: number) {
+  const market = MARKET_OF[a.type];
+  const p = a.priceKey ? prices[a.priceKey] : undefined;
+  if (!market || !a.symbol || !p) return null;
+  const currency = quoteCurrency(p.currency);
+  const sameUnit = a.type !== 'gold' && a.currency === currency && a.buyPrice !== undefined;
+  const gain = gainOf(a, valueAsset(a, prices, now));
+  return {
+    market,
+    symbol: a.symbol,
+    currency,
+    livePrice: p.price,
+    buyPrice: sameUnit ? a.buyPrice! / Math.pow(10, currencyMeta(currency).exponent) : null,
+    changePct: gain?.pct == null ? null : Math.round(gain.pct * 1000) / 10,
+  };
 }
 
 export type NetWorthInput = {

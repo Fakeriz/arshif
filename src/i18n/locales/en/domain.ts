@@ -90,6 +90,9 @@ const domain: Messages['domain'] = {
     date: 'Date must be in YYYY-MM-DD format.',
   },
   notif: {
+    priceUpTitle: '{name} is up {changeAbs}',
+    priceDownTitle: '{name} is down {changeAbs}',
+    priceAlertMessage: '{symbol} is now {price}, a move of {change} from {base} when the alert was set (threshold ±{threshold}). This alert is done; set it again on the asset page if needed.',
     recapTitle: 'Your weekly recap is ready',
     recapMessage: 'See where your money went last week.',
     budgetTitle: 'Entertainment budget at {pct}%',

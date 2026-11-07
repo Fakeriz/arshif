@@ -90,6 +90,9 @@ const domain: Messages['domain'] = {
     date: 'Tarikh mesti dalam format TTTT-BB-HH.',
   },
   notif: {
+    priceUpTitle: '{name} naik {changeAbs}',
+    priceDownTitle: '{name} turun {changeAbs}',
+    priceAlertMessage: '{symbol} kini {price}, bergerak {change} daripada {base} semasa amaran dipasang (ambang ±{threshold}). Amaran ini selesai; pasang semula di halaman aset jika perlu.',
     recapTitle: 'Rekap mingguan anda sudah sedia',
     recapMessage: 'Lihat ke mana wang anda pergi minggu lepas.',
     budgetTitle: 'Belanjawan Hiburan {pct}%',

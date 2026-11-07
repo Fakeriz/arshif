@@ -1,21 +1,31 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { KeyRound } from 'lucide-react-native';
+import { KeyRound, MailCheck } from 'lucide-react-native';
 import { useEffect, useRef, useState } from 'react';
 import { Platform, StyleSheet, View } from 'react-native';
 
 import { Screen } from '@/components/shell/Screen';
-import { ScreenHeader } from '@/components/shell/ScreenHeader';
-import { AppText, Button, Card, EmptyState, Input, useToast } from '@/components/ui';
+import { AppText, Button, Card, EmptyState, Icon, Input, useToast } from '@/components/ui';
+import { AuthTheme } from '@/features/auth/AuthTheme';
 import { authErrorKey } from '@/features/auth/errors';
 import { useT, type MsgKey } from '@/i18n';
 import { supabase } from '@/lib/supabase';
-import { space } from '@/theme/tokens';
+import { useTheme } from '@/theme/ThemeProvider';
+import { radius, space } from '@/theme/tokens';
 
 const RESEND_SECONDS = 60;
 
+export default function VerifikasiRoute() {
+  return (
+    <AuthTheme>
+      <VerifikasiScreen />
+    </AuthTheme>
+  );
+}
+
 /** Verifikasi kode 6 digit dari email. Sukses → sesi aktif, gerbang rute pindah otomatis. */
-export default function VerifikasiScreen() {
+function VerifikasiScreen() {
   const t = useT();
+  const { colors } = useTheme();
   const router = useRouter();
   const { show } = useToast();
   const { email = '' } = useLocalSearchParams<{ email?: string }>();
@@ -41,8 +51,9 @@ export default function VerifikasiScreen() {
     setBusy(true);
     setError(null);
     const { error: err } = await supabase.auth.verifyOtp({ email, token, type: 'email' });
-    setBusy(false);
+    // Sukses: tombol tetap memuat sampai gerbang rute pindah, supaya tidak sempat aktif lagi.
     if (err) {
+      setBusy(false);
       submitted.current = '';
       setError(authErrorKey(err, 'verify'));
     }
@@ -80,11 +91,18 @@ export default function VerifikasiScreen() {
   }
 
   return (
-    <Screen>
-      <ScreenHeader title={t('auth.verify.title')} />
-      <AppText variant="body" tone="secondary">
-        {t('auth.verify.lead', { email })}
-      </AppText>
+    <Screen centered>
+      <View style={styles.head}>
+        <View style={[styles.badge, { backgroundColor: colors.surfaceSunken }]} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
+          <Icon icon={MailCheck} color={colors.textSecondary} />
+        </View>
+        <AppText variant="h1" accessibilityRole="header">
+          {t('auth.verify.title')}
+        </AppText>
+        <AppText variant="body" tone="secondary">
+          {t('auth.verify.lead', { email })}
+        </AppText>
+      </View>
       <Card>
         <View style={styles.form}>
           <Input
@@ -104,20 +122,25 @@ export default function VerifikasiScreen() {
             disabled={busy}
           />
           <Button label={t('auth.verify.submit')} onPress={() => void verify(code)} loading={busy} disabled={busy || code.length !== 6} fullWidth />
-          <Button
-            label={wait > 0 ? t('auth.verify.resendIn', { seconds: wait }) : t('auth.verify.resend')}
-            variant="secondary"
-            onPress={resend}
-            disabled={busy || wait > 0}
-            fullWidth
-          />
-          <Button label={t('auth.verify.changeEmail')} variant="ghost" onPress={changeEmail} fullWidth />
         </View>
       </Card>
+      <View style={styles.secondary}>
+        <Button
+          label={wait > 0 ? t('auth.verify.resendIn', { seconds: wait }) : t('auth.verify.resend')}
+          variant="secondary"
+          onPress={resend}
+          disabled={busy || wait > 0}
+          fullWidth
+        />
+        <Button label={t('auth.verify.changeEmail')} variant="ghost" onPress={changeEmail} fullWidth />
+      </View>
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  form: { gap: space.md },
+  head: { gap: space.sm, paddingHorizontal: space.xs, marginBottom: space.lg },
+  badge: { width: space.x4, height: space.x4, borderRadius: radius.control, alignItems: 'center', justifyContent: 'center', marginBottom: space.md },
+  form: { gap: space.lg },
+  secondary: { gap: space.sm },
 });

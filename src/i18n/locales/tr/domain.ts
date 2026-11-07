@@ -90,6 +90,9 @@ const domain: Messages['domain'] = {
     date: 'Tarih YYYY-AA-GG biçiminde olmalı.',
   },
   notif: {
+    priceUpTitle: '{name} {changeAbs} yükseldi',
+    priceDownTitle: '{name} {changeAbs} düştü',
+    priceAlertMessage: '{symbol} şu an {price}; alarm kurulduğundaki {base} fiyatından {change} hareket etti (eşik ±{threshold}). Bu alarm tamamlandı; gerekirse varlık sayfasından yeniden kurun.',
     recapTitle: 'Haftalık özetin hazır',
     recapMessage: 'Geçen hafta paranın nereye gittiğine bak.',
     budgetTitle: 'Eğlence bütçesi %{pct}',

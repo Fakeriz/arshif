@@ -26,7 +26,6 @@ const capture: Messages['capture'] = {
     failedTitle: 'Receipt could not be read',
     failedMessage: 'No scan quota was used. Retake the photo in better light and keep the whole receipt inside the frame.',
     retake: 'Retake photo',
-    guide: 'Place the receipt inside the frame. Make sure all the text is clearly visible.',
     cameraNote: 'Your phone camera will open. The photo is resized before it is sent.',
     gallery: 'Choose from gallery',
     shutter: 'Take receipt photo',
@@ -145,13 +144,6 @@ const capture: Messages['capture'] = {
     loading: 'Loading receipt photo',
     failed: 'Could not load the receipt photo. Try again later.',
     a11y: 'Receipt photo for {merchant}',
-  },
-  docScan: {
-    button: 'Scan document',
-    unavailableTitle: "Document scan isn't available yet",
-    needNewBuild: 'Document scan needs the latest app version on Android. For now, take a photo of the receipt.',
-    needServices: 'The document scanner needs Google Play services. For now, take a photo of the receipt.',
-    useCamera: 'Use camera',
   },
 };
 

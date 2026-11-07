@@ -1,23 +1,26 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { Pencil, Trash2 } from 'lucide-react-native';
+import { History, Pencil, Trash2 } from 'lucide-react-native';
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import { Screen } from '@/components/shell/Screen';
 import { ScreenHeader } from '@/components/shell/ScreenHeader';
-import { AppText, Button, Card, CurrencyText, Dialog, EmptyState, TrendBadge, useToast } from '@/components/ui';
+import { AppText, Badge, Button, Card, CurrencyText, Dialog, EmptyState, TrendBadge, useToast } from '@/components/ui';
 import { AssetForm } from '@/features/assets/AssetForm';
+import { FairPriceCard } from '@/features/assets/FairPriceCard';
+import { PriceAlertCard } from '@/features/assets/PriceAlertCard';
+import { PriceChart } from '@/features/assets/PriceChart';
 import { priceLabel, quantityLabel } from '@/features/assets/view';
 import { InfoRow } from '@/features/transactions/InfoRow';
 import { useI18n } from '@/i18n';
-import { gainOf, toMinor, unitOf, valueAsset } from '@/lib/assets';
+import { chartSymbol, gainOf, isLiveType, toMinor, unitOf, valueAsset } from '@/lib/assets';
 import { shortDate } from '@/lib/dates';
 import { formatMoney } from '@/lib/money';
 import { useStore } from '@/state/AppStore';
 import { useAssets } from '@/state/assets';
 import { space } from '@/theme/tokens';
 
-/** Detail aset (brief §6). Grafik harga (opsional di brief) belum dibuat: server hanya menyimpan harga terakhir, belum riwayat. */
+/** Detail aset (brief §6). Grafik harga = widget embed resmi TradingView (Live Market v2 Fase 3), hanya tampilan. */
 export default function AssetDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
@@ -38,8 +41,13 @@ export default function AssetDetail() {
     );
   }
 
-  const v = valueAsset(asset, prices, Date.now());
+  const now = Date.now();
+  const v = valueAsset(asset, prices, now);
+  // Untung/rugi hanya dari harga live (termasuk harga terakhir yang diketahui), tidak pernah dari harga beli itu sendiri.
   const gain = gainOf(asset, v);
+  // Aset live yang semua penyedianya gagal (basi) atau belum pernah dapat harga: jelaskan dan tawarkan nilai manual.
+  const liveTrouble = isLiveType(asset.type) && v.source !== 'manual' && (v.stale || v.source === 'buy' || v.source === 'none');
+  const chart = chartSymbol(asset);
   const unit = t(`assets.unit.${unitOf(asset.type)}`);
   const qty = quantityLabel(asset, t, lang);
   const rows: { label: string; value: string }[] = [];
@@ -68,11 +76,35 @@ export default function AssetDetail() {
             <CurrencyText amount={v.value} currency={v.currency} kind="balance" variant="amountHero" hidden={state.hideBalance} />
           )}
           {gain?.pct != null && !state.hideBalance && <TrendBadge value={gain.pct} suffix={t('assets.detail.vsBuy')} />}
-          <AppText variant="caption" tone="muted">
-            {priceLabel(v, t, lang)}
+          {v.stale && <Badge label={t('assets.lastPrice')} icon={History} tone="warning" />}
+          <AppText variant="caption" tone="muted" align="center">
+            {priceLabel(asset, v, t, lang, now)}
           </AppText>
         </View>
       </Card>
+      {liveTrouble && (
+        <Card padding="md">
+          <View style={styles.trouble}>
+            <AppText variant="caption" tone="secondary">
+              {v.stale ? t('assets.detail.staleNote') : t('assets.detail.noLiveNote')}
+            </AppText>
+            <Button label={t('assets.detail.setManual')} variant="secondary" size="md" fullWidth onPress={() => setEdit(true)} />
+          </View>
+        </Card>
+      )}
+      {chart && (
+        <Card>
+          <View style={styles.chart}>
+            <AppText variant="h3">{t('assets.chart.title')}</AppText>
+            <PriceChart symbol={chart} label={t('assets.chart.a11y', { symbol: chart })} />
+            <AppText variant="caption" tone="muted">
+              {asset.type === 'gold' ? `${t('assets.chart.goldUnit')} ${t('assets.chart.source')}` : t('assets.chart.source')}
+            </AppText>
+          </View>
+        </Card>
+      )}
+      {isLiveType(asset.type) && <PriceAlertCard asset={asset} />}
+      {isLiveType(asset.type) && <FairPriceCard asset={asset} />}
       {rows.length > 0 && (
         <Card padding="md">
           {rows.map((r, i) => (
@@ -109,4 +141,6 @@ export default function AssetDetail() {
 const styles = StyleSheet.create({
   hero: { alignItems: 'center', gap: space.xs },
   actions: { gap: space.sm, marginTop: space.sm },
+  trouble: { gap: space.md },
+  chart: { gap: space.md },
 });

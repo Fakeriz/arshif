@@ -285,3 +285,45 @@ Rules:
 Data (JSON): ${JSON.stringify(input)}
 Write the whole reply (answer, points, tip) in ${LANG_STYLE[lang] ?? LANG_STYLE.id}, even if the question uses another language.`;
 }
+
+// ------------------------------------------------------------------ Tanya harga wajar (Live Market v2 Fase 5)
+export const PRICE_SCHEMA: GeminiSchema = {
+  type: 'OBJECT',
+  properties: {
+    targetLow: { type: 'NUMBER', description: 'low end of the estimated fair value range per unit, in the given currency' },
+    targetHigh: { type: 'NUMBER', description: 'high end of the estimated fair value range per unit, in the given currency' },
+    reasons: { type: 'ARRAY', items: S('one short reason for the range, at most 22 words') },
+  },
+  required: ['targetLow', 'targetHigh', 'reasons'],
+};
+
+const MARKET_NAMES: Record<string, string> = {
+  IDX: 'Indonesia Stock Exchange (IDX) stock', US: 'US-listed stock or ETF', CRYPTO: 'cryptocurrency', GOLD: 'gold spot price (XAU, per troy ounce)',
+};
+
+/**
+ * Perkiraan kisaran harga wajar satu aset. Input hanya angka ringkasan (tanpa nama/jumlah/catatan pengguna).
+ * Vonis wajar/murah/mahal TIDAK diminta dari AI: server menghitungnya dari kisaran vs harga live.
+ */
+export function pricePrompt(lang: string, asset: { market: string; symbol: string; currency: string; livePrice: number; buyPrice: number | null; changePct: number | null }): string {
+  const data = {
+    instrument: MARKET_NAMES[asset.market] ?? asset.market,
+    symbol: asset.symbol,
+    currency: asset.currency,
+    currentPricePerUnit: asset.livePrice,
+    userBuyPricePerUnit: asset.buyPrice,
+    userChangeSinceBuyPercent: asset.changePct,
+  };
+  return `You are Arshif Coach inside a personal finance app. Write the reasons in ${LANG_STYLE[lang] ?? LANG_STYLE.id}.
+Give an educational estimate of a fair value RANGE per unit for this instrument, in data.currency, as of today.
+Use the current price in data and your general knowledge of this instrument (business, typical valuation, historical price ranges, volatility).
+Reply as JSON:
+- targetLow, targetHigh: numbers in data.currency per unit. targetLow <= targetHigh. Keep the range realistic, normally within 30% of the current price.
+- reasons: 2 or 3 short reasons. At least one must mention the current price ${asset.livePrice} ${asset.currency} as given. Say plainly that this is an estimate, not a recommendation.
+Rules:
+- Never tell the user to buy, sell, or hold. No guarantees, no predictions of exact future prices.
+- Do not say whether the range means cheap or expensive; the app computes that.
+- The buy price and change are the user's own numbers; do not judge the user's decision.
+- No emoji, no em dashes, no markdown.
+Data (JSON): ${JSON.stringify(data)}`;
+}

@@ -9,6 +9,8 @@ const home: Messages['home'] = {
   hideBalance: 'Hide balance',
   balanceMeta: '{count} accounts · converted to {currency} · rates as of {date}',
   balanceMeta_one: '{count} account · converted to {currency} · rates as of {date}',
+  balanceMetaStale: '{count} accounts · converted to {currency} · last known rates {date}',
+  balanceMetaStale_one: '{count} account · converted to {currency} · last known rates {date}',
   balanceMetaSame: '{count} accounts · {currency}',
   balanceMetaSame_one: '{count} account · {currency}',
   accountLimitA11y: '4-account limit reached. Open Premium to add accounts',

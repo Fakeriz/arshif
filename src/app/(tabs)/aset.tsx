@@ -163,7 +163,8 @@ export default function AsetScreen() {
                 <ListItem
                   key={a.id}
                   title={a.name}
-                  subtitle={[qty, priceLabel(v, t, lang)].filter(Boolean).join(' · ')}
+                  subtitle={[qty, priceLabel(a, v, t, lang, now)].filter(Boolean).join(' · ')}
+                  subtitleLines={2}
                   trailing={main === null ? undefined : <CurrencyText amount={main} currency={currency} kind="balance" hidden={state.hideBalance} />}
                   onPress={() => router.push(`/aset/${a.id}`)}
                   chevron
