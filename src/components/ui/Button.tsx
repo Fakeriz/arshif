@@ -1,4 +1,4 @@
-import type { LucideIcon } from 'lucide-react-native';
+import { Check, type LucideIcon } from 'lucide-react-native';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
 
 import { useTheme } from '@/theme/ThemeProvider';
@@ -6,6 +6,7 @@ import { fonts, layout, radius, space } from '@/theme/tokens';
 
 import { AppText, type TextTone } from './AppText';
 import { Icon } from './Icon';
+import { PopOnMount } from './PopIn';
 import { PressableScale } from './PressableScale';
 
 export type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger';
@@ -18,6 +19,8 @@ export type ButtonProps = {
   size?: ButtonSize;
   icon?: LucideIcon;
   loading?: boolean;
+  /** Aksi berhasil: ikon berganti centang yang meletup. Tombol tidak bisa ditekan selama `done`. */
+  done?: boolean;
   disabled?: boolean;
   fullWidth?: boolean;
   accessibilityHint?: string;
@@ -30,6 +33,7 @@ export function Button({
   size = 'lg',
   icon,
   loading,
+  done,
   disabled,
   fullWidth,
   accessibilityHint,
@@ -48,12 +52,13 @@ export function Button({
 
   return (
     <PressableScale
-      onPress={onPress}
+      // `done` menahan tekanan tanpa meredupkan tombol: ini status berhasil, bukan nonaktif.
+      onPress={done ? undefined : onPress}
       disabled={disabled || loading}
       hapticOnPress={variant === 'primary'}
       accessibilityLabel={label}
       accessibilityHint={accessibilityHint}
-      aria-disabled={!!(disabled || loading)} aria-busy={!!loading}
+      aria-disabled={!!(disabled || loading || done)} aria-busy={!!loading}
       focusRadius={radius.md}
       style={[
         styles.base,
@@ -67,7 +72,11 @@ export function Button({
       ]}
     >
       <View style={styles.row}>
-        {loading ? (
+        {done ? (
+          <PopOnMount>
+            <Icon icon={Check} color={look.fg} size={iconSize} />
+          </PopOnMount>
+        ) : loading ? (
           <ActivityIndicator size="small" color={look.fg} />
         ) : (
           icon && <Icon icon={icon} color={look.fg} size={iconSize} />

@@ -166,6 +166,29 @@ Tombol `lg 48 / md 40 / sm 32`, input 44, ikon Lucide stroke 1.75 ukuran 16/20/2
 
 Tidak berubah dari `motion.ts`: 150 / 220 / 300 ms, hanya transform + opacity, tekan skala 0.97, haptic hanya pada primary. Hormati reduce motion.
 
+### 7.1 Mikro-interaksi (Motion Kit)
+
+Diadaptasi dari kit referensi mikro-interaksi, disaring lewat aturan Monokrom: tanpa gradasi, tanpa warna dekoratif, hanya transform + opasitas. Contoh hidup: Lembar Desain, seksi "Gerak".
+
+**Blok bangun** (`src/theme/motion.ts`, `components/ui/PopIn.tsx`):
+
+| Blok | Gerak | Pakai untuk |
+|---|---|---|
+| `usePresence` / `PopIn` | skala + opasitas dengan pegas, elemen tetap terpasang | centang, lencana hitungan, tombol kirim, sorotan baris |
+| `useEnter` / `PopOnMount` | masuk sekali saat dipasang (geser/skala), bisa bergiliran lewat `delay` | opsi menu, gelembung chat, avatar baru, ikon yang berganti |
+| `RollingNumber` | hanya karakter yang berubah yang bergulir, searah perubahan | nominal, penghitung, hitung mundur |
+
+**Komponen yang ditingkatkan:** `Checkbox` (isi tumbuh + centang meletup), `Chip` (centang meletup), `Toggle` (jalur crossfade), `Button` (`done`), `Input` (`valid`), `Dialog` (masuk dengan pegas).
+
+**Komponen baru:** `Stepper`, `Slider`, `RadioList`, `Select`, `Accordion`, `Tooltip`, `StarRating`, `OtpInput`, `Calendar`, `Composer`, `ChatBubble` + `TypingDots`, `Countdown`, `MiniBars`, `StepList`, `UploadProgress`, `VoicePlayer`, `AvatarStack`, `SpeedDial`.
+
+Aturan tambahan:
+- **Tinggi tidak dianimasikan.** `Accordion` dan `Select` mengubah tinggi langsung; yang bergerak isinya (geser + pudar) dan panahnya.
+- **Status berhasil bukan nonaktif.** `Button done` menahan tekanan tanpa meredup.
+- **Terisi = warna teks.** Bintang, batang terpilih, dan batang gelombang yang sudah diputar memakai `text` / ujung `chartRamp`, bukan aksen berwarna.
+- Gerak berulang (`TypingDots`, karet `OtpInput`) diam saat reduce motion.
+
+
 ---
 
 ## 8. Migrasi dari "Kaca & Aksen"

@@ -1,11 +1,10 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { KeyRound } from 'lucide-react-native';
 import { useEffect, useRef, useState } from 'react';
-import { Platform, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 
 import { Screen } from '@/components/shell/Screen';
 import { ScreenHeader } from '@/components/shell/ScreenHeader';
-import { AppText, Button, Card, EmptyState, Input, useToast } from '@/components/ui';
+import { AppText, Button, Card, EmptyState, OtpInput, useToast } from '@/components/ui';
 import { authErrorKey } from '@/features/auth/errors';
 import { useT, type MsgKey } from '@/i18n';
 import { supabase } from '@/lib/supabase';
@@ -87,18 +86,11 @@ export default function VerifikasiScreen() {
       </AppText>
       <Card>
         <View style={styles.form}>
-          <Input
+          <OtpInput
             label={t('auth.verify.codeLabel')}
-            icon={KeyRound}
             value={code}
             onChangeText={onChange}
-            keyboardType="number-pad"
-            inputMode="numeric"
-            maxLength={Platform.OS === 'web' ? 32 : 6}
-            textContentType="oneTimeCode"
-            autoComplete={Platform.OS === 'android' ? 'sms-otp' : 'one-time-code'}
             autoFocus
-            returnKeyType="done"
             onSubmitEditing={() => void verify(code)}
             error={error ? t(error) : undefined}
             disabled={busy}
