@@ -8,6 +8,7 @@ import { layout, radius, space, type as typeScale } from '@/theme/tokens';
 
 import { AppText } from './AppText';
 import { Icon } from './Icon';
+import { AnimatedCheck, PopIn } from './PopIn';
 
 export type InputProps = Omit<TextInputProps, 'style' | 'editable'> & {
   label: string;
@@ -16,6 +17,8 @@ export type InputProps = Omit<TextInputProps, 'style' | 'editable'> & {
   warning?: string;
   hint?: string;
   icon?: LucideIcon;
+  /** Isian lolos validasi: lencana centang meletup di ujung kolom. */
+  valid?: boolean;
   trailing?: ReactNode;
   disabled?: boolean;
 };
@@ -26,6 +29,7 @@ export function Input({
   warning,
   hint,
   icon,
+  valid,
   trailing,
   disabled,
   secureTextEntry,
@@ -80,6 +84,13 @@ export function Input({
             <Icon icon={hidden ? Eye : EyeOff} color={colors.textMuted} />
           </Pressable>
         )}
+        {valid !== undefined && (
+          <PopIn visible={valid && !error} from={0.3} style={[styles.valid, { backgroundColor: colors.positiveSoft }]}>
+            <View accessible={valid && !error} accessibilityLabel={t('common.ui.valid')}>
+              <AnimatedCheck visible={valid && !error} color={colors.positive} size={layout.iconSize.sm} />
+            </View>
+          </PopIn>
+        )}
         {trailing}
       </View>
       {error ? (
@@ -119,6 +130,7 @@ const styles = StyleSheet.create({
   },
   focusedBorder: { borderWidth: 1.5 },
   input: { flex: 1, paddingVertical: space.md, outlineStyle: 'none' } as object,
+  valid: { width: 24, height: 24, borderRadius: radius.full, alignItems: 'center', justifyContent: 'center' },
   message: { flexDirection: 'row', alignItems: 'center', gap: space.xs },
   flex: { flex: 1 },
 });
