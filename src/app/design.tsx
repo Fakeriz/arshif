@@ -9,6 +9,7 @@ import { ListSection, MoneySection, ProgressSection } from '@/features/design-sh
 import { GoalSection, NumberPadSection, SparklineSection, StatTileSection } from '@/features/design-sheet/FintechSections';
 import { OverlaySection, StateSection } from '@/features/design-sheet/FeedbackSections';
 import { ColorSection, ShapeSection, TypeSection } from '@/features/design-sheet/FoundationSections';
+import { MotionChoiceSection, MotionFeedbackSection, MotionInputSection, MotionNumberSection } from '@/features/design-sheet/MotionSections';
 import { ShowcaseSection } from '@/features/design-sheet/ShowcaseSection';
 import { useTheme, type ThemeMode } from '@/theme/ThemeProvider';
 import { layout, space } from '@/theme/tokens';
@@ -62,6 +63,10 @@ function DesignSheet() {
           <SparklineSection />
           <GoalSection />
           <NumberPadSection />
+          <MotionChoiceSection />
+          <MotionNumberSection />
+          <MotionInputSection />
+          <MotionFeedbackSection />
           <StateSection />
           <OverlaySection />
         </View>

@@ -40,23 +40,26 @@ export function Dialog({
 }: DialogProps) {
   const { colors } = useTheme();
   const { t: tr } = useI18n();
-  const { timing } = useMotion();
+  const { timing, spring } = useMotion();
   const [mounted, setMounted] = useState(visible);
   const t = useSharedValue(0);
 
   useEffect(() => {
     if (visible) {
       setMounted(true);
-      t.value = timing(1, motion.base);
+      t.value = spring(1);
       return;
     }
     t.value = timing(0, motion.fast);
     const id = setTimeout(() => setMounted(false), motion.fast);
     return () => clearTimeout(id);
-  }, [visible, t, timing]);
+  }, [visible, t, timing, spring]);
 
-  const backdrop = useAnimatedStyle(() => ({ opacity: t.value }));
-  const card = useAnimatedStyle(() => ({ opacity: t.value, transform: [{ scale: 0.96 + t.value * 0.04 }] }));
+  const backdrop = useAnimatedStyle(() => ({ opacity: Math.max(0, Math.min(1, t.value)) }));
+  const card = useAnimatedStyle(() => ({
+    opacity: Math.max(0, Math.min(1, t.value)),
+    transform: [{ translateY: (1 - t.value) * 12 }, { scale: 0.94 + t.value * 0.06 }],
+  }));
 
   const look: Record<DialogTone, { icon: LucideIcon; fg: string; bg: string }> = {
     info: { icon: Info, fg: colors.info, bg: colors.infoSoft },

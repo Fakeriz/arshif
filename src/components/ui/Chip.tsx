@@ -6,6 +6,7 @@ import { layout, radius, space } from '@/theme/tokens';
 
 import { AppText } from './AppText';
 import { Icon } from './Icon';
+import { PopOnMount } from './PopIn';
 import { PressableScale } from './PressableScale';
 
 export type ChipProps = {
@@ -39,7 +40,14 @@ export function Chip({ label, selected, onPress, icon, count, disabled }: ChipPr
       ]}
     >
       <View style={styles.row}>
-        {leading && <Icon icon={leading} color={fg} size={layout.iconSize.sm} />}
+        {leading &&
+          (leading === Check ? (
+            <PopOnMount>
+              <Icon icon={Check} color={fg} size={layout.iconSize.sm} />
+            </PopOnMount>
+          ) : (
+            <Icon icon={leading} color={fg} size={layout.iconSize.sm} />
+          ))}
         <AppText variant="caption" tone={selected ? 'accent' : 'secondary'} numberOfLines={1}>
           {label}
         </AppText>

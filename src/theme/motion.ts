@@ -2,7 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Haptics from 'expo-haptics';
 import { useCallback, useEffect, useState } from 'react';
 import { Platform } from 'react-native';
-import { Easing, useReducedMotion, withSpring, withTiming } from 'react-native-reanimated';
+import { Easing, useAnimatedStyle, useReducedMotion, useSharedValue, withDelay, withSpring, withTiming } from 'react-native-reanimated';
 
 import { motion } from './tokens';
 
@@ -22,6 +22,40 @@ export function useMotion() {
       return reduced ? withTiming(to, { duration: 0 }) : withSpring(to, motion.spring);
     },
   };
+}
+
+/**
+ * Muncul/hilang tanpa unmount: skala + opasitas dengan pegas (centang, lencana hitungan, tombol kirim).
+ * `from` = skala saat tersembunyi.
+ */
+export function usePresence(visible: boolean, from = 0.5) {
+  const { spring } = useMotion();
+  const t = useSharedValue(visible ? 1 : 0);
+  useEffect(() => {
+    t.value = spring(visible ? 1 : 0);
+  }, [visible, spring, t]);
+  return useAnimatedStyle(() => ({
+    opacity: Math.max(0, Math.min(1, t.value)),
+    transform: [{ scale: from + (1 - from) * t.value }],
+  }));
+}
+
+/**
+ * Animasi masuk saat elemen dipasang (mount): geser + skala + opasitas dengan pegas.
+ * `delay` untuk giliran (stagger). Reduced motion: langsung di posisi akhir.
+ */
+export function useEnter({ delay = 0, scale = 1, x = 0, y = 0 }: { delay?: number; scale?: number; x?: number; y?: number } = {}) {
+  const reduced = useReducedMotion();
+  const t = useSharedValue(reduced ? 1 : 0);
+  useEffect(() => {
+    if (!reduced) t.value = withDelay(delay, withSpring(1, motion.spring));
+    // Hanya saat mount: nilai awal menentukan animasi masuk.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  return useAnimatedStyle(() => ({
+    opacity: Math.max(0, Math.min(1, t.value)),
+    transform: [{ translateX: (1 - t.value) * x }, { translateY: (1 - t.value) * y }, { scale: scale + (1 - scale) * t.value }],
+  }));
 }
 
 type HapticKind = 'tap' | 'selection' | 'success' | 'warning';

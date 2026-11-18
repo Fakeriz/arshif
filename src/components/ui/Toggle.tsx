@@ -27,6 +27,7 @@ export function Toggle({ value, onChange, accessibilityLabel, disabled }: Toggle
     x.value = spring(value ? 1 : 0);
   }, [value, spring, x]);
 
+  const fill = useAnimatedStyle(() => ({ opacity: Math.max(0, Math.min(1, x.value)) }));
   const thumb = useAnimatedStyle(() => ({ transform: [{ translateX: x.value * (W - THUMB - PAD * 2) }] }));
 
   return (
@@ -40,15 +41,17 @@ export function Toggle({ value, onChange, accessibilityLabel, disabled }: Toggle
         haptic('tap');
         onChange(!value);
       }}
-      style={[styles.track, { backgroundColor: value ? colors.accent : colors.track, borderColor: value ? colors.accent : colors.borderStrong }, disabled && styles.off]}
+      style={[styles.track, { backgroundColor: colors.track, borderColor: value ? colors.accent : colors.borderStrong }, disabled && styles.off]}
     >
+      <Animated.View style={[styles.fill, { backgroundColor: colors.accent }, fill]} />
       <Animated.View style={[styles.thumb, { backgroundColor: value ? colors.onAccent : colors.text }, thumb]} />
     </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
-  track: { width: W, height: H, borderRadius: radius.full, borderWidth: 1, padding: PAD - 1, justifyContent: 'center' },
+  track: { width: W, height: H, borderRadius: radius.full, borderWidth: 1, padding: PAD - 1, justifyContent: 'center', overflow: 'hidden' },
+  fill: { ...StyleSheet.absoluteFill, borderRadius: radius.full },
   thumb: { width: THUMB, height: THUMB, borderRadius: radius.full },
   off: { opacity: 0.45 },
 });

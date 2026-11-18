@@ -34,6 +34,15 @@ R-10 membatasi glassmorphism ke 1–2 elemen. Ahmad memutuskan **kaca tetap di s
 - [ ] Fase 7 — Enhancements v1 (Bab 13): migrasi 13 + Edge Functions live 2026-11-06 (test:live 11/11), dipush ke main; build EAS development baru menunggu login Expo pemilik. Detail: `docs/fase7-enhancements.md`
 - [ ] Fase 8 — Panel Admin web (menunggu keputusan host + APP_URL)
 
+## Motion Kit (2026-11-13)
+
+Mikro-interaksi dari kit referensi diadaptasi ke Monokrom (lihat `docs/design.md` 7.1).
+- Blok bangun: `usePresence`, `useEnter` di `src/theme/motion.ts`; `PopIn`, `PopOnMount`, `AnimatedCheck`, `RollingNumber` di `components/ui`.
+- Ditingkatkan di tempat (berlaku di semua layar): `Checkbox`, `Chip`, `Toggle`, `Dialog`; prop baru `Button done` dan `Input valid`.
+- Baru: `Stepper`, `Slider`, `RadioList`, `Select`, `Accordion`, `Tooltip`, `StarRating`, `OtpInput`, `Calendar`, `Composer`, `ChatBubble`, `TypingDots`, `Countdown`, `MiniBars`, `StepList`, `UploadProgress`, `VoicePlayer`, `AvatarStack`, `SpeedDial`.
+- Terpasang di layar: `(auth)/verifikasi` memakai `OtpInput`. Komponen baru lainnya baru tampil di Lembar Desain (seksi "Gerak"), belum dipasang ke layar fitur.
+- i18n: `common.ui.*` di id/en/ms/tr. Test: `src/__tests__/motion-kit.test.tsx`.
+
 ## Fase 0 — yang sudah ada
 
 - **Tokens** `src/theme/tokens.ts`: `palettes` (netral + semantik + kaca per tema), `accents` (5 aksen × 2 tema: accent, onAccent, accentText, accentSoft, accentGlow, focus), `buildPalette(scheme, accent)`, radius PRD (kartu 16, tombol/input 12, sheet 24), Plus Jakarta Sans 400–800, gerak 150–300ms.
