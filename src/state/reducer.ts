@@ -77,6 +77,7 @@ export type Action =
   | { type: 'prefs/notif'; key: keyof NotifPrefs; value: boolean }
   | { type: 'budget/split'; split: Split }
   | { type: 'account/setBank'; id: string; bank: string }
+  | { type: 'account/setCardStyle'; id: string; cardStyle: string | null }
   | { type: 'account/setActive'; id: string }
   | { type: 'account/credit'; id: string; patch: Pick<Account, 'creditLimit' | 'limitGroupId' | 'annualFee'> }
   | { type: 'prefs/payday'; payday: number }
@@ -223,6 +224,8 @@ export function reducer(state: AppState, action: Action): AppState {
       return { ...state, notifPrefs: { ...state.notifPrefs, [action.key]: action.value } };
     case 'account/setBank':
       return { ...state, accounts: state.accounts.map((a) => (a.id === action.id ? { ...a, bank: action.bank } : a)) };
+    case 'account/setCardStyle':
+      return { ...state, accounts: state.accounts.map((a) => (a.id === action.id ? { ...a, cardStyle: action.cardStyle ?? undefined } : a)) };
     case 'account/setActive':
       return state.accounts.some((a) => a.id === action.id) ? { ...state, activeAccountId: action.id } : state;
     case 'budget/split':

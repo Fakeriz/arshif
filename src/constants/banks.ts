@@ -21,6 +21,11 @@ export const BANKS: BankDef[] = [
   { key: 'ovo', name: 'OVO', color: '#4C3494', onColor: '#FFFFFF', country: 'ID' },
   { key: 'dana', name: 'DANA', color: '#118EEA', onColor: '#031B2E', country: 'ID' },
   { key: 'shopeepay', name: 'ShopeePay', color: '#EE4D2D', onColor: '#2B0A03', country: 'ID' },
+  // Penyedia paylater (2026-11-08). Warna dibaca dari CSS situs resmi masing-masing (tidak ada brand kit publik);
+  // Indodana paling tidak pasti (situsnya juga banyak memakai hijau). Verifikasi sebelum rilis seperti bank lain.
+  { key: 'akulaku', name: 'Akulaku', color: '#EB3223', onColor: '#1A0402', country: 'ID' },
+  { key: 'kredivo', name: 'Kredivo', color: '#239CEC', onColor: '#021B2E', country: 'ID' },
+  { key: 'indodana', name: 'Indodana', color: '#FEBE10', onColor: '#1A1300', country: 'ID' },
   { key: 'maybank', name: 'Maybank', color: '#FFC83D', onColor: '#1A1300', country: 'MY' },
   { key: 'cimb', name: 'CIMB', color: '#C8102E', onColor: '#FFFFFF', country: 'MY' },
   { key: 'publicbank', name: 'Public Bank', color: '#D0021B', onColor: '#FFFFFF', country: 'MY' },

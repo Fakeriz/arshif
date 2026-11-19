@@ -19,6 +19,8 @@ export type Account = {
   limitGroupId?: string;
   /** Iuran tahunan kartu kredit (FR-ACC-7). */
   annualFee?: AnnualFee;
+  /** Tampilan kartu pilihan pengguna: id produk di src/data/cardProducts.ts. Kosong = desain bawaan bank. */
+  cardStyle?: string;
 };
 
 export type AnnualFee = {

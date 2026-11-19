@@ -12,6 +12,8 @@ export type SetupDraft = {
     opening: number | null;
     /** Kartu kredit/paylater: limit (FR-ACC-3/8). */
     creditLimit: number | null;
+    /** Tampilan kartu dari "Pilih Tampilan Kartu" (form tambah akun). Kosong = desain bawaan bank. */
+    cardStyle?: string;
   };
   income: number | null;
   payday: string;
@@ -60,6 +62,7 @@ export function accountFromDraft(a: SetupDraft['account']) {
     currency: a.currency,
     openingBalance: credit ? -(a.opening ?? 0) : (a.opening ?? 0),
     creditLimit: credit && a.creditLimit ? a.creditLimit : undefined,
+    cardStyle: a.cardStyle,
   };
 }
 

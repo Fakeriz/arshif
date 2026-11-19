@@ -117,6 +117,7 @@ export function AccountDeck({ accounts, hidden, limitReached, activeId, onActive
             hidden={hidden}
             width={cardW}
             footnote={footnote(item.account.id)}
+            cardStyle={item.account.cardStyle}
             onPress={() => setOpen(false)}
           />
         ) : (
