@@ -1,6 +1,7 @@
 import { Plus } from 'lucide-react-native';
 import { useState, type ReactNode } from 'react';
 import { ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
+import { useReducedMotion } from 'react-native-reanimated';
 
 import { usePaywall } from '@/components/shell/Paywall';
 import { Screen } from '@/components/shell/Screen';
@@ -87,8 +88,11 @@ export function ChoiceRow<K extends string>({ label, options, value, onChange }:
 }
 
 /** Lembar isi formulir dengan area gulir dan tombol simpan di bawah. */
-export function FormSheet({ visible, onClose, title, subtitle, children, submitLabel, saving, onSubmit }: {
-  visible: boolean; onClose: () => void; title: string; subtitle?: string; children: ReactNode; submitLabel: string; saving: boolean; onSubmit: () => void;
+export function FormSheet({ visible, onClose, title, subtitle, children, submitLabel, saving, done, onSubmit }: {
+  visible: boolean; onClose: () => void; title: string; subtitle?: string; children: ReactNode; submitLabel: string; saving: boolean;
+  /** Aksi berhasil: tombol menampilkan centang "Tersimpan" (Motion Kit "Tombol status"). */
+  done?: boolean;
+  onSubmit: () => void;
 }) {
   const t = useT();
   const { height } = useWindowDimensions();
@@ -97,7 +101,7 @@ export function FormSheet({ visible, onClose, title, subtitle, children, submitL
       <ScrollView style={{ maxHeight: height * 0.62 }} contentContainerStyle={styles.form} keyboardShouldPersistTaps="handled">
         {children}
       </ScrollView>
-      <Button label={saving ? t('plan.common.saving') : submitLabel} fullWidth loading={saving} disabled={saving} onPress={onSubmit} />
+      <Button label={done ? t('common.ui.saved') : saving ? t('plan.common.saving') : submitLabel} fullWidth loading={saving && !done} done={done} disabled={saving && !done} onPress={onSubmit} />
     </BottomSheet>
   );
 }
@@ -106,9 +110,16 @@ export function FormSheet({ visible, onClose, title, subtitle, children, submitL
  * Bayar / setor / terima dari akun: nominal (mata uang entitas), akun, tanggal. Transaksi dibuat pemanggil.
  * `max` membatasi nominal (sisa utang).
  */
+// Ditulis sebagai fungsi biasa: penjaga teks-JSX di i18n.test salah membaca panah + tipe Promise sebagai teks UI.
+function wait(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+type Confirm = { (): Promise<void> };
+
 export function PaySheet({ visible, onClose, title, note, currency, initial, max, submitLabel, onSubmit, defaultAccountId }: {
   visible: boolean; onClose: () => void; title: string; note: string; currency: string; initial: number | null; max?: number; submitLabel: string;
-  onSubmit(p: PayInput): Promise<void>; defaultAccountId?: string;
+  /** `confirmed()`: tampilkan centang sebentar; panggil (dan tunggu) setelah berhasil, sebelum menutup lembar. */
+  onSubmit(p: PayInput, confirmed: Confirm): Promise<void>; defaultAccountId?: string;
 }) {
   const t = useT();
   const accounts = useLedger().accounts;
@@ -118,24 +129,31 @@ export function PaySheet({ visible, onClose, title, note, currency, initial, max
   const [date, setDate] = useState(localYmd());
   const [tried, setTried] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [done, setDone] = useState(false);
+  const reduced = useReducedMotion();
   // Satu id per lembar: coba ulang setelah gagal memakai id yang sama (lihat PayInput).
   const [payId] = useState(newId);
   const over = max !== undefined && amount !== null && amount > max;
   const amountError = tried && (!amount || amount <= 0) ? t('plan.common.amountError') : over ? t('plan.debts.overpay', { amount: formatMoney(max!, currency) }) : undefined;
+
+  const confirmed = (): Promise<void> => {
+    setDone(true);
+    return wait(reduced ? 0 : 600);
+  };
 
   const submit = async () => {
     setTried(true);
     if (!amount || amount <= 0 || over || !accountId || !isYmd(date) || saving) return;
     setSaving(true);
     try {
-      await onSubmit({ id: payId, amount, accountId, date });
+      await onSubmit({ id: payId, amount, accountId, date }, confirmed);
     } finally {
       setSaving(false);
     }
   };
 
   return (
-    <FormSheet visible={visible} onClose={onClose} title={title} subtitle={note} submitLabel={submitLabel} saving={saving} onSubmit={() => void submit()}>
+    <FormSheet visible={visible} onClose={onClose} title={title} subtitle={note} submitLabel={submitLabel} saving={saving} done={done} onSubmit={() => void submit()}>
       <AmountField label={`${t('plan.common.amount')} (${currency})`} value={amount} onChange={setAmount} currency={currency} error={amountError} />
       {accounts.length === 0 ? (
         <AppText variant="caption" tone="warning">

@@ -70,9 +70,10 @@ export default function GoalDetail() {
             initial={null}
             defaultAccountId={goal.accountId}
             submitLabel={t('plan.goals.deposit')}
-            onSubmit={async (p) => {
+            onSubmit={async (p, confirmed) => {
               try {
                 const next = await depositGoal(goal, p);
+                await confirmed();
                 setPay(false);
                 if (next.status === 'completed') {
                   haptic('success');

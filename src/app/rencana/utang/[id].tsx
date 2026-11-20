@@ -68,9 +68,10 @@ export default function DebtDetail() {
             initial={debt.minPayment > 0 ? Math.min(debt.minPayment, debt.balance) : debt.balance}
             max={debt.balance}
             submitLabel={debt.kind === 'debt' ? t('plan.debts.pay') : t('plan.debts.receive')}
-            onSubmit={async (p) => {
+            onSubmit={async (p, confirmed) => {
               try {
                 const next = await payDebt(debt, p);
+                await confirmed();
                 setPay(false);
                 show({ tone: 'success', title: t('plan.debts.payDone', { name: debt.counterparty, amount: formatMoney(next.balance, next.currency) }) });
               } catch {

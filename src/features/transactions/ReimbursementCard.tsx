@@ -113,12 +113,13 @@ export function ReimbursementCard({ tx }: { tx: Transaction }) {
         currency={tx.currency}
         initial={tx.amount}
         submitLabel={t('tx.reimb.recordSave')}
-        onSubmit={async (p) => {
+        onSubmit={async (p, confirmed) => {
           try {
             const income = await commitTx({
               id: newId(), type: 'income', merchant: t('tx.reimb.repaymentMerchant', { merchant: tx.merchant }).slice(0, 120), categoryKey: 'other',
               accountId: p.accountId, date: p.date, time: '12:00', amount: p.amount, currency: tx.currency, source: 'manual',
             });
+            await confirmed();
             set('pending', income.id);
             setRecording(false);
             show({ tone: 'success', title: t('tx.reimb.linked') });

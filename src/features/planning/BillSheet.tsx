@@ -57,9 +57,10 @@ export function BillSheet({ bill, onClose }: { bill: Bill | null; onClose: () =>
         initial={bill.amount}
         defaultAccountId={bill.accountId}
         submitLabel={t('plan.bills.markPaid')}
-        onSubmit={async (p) => {
+        onSubmit={async (p, confirmed) => {
           try {
             const next = await payBill(bill, p);
+            await confirmed();
             setPay(false);
             onClose();
             show({ tone: 'success', title: t('plan.bills.paidDone', { name: bill.name, date: shortDate(next.dueDate, lang) }) });
