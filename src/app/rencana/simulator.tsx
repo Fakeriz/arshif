@@ -1,13 +1,13 @@
 import { useMemo, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
-import { AmountField, AppText, Badge, Card, EmptyState } from '@/components/ui';
+import { AmountField, AppText, Badge, Card, EmptyState, Slider } from '@/components/ui';
 import { PlanScreen } from '@/features/planning/kit';
 import { useI18n } from '@/i18n';
 import { CALENDARS } from '@/i18n/calendar';
 import { parseYMD, todayYmd } from '@/lib/dates';
 import { convert, hasRate } from '@/lib/fx';
-import { formatMoney } from '@/lib/money';
+import { currencyMeta, formatMoney } from '@/lib/money';
 import { compareMethods, monthAfter, type Method, type SimResult } from '@/lib/planning/debts';
 import { useStore } from '@/state/AppStore';
 import { usePlanning } from '@/state/planning';
@@ -40,6 +40,9 @@ export default function SimulatorScreen() {
   }, [debts, main, state.ratesDate]);
 
   const result = useMemo(() => (sim.length ? compareMethods(sim, extra ?? 0) : null), [sim, extra]);
+  // Rentang slider: 0 sampai 2x total cicilan minimum, dibulatkan ke langkahnya.
+  const extraStep = main === 'IDR' ? 50_000 : 10 * Math.pow(10, currencyMeta(main).exponent);
+  const extraMax = Math.max(extraStep * 10, Math.ceil((sim.reduce((n, d) => n + d.minPayment, 0) * 2) / extraStep) * extraStep);
   const dateOf = (months: number) => {
     const { y, m } = parseYMD(monthAfter(today, months));
     return `${CALENDARS[lang].monthsShort[m - 1]} ${y}`;
@@ -58,6 +61,8 @@ export default function SimulatorScreen() {
       ) : (
         <>
           <AmountField label={t('plan.sim.extra', { currency: main })} value={extra} onChange={setExtra} currency={main} hint={t('plan.sim.extraHint', { currency: main })} />
+          {/* Geser untuk mencoba nominal ekstra (Motion Kit "Slider"); angka di atas tetap bisa diketik persis. */}
+          <Slider accessibilityLabel={t('plan.sim.extra', { currency: main })} value={Math.min(extra ?? 0, extraMax)} onChange={(v) => setExtra(v || null)} min={0} max={extraMax} step={extraStep} />
           {missing.length > 0 && (
             <AppText variant="caption" tone="warning">
               {t('plan.sim.noRate', { codes: missing.join(', ') })}
