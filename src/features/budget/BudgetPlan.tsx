@@ -1,14 +1,14 @@
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
-import { AmountField, AppText, Button, Card, CategoryIcon, useToast } from '@/components/ui';
+import { AmountField, AppText, Button, Card, CategoryIcon, Stepper, useToast } from '@/components/ui';
 import { CATEGORIES } from '@/constants/categories';
 import type { BudgetRecord } from '@/data/types';
 import { FormSheet } from '@/features/planning/kit';
 import { categoryLabel, useI18n } from '@/i18n';
 import { copyBudget, type BudgetDraft } from '@/lib/budget';
 import { shortDate } from '@/lib/dates';
-import { formatMoney } from '@/lib/money';
+import { currencyMeta, formatCompact, formatMoney } from '@/lib/money';
 import { newId } from '@/lib/uuid';
 import { useStore } from '@/state/AppStore';
 import { useBudget } from '@/state/derived';
@@ -99,6 +99,9 @@ function BudgetSheet({ visible, onClose, currency, initial, suggested, suggestio
     onSave({ total: total!, categoryLimits });
   };
 
+  // Pengatur nominal (Motion Kit): IDR per 50 rb, mata uang lain per 10 satuan utama.
+  const limitStep = currency === 'IDR' ? 50_000 : 10 * Math.pow(10, currencyMeta(currency).exponent);
+
   return (
     <FormSheet visible={visible} onClose={onClose} title={t('budget.plan.sheetTitle')} subtitle={t('budget.plan.sheetSub')} submitLabel={t('budget.plan.save')} saving={false} onSubmit={submit}>
       {suggestion && (
@@ -123,9 +126,17 @@ function BudgetSheet({ visible, onClose, currency, initial, suggested, suggestio
       {LIMITABLE.map((c) => (
         <View key={c.key} style={styles.catRow}>
           <CategoryIcon category={c.key} size={32} />
-          <View style={styles.flex}>
-            <AmountField label={categoryLabel(t, c.key)} value={limits[c.key] ?? null} onChange={(v) => setLimits((l) => ({ ...l, [c.key]: v }))} currency={currency} />
-          </View>
+          <AppText variant="bodyStrong" numberOfLines={1} style={styles.flex}>
+            {categoryLabel(t, c.key)}
+          </AppText>
+          <Stepper
+            accessibilityLabel={categoryLabel(t, c.key)}
+            value={limits[c.key] ?? 0}
+            // 0 = tanpa batas (kategori tidak dibatasi).
+            onChange={(v) => setLimits((l) => ({ ...l, [c.key]: v === 0 ? null : v }))}
+            step={limitStep}
+            format={(v) => (v === 0 ? t('budget.plan.noLimit') : `${currencyMeta(currency).symbol} ${formatCompact(v, currency)}`)}
+          />
         </View>
       ))}
     </FormSheet>
