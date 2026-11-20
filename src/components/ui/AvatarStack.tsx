@@ -37,7 +37,7 @@ export function AvatarStack({ names, max = 4, size = 36, ringColor, onAdd, addLa
       {shown.map((name, i) => {
         const hue = hues[HUES[i % HUES.length]];
         return (
-          <PopOnMount key={name} style={i > 0 && { marginLeft: -size * 0.28 }}>
+          <PopOnMount key={`${i}-${name}`} style={i > 0 && { marginLeft: -size * 0.28 }}>
             {/* Latar buram dulu (warna kartu), baru tinta rona 15% di atasnya, supaya avatar di bawahnya tidak tembus. */}
             <View style={[styles.bubble, bubble, { backgroundColor: ring }]}>
               <View style={[styles.tint, { backgroundColor: `${hue}26` }]} />

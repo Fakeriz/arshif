@@ -3,7 +3,7 @@ import { Plus, Share2, Trash2, UserPlus, X } from 'lucide-react-native';
 import { useMemo, useState } from 'react';
 import { Share, StyleSheet, View } from 'react-native';
 
-import { AmountField, AppText, Button, Card, Checkbox, Chip, Dialog, EmptyState, Icon, Input, PressableScale, Tabs, Toggle, useToast } from '@/components/ui';
+import { AmountField, AppText, AvatarStack, Button, Card, Checkbox, Chip, Dialog, EmptyState, Icon, Input, PressableScale, Tabs, Toggle, useToast } from '@/components/ui';
 import type { SplitBill, SplitItem, SplitParticipant } from '@/data/planning';
 import { localYmd } from '@/features/capture/clock';
 import { PlanScreen, SectionLabel, useSaveError } from '@/features/planning/kit';
@@ -190,6 +190,10 @@ function Editor({ initial, isNew, fixedTotal }: { initial: SplitBill; isNew: boo
 
       <SectionLabel>{t('plan.split.people')}</SectionLabel>
       <Card padding="md">
+        {/* Siapa saja yang ikut, sekilas (Motion Kit "Dompet bersama"); avatar baru meletup saat ditambah. */}
+        <View style={styles.avatars}>
+          <AvatarStack names={people.map((p) => p.name)} max={6} />
+        </View>
         {people.map((p) => (
           <View key={p.id} style={styles.personRow}>
             <AppText variant="body" numberOfLines={1} style={styles.flex}>
@@ -335,6 +339,7 @@ function Editor({ initial, isNew, fixedTotal }: { initial: SplitBill; isNew: boo
 }
 
 const styles = StyleSheet.create({
+  avatars: { marginBottom: space.sm },
   flex: { flex: 1, minWidth: 0 },
   pair: { flexDirection: 'row', gap: space.md },
   personRow: { flexDirection: 'row', alignItems: 'center', gap: space.sm, minHeight: 44 },
