@@ -135,6 +135,7 @@ function BudgetSheet({ visible, onClose, currency, initial, suggested, suggestio
             // 0 = tanpa batas (kategori tidak dibatasi).
             onChange={(v) => setLimits((l) => ({ ...l, [c.key]: v === 0 ? null : v }))}
             step={limitStep}
+            size="sm"
             format={(v) => (v === 0 ? t('budget.plan.noLimit') : `${currencyMeta(currency).symbol} ${formatCompact(v, currency)}`)}
           />
         </View>

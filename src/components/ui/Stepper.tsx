@@ -21,8 +21,8 @@ export type StepperProps = {
   step?: number;
   /** Format tampilan, mis. (n) => formatMoney(n, 'IDR'). */
   format?: (n: number) => string;
-  /** lg = nominal besar (amountHero) dengan tombol 44; md = penghitung ringkas. */
-  size?: 'md' | 'lg';
+  /** lg = nominal besar (amountHero) dengan tombol 44; md = penghitung ringkas; sm = di baris daftar (tombol 32, angka bodyStrong). */
+  size?: 'sm' | 'md' | 'lg';
 };
 
 /** Penambah/pengurang nilai: tombol − dan + mengapit angka yang bergulir searah perubahan. */
@@ -39,7 +39,7 @@ export function Stepper({ value, onChange, accessibilityLabel, min = 0, max = Nu
     haptic('selection');
     onChange(next);
   };
-  const side = size === 'lg' ? 44 : 36;
+  const side = size === 'lg' ? 44 : size === 'sm' ? 32 : 36;
   const button = [styles.button, { width: side, height: side, backgroundColor: colors.track }];
 
   return (
@@ -50,13 +50,13 @@ export function Stepper({ value, onChange, accessibilityLabel, min = 0, max = Nu
       accessibilityValue={{ text: format(value) }}
       accessibilityActions={[{ name: 'increment' }, { name: 'decrement' }]}
       onAccessibilityAction={(e) => bump(e.nativeEvent.actionName === 'increment' ? 1 : -1)}
-      style={[styles.row, size === 'lg' && styles.spread]}
+      style={[styles.row, size === 'lg' && styles.spread, size === 'sm' && styles.tight]}
     >
       <PressableScale accessibilityLabel={t('common.ui.decrease')} disabled={value <= min} onPress={() => bump(-1)} focusRadius={radius.full} hitSlop={6} style={button}>
         <Icon icon={Minus} color={colors.text} size={18} />
       </PressableScale>
-      <View style={size === 'md' && styles.mdValue}>
-        <RollingNumber value={format(value)} variant={size === 'lg' ? 'amountHero' : 'h1'} direction={direction} />
+      <View style={size === 'md' ? styles.mdValue : size === 'sm' ? styles.smValue : undefined}>
+        <RollingNumber value={format(value)} variant={size === 'lg' ? 'amountHero' : size === 'sm' ? 'bodyStrong' : 'h1'} direction={direction} />
       </View>
       <PressableScale accessibilityLabel={t('common.ui.increase')} disabled={value >= max} onPress={() => bump(1)} focusRadius={radius.full} hitSlop={6} style={button}>
         <Icon icon={Plus} color={colors.text} size={18} />
@@ -68,6 +68,9 @@ export function Stepper({ value, onChange, accessibilityLabel, min = 0, max = Nu
 const styles = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'center', gap: space.md },
   spread: { justifyContent: 'space-between', alignSelf: 'stretch' },
+  tight: { gap: space.xs },
   mdValue: { minWidth: 36, alignItems: 'center' },
+  // Lebar tetap agar tombol tidak bergeser saat teks berganti (mis. "Tanpa batas" -> "Rp 50 rb").
+  smValue: { width: 86, alignItems: 'center' },
   button: { borderRadius: radius.full, alignItems: 'center', justifyContent: 'center' },
 });
