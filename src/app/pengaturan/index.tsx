@@ -4,8 +4,9 @@ import { useEffect, useState } from 'react';
 import { Platform, StyleSheet, View } from 'react-native';
 
 import { Screen } from '@/components/shell/Screen';
+import { HeaderButton } from '@/components/shell/HeaderActions';
 import { ScreenHeader } from '@/components/shell/ScreenHeader';
-import { AppText, Button, Card, MenuGroup, type MenuEntry } from '@/components/ui';
+import { AppText, Button, Card, Dialog, MenuGroup, type MenuEntry } from '@/components/ui';
 import { isAdmin } from '@/data/remote/api';
 import { LANGS, useI18n } from '@/i18n';
 import { isoDateLabel } from '@/lib/dates';
@@ -26,6 +27,7 @@ export default function PengaturanScreen() {
   const { t, lang } = useI18n();
   const router = useRouter();
   const [admin, setAdmin] = useState(false);
+  const [signingOut, setSigningOut] = useState(false);
   // Panel admin hanya web; barisnya hanya muncul untuk akun admin (server tetap memeriksa ulang).
   useEffect(() => {
     if (Platform.OS === 'web') isAdmin().then(setAdmin).catch(() => undefined);
@@ -58,7 +60,7 @@ export default function PengaturanScreen() {
 
   return (
     <Screen>
-      <ScreenHeader title={t('settings.title')} />
+      <ScreenHeader title={t('settings.title')} right={<HeaderButton label={t('settings.signOut')} icon={LogOut} onPress={() => setSigningOut(true)} />} />
       <Card>
         <View style={styles.profile}>
           <View style={[styles.avatar, { backgroundColor: colors.accentSoft }]}>
@@ -81,8 +83,19 @@ export default function PengaturanScreen() {
       <MenuGroup label={t('settings.groups.prefs')} entries={prefs} />
       <MenuGroup label={t('settings.groups.data')} entries={data} />
 
-      {/* Keluar: sesi dihapus dari perangkat, gerbang rute kembali ke layar masuk. */}
-      <Button label={t('settings.signOut')} icon={LogOut} variant="secondary" fullWidth onPress={() => void supabase.auth.signOut()} />
+      <Button label={t('settings.signOut')} icon={LogOut} variant="secondary" fullWidth onPress={() => setSigningOut(true)} />
+      {/* Keluar (ikon kanan atas atau tombol bawah) selalu dikonfirmasi dulu. Sesi dihapus dari perangkat, gerbang rute kembali ke layar masuk. */}
+      <Dialog
+        visible={signingOut}
+        title={t('settings.signOutTitle')}
+        message={t('settings.signOutMessage')}
+        confirmLabel={t('settings.signOut')}
+        onCancel={() => setSigningOut(false)}
+        onConfirm={() => {
+          setSigningOut(false);
+          void supabase.auth.signOut();
+        }}
+      />
     </Screen>
   );
 }

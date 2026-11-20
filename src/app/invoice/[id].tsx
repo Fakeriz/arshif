@@ -78,7 +78,7 @@ function Detail({ inv, title }: { inv: Invoice; title: string }) {
     ...(inv.status === 'draft' ? [{ key: 'sent', label: t('inv.markSent'), icon: Send, disabled: busy, onPress: () => void changeStatus('sent') }] : []),
     ...(!isInvoice && inv.status !== 'accepted' ? [{ key: 'accepted', label: t('inv.markAccepted'), icon: CircleCheck, disabled: busy, onPress: () => void changeStatus('accepted') }] : []),
     ...(inv.status === 'sent' || inv.status === 'accepted' ? [{ key: 'draft', label: t('inv.backToDraft'), icon: Undo2, disabled: busy, onPress: () => void changeStatus('draft') }] : []),
-    ...(!paid ? [{ key: 'edit', label: t('plan.common.edit'), icon: Pencil, onPress: () => router.push({ pathname: '/invoice/form', params: { id: inv.id } }) }] : []),
+    ...(!paid ? [{ key: 'edit', label: t('plan.common.edit'), icon: Pencil, pinned: true, onPress: () => router.push({ pathname: '/invoice/form', params: { id: inv.id } }) }] : []),
     { key: 'delete', label: t('plan.common.delete'), icon: Trash2, danger: true, onPress: () => setConfirm(true) },
   ];
 

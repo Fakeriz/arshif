@@ -3,8 +3,9 @@ import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import { Screen } from '@/components/shell/Screen';
+import { HeaderButton } from '@/components/shell/HeaderActions';
 import { TabHeader } from '@/components/shell/TabHeader';
-import { AppText, Badge, Button, Card, CurrencyText, DonutChart, EmptyState, Skeleton } from '@/components/ui';
+import { AppText, Badge, Card, CurrencyText, DonutChart, EmptyState, Skeleton } from '@/components/ui';
 import { BucketSection } from '@/features/budget/BucketSection';
 import { BudgetPlanCard } from '@/features/budget/BudgetPlan';
 import { MissingRatesBanner } from '@/features/fx/MissingRatesBanner';
@@ -61,7 +62,7 @@ export default function AnggaranScreen() {
       <TabHeader
         title={t('budget.title')}
         subtitle={subtitle}
-        right={<Button label={t('budget.adjust')} icon={SlidersHorizontal} variant="secondary" size="sm" onPress={() => setSheet(true)} />}
+        right={<HeaderButton label={t('budget.adjust')} icon={SlidersHorizontal} onPress={() => setSheet(true)} />}
       />
       <Card>
         <View style={styles.safeHead}>

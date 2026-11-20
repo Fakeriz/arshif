@@ -122,7 +122,7 @@ describe('batas invoice Free', () => {
     await wrap(<InvoiceList />, { state: { usage: { ...base.usage, invoice: 5 } }, invoices: [invoice()] });
     expect(screen.getByText('Bulan ini: 5 dari 5 invoice dan penawaran (paket Free)')).toBeTruthy();
     expect(screen.getByText('PRO')).toBeTruthy();
-    await act(async () => fireEvent.press(screen.getByText('Buat')));
+    await act(async () => fireEvent.press(screen.getByLabelText('Invoice baru')));
     expect(await screen.findByText('Buka batas dengan Premium')).toBeTruthy();
     expect(screen.getByText('Paket Free bisa membuat 5 invoice dan penawaran per bulan. Premium tanpa batas.')).toBeTruthy();
     expect(mockPush).not.toHaveBeenCalledWith(expect.objectContaining({ pathname: '/invoice/form' }));
@@ -131,7 +131,8 @@ describe('batas invoice Free', () => {
   it('Premium: tanpa baris kuota, tombol Buat membuka form', async () => {
     await wrap(<InvoiceList />, { state: { plan: 'premium', usage: { ...base.usage, invoice: 40 } } });
     expect(screen.queryByText(/dari 5 invoice/)).toBeNull();
-    await act(async () => fireEvent.press(screen.getByText('Buat')));
+    // Ikon + di kanan atas (yang pertama); tombol kedua ada di state kosong.
+    await act(async () => fireEvent.press(screen.getAllByLabelText('Invoice baru')[0]!));
     expect(mockPush).toHaveBeenCalledWith({ pathname: '/invoice/form', params: { jenis: 'invoice' } });
   });
 });

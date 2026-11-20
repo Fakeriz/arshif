@@ -36,6 +36,8 @@ const settings: Messages['settings'] = {
     quota_warning: { title: 'Kuota hampir habis', sub: 'Apabila kuota imbas atau automasi semakin sedikit' },
   },
   signOut: 'Log keluar',
+  signOutTitle: 'Log keluar dari Arshif?',
+  signOutMessage: 'Data kekal dalam akaun anda. Log masuk semula bila-bila masa dengan kod daripada e-mel.',
   accounts: {
     title: 'Akaun & kad',
     hint: 'Ketik akaun untuk memilih reka bentuk kad bank.',

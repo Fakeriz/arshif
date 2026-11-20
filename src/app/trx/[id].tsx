@@ -82,7 +82,7 @@ export default function TransactionDetail() {
               ...(tx.type === 'expense'
                 ? [{ key: 'split', label: t('plan.split.fromReceipt'), icon: Split, onPress: () => router.push({ pathname: '/rencana/split/[id]', params: { id: 'baru', tx: tx.id } }) }]
                 : []),
-              { key: 'edit', label: t('tx.detail.edit'), icon: Pencil, onPress: () => router.push({ pathname: '/tambah', params: { id: tx.id } }) },
+              { key: 'edit', label: t('tx.detail.edit'), icon: Pencil, pinned: true, onPress: () => router.push({ pathname: '/tambah', params: { id: tx.id } }) },
               { key: 'delete', label: t('tx.detail.delete'), icon: Trash2, danger: true, onPress: () => setConfirm(true) },
             ]}
           />

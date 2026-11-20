@@ -1,10 +1,12 @@
 import { useRouter } from 'expo-router';
+import { Plus } from 'lucide-react-native';
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
-import { AppText, Card, EmptyState, Tabs } from '@/components/ui';
+import { AppText, Card, EmptyState, ProBadge, Tabs } from '@/components/ui';
 import { InvoiceScreen, StatusBadge } from '@/features/invoice/kit';
-import { AddButton } from '@/features/planning/kit';
+import { HeaderButton } from '@/components/shell/HeaderActions';
+import { usePaywall } from '@/components/shell/Paywall';
 import { useI18n } from '@/i18n';
 import { shortDate, todayYmd } from '@/lib/dates';
 import type { InvoiceKind } from '@/lib/invoice';
@@ -20,6 +22,7 @@ export default function InvoiceList() {
   const router = useRouter();
   const { state } = useStore();
   const { invoices } = useInvoices();
+  const paywall = usePaywall();
   const [kind, setKind] = useState<InvoiceKind>('invoice');
   const used = state.usage.invoice;
   const limit = QUOTAS[state.plan].invoice;
@@ -31,7 +34,12 @@ export default function InvoiceList() {
   const addLabel = kind === 'invoice' ? t('inv.newInvoice') : t('inv.newQuote');
 
   return (
-    <InvoiceScreen title={t('inv.title')} right={<AddButton label={t('inv.new')} limited={limited} reason={reason} onPress={create} />}>
+    <InvoiceScreen title={t('inv.title')} right={
+        <>
+          {limited && <ProBadge size="sm" />}
+          <HeaderButton label={addLabel} icon={Plus} onPress={() => (limited ? paywall(reason) : create())} />
+        </>
+      }>
       <Tabs accessibilityLabel={t('inv.kind')} value={kind} onChange={setKind} items={[{ key: 'invoice', label: t('inv.invoices') }, { key: 'quote', label: t('inv.quotes') }]} />
       {limit !== null && (
         <AppText variant="caption" tone={limited ? 'warning' : 'secondary'}>

@@ -36,6 +36,8 @@ const settings: Messages['settings'] = {
     quota_warning: { title: 'Kota azalıyor', sub: 'Tarama veya otomasyon kotası azaldığında' },
   },
   signOut: 'Çıkış yap',
+  signOutTitle: 'Arshif\'ten çıkış yapılsın mı?',
+  signOutMessage: 'Verilerin hesabında kalır. E-postana gelen kodla istediğin zaman tekrar giriş yap.',
   accounts: {
     title: 'Hesaplar & kartlar',
     hint: 'Banka kartı tasarımını seçmek için bir hesaba dokun.',

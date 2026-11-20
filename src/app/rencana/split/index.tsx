@@ -2,7 +2,8 @@ import { useRouter } from 'expo-router';
 import { Plus } from 'lucide-react-native';
 import { StyleSheet, View } from 'react-native';
 
-import { AppText, Badge, Button, Card, EmptyState } from '@/components/ui';
+import { AppText, Badge, Card, EmptyState } from '@/components/ui';
+import { HeaderButton } from '@/components/shell/HeaderActions';
 import { PlanScreen } from '@/features/planning/kit';
 import { useI18n } from '@/i18n';
 import { shortDate } from '@/lib/dates';
@@ -17,7 +18,7 @@ export default function SplitList() {
   const create = () => router.push({ pathname: '/rencana/split/[id]', params: { id: 'baru' } });
 
   return (
-    <PlanScreen title={t('plan.split.title')} right={splits.length ? <Button label={t('plan.split.create')} icon={Plus} size="sm" variant="secondary" onPress={create} /> : undefined}>
+    <PlanScreen title={t('plan.split.title')} right={splits.length ? <HeaderButton label={t('plan.split.create')} icon={Plus} onPress={create} /> : undefined}>
       {splits.length === 0 ? (
         <EmptyState title={t('plan.split.emptyTitle')} message={t('plan.split.emptyMessage')} actionLabel={t('plan.split.create')} onAction={create} />
       ) : (

@@ -40,4 +40,13 @@ describe('HeaderActions: aksi layar di kanan atas', () => {
     await act(() => new Promise((r) => setTimeout(r, 600)));
     expect(split.onPress).toHaveBeenCalledTimes(1);
   });
+
+  it('Edit (pinned) tetap ikon sendiri di samping titik tiga; menu berisi sisanya', async () => {
+    await wrap(<HeaderActions actions={[action('Split bill', Split), action('Edit', Pencil, { pinned: true }), action('Hapus', Trash2, { danger: true })]} />);
+    expect(screen.getByLabelText('Edit')).toBeTruthy();
+    expect(screen.queryByLabelText('Hapus')).toBeNull();
+    await fireEvent.press(screen.getByLabelText('Aksi lainnya'));
+    expect(screen.getByLabelText('Hapus')).toBeTruthy();
+    expect(screen.getAllByLabelText('Edit')).toHaveLength(1);
+  });
 });

@@ -5,6 +5,7 @@ import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { categoryLabel, useT, type MsgKey } from '@/i18n';
 import { Screen } from '@/components/shell/Screen';
+import { HeaderButton } from '@/components/shell/HeaderActions';
 import { TabHeader } from '@/components/shell/TabHeader';
 import { AppText, Badge, Chip, CurrencyText, EmptyState, Input, PopIn } from '@/components/ui';
 import { ReviewBanner } from '@/features/smartlog/ReviewBanner';
@@ -74,7 +75,11 @@ export default function TransaksiScreen() {
 
   return (
     <Screen tabs onEndReached={visible.length < shown.length ? () => setLimit((n) => n + PAGE_ROWS) : undefined}>
-      <TabHeader title={t('tx.title')} subtitle={ready ? t('tx.count', { shown: shown.length, total: ledger.transactions.length }) : undefined} />
+      <TabHeader
+        title={t('tx.title')}
+        subtitle={ready ? t('tx.count', { shown: shown.length, total: ledger.transactions.length }) : undefined}
+        right={ready ? <HeaderButton label={extra ? `${t('tx.filter')}, ${extra}` : t('tx.filter')} icon={ListFilter} badge={extra} selected={extra > 0} onPress={() => setSheet(true)} /> : undefined}
+      />
       <ReviewBanner />
       <MissingRatesBanner />
       {ready && (
@@ -100,7 +105,6 @@ export default function TransaksiScreen() {
             {TYPES.map((ty) => (
               <Chip key={ty.key} label={t(ty.label)} selected={(filter.type ?? 'all') === ty.key} onPress={() => setFilter((f) => ({ ...f, type: ty.key }))} />
             ))}
-            <Chip label={t('tx.filter')} icon={ListFilter} count={extra || undefined} selected={extra > 0} onPress={() => setSheet(true)} />
           </ScrollView>
           {active && shown.length > 0 && (
             <View style={styles.sum}>

@@ -1,34 +1,52 @@
 import { EllipsisVertical, type LucideIcon } from 'lucide-react-native';
-import { useState, type ReactNode } from 'react';
-import { Platform, StyleSheet, View } from 'react-native';
+import { useEffect, useRef, useState, type ComponentRef, type ReactNode } from 'react';
+import { Modal, Platform, Pressable, StyleSheet, useWindowDimensions, View } from 'react-native';
+import Animated, { useAnimatedStyle, useSharedValue } from 'react-native-reanimated';
 
-import { AppText, BottomSheet, Icon, PressableScale } from '@/components/ui';
+import { AppText, Icon, PressableScale } from '@/components/ui';
 import { useT } from '@/i18n';
+import { useMotion } from '@/theme/motion';
 import { useTheme } from '@/theme/ThemeProvider';
 import { elevation, layout, motion, radius, space } from '@/theme/tokens';
 
-/** Aksi layar di kanan atas (edit, hapus, split bill, ...). Aksi utama (Simpan, Bayar, Setor) tetap di badan layar. */
-export type HeaderAction = { key: string; label: string; icon: LucideIcon; onPress: () => void; danger?: boolean; disabled?: boolean };
+/**
+ * Aksi layar di kanan atas (edit, hapus, split bill, ...). Aksi utama (Simpan, Bayar, Setor) tetap di badan layar.
+ * pinned = tetap tampil sebagai ikon sendiri walau aksi lain masuk menu titik tiga (Edit).
+ */
+export type HeaderAction = { key: string; label: string; icon: LucideIcon; onPress: () => void; danger?: boolean; disabled?: boolean; pinned?: boolean };
 
-/** Tombol bulat 44 px di baris atas layar, sama dengan tombol kembali. */
-export function HeaderButton({ label, icon, onPress, danger, disabled }: { label: string; icon: LucideIcon; onPress: () => void; danger?: boolean; disabled?: boolean }) {
+type HeaderButtonProps = { label: string; icon: LucideIcon; onPress: () => void; danger?: boolean; disabled?: boolean; selected?: boolean; badge?: number };
+
+/** Tombol bulat 44 px di baris atas layar, sama dengan tombol kembali. badge = jumlah (mis. filter aktif). */
+export function HeaderButton({ label, icon, onPress, danger, disabled, selected, badge }: HeaderButtonProps) {
   const { colors, scheme } = useTheme();
   return (
     <PressableScale
       accessibilityLabel={label}
-      accessibilityState={{ disabled: !!disabled }}
+      accessibilityState={{ disabled: !!disabled, selected: !!selected }}
       disabled={disabled}
       focusRadius={radius.full}
       onPress={onPress}
-      style={[styles.btn, { backgroundColor: colors.surfaceRaised, borderColor: colors.border, opacity: disabled ? 0.45 : 1 }, elevation[scheme].card]}
+      style={[
+        styles.btn,
+        { backgroundColor: selected ? colors.accentSoft : colors.surfaceRaised, borderColor: selected ? colors.accent : colors.border, opacity: disabled ? 0.45 : 1 },
+        elevation[scheme].card,
+      ]}
     >
-      <Icon icon={icon} color={danger ? colors.negative : colors.text} />
+      <Icon icon={icon} color={danger ? colors.negative : selected ? colors.accentText : colors.text} />
+      {badge ? (
+        <View style={[styles.badge, { backgroundColor: colors.accent, borderColor: colors.bg }]} aria-hidden>
+          <AppText variant="caption" style={[styles.badgeText, { color: colors.onAccent }]}>
+            {badge > 9 ? '9+' : String(badge)}
+          </AppText>
+        </View>
+      ) : null}
     </PressableScale>
   );
 }
 
 /**
- * Jalankan setelah sheet (Modal) selesai menutup. Native: iOS menolak membuka Modal/kamera di atas Modal yang sedang
+ * Jalankan setelah menu (Modal) selesai menutup. Native: iOS menolak membuka Modal/kamera di atas Modal yang sedang
  * menutup. Web: langsung, karena berbagi/berkas di browser harus di dalam ketukan pengguna.
  */
 export function afterSheetClose(fn: () => void): void {
@@ -36,62 +54,125 @@ export function afterSheetClose(fn: () => void): void {
   else setTimeout(fn, motion.base + 50);
 }
 
-/** Tombol titik tiga yang membuka sheet berisi `children` (baris menu atau pengaturan). */
-export function HeaderMenu({ title, children }: { title?: string; children: (close: () => void) => ReactNode }) {
+const MENU_WIDTH = 260;
+
+/**
+ * Tombol titik tiga yang membuka menu melayang tepat di bawahnya, rata kanan (gaya menu iOS), bukan sheet bawah.
+ * Ketuk di luar menu = tutup. `children` = baris menu atau pengaturan.
+ */
+export function HeaderMenu({ children }: { children: (close: () => void) => ReactNode }) {
   const t = useT();
-  const [open, setOpen] = useState(false);
-  const close = () => setOpen(false);
+  const { colors, scheme } = useTheme();
+  const { spring, timing } = useMotion();
+  const { width: screenW } = useWindowDimensions();
+  const anchor = useRef<ComponentRef<typeof View>>(null);
+  const [pos, setPos] = useState<{ top: number; right: number } | null>(null);
+  const [mounted, setMounted] = useState(false);
+  const p = useSharedValue(0);
+  const open = pos !== null;
+
+  useEffect(() => {
+    if (open) {
+      setMounted(true);
+      p.value = spring(1);
+      return;
+    }
+    p.value = timing(0, motion.fast);
+    const id = setTimeout(() => setMounted(false), motion.fast);
+    return () => clearTimeout(id);
+  }, [open, p, spring, timing]);
+
+  const measured = useRef<{ top: number; right: number } | null>(null);
+  const measure = (then?: (p: { top: number; right: number }) => void) =>
+    anchor.current?.measureInWindow?.((x, y, w, h) => {
+      measured.current = { top: y + h + space.sm, right: Math.max(space.sm, screenW - (x + w)) };
+      then?.(measured.current);
+    });
+  // Buka langsung di posisi terakhir yang diukur (saat tombol tampil), lalu ukur ulang bila layar sudah digulir.
+  const show = () => {
+    setPos(measured.current ?? { top: 96, right: space.lg });
+    measure((p) => setPos((cur) => (cur ? p : cur)));
+  };
+  const close = () => setPos(null);
+
+  // Tumbuh dari pojok kanan atas, dekat tombol pemicunya.
+  const pop = useAnimatedStyle(() => ({ opacity: Math.max(0, Math.min(1, p.value)), transform: [{ scale: 0.85 + p.value * 0.15 }] }));
+
   return (
     <>
-      <HeaderButton label={t('common.moreActions')} icon={EllipsisVertical} onPress={() => setOpen(true)} />
-      <BottomSheet visible={open} onClose={close} title={title ?? t('common.moreActions')}>
-        {children(close)}
-      </BottomSheet>
+      <View ref={anchor} collapsable={false} onLayout={() => measure()}>
+        <HeaderButton label={t('common.moreActions')} icon={EllipsisVertical} onPress={show} selected={open} />
+      </View>
+      <Modal transparent visible={mounted} onRequestClose={close} animationType="none" statusBarTranslucent>
+        <Pressable style={StyleSheet.absoluteFill} onPress={close} accessibilityRole="button" accessibilityLabel={t('common.close')} />
+        <Animated.View
+          accessibilityViewIsModal
+          style={[
+            styles.menu,
+            { top: pos?.top ?? 0, right: pos?.right ?? space.lg, width: Math.min(MENU_WIDTH, screenW - space.lg * 2), backgroundColor: colors.surfaceRaised, borderColor: colors.border },
+            elevation[scheme].floating,
+            pop,
+          ]}
+        >
+          {children(close)}
+        </Animated.View>
+      </Modal>
     </>
   );
 }
 
-/** Satu baris menu: ikon + label; aksi berbahaya (hapus) berwarna merah. */
+/** Satu baris menu: label + ikon di kanan (gaya iOS); aksi berbahaya (hapus) berwarna merah. */
 function MenuRow({ action, divider, onPress }: { action: HeaderAction; divider: boolean; onPress: () => void }) {
   const { colors } = useTheme();
   return (
-    <PressableScale accessibilityLabel={action.label} accessibilityState={{ disabled: !!action.disabled }} disabled={action.disabled} onPress={onPress} focusRadius={radius.md} scaleTo={0.985}>
+    <PressableScale accessibilityLabel={action.label} accessibilityState={{ disabled: !!action.disabled }} disabled={action.disabled} onPress={onPress} focusRadius={radius.sm} scaleTo={0.985}>
       <View style={[styles.row, divider && { borderBottomWidth: layout.hairline, borderBottomColor: colors.border }, action.disabled && styles.disabled]}>
-        <Icon icon={action.icon} color={action.danger ? colors.negative : colors.text} />
-        <AppText variant="bodyStrong" tone={action.danger ? 'negative' : 'primary'} style={styles.flex}>
+        <AppText variant="body" tone={action.danger ? 'negative' : 'primary'} style={styles.flex}>
           {action.label}
         </AppText>
+        <Icon icon={action.icon} color={action.danger ? colors.negative : colors.text} size={layout.iconSize.md} />
       </View>
     </PressableScale>
   );
 }
 
-/** Maksimal 2 aksi: tombol ikon langsung. Lebih dari itu: satu tombol titik tiga berisi semua aksi. */
+/**
+ * Maksimal 2 aksi: tombol ikon langsung. Lebih dari itu: aksi `pinned` (Edit) tetap ikon sendiri, sisanya masuk satu
+ * tombol titik tiga.
+ */
 export function HeaderActions({ actions }: { actions: HeaderAction[] }) {
-  if (actions.length === 0) return null;
-  if (actions.length <= 2) return <>{actions.map((a) => <HeaderButton key={a.key} label={a.label} icon={a.icon} onPress={a.onPress} danger={a.danger} disabled={a.disabled} />)}</>;
+  const icon = (a: HeaderAction) => <HeaderButton key={a.key} label={a.label} icon={a.icon} onPress={a.onPress} danger={a.danger} disabled={a.disabled} />;
+  if (actions.length <= 2) return <>{actions.map(icon)}</>;
+  const pinned = actions.filter((a) => a.pinned);
+  const rest = actions.filter((a) => !a.pinned);
   return (
-    <HeaderMenu>
-      {(close) =>
-        actions.map((a, i) => (
-          <MenuRow
-            key={a.key}
-            action={a}
-            divider={i < actions.length - 1}
-            onPress={() => {
-              close();
-              afterSheetClose(a.onPress);
-            }}
-          />
-        ))
-      }
-    </HeaderMenu>
+    <>
+      {pinned.map(icon)}
+      <HeaderMenu>
+        {(close) =>
+          rest.map((a, i) => (
+            <MenuRow
+              key={a.key}
+              action={a}
+              divider={i < rest.length - 1}
+              onPress={() => {
+                close();
+                afterSheetClose(a.onPress);
+              }}
+            />
+          ))
+        }
+      </HeaderMenu>
+    </>
   );
 }
 
 const styles = StyleSheet.create({
   btn: { width: 44, height: 44, borderRadius: radius.full, borderWidth: layout.hairline, alignItems: 'center', justifyContent: 'center' },
-  row: { flexDirection: 'row', alignItems: 'center', gap: space.md, minHeight: 52, paddingVertical: space.sm },
+  badge: { position: 'absolute', top: -4, right: -4, minWidth: 18, height: 18, paddingHorizontal: 4, borderRadius: radius.full, borderWidth: 2, alignItems: 'center', justifyContent: 'center' },
+  badgeText: { fontSize: 10, lineHeight: 12, fontWeight: '700' },
+  menu: { position: 'absolute', borderRadius: radius.lg, borderWidth: layout.hairline, paddingHorizontal: space.md, paddingVertical: space.xs, transformOrigin: 'top right' },
+  row: { flexDirection: 'row', alignItems: 'center', gap: space.md, minHeight: 48, paddingVertical: space.sm },
   disabled: { opacity: 0.45 },
   flex: { flex: 1 },
 });

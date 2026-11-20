@@ -36,6 +36,8 @@ const settings: Messages['settings'] = {
     quota_warning: { title: 'Quota running low', sub: 'When scan or automation quota runs low' },
   },
   signOut: 'Sign out',
+  signOutTitle: 'Sign out of Arshif?',
+  signOutMessage: 'Your data stays in your account. Sign in again anytime with a code from your email.',
   accounts: {
     title: 'Accounts & cards',
     hint: 'Tap an account to choose its bank card design.',

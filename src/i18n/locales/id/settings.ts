@@ -34,6 +34,8 @@ const settings = {
     quota_warning: { title: 'Kuota hampir habis', sub: 'Saat kuota scan atau automation menipis' },
   },
   signOut: 'Keluar',
+  signOutTitle: 'Keluar dari Arshif?',
+  signOutMessage: 'Data tetap tersimpan di akunmu. Masuk lagi kapan saja dengan kode dari email.',
   accounts: {
     title: 'Akun & kartu',
     hint: 'Ketuk akun untuk memilih desain kartu bank.',
