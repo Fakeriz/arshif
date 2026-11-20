@@ -21,7 +21,6 @@ const settings: Messages['settings'] = {
   hapticLevel: { off: 'Off', soft: 'Soft', strong: 'Strong' },
   language: 'Language',
   languageSub: 'App language and Coach recaps',
-  languagePick: 'Choose language',
   mainCurrency: 'Main currency',
   mainCurrencySub: 'All totals and budgets are converted to this',
   mainCurrencyNoRate: 'No exchange rate for {code} yet, so income and budgets cannot be converted. Main currency was not changed.',

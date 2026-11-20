@@ -1,5 +1,5 @@
 import { useRouter } from 'expo-router';
-import { Bell, BellRing, CreditCard, Crown, Database, Languages, LogOut, Palette, ShieldCheck, Wallet } from 'lucide-react-native';
+import { Bell, BellRing, CreditCard, Crown, Database, LogOut, Palette, ShieldCheck, Wallet } from 'lucide-react-native';
 import { useEffect, useState } from 'react';
 import { Platform, StyleSheet, View } from 'react-native';
 
@@ -8,7 +8,6 @@ import { ScreenHeader } from '@/components/shell/ScreenHeader';
 import { AppText, Button, Card } from '@/components/ui';
 import { isAdmin } from '@/data/remote/api';
 import { MenuGroup, type MenuEntry } from '@/features/settings/kit';
-import { LanguageSheet } from '@/features/settings/LanguageSheet';
 import { LANGS, useI18n } from '@/i18n';
 import { isoDateLabel } from '@/lib/dates';
 import { supabase } from '@/lib/supabase';
@@ -27,7 +26,6 @@ export default function PengaturanScreen() {
   const { state } = useStore();
   const { t, lang } = useI18n();
   const router = useRouter();
-  const [langOpen, setLangOpen] = useState(false);
   const [admin, setAdmin] = useState(false);
   // Panel admin hanya web; barisnya hanya muncul untuk akun admin (server tetap memeriksa ulang).
   useEffect(() => {
@@ -50,9 +48,8 @@ export default function PengaturanScreen() {
     { key: 'smartlog', icon: BellRing, title: t('slog.automation.entry'), subtitle: t('slog.automation.entrySub'), onPress: () => router.push('/otomasi') },
   ];
   const prefs: MenuEntry[] = [
-    { key: 'language', icon: Languages, title: t('settings.language'), subtitle: LANGS.find((l) => l.key === lang)?.nativeName ?? lang, onPress: () => setLangOpen(true) },
     { key: 'finance', icon: Wallet, title: t('settings.menu.finance'), subtitle: `${state.mainCurrency} · ${t('settings.payday.value', { day: state.payday })}`, onPress: () => router.push('/pengaturan/keuangan') },
-    { key: 'appearance', icon: Palette, title: t('settings.appearance'), subtitle: t(`settings.themeMode.${mode}`), onPress: () => router.push('/pengaturan/tampilan') },
+    { key: 'appearance', icon: Palette, title: t('settings.appearance'), subtitle: `${t(`settings.themeMode.${mode}`)} · ${LANGS.find((l) => l.key === lang)?.nativeName ?? lang}`, onPress: () => router.push('/pengaturan/tampilan') },
     { key: 'notif', icon: Bell, title: t('settings.notifications'), subtitle: t('settings.menu.notifCount', { on: notifOn, total: NOTIF_COUNT }), onPress: () => router.push('/pengaturan/notifikasi') },
   ];
   const data: MenuEntry[] = [
@@ -87,7 +84,6 @@ export default function PengaturanScreen() {
 
       {/* Keluar: sesi dihapus dari perangkat, gerbang rute kembali ke layar masuk. */}
       <Button label={t('settings.signOut')} icon={LogOut} variant="secondary" fullWidth onPress={() => void supabase.auth.signOut()} />
-      <LanguageSheet visible={langOpen} onClose={() => setLangOpen(false)} />
     </Screen>
   );
 }

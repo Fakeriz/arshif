@@ -1,6 +1,6 @@
-import { AppText, Tabs } from '@/components/ui';
+import { AppText, Select, Tabs } from '@/components/ui';
 import { SettingsScreen, SettingsSection } from '@/features/settings/kit';
-import { useT } from '@/i18n';
+import { LANGS, useI18n } from '@/i18n';
 import { HAPTIC_LEVELS, haptic, useHapticLevel } from '@/theme/motion';
 import { useTheme, type ThemeMode } from '@/theme/ThemeProvider';
 import { withThemeTransition } from '@/theme/viewTransition';
@@ -8,7 +8,7 @@ import { withThemeTransition } from '@/theme/viewTransition';
 const MODES: ThemeMode[] = ['system', 'dark', 'light'];
 
 export default function TampilanScreen() {
-  const t = useT();
+  const { t, lang, setLang } = useI18n();
   const { mode, setMode } = useTheme();
   const [hapticLevel, setHapticLevel] = useHapticLevel();
   return (
@@ -16,6 +16,8 @@ export default function TampilanScreen() {
       <SettingsSection label={t('settings.theme')}>
         <Tabs items={MODES.map((key) => ({ key, label: t(`settings.themeMode.${key}`) }))} value={mode} onChange={(m) => withThemeTransition(() => setMode(m))} accessibilityLabel={t('settings.theme')} />
       </SettingsSection>
+      {/* Dropdown (Motion Kit): hanya 4 bahasa, cukup menu kecil di tempat. */}
+      <Select label={t('settings.language')} items={LANGS.map((l) => ({ key: l.key, label: l.nativeName }))} value={lang} onChange={setLang} />
       <SettingsSection label={t('settings.haptics')}>
         <Tabs
           items={HAPTIC_LEVELS.map((key) => ({ key, label: t(`settings.hapticLevel.${key}`) }))}

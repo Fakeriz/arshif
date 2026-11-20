@@ -21,7 +21,6 @@ const settings: Messages['settings'] = {
   hapticLevel: { off: 'Mati', soft: 'Lembut', strong: 'Kuat' },
   language: 'Bahasa',
   languageSub: 'Bahasa aplikasi dan rekap Coach',
-  languagePick: 'Pilih bahasa',
   mainCurrency: 'Mata wang utama',
   mainCurrencySub: 'Semua jumlah dan belanjawan ditukar ke mata wang ini',
   mainCurrencyNoRate: 'Kadar tukaran {code} belum tersedia, jadi pendapatan dan belanjawan tidak dapat ditukar. Mata wang utama tidak diubah.',

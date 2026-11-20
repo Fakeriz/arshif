@@ -19,7 +19,6 @@ const settings = {
   hapticLevel: { off: 'Mati', soft: 'Lembut', strong: 'Kuat' },
   language: 'Bahasa',
   languageSub: 'Bahasa aplikasi dan recap Coach',
-  languagePick: 'Pilih bahasa',
   mainCurrency: 'Mata uang utama',
   mainCurrencySub: 'Semua total dan anggaran dikonversi ke sini',
   mainCurrencyNoRate: 'Kurs {code} belum tersedia, jadi pemasukan dan anggaran tidak bisa dikonversi. Mata uang utama tidak diubah.',

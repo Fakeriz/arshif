@@ -21,7 +21,6 @@ const settings: Messages['settings'] = {
   hapticLevel: { off: 'Kapalı', soft: 'Hafif', strong: 'Güçlü' },
   language: 'Dil',
   languageSub: 'Uygulama dili ve Coach özetleri',
-  languagePick: 'Dil seç',
   mainCurrency: 'Ana para birimi',
   mainCurrencySub: 'Tüm toplamlar ve bütçeler bu birime çevrilir',
   mainCurrencyNoRate: '{code} için henüz kur yok, bu yüzden gelir ve bütçeler çevrilemez. Ana para birimi değiştirilmedi.',
