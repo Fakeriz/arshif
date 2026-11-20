@@ -125,7 +125,14 @@ function ScanInner() {
   if (limits.scan) {
     center = <EmptyState kind="limit" title={t('capture.scan.limitTitle')} message={t('capture.scan.limitMessage')} actionLabel={t('capture.seePremium')} onAction={() => paywall(t('capture.scan.limitReason'))} />;
   } else if (phase.kind === 'uploading' || phase.kind === 'processing') {
-    center = <ProcessingView title={phase.kind === 'uploading' ? t('capture.scan.uploading') : t('capture.scan.processingTitle')} message={t('capture.scan.processingMessage')} />;
+    center = (
+      <ProcessingView
+        title={phase.kind === 'uploading' ? t('capture.scan.uploading') : t('capture.scan.processingTitle')}
+        message={t('capture.scan.processingMessage')}
+        steps={[t('capture.steps.uploadPhoto'), t('capture.steps.readReceipt'), t('capture.steps.review')]}
+        done={phase.kind === 'uploading' ? 0 : 1}
+      />
+    );
   } else if (phase.kind === 'noScanner') {
     center = (
       <EmptyState

@@ -1,6 +1,15 @@
 import type { Messages } from '../id';
 
 const capture: Messages['capture'] = {
+  steps: {
+    uploadPhoto: 'Muat naik foto resit',
+    uploadPdf: 'Muat naik PDF',
+    readReceipt: 'Membaca resit',
+    readStatement: 'Membaca transaksi',
+    recorded: 'Rakaman diterima',
+    understand: 'Memahami percakapan',
+    review: 'Semak hasil',
+  },
   seePremium: 'Lihat Premium',
   confidence: 'Keyakinan {pct}, sila semak semula.',
   error: {

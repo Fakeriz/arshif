@@ -1,6 +1,15 @@
 import type { Messages } from '../id';
 
 const capture: Messages['capture'] = {
+  steps: {
+    uploadPhoto: 'Upload receipt photo',
+    uploadPdf: 'Upload PDF',
+    readReceipt: 'Read the receipt',
+    readStatement: 'Read the transactions',
+    recorded: 'Recording received',
+    understand: 'Understand what you said',
+    review: 'Check the result',
+  },
   seePremium: 'See Premium',
   confidence: 'Confidence {pct}, double-check.',
   error: {

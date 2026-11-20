@@ -1,5 +1,14 @@
 /** Scan struk, Voice Log, Import PDF, layar review-nya, dan foto struk di detail transaksi. */
 const capture = {
+  steps: {
+    uploadPhoto: 'Unggah foto struk',
+    uploadPdf: 'Unggah PDF',
+    readReceipt: 'Membaca struk',
+    readStatement: 'Membaca transaksi',
+    recorded: 'Rekaman diterima',
+    understand: 'Memahami ucapan',
+    review: 'Cek hasil',
+  },
   seePremium: 'Lihat Premium',
   confidence: 'Keyakinan {pct}, cek ulang.',
   error: {

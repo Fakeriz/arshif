@@ -100,7 +100,12 @@ export default function VoiceScreen() {
       <ScreenHeader title={t('capture.voice.title')} />
       {phase.kind === 'processing' ? (
         <View style={styles.center}>
-          <ProcessingView title={t('capture.voice.processingTitle')} message={t('capture.voice.processingMessage')} />
+          <ProcessingView
+            title={t('capture.voice.processingTitle')}
+            message={t('capture.voice.processingMessage')}
+            steps={[t('capture.steps.recorded'), t('capture.steps.understand'), t('capture.steps.review')]}
+            done={1}
+          />
         </View>
       ) : phase.kind === 'failed' ? (
         <CaptureError flow="voice" failure={phase.failure} actionLabel={t('capture.voice.rerecord')} onAction={() => setPhase({ kind: 'idle' })} />

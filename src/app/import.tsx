@@ -85,7 +85,12 @@ export default function ImportScreen() {
       <ScreenHeader title={t('capture.import.title')} />
       {phase.kind === 'uploading' || phase.kind === 'processing' ? (
         <View style={styles.center}>
-          <ProcessingView title={phase.kind === 'uploading' ? t('capture.import.uploading') : t('capture.import.processingTitle')} message={t('capture.import.processingMessage')} />
+          <ProcessingView
+            title={phase.kind === 'uploading' ? t('capture.import.uploading') : t('capture.import.processingTitle')}
+            message={t('capture.import.processingMessage')}
+            steps={[t('capture.steps.uploadPdf'), t('capture.steps.readStatement'), t('capture.steps.review')]}
+            done={phase.kind === 'uploading' ? 0 : 1}
+          />
         </View>
       ) : phase.kind === 'failed' ? (
         <CaptureError
