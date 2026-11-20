@@ -32,8 +32,6 @@ const plan = {
     amount: 'Nominal',
     currency: 'Mata uang',
     date: 'Tanggal',
-    dateHint: 'Format TTTT-BB-HH',
-    dateError: 'Tanggal harus berformat TTTT-BB-HH.',
     nameError: 'Isi nama.',
     amountError: 'Isi nominal lebih dari 0.',
     account: 'Dari akun',

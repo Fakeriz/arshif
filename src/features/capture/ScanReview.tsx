@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import { useT } from '@/i18n';
-import { AmountField, AppText, Button, Input } from '@/components/ui';
+import { AmountField, AppText, Button, DateField, Input } from '@/components/ui';
 import type { ReceiptDetails, ReceiptItem, Transaction } from '@/data/types';
 import { formatMoney } from '@/lib/money';
 import { discountsTotal, isLowConfidence, itemsTotal, subtotalMismatch, totalCheck } from '@/lib/receipt';
@@ -104,7 +104,7 @@ export function ScanReview({ result: r, receiptPath, accounts, existing, onSave,
         {t('capture.scanReview.intro')}
       </AppText>
       <Input label={t('capture.scanReview.merchant')} value={merchant} onChangeText={setMerchant} error={errors.merchant} warning={conf(r.confidence.merchant)} />
-      <Input label={t('capture.scanReview.date')} value={date} onChangeText={setDate} error={errors.date} warning={r.date ? conf(r.confidence.date) : conf(0)} />
+      <DateField label={t('capture.scanReview.date')} value={date} onChange={setDate} error={errors.date} warning={r.date ? conf(r.confidence.date) : conf(0)} />
       <AmountField label={t('capture.scanReview.total', { currency: r.currency })} value={total} onChange={setTotal} currency={r.currency} error={errors.total} warning={hasBreakdown && total && !formula.ok ? t('tx.receipt.totalWarning') : conf(r.confidence.total)} />
       <CategoryPicker type="expense" scroll value={category} onChange={setCategory} />
       <AccountPicker label={t('capture.scanReview.paidFrom')} accounts={accounts} value={accountId} onChange={setAccountId} />

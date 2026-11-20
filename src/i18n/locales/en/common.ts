@@ -36,6 +36,8 @@ const common: Messages['common'] = {
   bankCardA11y: '{bank} {type}, balance {amount}',
   bankCardA11yLast4: '{bank} {type}, ending {last4}, balance {amount}',
   ui: {
+    pickDate: 'Pick a date',
+    clearDate: 'Clear date',
     increase: 'Increase',
     decrease: 'Decrease',
     prevMonth: 'Previous month',

@@ -88,7 +88,6 @@ const tx: Messages['tx'] = {
     merchantPlaceholder: 'E.g. 7-Eleven, lunch',
     category: 'Category',
     date: 'Date',
-    dateHint: 'Format YYYY-MM-DD, e.g. 2026-11-05',
     note: 'Note (optional)',
     notePlaceholder: 'Add a note',
     saveNew: 'Save transaction',

@@ -3,7 +3,7 @@ import { StyleSheet, View } from 'react-native';
 
 import { useT, type MsgKey } from '@/i18n';
 import { CurrencySheet } from '@/components/shell/CurrencySheet';
-import { AmountInput, Button, Chip, Input, Tabs } from '@/components/ui';
+import { AmountInput, Button, Chip, DateField, Input, Tabs } from '@/components/ui';
 import type { Transaction, TxType } from '@/data/types';
 import { addDays, todayYmd } from '@/lib/dates';
 import { convert } from '@/lib/fx';
@@ -105,7 +105,7 @@ export function TransactionForm({ accounts, initial, onSubmit }: TransactionForm
           <CategoryPicker type={type} value={categoryKey} onChange={setCategoryKey} error={errors.categoryKey} />
         </>
       )}
-      <Input label={t('tx.form.date')} value={date} onChangeText={setDate} placeholder={t('domain.date.datePlaceholder')} hint={t('tx.form.dateHint')} error={errors.date} keyboardType="numbers-and-punctuation" />
+      <DateField label={t('tx.form.date')} value={date} onChange={setDate} error={errors.date} />
       <View style={styles.dates}>
         <Chip label={t('domain.date.today')} selected={date === today} onPress={() => setDate(today)} />
         <Chip label={t('domain.date.yesterday')} selected={date === addDays(today, -1)} onPress={() => setDate(addDays(today, -1))} />

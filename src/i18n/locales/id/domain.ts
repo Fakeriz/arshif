@@ -128,7 +128,6 @@ const domain = {
   date: {
     today: 'Hari ini',
     yesterday: 'Kemarin',
-    datePlaceholder: 'TTTT-BB-HH',
   },
   greeting: {
     morning: 'Selamat pagi',

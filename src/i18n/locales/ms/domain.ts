@@ -113,7 +113,7 @@ const domain: Messages['domain'] = {
     smartlogQuotaTitle: 'Kuota Smart Log sudah habis',
     smartlogQuotaMessage: 'Pemberitahuan bank tidak diproses secara automatik sehingga kuota automasi pulih pada 1 haribulan. Premium tanpa had.',
   },
-  date: { today: 'Hari ini', yesterday: 'Semalam', datePlaceholder: 'TTTT-BB-HH' },
+  date: { today: 'Hari ini', yesterday: 'Semalam' },
   greeting: { morning: 'Selamat pagi', afternoon: 'Selamat tengah hari', evening: 'Selamat petang', night: 'Selamat malam' },
 };
 

@@ -34,8 +34,6 @@ const plan: Messages['plan'] = {
     amount: 'Amaun',
     currency: 'Mata wang',
     date: 'Tarikh',
-    dateHint: 'Format TTTT-BB-HH',
-    dateError: 'Tarikh mesti dalam format TTTT-BB-HH.',
     nameError: 'Isi nama.',
     amountError: 'Isi amaun lebih daripada 0.',
     account: 'Dari akaun',

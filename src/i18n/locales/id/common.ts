@@ -35,6 +35,8 @@ const common = {
   bankCardA11y: '{bank} {type}, saldo {amount}',
   bankCardA11yLast4: '{bank} {type}, akhiran {last4}, saldo {amount}',
   ui: {
+    pickDate: 'Pilih tanggal',
+    clearDate: 'Hapus tanggal',
     increase: 'Tambah',
     decrease: 'Kurangi',
     prevMonth: 'Bulan sebelumnya',

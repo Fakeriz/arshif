@@ -100,7 +100,6 @@ const tx = {
     merchantPlaceholder: 'Mis. Indomaret, makan siang',
     category: 'Kategori',
     date: 'Tanggal',
-    dateHint: 'Format TTTT-BB-HH, mis. 2026-11-05',
     note: 'Catatan (opsional)',
     notePlaceholder: 'Tambahkan catatan',
     saveNew: 'Simpan transaksi',

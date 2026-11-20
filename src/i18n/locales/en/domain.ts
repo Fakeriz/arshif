@@ -113,7 +113,7 @@ const domain: Messages['domain'] = {
     smartlogQuotaTitle: 'Smart Log quota used up',
     smartlogQuotaMessage: 'Bank notifications are not processed automatically until the automation quota resets on the 1st. Premium has no limit.',
   },
-  date: { today: 'Today', yesterday: 'Yesterday', datePlaceholder: 'YYYY-MM-DD' },
+  date: { today: 'Today', yesterday: 'Yesterday' },
   greeting: { morning: 'Good morning', afternoon: 'Good afternoon', evening: 'Good evening', night: 'Good evening' },
 };
 

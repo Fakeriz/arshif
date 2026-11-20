@@ -113,7 +113,7 @@ const domain: Messages['domain'] = {
     smartlogQuotaTitle: 'Smart Log kotası doldu',
     smartlogQuotaMessage: 'Otomasyon kotası ayın 1\'inde yenilenene kadar banka bildirimleri otomatik işlenmez. Premium\'da sınır yok.',
   },
-  date: { today: 'Bugün', yesterday: 'Dün', datePlaceholder: 'YYYY-AA-GG' },
+  date: { today: 'Bugün', yesterday: 'Dün' },
   greeting: { morning: 'Günaydın', afternoon: 'İyi günler', evening: 'İyi akşamlar', night: 'İyi akşamlar' },
 };
 

@@ -34,8 +34,6 @@ const plan: Messages['plan'] = {
     amount: 'Amount',
     currency: 'Currency',
     date: 'Date',
-    dateHint: 'Format YYYY-MM-DD',
-    dateError: 'Date must be in YYYY-MM-DD format.',
     nameError: 'Enter a name.',
     amountError: 'Enter an amount above 0.',
     account: 'From account',

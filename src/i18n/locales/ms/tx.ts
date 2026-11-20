@@ -88,7 +88,6 @@ const tx: Messages['tx'] = {
     merchantPlaceholder: 'Cth. 99 Speedmart, makan tengah hari',
     category: 'Kategori',
     date: 'Tarikh',
-    dateHint: 'Format TTTT-BB-HH, cth. 2026-11-05',
     note: 'Nota (pilihan)',
     notePlaceholder: 'Tambah nota',
     saveNew: 'Simpan transaksi',

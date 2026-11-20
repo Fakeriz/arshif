@@ -34,8 +34,6 @@ const plan: Messages['plan'] = {
     amount: 'Tutar',
     currency: 'Para birimi',
     date: 'Tarih',
-    dateHint: 'Biçim YYYY-AA-GG',
-    dateError: 'Tarih YYYY-AA-GG biçiminde olmalı.',
     nameError: 'Bir ad gir.',
     amountError: '0’dan büyük bir tutar gir.',
     account: 'Ödeme hesabı',

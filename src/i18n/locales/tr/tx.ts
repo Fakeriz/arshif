@@ -88,7 +88,6 @@ const tx: Messages['tx'] = {
     merchantPlaceholder: 'Örn. BİM, öğle yemeği',
     category: 'Kategori',
     date: 'Tarih',
-    dateHint: 'Biçim YYYY-AA-GG, örn. 2026-11-05',
     note: 'Not (isteğe bağlı)',
     notePlaceholder: 'Not ekle',
     saveNew: 'İşlemi kaydet',

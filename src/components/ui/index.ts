@@ -12,6 +12,7 @@ export { CategoryIcon } from './CategoryIcon';
 export { Checkbox } from './Checkbox';
 export { Chip } from './Chip';
 export { CurrencyText } from './CurrencyText';
+export { DateField } from './DateField';
 export { Dialog } from './Dialog';
 export { DonutChart, type DonutSegment } from './DonutChart';
 export { EmptyState } from './EmptyState';

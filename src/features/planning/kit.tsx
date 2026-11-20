@@ -5,7 +5,7 @@ import { ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native'
 import { usePaywall } from '@/components/shell/Paywall';
 import { Screen } from '@/components/shell/Screen';
 import { ScreenHeader } from '@/components/shell/ScreenHeader';
-import { AmountField, AppText, BottomSheet, Button, Chip, EmptyState, Input, ProBadge, Skeleton, useToast } from '@/components/ui';
+import { AmountField, AppText, BottomSheet, Button, Chip, DateField, EmptyState, Input, ProBadge, Skeleton, useToast } from '@/components/ui';
 import { QuotaError } from '@/data/remote/planning';
 import { localYmd } from '@/features/capture/clock';
 import { AccountPicker } from '@/features/transactions/pickers';
@@ -16,6 +16,8 @@ import { useActiveAccountId } from '@/state/AppStore';
 import { useLedger } from '@/state/derived';
 import { usePlanning, type PayInput } from '@/state/planning';
 import { radius, space } from '@/theme/tokens';
+
+export { DateField };
 
 export const YMD_RE = /^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$/;
 export const isYmd = (s: string): boolean => YMD_RE.test(s) && !Number.isNaN(Date.parse(`${s}T00:00:00Z`));
@@ -66,23 +68,6 @@ export function useSaveError() {
       show({ tone: 'error', title: t('plan.common.saveFailed') });
     }
   };
-}
-
-export function DateField({ label, value, onChange, error, optional }: { label: string; value: string; onChange: (v: string) => void; error?: boolean; optional?: boolean }) {
-  const t = useT();
-  return (
-    <Input
-      label={label}
-      value={value}
-      onChangeText={onChange}
-      placeholder={t('domain.date.datePlaceholder')}
-      autoCapitalize="none"
-      keyboardType="numbers-and-punctuation"
-      maxLength={10}
-      error={error ? t('plan.common.dateError') : undefined}
-      hint={optional && !value ? undefined : t('plan.common.dateHint')}
-    />
-  );
 }
 
 /** Pilihan chip sederhana (frekuensi, jenis, siklus). */
