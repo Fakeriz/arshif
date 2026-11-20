@@ -7,12 +7,11 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useI18n } from '@/i18n';
 import { haptic, useMotion } from '@/theme/motion';
 import { useTheme } from '@/theme/ThemeProvider';
-import { layout, motion, radius, space } from '@/theme/tokens';
+import { elevation, fonts, layout, motion, palettes, radius, space } from '@/theme/tokens';
 
 import { AppText } from './AppText';
-import { Button } from './Button';
-import { GlassView } from './GlassView';
 import { Icon } from './Icon';
+import { PressableScale } from './PressableScale';
 
 export type ToastTone = 'success' | 'error' | 'warning' | 'info';
 export type ToastAction = { label: string; onPress: () => void };
@@ -47,16 +46,18 @@ export function ToastProvider({ children }: { children: ReactNode }) {
 }
 
 function ToastView({ item, onDone }: { item: ToastItem; onDone: () => void }) {
-  const { colors } = useTheme();
+  const { scheme } = useTheme();
   const { t: tr } = useI18n();
   const { timing, spring } = useMotion();
   const insets = useSafeAreaInsets();
   const t = useSharedValue(0);
+  const leaving = useSharedValue(0);
 
+  // Keluar lebih cepat dari masuk (Motion Kit "Notifikasi"): mengecil sedikit sambil memudar.
   const dismiss = useCallback(() => {
-    t.value = timing(0, motion.fast);
+    leaving.value = timing(1, motion.fast);
     setTimeout(onDone, motion.fast);
-  }, [onDone, t, timing]);
+  }, [onDone, leaving, timing]);
 
   const duration = item.durationMs ?? (item.actions?.length ? 7000 : 3500);
   useEffect(() => {
@@ -65,63 +66,80 @@ function ToastView({ item, onDone }: { item: ToastItem; onDone: () => void }) {
     return () => clearTimeout(id);
   }, [dismiss, duration, spring, t]);
 
-  const style = useAnimatedStyle(() => ({ opacity: t.value, transform: [{ translateY: (1 - t.value) * -16 }] }));
+  const style = useAnimatedStyle(() => ({
+    opacity: Math.min(t.value, 1 - leaving.value),
+    transform: [{ translateY: (1 - t.value) * -22 + leaving.value * -14 }, { scale: 0.86 + Math.min(t.value, 1) * 0.14 - leaving.value * 0.08 }],
+  }));
   const tone = item.tone ?? 'info';
+  // Talmo .toast: pill tinta di tema terang, pill kertas di tema gelap; warna isi dari palet kebalikannya.
+  const ink = palettes[scheme === 'dark' ? 'light' : 'dark'];
   const look = {
-    success: { icon: CircleCheck, fg: colors.positive },
-    error: { icon: CircleAlert, fg: colors.negative },
-    warning: { icon: TriangleAlert, fg: colors.warning },
-    info: { icon: Info, fg: colors.info },
+    success: { icon: CircleCheck, fg: ink.positive },
+    error: { icon: CircleAlert, fg: ink.negative },
+    warning: { icon: TriangleAlert, fg: ink.warning },
+    info: { icon: Info, fg: ink.info },
   }[tone];
+  const bg = scheme === 'dark' ? '#F2F0EC' : '#1C1B1F';
+  const fg = scheme === 'dark' ? '#1C1B1F' : '#F4F2EE';
+  const actionBg = scheme === 'dark' ? 'rgba(0, 0, 0, 0.08)' : 'rgba(255, 255, 255, 0.14)';
 
   return (
     <View style={[styles.anchor, { top: insets.top + space.sm }]} pointerEvents="box-none">
       <Animated.View
         accessibilityRole={tone === 'error' ? 'alert' : 'text'}
         aria-live="polite"
-        style={[styles.toastWrap, style]}
+        style={[styles.toast, { backgroundColor: bg }, elevation[scheme].floating, style]}
       >
-        <GlassView level="floating" radius={radius.md} style={styles.toast}>
-        <Icon icon={look.icon} color={look.fg} />
+        <Icon icon={look.icon} color={look.fg} size={18} />
         <View style={styles.text}>
-          <AppText variant="bodyStrong" numberOfLines={2}>
+          <AppText variant="bodyStrong" numberOfLines={2} style={{ color: fg }}>
             {item.title}
           </AppText>
           {item.message && (
-            <AppText variant="caption" tone="secondary" numberOfLines={3}>
+            <AppText variant="caption" numberOfLines={3} style={{ color: ink.textSecondary }}>
               {item.message}
             </AppText>
           )}
-          {!!item.actions?.length && (
-            <View style={styles.actions}>
-              {item.actions.slice(0, 2).map((a) => (
-                <Button
-                  key={a.label}
-                  label={a.label}
-                  size="md"
-                  variant="secondary"
-                  onPress={() => {
-                    a.onPress();
-                    dismiss();
-                  }}
-                />
-              ))}
-            </View>
-          )}
         </View>
-        <Pressable onPress={dismiss} hitSlop={12} accessibilityRole="button" accessibilityLabel={tr('common.closeNotification')}>
-          <Icon icon={X} color={colors.textMuted} size={layout.iconSize.sm} />
+        {item.actions?.slice(0, 2).map((a) => (
+          <PressableScale
+            key={a.label}
+            accessibilityLabel={a.label}
+            onPress={() => {
+              a.onPress();
+              dismiss();
+            }}
+            focusRadius={radius.sm}
+            style={[styles.action, { backgroundColor: actionBg }]}
+          >
+            <AppText variant="caption" style={[styles.actionLabel, { color: fg }]}>
+              {a.label}
+            </AppText>
+          </PressableScale>
+        ))}
+        <Pressable onPress={dismiss} hitSlop={12} accessibilityRole="button" accessibilityLabel={tr('common.closeNotification')} style={styles.close}>
+          <Icon icon={X} color={ink.textMuted} size={layout.iconSize.sm} />
         </Pressable>
-        </GlassView>
       </Animated.View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  anchor: { position: 'absolute', left: space.lg, right: space.lg, alignItems: 'center' },
-  toastWrap: { width: '100%', maxWidth: layout.maxContentWidth },
-  toast: { flexDirection: 'row', alignItems: 'flex-start', gap: space.md, padding: space.lg },
+  anchor: { position: 'absolute', left: space.md, right: space.md, alignItems: 'center' },
+  toast: {
+    width: '100%',
+    maxWidth: 440,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: space.md,
+    borderRadius: 13,
+    paddingVertical: 11,
+    paddingLeft: space.lg,
+    paddingRight: 11,
+  },
   text: { flex: 1, gap: space.xxs },
-  actions: { flexDirection: 'row', flexWrap: 'wrap', gap: space.sm, marginTop: space.sm },
+  action: { height: 30, paddingHorizontal: space.md, borderRadius: radius.sm, alignItems: 'center', justifyContent: 'center' },
+  actionLabel: { fontFamily: fonts.bold },
+  close: { padding: space.xxs },
 });
