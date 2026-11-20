@@ -4,7 +4,7 @@ import { AccessibilityInfo, Platform, StyleSheet, View, type StyleProp, type Vie
 import { useReducedMotion } from 'react-native-reanimated';
 
 import { useTheme } from '@/theme/ThemeProvider';
-import { layout, radius as radii } from '@/theme/tokens';
+import { elevation, layout, radius as radii } from '@/theme/tokens';
 
 /**
  * Lapisan kaca:
@@ -106,8 +106,9 @@ export function GlassView({ children, level = 'panel', radius = radii.lg, style,
     backgroundColor: floating ? (blur ? colors.glassStrong : colors.glassStrongFallback) : colors.glass,
   };
 
+  // Bayangan di lapisan luar: `overflow: hidden` di shell memotong bayangan di iOS.
   return (
-    <View accessibilityLabel={accessibilityLabel} style={[shell, style]}>
+    <View accessibilityLabel={accessibilityLabel} style={[shell, !floating && elevation[scheme].card, style]}>
       {blur && (
         <BlurView
           intensity={layout.blur.floating}

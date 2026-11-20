@@ -11,7 +11,7 @@ Sumber kebenaran nilai: `src/theme/tokens.ts`. Dokumen ini menjelaskan *kenapa* 
 1. **Angka adalah pahlawan.** Saldo, target, dan nominal tampil besar dan tebal; semua elemen lain mundur ke abu-abu.
 2. **Warna = makna, bukan dekorasi.** Antarmuka hitam-putih-abu. Warna hanya muncul untuk naik/turun, peringatan, status, dan ikon kategori.
 3. **Kedalaman lewat nada, bukan efek.** Tidak ada blur atau glow di panel. Lapisan dibedakan oleh selisih nada: kanvas → kartu → panel inset.
-4. **Bentuk mengikuti peran.** Yang ditekan (tombol, chip, toggle) berbentuk pill; isian (input, select) kotak lembut radius 14; badge radius 8. Perbedaan bentuk membuat isian dan tombol langsung terbedakan.
+4. **Persis Talmo.** Ukuran, radius, dan berat huruf mengikuti CSS Talmo Studio: tombol kotak lembut (9/11/13), chip 9, input 11, segmented 10/8, kartu 20, badge & toggle pill. Judul halaman besar rata kiri.
 5. **Primary terbalik.** Tombol utama memakai warna teks sebagai latar: terang di tema gelap, hitam di tema terang.
 6. **Aksesibel sejak token.** Setiap pasangan teks/latar ≥ 4.5:1, grafis ≥ 3:1, diuji otomatis di `__tests__/contrast.test.ts`.
 
@@ -56,24 +56,24 @@ Hijau dan merah tanah yang kalem, bukan warna lampu lalu lintas. Setiap token pu
 
 ### 2.3 Aksen
 
-`netral` adalah **default**: `accent` = warna teks, `onAccent` = warna kertas, tanpa glow.
-Aksen berwarna lama (Merah, Kuningan, Zamrud, Biru, Ungu) tetap tersedia di Pengaturan (FR-SET-4) dan lolos AA di palet batu. Tidak ada aksen yang memakai glow: `AmbientGlow` sudah dihapus.
+**Tidak ada aksen berwarna** (dihapus 2026-11-20, monokrom seperti Talmo). `accent` = warna tinta: tombol primary, chip terpilih, segmented tinta, tab bar aktif. Pilihan warna aksen di Pengaturan sudah dihapus; kolom `profiles.accent` di database tidak lagi dibaca atau ditulis.
 
 | | Gelap | Terang |
 |---|---|---|
 | `accent` (isi tombol primary) | `#E0E0E0` | `#0A0A0A` |
 | `onAccent` | `#0A0A0A` | `#F4F4F4` |
 | `accentText` (link, tombol ghost) | `#E0E0E0` | `#0A0A0A` |
-| `accentSoft` (chip/nav terpilih) | `rgba(255,255,255,.08)` | `rgba(8,8,8,.06)` |
+| `accentSoft` (sorotan tipis) | `rgba(255,255,255,.08)` | `rgba(8,8,8,.06)` |
 | `focus` (ring fokus) | `#C9C9C9` | `#575655` |
 
-### 2.4 Kartu tinta & brass
+Permukaan tambahan dari Talmo: `surfaceAlt` (`#EDEDED` / `#1C1C1C`, track segmented & input gelap) dan `fill` (`rgba(8,8,8,.06)` / `rgba(255,255,255,.07)`, badge abu & toggle mati).
+
+### 2.4 Kartu tinta
 
 - **Kartu tinta (`inkCard`)**: tepat **satu per layar**, memegang angka terpenting layar itu (kekayaan bersih, saldo akun, total tagihan). Ini titik fokus dan motif identitas Arshif.
   - Terang: isi `#0A0A0A`, teks `#E0E0E0`, redup `#A4A4A4`.
   - Gelap: **terbalik**, isi `#E0E0E0`, teks `#0A0A0A`, redup `#575655`, naik `#22573A`, turun `#8C2621` (lebih gelap agar badge tren tetap 4.5:1). Kartu gelap di atas kanvas `#0D0D0D` tidak lagi menonjol, jadi dibalik agar tetap titik paling kontras.
   - Pakai komponen `InkCard` (`src/theme/ThemeProvider.tsx`): ia menimpa warna teks, naik/turun, dan track untuk semua anak, jadi `AppText`, `BalanceText`, dan `TrendBadge` otomatis benar. Contoh: `BalanceBlock` di Beranda.
-- **Brass (`brass`)**: satu-satunya aksen berwarna, **khusus tag mata uang** (IDR/MYR/TRY/USD), karena multi-mata uang adalah pembeda produk. Terang `#735214`, gelap `#D9B26A`. Tidak dipakai untuk tombol, bar budget, atau dekorasi.
 
 ### 2.5 Grafik
 
@@ -82,7 +82,7 @@ Aksen berwarna lama (Merah, Kuningan, Zamrud, Biru, Ungu) tetap tersedia di Peng
   - Terang: `#D4D4D4 → #A3A3A3 → #737373 → #404040 → #171717`
 - **`chartArea`**: grafik garis, isian tipis di bawah garis abu (`#A3A3A3` gelap, `#737373` terang agar garis tetap 3:1 di kartu kertas), tanpa titik data kecuali disentuh.
 - Batang memakai radius atas `radius.bar` (6), jarak antar batang ≈ 25% lebar batang.
-- **`categoryHues`** tetap dipakai untuk donut kategori dan ikon kategori, satu-satunya tempat warna bebas muncul.
+- **`categoryHues`** kini skala abu (monokrom): kategori dibedakan ikon + label, irisan donut bersebelahan berselang terang/gelap. Kartu bank tetap memakai warna bank (identitas yang dikenali pengguna).
 
 ---
 
@@ -92,17 +92,19 @@ Satu keluarga: **Plus Jakarta Sans** (keputusan PRD tetap). Angka memakai `fontV
 
 | Varian | Ukuran / tinggi baris | Bobot | Contoh di referensi |
 |---|---|---|---|
-| `balanceHero` | 40 / 46, -1.4 | Bold | Saldo utama Home |
-| `amountHero` | 32 / 38, -1 | Bold | "$1,211.29", "$420,000" |
-| `display` | 30 / 36 | Bold | Layar kosong, onboarding |
-| `h1` | 24 / 30 | Bold | Judul layar |
-| `h2` | 19 / 26 | SemiBold | Judul seksi |
-| `h3` | 16 / 22 | SemiBold | **Judul kartu** ("Contribution History") |
-| `body` / `bodyStrong` | 15 / 22 | Regular / SemiBold | Isi, nama item |
-| `amount` | 15 / 22 | SemiBold | Nominal di baris ("$1,248.75") |
-| `caption` | 13 / 18 | Regular | **Subjudul kartu**, deskripsi baris, label sumbu |
-| `overline` | 11 / 14, +0.8 | SemiBold | "UPCOMING", "RETIREMENT" (tulis kapital) |
-| `button` | 14 / 18 | SemiBold | Label tombol |
+| `balanceHero` | 38 / 42, -0.95 | SemiBold | Saldo utama Home |
+| `amountHero` | 30 / 34, -0.6 | SemiBold | Nominal besar |
+| `display` | 34 / 36, -0.85 | SemiBold | Lembar desain |
+| `h1` | 28 / 30, -0.7 | SemiBold | **Judul halaman** (Talmo `.phead h1`) |
+| `h2` | 20 / 25 | SemiBold | Judul seksi |
+| `h3` | 15 / 19 | SemiBold | **Judul kartu** (Talmo `.chead h3`) |
+| `body` / `bodyStrong` | 14 / 20 | Medium / SemiBold | Isi, nama item |
+| `amount` | 14 / 20 | SemiBold | Nominal di baris |
+| `caption` | 12.5 / 17 | Medium | Subjudul kartu, deskripsi baris, label |
+| `overline` | 11 / 14 | SemiBold | Label kecil (sentence case, tanpa jarak huruf lebar) |
+| `button` | 13.5 / 18 | SemiBold | Label tombol (lg: 15) |
+
+Bobot judul 600 (SemiBold), bukan Bold, seperti Talmo.
 
 Hierarki di dalam kartu selalu: `h3` (text) → `caption` (textSecondary) → konten.
 
@@ -115,10 +117,14 @@ Hierarki di dalam kartu selalu: `h3` (text) → `caption` (textSecondary) → ko
 | Alias | Nilai | Untuk |
 |---|---|---|
 | `card` | 20 | Kartu utama |
-| `inset` | 14 | Panel di dalam kartu, textarea, baris daftar berlatar |
-| `control` | 999 | Tombol, chip, toggle |
-| `field` | 14 | Input satu baris, select |
-| `badge` | 8 | Badge status dan delta (`TrendBadge`) |
+| `inset` | 14 | Panel di dalam kartu, textarea |
+| `button` | sm 9 / md 11 / lg 13 | Tombol (Talmo `.btn--sm/.btn/.btn--lg`) |
+| `chip` | 9 | Chip filter |
+| `seg` / `segItem` | 10 / 8 | Track dan thumb segmented control |
+| `field` | 11 | Input satu baris, select |
+| `badge` | 999 | Badge hitungan & status (pill 20) |
+| `control` | 999 | Toggle, tombol ikon bulat |
+| `tabBar` / `tabItem` | 22 / 16 | Tab bar mengambang dan item aktifnya |
 | `bar` | 6 | Batang grafik |
 | `sheet` | 28 | Bottom sheet, dialog |
 
@@ -134,13 +140,13 @@ Aturan bersarang: radius dalam = radius luar − padding (20 − 16 ≈ 4 → di
 ### Elevasi (`elevation`)
 
 - **Gelap:** tanpa bayangan; kartu `#161616` di kanvas `#0D0D0D` sudah cukup.
-- **Terang:** kartu kertas `#F2F2F2` dengan bayangan tipis (`#080808`, `opacity .12, radius 20, y 12`) + garis `border`.
+- **Terang:** kartu kertas `#F2F2F2` dengan bayangan tipis (`#080808`, `opacity .08, radius 14, y 8`) + garis `border`; tombol primary punya bayangan sendiri (`elevation.light.primary`).
 - `floating` (tab bar, sheet, toast) memakai bayangan lebih tegas di kedua tema.
 - Blur hanya untuk tab bar mengambang (`layout.blur.floating`); panel tidak blur.
 
 ### Ukuran kontrol
 
-Tombol `lg 48 / md 40 / sm 32`, input 44, ikon Lucide stroke 1.75 ukuran 16/20/24.
+Tombol `lg 50 / md 40 / sm 32` (bawaan `md`), input 42, segmented item 28 + padding 3, toggle 42×24, ikon Lucide stroke 1.75 ukuran 16/20/24.
 
 ---
 
@@ -148,22 +154,24 @@ Tombol `lg 48 / md 40 / sm 32`, input 44, ikon Lucide stroke 1.75 ukuran 16/20/2
 
 | Komponen | Spesifikasi |
 |---|---|
-| **Card** | `surface`, radius `card`, padding 16, border `border`; terang + `elevation.light.card`. Header: judul `h3` + subjudul `caption`; aksi kanan berupa tombol ikon bulat 28 (`surfaceSunken`) atau tombol pill `sm` outline. |
-| **Panel inset** | `surfaceSunken`, radius `inset`, padding 12. Untuk ringkasan 2 kolom ("UPCOMING / SAVINGS PLAN"), rincian biaya, kartu target bertumpuk. |
-| **Button primary** | Pill, isi `accent`, teks `onAccent`. Satu per kartu; biasanya lebar penuh di dasar kartu. |
-| **Button secondary** | Pill, isi `surfaceSunken`, teks `text`. |
-| **Button outline** | Pill, transparan, border `borderStrong`. Untuk "Cancel", "View Analytics". |
-| **Button ghost** | Teks `accentText` saja, untuk "FORGOT?" (gaya `overline`). |
-| **Input / Select** | Radius `field` (14) tinggi 44, isi `surfaceSunken`, tanpa border; placeholder `textMuted`; ikon kanan 16 `textMuted`. Fokus: ring 2 px `focus`. |
-| **Textarea** | Radius `inset`, min 88 tinggi, isi `surfaceSunken`. |
-| **Badge** | Radius `badge` (8) tinggi 22, `caption` 12 SemiBold. Varian: solid (`accent`/`onAccent`), soft (`surfaceSunken`), outline, status (titik 6 px semantik + teks). Delta kecil ("+10%") memakai badge solid. |
-| **Checkbox** | 16×16, radius 4. Tercentang: isi `accent`, centang `onAccent`. Kosong: `surfaceSunken`. Label `bodyStrong` + deskripsi `caption`. |
-| **Toggle** | Pill 36×20; aktif `accent`, mati `track`. |
-| **Progress bar** | Tinggi 6, pill, jalur `track`, isi `text`. Di bawahnya: kiri "65% achieved" (`caption` secondary), kanan nominal (`amount`). |
-| **List / Nav item** | Tinggi 36, ikon 16 + label `caption` 14 Medium. Terpilih: latar `accentSoft`, radius `inset`. Grup diberi label `caption` muted. |
-| **Row navigasi** | Panel inset berisi ikon + judul `bodyStrong` + deskripsi `caption` + chevron `textMuted` di kanan. |
-| **Breadcrumb** | `caption`, separator chevron 12, item terakhir `text`. |
-| **Empty state** | Ikon dalam lingkaran 40 `surfaceSunken`, judul `h3`, deskripsi `caption` di tengah, satu tombol pill `sm`. |
+| **Card** | `surface`, radius `card`, padding 18/20, garis `border`; terang + `elevation.light.card`. Header: judul `h3` + subjudul `caption` redup. |
+| **Panel inset** | `surfaceSunken`, radius `inset`, padding 12. |
+| **Button primary** | Radius `button[size]`, isi `accent`, teks `onAccent`, bayangan primary di tema terang. |
+| **Button secondary** | Isi kertas (`surface`; gelap `surfaceAlt`) + garis `borderStrong`, teks `text`. |
+| **Button danger** | Seperti secondary, teks `negative`. |
+| **Button ghost** | Teks `accentText` saja. |
+| **Segmented (`Tabs`)** | Track `surfaceAlt` + garis `border`, radius 10, padding 3; item tinggi 28, `caption` SemiBold redup; terpilih: thumb kertas dengan bayangan tipis. Varian `tone="ink"`: thumb tinta, teks `onAccent`. |
+| **Tabs underline** | Tinggi 42, `bodyStrong` redup, terpilih `text` + garis bawah tinta 2 px. |
+| **Chip** | Tinggi 36, radius 9, isi kertas + garis `border`, `caption` SemiBold redup. Terpilih: isi tinta, teks `onAccent`, tanpa centang. |
+| **Input / Select** | Radius 11, tinggi 42, isi kertas (gelap `surfaceAlt`) + garis `borderStrong`; fokus garis tinta 1.5 px. |
+| **Badge** | Pill tinggi 20, isi `fill`, `overline` SemiBold. Status memakai `*Soft` + warna semantik. |
+| **Toggle** | 42×24 pill, kenop putih 18 (gelap+aktif: hitam); mati `fill` + garis, aktif `accent`. |
+| **Progress bar** | Tinggi 6, pill, jalur `track`, isi `text`. |
+| **Baris daftar (`ListItem`)** | Padding vertikal 14, celah 14, garis pemisah `border`; judul `bodyStrong`, keterangan `caption` redup. |
+| **Grup menu (`MenuGroup`)** | Label grup `caption` SemiBold redup; kartu padding sisi 20; ikon 18 `textMuted` tanpa kotak (Talmo `.menu__item`). |
+| **Header layar (`ScreenHeader`)** | Baris tombol bulat 44 (kembali kiri, aksi kanan), lalu judul `h1` rata kiri + subjudul opsional. |
+| **Tab bar** | Kotak mengambang radius 22, padding 6, `surfaceRaised` + bayangan floating; item 54 radius 16, label 11 SemiBold; aktif = blok tinta. Tombol "+ Catat" bulat tinta 48 tetap di tengah. |
+| **Empty state** | Ikon 20 dalam lingkaran 52 `surfaceRaised` bergaris, judul `h3`, pesan `caption` redup, satu tombol `md`. |
 | **Fade-out list** | Item yang terpotong di dasar kartu memudar (`opacity.faded`) sebagai isyarat ada lanjutan. |
 
 ---
@@ -181,6 +189,8 @@ Tombol `lg 48 / md 40 / sm 32`, input 44, ikon Lucide stroke 1.75 ukuran 16/20/2
 ## 7. Gerak
 
 Tidak berubah dari `motion.ts`: 150 / 220 / 300 ms, hanya transform + opacity, tekan skala 0.97, haptic hanya pada primary. Hormati reduce motion.
+
+**Ganti tema (web):** lingkaran yang membesar dari titik ketuk, 600 ms `cubic-bezier(.22,1,.36,1)`, lewat View Transitions (`src/theme/viewTransition.web.ts`), seperti Talmo. Native dan reduce motion: langsung berganti.
 
 ### 7.1 Mikro-interaksi (Motion Kit)
 

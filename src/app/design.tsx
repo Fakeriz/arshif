@@ -2,7 +2,7 @@ import { Redirect } from 'expo-router';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { AccentPicker, AppText, GlassView, Tabs } from '@/components/ui';
+import { AppText, GlassView, Tabs } from '@/components/ui';
 import { CashflowSection, DonutSection, GaugeSection } from '@/features/design-sheet/ChartSections';
 import { BadgeChipSection, ButtonSection, InputSection, TabsSection } from '@/features/design-sheet/ControlSections';
 import { ListSection, MoneySection, ProgressSection } from '@/features/design-sheet/DataSections';
@@ -41,8 +41,6 @@ function DesignSheet() {
             <GlassView style={styles.controls}>
               <AppText variant="overline" tone="secondary">Tema</AppText>
               <Tabs items={MODES} value={mode} onChange={setMode} accessibilityLabel="Tema" />
-              <AppText variant="overline" tone="secondary">Warna aksen</AppText>
-              <AccentPicker />
             </GlassView>
           </View>
           <ShowcaseSection />

@@ -47,7 +47,7 @@ export function AppStoreProvider({ children, preset }: { children: ReactNode; pr
   const email = session?.user.email ?? '';
   const { show } = useToast();
   const { t, lang, setLang } = useI18n();
-  const { accent, setAccent, mode, setMode } = useTheme();
+  const { mode, setMode } = useTheme();
   const stateRef = useRef(state);
   const [refreshing, setRefreshing] = useState(false);
   stateRef.current = state;
@@ -62,12 +62,12 @@ export function AppStoreProvider({ children, preset }: { children: ReactNode; pr
     setUserRates(state.userRates);
   }
   // Setter tema/bahasa berganti identitas saat nilainya berubah; lewat ref agar reload tidak ikut terpicu.
-  const applyPrefs = useRef({ setLang, setAccent, setMode });
-  applyPrefs.current = { setLang, setAccent, setMode };
-  const currentPrefs = useRef({ lang, accent, mode });
-  currentPrefs.current = { lang, accent, mode };
+  const applyPrefs = useRef({ setLang, setMode });
+  applyPrefs.current = { setLang, setMode };
+  const currentPrefs = useRef({ lang, mode });
+  currentPrefs.current = { lang, mode };
   // Nilai preferensi terakhir yang tersimpan di server, supaya perubahan dari server tidak ditulis balik.
-  const synced = useRef<{ lang: string; accent: string; mode: string } | null>(null);
+  const synced = useRef<{ lang: string; mode: string } | null>(null);
   // true = nilai dari server baru dikirim ke Theme/I18n dan belum terlihat di render; jangan ditulis balik.
   const applying = useRef(false);
 
@@ -90,17 +90,16 @@ export function AppStoreProvider({ children, preset }: { children: ReactNode; pr
       historyTried.current = new Set(codes);
       const cur = currentPrefs.current;
       if (!profile.onboarded) {
-        // Pengguna baru: profil masih berisi default DB. Bahasa/aksen/tema perangkat yang dipakai dan disimpan.
+        // Pengguna baru: profil masih berisi default DB. Bahasa/tema perangkat yang dipakai dan disimpan.
         synced.current = { ...cur };
         applying.current = false;
-        api.updateProfile(userId, { lang: cur.lang, accent: cur.accent, theme_mode: cur.mode }).catch(() => undefined);
+        api.updateProfile(userId, { lang: cur.lang, theme_mode: cur.mode }).catch(() => undefined);
       } else {
-        synced.current = { lang: profile.lang, accent: profile.accent, mode: profile.themeMode };
+        synced.current = { lang: profile.lang, mode: profile.themeMode };
         // Hanya "sedang menerapkan" bila nilai server memang berbeda dari yang tampil sekarang;
         // kalau sama, efek di bawah tidak akan berjalan untuk melepas penanda ini.
-        applying.current = cur.lang !== profile.lang || cur.accent !== profile.accent || cur.mode !== profile.themeMode;
+        applying.current = cur.lang !== profile.lang || cur.mode !== profile.themeMode;
         applyPrefs.current.setLang(profile.lang);
-        applyPrefs.current.setAccent(profile.accent);
         applyPrefs.current.setMode(profile.themeMode);
       }
       localDispatch({
@@ -131,19 +130,19 @@ export function AppStoreProvider({ children, preset }: { children: ReactNode; pr
     }
   }, [userId, reload, preset]);
 
-  // Bahasa, aksen, dan tema disimpan per pengguna (FR-SET-1, FR-SET-4). Hanya perubahan dari pengguna
+  // Bahasa dan tema disimpan per pengguna (FR-SET-1). Hanya perubahan dari pengguna
   // yang ditulis: selama nilai server sedang diterapkan, nilai perangkat lama tidak boleh menimpa profil.
   useEffect(() => {
     const s = synced.current;
     if (!userId || !s) return;
-    if (s.lang === lang && s.accent === accent && s.mode === mode) {
+    if (s.lang === lang && s.mode === mode) {
       applying.current = false;
       return;
     }
     if (applying.current) return;
-    synced.current = { lang, accent, mode };
-    api.updateProfile(userId, { lang, accent, theme_mode: mode }).catch(() => show({ tone: 'error', title: t('common.syncFailed'), message: t('common.syncFailedMessage') }));
-  }, [userId, lang, accent, mode, show, t]);
+    synced.current = { lang, mode };
+    api.updateProfile(userId, { lang, theme_mode: mode }).catch(() => show({ tone: 'error', title: t('common.syncFailed'), message: t('common.syncFailedMessage') }));
+  }, [userId, lang, mode, show, t]);
 
   // Mata uang baru (transaksi/akun dengan kode yang belum punya riwayat kurs): muat riwayatnya.
   useEffect(() => {

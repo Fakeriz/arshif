@@ -33,7 +33,6 @@ const common: Messages['common'] = {
   noDataThisMonth: 'Belum ada data bulan ini',
   cashflowEmptyTitle: 'Belum ada aliran tunai',
   cashflowEmptyMessage: 'Rekod transaksi pertama anda untuk melihat trend bulanan.',
-  accentColor: 'Warna aksen',
   bankCardA11y: '{bank} {type}, baki {amount}',
   bankCardA11yLast4: '{bank} {type}, berakhir {last4}, baki {amount}',
   ui: {

@@ -2,7 +2,7 @@ import { CircleAlert, Crown, Inbox, WifiOff, type LucideIcon } from 'lucide-reac
 import { StyleSheet, View } from 'react-native';
 
 import { useTheme } from '@/theme/ThemeProvider';
-import { radius, space } from '@/theme/tokens';
+import { layout, radius, space } from '@/theme/tokens';
 
 import { AppText } from './AppText';
 import { Button } from './Button';
@@ -38,27 +38,27 @@ export function EmptyState({
 }: EmptyStateProps) {
   const { colors } = useTheme();
   const look = {
-    empty: { icon: Inbox, fg: colors.textSecondary, bg: colors.track },
-    error: { icon: CircleAlert, fg: colors.negative, bg: colors.negativeSoft },
-    limit: { icon: Crown, fg: colors.accentText, bg: colors.accentSoft },
-    offline: { icon: WifiOff, fg: colors.warning, bg: colors.warningSoft },
+    empty: { icon: Inbox, fg: colors.textSecondary },
+    error: { icon: CircleAlert, fg: colors.negative },
+    limit: { icon: Crown, fg: colors.text },
+    offline: { icon: WifiOff, fg: colors.warning },
   }[kind];
-  const size = compact ? 56 : 72;
+  const size = 52;
 
   return (
     <View
       style={[styles.wrap, compact && styles.compact]}
       accessibilityRole={kind === 'error' ? 'alert' : undefined}
     >
-      <View style={[styles.halo, { width: size, height: size, backgroundColor: look.bg }]}>
-        <Icon icon={icon ?? look.icon} color={look.fg} size={compact ? 26 : 32} />
+      <View style={[styles.halo, { width: size, height: size, backgroundColor: colors.surfaceRaised, borderColor: colors.border }]}>
+        <Icon icon={icon ?? look.icon} color={look.fg} size={layout.iconSize.md + 2} />
       </View>
       <View style={styles.text}>
-        <AppText variant={compact ? 'bodyStrong' : 'h3'} align="center">
+        <AppText variant="h3" align="center">
           {title}
         </AppText>
         {message && (
-          <AppText variant="body" tone="secondary" align="center">
+          <AppText variant="caption" tone="muted" align="center">
             {message}
           </AppText>
         )}
@@ -67,7 +67,7 @@ export function EmptyState({
         <Button
           label={actionLabel}
           onPress={onAction}
-          size={compact ? 'md' : 'lg'}
+          size="md"
           variant={kind === 'error' || kind === 'offline' ? 'secondary' : 'primary'}
           icon={kind === 'limit' ? Crown : undefined}
         />
@@ -77,8 +77,8 @@ export function EmptyState({
 }
 
 const styles = StyleSheet.create({
-  wrap: { alignItems: 'center', gap: space.lg, paddingVertical: space.x4, paddingHorizontal: space.xxl },
-  compact: { paddingVertical: space.xxl, gap: space.md },
-  halo: { borderRadius: radius.full, alignItems: 'center', justifyContent: 'center' },
-  text: { gap: space.xs + 2, maxWidth: 320 },
+  wrap: { alignItems: 'center', gap: space.sm, paddingVertical: space.x4, paddingHorizontal: space.xl },
+  compact: { paddingVertical: space.xxl },
+  halo: { borderRadius: radius.full, borderWidth: layout.hairline, alignItems: 'center', justifyContent: 'center', marginBottom: space.xs },
+  text: { gap: space.xs, maxWidth: 300, marginBottom: space.sm },
 });

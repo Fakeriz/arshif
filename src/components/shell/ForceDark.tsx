@@ -1,12 +1,11 @@
 import type { ReactNode } from 'react';
 
-import { ThemeProvider, useTheme } from '@/theme/ThemeProvider';
+import { ThemeProvider } from '@/theme/ThemeProvider';
 
-/** Untuk layar yang memang selalu gelap (kamera). Aksen pilihan pengguna tetap dipakai. */
+/** Untuk layar yang memang selalu gelap (kamera). */
 export function ForceDark({ children }: { children: ReactNode }) {
-  const { accent } = useTheme();
   return (
-    <ThemeProvider initialMode="dark" initialAccent={accent}>
+    <ThemeProvider initialMode="dark">
       {children}
     </ThemeProvider>
   );

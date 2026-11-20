@@ -23,7 +23,7 @@ const NOTIF_COUNT = 4;
  * menampilkan keadaan sekarang supaya tidak perlu membuka menu hanya untuk mengecek.
  */
 export default function PengaturanScreen() {
-  const { colors, mode, accent } = useTheme();
+  const { colors, mode } = useTheme();
   const { state } = useStore();
   const { t, lang } = useI18n();
   const router = useRouter();
@@ -52,7 +52,7 @@ export default function PengaturanScreen() {
   const prefs: MenuEntry[] = [
     { key: 'language', icon: Languages, title: t('settings.language'), subtitle: LANGS.find((l) => l.key === lang)?.nativeName ?? lang, onPress: () => setLangOpen(true) },
     { key: 'finance', icon: Wallet, title: t('settings.menu.finance'), subtitle: `${state.mainCurrency} · ${t('settings.payday.value', { day: state.payday })}`, onPress: () => router.push('/pengaturan/keuangan') },
-    { key: 'appearance', icon: Palette, title: t('settings.appearance'), subtitle: `${t(`settings.themeMode.${mode}`)} · ${t(`domain.accent.${accent}`)}`, onPress: () => router.push('/pengaturan/tampilan') },
+    { key: 'appearance', icon: Palette, title: t('settings.appearance'), subtitle: t(`settings.themeMode.${mode}`), onPress: () => router.push('/pengaturan/tampilan') },
     { key: 'notif', icon: Bell, title: t('settings.notifications'), subtitle: t('settings.menu.notifCount', { on: notifOn, total: NOTIF_COUNT }), onPress: () => router.push('/pengaturan/notifikasi') },
   ];
   const data: MenuEntry[] = [

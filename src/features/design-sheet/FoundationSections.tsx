@@ -3,7 +3,7 @@ import { StyleSheet, View } from 'react-native';
 import { useI18n } from '@/i18n';
 import { AppText, Card, GlassView } from '@/components/ui';
 import { useTheme } from '@/theme/ThemeProvider';
-import { ACCENT_OPTIONS, accents, motion, radius, space, type as typeScale, type Palette, type TypeVariant } from '@/theme/tokens';
+import { motion, radius, space, type as typeScale, type Palette, type TypeVariant } from '@/theme/tokens';
 
 import { Section } from './Section';
 
@@ -19,25 +19,9 @@ const SWATCHES: { key: keyof Palette; label: string }[] = [
 ];
 
 export function ColorSection() {
-  const { colors, scheme, hues } = useTheme();
-  const { t: tr } = useI18n();
+  const { colors, hues } = useTheme();
   return (
-    <Section index="Warna" title="Kaca & aksen" note="Netral tinta hangat, kaca translusen, satu aksen pilihan pengguna. Hijau selalu pemasukan; over budget punya warna sendiri dan selalu disertai ikon.">
-      <AppText variant="overline" tone="muted">Lima aksen (tema ini)</AppText>
-      <View style={styles.accentRow}>
-        {ACCENT_OPTIONS.map((o) => {
-          const t = accents[o.key][scheme];
-          return (
-            <View key={o.key} style={styles.accentItem}>
-              <View style={[styles.accentChip, { backgroundColor: t.accent }]}>
-                <AppText variant="caption" style={{ color: t.onAccent }}>Aa</AppText>
-              </View>
-              <AppText variant="caption">{tr(`domain.accent.${o.key}`)}</AppText>
-              <AppText variant="caption" tone="muted" numeric>{t.accent}</AppText>
-            </View>
-          );
-        })}
-      </View>
+    <Section index="Warna" title="Batu & kertas" note="Monokrom: tinta di atas kertas, tanpa aksen berwarna. Hijau selalu pemasukan; over budget selalu disertai ikon.">
       <View style={styles.grid}>
         {SWATCHES.map((s) => (
           <View key={s.key} style={styles.swatch}>
@@ -90,9 +74,9 @@ export function TypeSection() {
 
 export function ShapeSection() {
   const { colors } = useTheme();
-  const radii = Object.entries(radius).filter(([k]) => k !== 'full');
+  const radii = Object.entries(radius).flatMap(([k, v]) => (typeof v === 'number' && k !== 'full' ? [[k, v] as const] : []));
   return (
-    <Section index="Bentuk & gerak" title="Satu skala, satu ritme" note={`Kartu 16, tombol dan input 12, sheet 24. Gerak ${motion.fast}–${motion.slow}ms, hanya transform + opacity, efek tekan ${motion.pressScale}. Instan saat reduced motion aktif.`}>
+    <Section index="Bentuk & gerak" title="Satu skala, satu ritme" note={`Kartu 20, tombol 9/11/13, input 11, chip 9, sheet 28. Gerak ${motion.fast}–${motion.slow}ms, hanya transform + opacity, efek tekan ${motion.pressScale}. Instan saat reduced motion aktif.`}>
       <View style={styles.radiusRow}>
         {radii.map(([k, v]) => (
           <View key={k} style={styles.radiusItem}>

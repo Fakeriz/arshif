@@ -19,7 +19,7 @@ export type BadgeProps = {
 export function Badge({ label, tone = 'neutral', icon }: BadgeProps) {
   const { colors } = useTheme();
   const looks: Record<BadgeTone, { bg: string; fg: string; text: TextTone }> = {
-    neutral: { bg: colors.track, fg: colors.textSecondary, text: 'secondary' },
+    neutral: { bg: colors.fill, fg: colors.textSecondary, text: 'secondary' },
     accent: { bg: colors.accentSoft, fg: colors.accentText, text: 'accent' },
     positive: { bg: colors.positiveSoft, fg: colors.positive, text: 'positive' },
     negative: { bg: colors.negativeSoft, fg: colors.negative, text: 'negative' },
@@ -65,9 +65,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     alignSelf: 'flex-start',
     gap: space.xs,
-    paddingHorizontal: space.sm,
-    paddingVertical: space.xs,
+    minHeight: 20,
+    paddingHorizontal: 7,
     borderRadius: radius.badge,
   },
-  sm: { paddingHorizontal: space.xs + 2, paddingVertical: space.xxs },
+  sm: { minHeight: 18, paddingHorizontal: space.xs + 2 },
 });

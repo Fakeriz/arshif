@@ -6,8 +6,8 @@ import { haptic, useMotion } from '@/theme/motion';
 import { useTheme } from '@/theme/ThemeProvider';
 import { radius } from '@/theme/tokens';
 
-const W = 52;
-const H = 32;
+const W = 42;
+const H = 24;
 const PAD = 3;
 const THUMB = H - PAD * 2;
 
@@ -19,7 +19,7 @@ export type ToggleProps = {
 };
 
 export function Toggle({ value, onChange, accessibilityLabel, disabled }: ToggleProps) {
-  const { colors } = useTheme();
+  const { colors, scheme } = useTheme();
   const { spring } = useMotion();
   const x = useSharedValue(value ? 1 : 0);
 
@@ -41,10 +41,10 @@ export function Toggle({ value, onChange, accessibilityLabel, disabled }: Toggle
         haptic('tap');
         onChange(!value);
       }}
-      style={[styles.track, { backgroundColor: colors.track, borderColor: value ? colors.accent : colors.borderStrong }, disabled && styles.off]}
+      style={[styles.track, { backgroundColor: colors.fill, borderColor: value ? colors.accent : colors.borderStrong }, disabled && styles.off]}
     >
       <Animated.View style={[styles.fill, { backgroundColor: colors.accent }, fill]} />
-      <Animated.View style={[styles.thumb, { backgroundColor: value ? colors.onAccent : colors.text }, thumb]} />
+      <Animated.View style={[styles.thumb, { backgroundColor: value && scheme === 'dark' ? '#080808' : '#FFFFFF' }, thumb]} />
     </Pressable>
   );
 }
@@ -52,6 +52,6 @@ export function Toggle({ value, onChange, accessibilityLabel, disabled }: Toggle
 const styles = StyleSheet.create({
   track: { width: W, height: H, borderRadius: radius.full, borderWidth: 1, padding: PAD - 1, justifyContent: 'center', overflow: 'hidden' },
   fill: { ...StyleSheet.absoluteFill, borderRadius: radius.full },
-  thumb: { width: THUMB, height: THUMB, borderRadius: radius.full },
+  thumb: { width: THUMB, height: THUMB, borderRadius: radius.full, shadowColor: '#000000', shadowOpacity: 0.25, shadowRadius: 3, shadowOffset: { width: 0, height: 1 } },
   off: { opacity: 0.45 },
 });

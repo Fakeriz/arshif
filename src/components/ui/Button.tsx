@@ -2,7 +2,7 @@ import { Check, type LucideIcon } from 'lucide-react-native';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
 
 import { useTheme } from '@/theme/ThemeProvider';
-import { fonts, layout, radius, space } from '@/theme/tokens';
+import { elevation, fonts, layout, radius, space } from '@/theme/tokens';
 
 import { AppText, type TextTone } from './AppText';
 import { Icon } from './Icon';
@@ -30,7 +30,7 @@ export function Button({
   label,
   onPress,
   variant = 'primary',
-  size = 'lg',
+  size = 'md',
   icon,
   loading,
   done,
@@ -38,12 +38,12 @@ export function Button({
   fullWidth,
   accessibilityHint,
 }: ButtonProps) {
-  const { colors } = useTheme();
+  const { colors, scheme } = useTheme();
   const looks: Record<ButtonVariant, { bg: string; border: string; fg: string; tone: TextTone }> = {
     primary: { bg: colors.accent, border: colors.accent, fg: colors.onAccent, tone: 'onAccent' },
-    secondary: { bg: colors.track, border: colors.glassBorder, fg: colors.text, tone: 'primary' },
+    secondary: { bg: scheme === 'dark' ? colors.surfaceAlt : colors.surface, border: colors.borderStrong, fg: colors.text, tone: 'primary' },
     ghost: { bg: 'transparent', border: 'transparent', fg: colors.accentText, tone: 'accent' },
-    danger: { bg: colors.negativeSoft, border: 'transparent', fg: colors.negative, tone: 'negative' },
+    danger: { bg: scheme === 'dark' ? colors.surfaceAlt : colors.surface, border: colors.borderStrong, fg: colors.negative, tone: 'negative' },
   };
   const look = looks[variant];
 
@@ -59,15 +59,17 @@ export function Button({
       accessibilityLabel={label}
       accessibilityHint={accessibilityHint}
       aria-disabled={!!(disabled || loading || done)} aria-busy={!!loading}
-      focusRadius={radius.md}
+      focusRadius={radius.button[size]}
       style={[
         styles.base,
         {
           height,
           backgroundColor: look.bg,
           borderColor: look.border,
-          paddingHorizontal: size === 'sm' ? space.md : space.xl,
+          borderRadius: radius.button[size],
+          paddingHorizontal: size === 'sm' ? space.md : size === 'lg' ? 22 : space.lg,
         },
+        variant === 'primary' && elevation[scheme].primary,
         fullWidth && styles.full,
       ]}
     >
@@ -85,7 +87,7 @@ export function Button({
           variant={size === 'sm' ? 'caption' : 'button'}
           tone={look.tone}
           numberOfLines={1}
-          style={size === 'sm' && styles.smLabel}
+          style={size === 'sm' ? styles.smLabel : size === 'lg' ? styles.lgLabel : undefined}
         >
           {label}
         </AppText>
@@ -96,7 +98,6 @@ export function Button({
 
 const styles = StyleSheet.create({
   base: {
-    borderRadius: radius.md,
     borderWidth: layout.hairline,
     alignItems: 'center',
     justifyContent: 'center',
@@ -104,4 +105,5 @@ const styles = StyleSheet.create({
   full: { alignSelf: 'stretch' },
   row: { flexDirection: 'row', alignItems: 'center', gap: space.sm },
   smLabel: { fontFamily: fonts.semibold },
+  lgLabel: { fontSize: 15 },
 });

@@ -37,11 +37,11 @@ export function Input({
   onBlur,
   ...rest
 }: InputProps) {
-  const { colors } = useTheme();
+  const { colors, scheme } = useTheme();
   const t = useT();
   const [focused, setFocused] = useState(false);
   const [hidden, setHidden] = useState(true);
-  const borderColor = error ? colors.negative : warning ? colors.warning : focused ? colors.accent : colors.border;
+  const borderColor = error ? colors.negative : warning ? colors.warning : focused ? colors.text : colors.borderStrong;
 
   return (
     <View style={[styles.wrap, disabled && styles.disabled]}>
@@ -51,7 +51,7 @@ export function Input({
       <View
         style={[
           styles.field,
-          { backgroundColor: colors.surfaceSunken, borderColor },
+          { backgroundColor: scheme === 'dark' ? colors.surfaceAlt : colors.surface, borderColor },
           focused && styles.focusedBorder,
         ]}
       >
@@ -123,13 +123,13 @@ const styles = StyleSheet.create({
     minHeight: layout.inputHeight,
     borderRadius: radius.field,
     borderWidth: layout.hairline,
-    paddingHorizontal: space.lg,
+    paddingHorizontal: 13,
     flexDirection: 'row',
     alignItems: 'center',
     gap: space.sm,
   },
   focusedBorder: { borderWidth: 1.5 },
-  input: { flex: 1, paddingVertical: space.md, outlineStyle: 'none' } as object,
+  input: { flex: 1, paddingVertical: space.sm, outlineStyle: 'none' } as object,
   valid: { width: 24, height: 24, borderRadius: radius.full, alignItems: 'center', justifyContent: 'center' },
   message: { flexDirection: 'row', alignItems: 'center', gap: space.xs },
   flex: { flex: 1 },

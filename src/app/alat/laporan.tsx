@@ -46,7 +46,7 @@ function Report() {
 
   const exportPdf = async () => {
     if (!(await exportGate())) return;
-    await pdf.run(() => annualReportDocument(r, { t, lang, owner: state.displayName ?? '', accent: colors.accent }), `Arshif-pajak-${year}-${country}`);
+    await pdf.run(() => annualReportDocument(r, { t, lang, owner: state.displayName ?? '' }), `Arshif-pajak-${year}-${country}`);
   };
 
   return (

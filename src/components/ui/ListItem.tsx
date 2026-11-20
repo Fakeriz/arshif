@@ -84,7 +84,7 @@ export function ListItemSkeleton({ divider }: { divider?: boolean }) {
   const { colors } = useTheme();
   return (
     <View style={[styles.row, divider && { borderBottomWidth: layout.hairline, borderBottomColor: colors.border }]}>
-      <Skeleton width={40} height={40} radius={radius.full} />
+      <Skeleton width={34} height={34} radius={radius.full} />
       <View style={styles.body}>
         <Skeleton width="55%" height={14} />
         <Skeleton width="35%" height={11} />
@@ -95,7 +95,7 @@ export function ListItemSkeleton({ divider }: { divider?: boolean }) {
 }
 
 const styles = StyleSheet.create({
-  row: { flexDirection: 'row', alignItems: 'center', gap: space.md, paddingVertical: space.md, minHeight: 64 },
+  row: { flexDirection: 'row', alignItems: 'center', gap: 14, paddingVertical: 14, minHeight: 56 },
   body: { flex: 1, minWidth: 0, gap: space.xxs },
   trailing: { alignItems: 'flex-end', maxWidth: '45%', gap: space.xxs },
 });

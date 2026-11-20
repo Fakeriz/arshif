@@ -6,7 +6,7 @@ import { Screen } from '@/components/shell/Screen';
 import { ScreenHeader } from '@/components/shell/ScreenHeader';
 import { AppText, Card, Icon, ListItem } from '@/components/ui';
 import { useTheme } from '@/theme/ThemeProvider';
-import { radius, space } from '@/theme/tokens';
+import { layout, space } from '@/theme/tokens';
 
 export type MenuEntry = {
   key: string;
@@ -23,18 +23,15 @@ export function MenuGroup({ label, entries }: { label: string; entries: MenuEntr
   const { colors } = useTheme();
   return (
     <View style={styles.group}>
-      <AppText variant="caption" tone="secondary" accessibilityRole="header" style={styles.label}>
+      <AppText variant="caption" tone="muted" accessibilityRole="header" style={styles.label}>
         {label}
       </AppText>
-      <Card padding="md">
+      <Card padding={0}>
+        <View style={styles.rows}>
         {entries.map((e, i) => (
           <ListItem
             key={e.key}
-            leading={
-              <View style={[styles.tile, { backgroundColor: e.tone === 'negative' ? colors.negativeSoft : colors.accentSoft }]}>
-                <Icon icon={e.icon} color={e.tone === 'negative' ? colors.negative : colors.accentText} />
-              </View>
-            }
+            leading={<Icon icon={e.icon} color={e.tone === 'negative' ? colors.negative : colors.textMuted} size={layout.iconSize.md - 2} />}
             title={e.title}
             subtitle={e.subtitle}
             subtitleLines={2}
@@ -44,6 +41,7 @@ export function MenuGroup({ label, entries }: { label: string; entries: MenuEntr
             accessibilityLabel={`${e.title}, ${e.subtitle}`}
           />
         ))}
+        </View>
       </Card>
     </View>
   );
@@ -75,6 +73,6 @@ export function SettingsSection({ label, children }: { label?: string; children:
 
 const styles = StyleSheet.create({
   group: { gap: space.sm },
-  label: { paddingHorizontal: space.xs },
-  tile: { width: 40, height: 40, borderRadius: radius.md, alignItems: 'center', justifyContent: 'center' },
+  label: { paddingHorizontal: space.xs, fontFamily: 'PlusJakartaSans_600SemiBold' },
+  rows: { paddingHorizontal: space.xl },
 });

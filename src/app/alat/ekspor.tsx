@@ -47,7 +47,7 @@ function Exports() {
   const [to, setTo] = useState(today);
   const monthly = usePdfShare();
   const history = usePdfShare();
-  const ctx = { t, lang, owner: state.displayName ?? '', accent: colors.accent };
+  const ctx = { t, lang, owner: state.displayName ?? '' };
   const main = state.mainCurrency;
   const s = monthlySummary(state.transactions, month, main);
   const rangeOk = isYmd(from) && isYmd(to) && from <= to;

@@ -1,8 +1,9 @@
-import { AccentPicker, AppText, Card, Tabs } from '@/components/ui';
+import { AppText, Card, Tabs } from '@/components/ui';
 import { SettingsScreen, SettingsSection } from '@/features/settings/kit';
 import { useT } from '@/i18n';
 import { HAPTIC_LEVELS, haptic, useHapticLevel } from '@/theme/motion';
 import { useTheme, type ThemeMode } from '@/theme/ThemeProvider';
+import { withThemeTransition } from '@/theme/viewTransition';
 
 const MODES: ThemeMode[] = ['system', 'dark', 'light'];
 
@@ -14,12 +15,7 @@ export default function TampilanScreen() {
     <SettingsScreen title={t('settings.appearance')}>
       <SettingsSection label={t('settings.theme')}>
         <Card padding="md">
-          <Tabs items={MODES.map((key) => ({ key, label: t(`settings.themeMode.${key}`) }))} value={mode} onChange={setMode} accessibilityLabel={t('settings.theme')} />
-        </Card>
-      </SettingsSection>
-      <SettingsSection label={t('common.accentColor')}>
-        <Card padding="md">
-          <AccentPicker />
+          <Tabs items={MODES.map((key) => ({ key, label: t(`settings.themeMode.${key}`) }))} value={mode} onChange={(m) => withThemeTransition(() => setMode(m))} accessibilityLabel={t('settings.theme')} />
         </Card>
       </SettingsSection>
       <SettingsSection label={t('settings.haptics')}>

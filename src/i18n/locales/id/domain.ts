@@ -36,14 +36,6 @@ const domain = {
     kartu_kredit: 'Kartu Kredit',
     paylater: 'Paylater',
   },
-  accent: {
-    netral: 'Netral',
-    merah: 'Merah',
-    kuningan: 'Kuningan',
-    zamrud: 'Zamrud',
-    biru: 'Biru',
-    ungu: 'Ungu',
-  },
   currencyName: {
     IDR: 'Rupiah Indonesia',
     MYR: 'Ringgit Malaysia',

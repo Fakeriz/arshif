@@ -31,15 +31,14 @@ const BASE_CSS = `
   .foot { margin-top: 26px; font-size: 8.5pt; color: #5c564e; }
 `;
 
-function page(title: string, accent: string, body: string, lang: string): string {
+function page(title: string, body: string, lang: string): string {
   return `<!doctype html><html lang="${esc(lang)}"><head><meta charset="utf-8"><title>${esc(title)}</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<style>:root { --accent: ${/^#[0-9a-fA-F]{6}$/.test(accent) ? accent : '#1c1915'}; }${BASE_CSS}</style></head><body>${body}</body></html>`;
+<style>:root { --accent: #0a0a0a; }${BASE_CSS}</style></head><body>${body}</body></html>`;
 }
 
 export type InvoiceDoc = {
   lang: string;
-  accent: string;
   /** "INVOICE" / "PENAWARAN". */
   docType: string;
   number: string;
@@ -78,7 +77,7 @@ export function invoiceHtml(d: InvoiceDoc): string {
   </table>
   ${d.notes ? `<div class="note"><div class="muted small">${esc(d.notes.label)}</div>${esc(d.notes.text)}</div>` : ''}
   <div class="foot">${esc(d.footer)}</div>`;
-  return page(`${d.docType} ${d.number}`, d.accent, body, d.lang);
+  return page(`${d.docType} ${d.number}`, body, d.lang);
 }
 
 /** Blok laporan: pasangan label-nilai, atau tabel dengan kolom. */
@@ -88,7 +87,6 @@ export type ReportBlock =
 
 export type ReportDoc = {
   lang: string;
-  accent: string;
   title: string;
   subtitle: string;
   owner: string;
@@ -125,5 +123,5 @@ export function reportHtml(d: ReportDoc): string {
   ${blocks}
   ${d.disclaimer ? `<div class="disclaimer">${esc(d.disclaimer)}</div>` : ''}
   <div class="foot">${esc(d.footer)}</div>`;
-  return page(d.title, d.accent, body, d.lang);
+  return page(d.title, body, d.lang);
 }

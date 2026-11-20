@@ -184,14 +184,14 @@ describe('invoice', () => {
   it('HTML PDF meng-escape isi pengguna', () => {
     expect(esc('<b>"A&B"</b>')).toBe('&lt;b&gt;&quot;A&amp;B&quot;&lt;/b&gt;');
     const html = invoiceHtml({
-      lang: 'id', accent: '#C8102E', docType: 'INVOICE', number: 'INV-2026-0001', sender: 'Sari', billTo: { label: 'Kepada', name: '<script>x</script>' },
+      lang: 'id', docType: 'INVOICE', number: 'INV-2026-0001', sender: 'Sari', billTo: { label: 'Kepada', name: '<script>x</script>' },
       meta: [['Tanggal', '10 Nov 2026']], columns: { item: 'Item', qty: 'Qty', price: 'Harga', amount: 'Jumlah' },
       items: [{ name: 'Desain', qty: '1', price: 'Rp 1.000', amount: 'Rp 1.000' }], totals: [['Subtotal', 'Rp 1.000']], grand: ['Total', 'Rp 1.000'], footer: 'Arshif',
     });
     expect(html).not.toContain('<script>x');
     expect(html).toContain('INV-2026-0001');
-    const report = reportHtml({ lang: 'id', accent: 'red; } body {', title: 'Laporan', subtitle: 'x', owner: 'y', blocks: [{ kind: 'table', columns: ['a'], numeric: [false], rows: [], empty: 'Kosong' }], disclaimer: 'Estimasi', footer: 'f' });
-    expect(report).toContain('--accent: #1c1915');
+    const report = reportHtml({ lang: 'id', title: 'Laporan', subtitle: 'x', owner: 'y', blocks: [{ kind: 'table', columns: ['a'], numeric: [false], rows: [], empty: 'Kosong' }], disclaimer: 'Estimasi', footer: 'f' });
+    expect(report).toContain('--accent: #0a0a0a');
     expect(report).toContain('Kosong');
     expect(pdfName('INV-2026-0001')).toBe('INV-2026-0001.pdf');
     expect(pdfName('Laporan Nov/2026')).toBe('Laporan-Nov-2026.pdf');

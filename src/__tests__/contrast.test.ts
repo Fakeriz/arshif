@@ -1,92 +1,54 @@
-import { composite, contrastRatio, hue } from '@/lib/contrast';
-import {
-  ACCENT_OPTIONS,
-  brass,
-  buildPalette,
-  inkCard,
-  categoryHues,
-  chartArea,
-  palettes,
-  stripTint,
-  type AccentKey,
-  type ColorScheme,
-} from '@/theme/tokens';
+import { composite, contrastRatio } from '@/lib/contrast';
+import { buildPalette, inkCard, categoryHues, chartArea, palettes, stripTint, type ColorScheme } from '@/theme/tokens';
 
 const schemes: ColorScheme[] = ['dark', 'light'];
-const accentKeys = ACCENT_OPTIONS.map((a) => a.key);
 const AA_TEXT = 4.5;
 const AA_GRAPHIC = 3;
 
-/**
- * Latar nyata tempat teks muncul: latar polos, kartu, kaca di atas latar,
- * dan kaca di atas pusat ambient glow (titik terburuk gradasi).
- */
-function backdrops(scheme: ColorScheme, accent: AccentKey) {
-  const p = buildPalette(scheme, accent);
-  const glowBg = composite(p.accentGlow, p.bg);
-  return {
+describe.each(schemes)('kontras tema %s', (scheme) => {
+  const p = buildPalette(scheme);
+  // Latar nyata tempat teks muncul: kanvas, kartu, track segmented/input gelap, sheet, badge abu.
+  const backdrops = {
     bg: p.bg,
     surface: p.surface,
-    glassOnBg: composite(p.glass, p.bg),
-    glassOnGlow: composite(p.glass, glowBg),
-    glassStrongOnGlow: composite(p.glassStrong, glowBg),
-    fallbackOnGlow: composite(p.glassFallback, glowBg),
+    surfaceAlt: p.surfaceAlt,
+    surfaceRaised: p.surfaceRaised,
+    fillOnSurface: composite(p.fill, p.surface),
   };
-}
+  const textTokens = {
+    text: p.text,
+    textSecondary: p.textSecondary,
+    textMuted: p.textMuted,
+    accentText: p.accentText,
+    positive: p.positive,
+    negative: p.negative,
+    warning: p.warning,
+  };
 
-describe.each(schemes)('kontras tema %s', (scheme) => {
-  describe.each(accentKeys)('aksen %s', (accent) => {
-    const p = buildPalette(scheme, accent);
-    const textTokens = {
-      text: p.text,
-      textSecondary: p.textSecondary,
-      textMuted: p.textMuted,
-      accentText: p.accentText,
-      positive: p.positive,
-      negative: p.negative,
-      warning: p.warning,
-    };
-
-    for (const [bgName, bg] of Object.entries(backdrops(scheme, accent))) {
-      for (const [fgName, fg] of Object.entries(textTokens)) {
-        it(`${fgName} di atas ${bgName} >= 4.5:1`, () => {
-          expect(contrastRatio(fg, bg)).toBeGreaterThanOrEqual(AA_TEXT);
-        });
-      }
+  for (const [bgName, bg] of Object.entries(backdrops)) {
+    for (const [fgName, fg] of Object.entries(textTokens)) {
+      it(`${fgName} di atas ${bgName} >= 4.5:1`, () => {
+        expect(contrastRatio(fg, bg)).toBeGreaterThanOrEqual(AA_TEXT);
+      });
     }
+  }
 
-    it('teks tombol (onAccent di atas accent) >= 4.5:1', () => {
-      expect(contrastRatio(p.onAccent, p.accent)).toBeGreaterThanOrEqual(AA_TEXT);
-    });
+  it('teks tombol, chip, segmented tinta (onAccent di atas accent) >= 4.5:1', () => {
+    expect(contrastRatio(p.onAccent, p.accent)).toBeGreaterThanOrEqual(AA_TEXT);
+  });
 
-    // Di atas glow polos hanya ada judul, label, dan teks aksen (header + saldo).
-    const glowBg = composite(p.accentGlow, p.bg);
-    it.each([
-      ['text', p.text],
-      ['textSecondary', p.textSecondary],
-      ['textMuted', p.textMuted],
-      ['accentText', p.accentText],
-    ])('%s di atas puncak glow >= 4.5:1', (_, fg) => {
-      expect(contrastRatio(fg, glowBg)).toBeGreaterThanOrEqual(AA_TEXT);
-    });
+  it.each([
+    ['text', p.text],
+    ['textSecondary', p.textSecondary],
+  ])('%s di atas strip akun Home >= 4.5:1', (_, fg) => {
+    const [r, g, b] = [1, 3, 5].map((i) => parseInt(p.accent.slice(i, i + 2), 16));
+    const strip = composite(`rgba(${r}, ${g}, ${b}, ${stripTint[scheme]})`, p.glassStrong);
+    expect(contrastRatio(fg, strip)).toBeGreaterThanOrEqual(AA_TEXT);
+  });
 
-    it.each([
-      ['text', p.text],
-      ['textSecondary', p.textSecondary],
-    ])('%s di atas strip akun Home (tinta aksen terpekat) >= 4.5:1', (_, fg) => {
-      const [r, g, b] = [1, 3, 5].map((i) => parseInt(p.accent.slice(i, i + 2), 16));
-      // Strip memakai kaca modal (glassStrong) di atas glow; fallback lebih pekat.
-      for (const base of [backdrops(scheme, accent).glassStrongOnGlow, backdrops(scheme, accent).fallbackOnGlow]) {
-        const strip = composite(`rgba(${r}, ${g}, ${b}, ${stripTint[scheme]})`, base);
-        expect(contrastRatio(fg, strip)).toBeGreaterThanOrEqual(AA_TEXT);
-      }
-    });
-
-    it('teks aksen di atas tinta aksen (kartu promo) >= 4.5:1', () => {
-      const promo = composite(p.accentSoft, backdrops(scheme, accent).glassOnGlow);
-      expect(contrastRatio(p.text, promo)).toBeGreaterThanOrEqual(AA_TEXT);
-      expect(contrastRatio(p.accentText, promo)).toBeGreaterThanOrEqual(AA_TEXT);
-    });
+  it('teks di atas tinta aksen (kartu promo, nav terpilih) >= 4.5:1', () => {
+    const promo = composite(p.accentSoft, p.surface);
+    expect(contrastRatio(p.text, promo)).toBeGreaterThanOrEqual(AA_TEXT);
   });
 
   it('garis grafik kekayaan bersih >= 3:1 di kartu', () => {
@@ -94,7 +56,7 @@ describe.each(schemes)('kontras tema %s', (scheme) => {
     expect(contrastRatio(chartArea[scheme].line, card)).toBeGreaterThanOrEqual(AA_GRAPHIC);
   });
 
-  it.each(['text', 'textMuted', 'brass', 'positive', 'negative'] as const)('kartu tinta: %s >= 4.5:1', (key) => {
+  it.each(['text', 'textMuted', 'positive', 'negative'] as const)('kartu tinta: %s >= 4.5:1', (key) => {
     expect(contrastRatio(inkCard[scheme][key], inkCard[scheme].bg)).toBeGreaterThanOrEqual(AA_TEXT);
   });
 
@@ -102,21 +64,6 @@ describe.each(schemes)('kontras tema %s', (scheme) => {
     const ink = inkCard[scheme];
     const soft = composite(ink[`${key}Soft`], ink.bg);
     expect(contrastRatio(ink[key], soft)).toBeGreaterThanOrEqual(AA_TEXT);
-  });
-
-  it.each(['bg', 'surface', 'surfaceSunken'] as const)('tag mata uang brass di atas %s >= 4.5:1', (bgKey) => {
-    expect(contrastRatio(brass[scheme], palettes[scheme][bgKey])).toBeGreaterThanOrEqual(AA_TEXT);
-  });
-
-  it('aksen Merah: over budget memakai rona berbeda (>= 15°) dari aksen', () => {
-    const p = buildPalette(scheme, 'merah');
-    const diff = Math.abs(hue(p.negative) - hue(p.accentText));
-    expect(Math.min(diff, 360 - diff)).toBeGreaterThanOrEqual(15);
-    expect(p.negative).not.toBe(palettes[scheme].negative);
-  });
-
-  it('aksen selain Merah: over budget tetap merah bawaan', () => {
-    expect(buildPalette(scheme, 'biru').negative).toBe(palettes[scheme].negative);
   });
 
   it.each(Object.entries(categoryHues[scheme]))('ikon kategori %s >= 3:1 di kaca', (_, color) => {

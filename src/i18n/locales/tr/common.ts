@@ -33,7 +33,6 @@ const common: Messages['common'] = {
   noDataThisMonth: 'Bu ay henüz veri yok',
   cashflowEmptyTitle: 'Henüz nakit akışı yok',
   cashflowEmptyMessage: 'Aylık eğilimi görmek için ilk işlemini kaydet.',
-  accentColor: 'Vurgu rengi',
   bankCardA11y: '{bank} {type}, bakiye {amount}',
   bankCardA11yLast4: '{bank} {type}, son dört hane {last4}, bakiye {amount}',
   ui: {

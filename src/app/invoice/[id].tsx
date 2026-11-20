@@ -73,7 +73,7 @@ function Detail({ inv }: { inv: Invoice }) {
   };
 
   const sharePdf = () =>
-    pdf.run(() => invoiceDocument(inv, { t, lang, owner: state.displayName ?? '', accent: colors.accent }), inv.number);
+    pdf.run(() => invoiceDocument(inv, { t, lang, owner: state.displayName ?? '' }), inv.number);
 
   return (
     <>

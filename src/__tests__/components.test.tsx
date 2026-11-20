@@ -2,7 +2,6 @@ import { fireEvent, render, screen } from '@testing-library/react-native';
 import type { ReactElement } from 'react';
 
 import {
-  AccentPicker,
   BalanceText,
   BankCard,
   Button,
@@ -19,7 +18,6 @@ import { progressTone } from '@/components/ui/ProgressBar';
 import { BootScreen } from '@/components/shell/BootScreen';
 import { Screen } from '@/components/shell/Screen';
 import { ThemeProvider, useTheme } from '@/theme/ThemeProvider';
-import { ACCENT_OPTIONS } from '@/theme/tokens';
 import { StyleSheet, Text } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
@@ -165,37 +163,6 @@ describe('CurrencyText over budget', () => {
   });
 });
 
-describe('AccentPicker', () => {
-  function CurrentAccent() {
-    const { accent, colors } = useTheme();
-    return <Text testID="accent">{`${accent}:${colors.accent}`}</Text>;
-  }
-
-  it('default Netral, mengganti aksen memperbarui token tema', async () => {
-    await wrap(
-      <>
-        <AccentPicker />
-        <CurrentAccent />
-      </>,
-    );
-    expect(screen.getByTestId('accent').props.children).toBe('netral:#E0E0E0');
-    await fireEvent.press(screen.getByLabelText('Biru'));
-    expect(screen.getByTestId('accent').props.children).toBe('biru:#2F6FE0');
-    expect(screen.getByLabelText('Biru').props.accessibilityState.checked).toBe(true);
-  });
-
-  it('memanggil onAccentChange agar bisa disimpan per pengguna', async () => {
-    const onAccentChange = jest.fn();
-    await render(
-      <ThemeProvider initialMode="dark" onAccentChange={onAccentChange}>
-        <AccentPicker />
-      </ThemeProvider>,
-    );
-    await fireEvent.press(screen.getByLabelText('Zamrud'));
-    expect(onAccentChange).toHaveBeenCalledWith('zamrud');
-  });
-});
-
 describe('BankCard', () => {
   it('nama bank sebagai teks + saldo, tanpa logo', async () => {
     await wrap(<BankCard bank="bca" accountType="Tabungan" last4="2153" balance={21480000} currency="IDR" />);
@@ -216,10 +183,10 @@ describe('Monokrom: tanpa glow, kartu solid', () => {
     return out;
   };
 
-  it.each(ACCENT_OPTIONS.map((a) => a.key))('aksen %s: tidak ada glow, kartu gelap #161616', async (accent) => {
+  it('tidak ada glow, kartu gelap #161616', async () => {
     await render(
       <SafeAreaProvider initialMetrics={metrics}>
-        <ThemeProvider initialMode="dark" initialAccent={accent}>
+        <ThemeProvider initialMode="dark">
           <Screen>
             <Card accessibilityLabel="kartu">
               <Text>isi</Text>

@@ -4,7 +4,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useT } from '@/i18n';
 import { useTheme } from '@/theme/ThemeProvider';
-import { layout, radius, space } from '@/theme/tokens';
+import { elevation, fonts, layout, radius, space } from '@/theme/tokens';
 
 import { AppText } from './AppText';
 import { GlassView } from './GlassView';
@@ -25,9 +25,9 @@ export type GlassTabBarProps<K extends string> = {
   onFootprint?: (px: number) => void;
 };
 
-/** Bottom nav: pill kaca mengambang, ikon tab aktif memakai warna aksen. */
+/** Bottom nav (Talmo .tabbar): kotak mengambang, tab aktif = blok tinta; tombol Catat di tengah. */
 export function GlassTabBar<K extends string>({ items, value, onChange, onPressAdd, floating = true, onFootprint }: GlassTabBarProps<K>) {
-  const { colors } = useTheme();
+  const { colors, scheme } = useTheme();
   const t = useT();
   const insets = useSafeAreaInsets();
   const renderTab = (item: TabBarItem<K>) => {
@@ -40,11 +40,11 @@ export function GlassTabBar<K extends string>({ items, value, onChange, onPressA
         accessibilityLabel={item.label}
         onPress={() => onChange(item.key)}
         containerStyle={styles.slot}
-        focusRadius={radius.full}
-        style={[styles.tab, active && { backgroundColor: colors.accentSoft }]}
+        focusRadius={radius.tabItem}
+        style={[styles.tab, active && { backgroundColor: colors.accent }]}
       >
-        <Icon icon={item.icon} color={active ? colors.accentText : colors.textSecondary} size={layout.iconSize.md + 2} />
-        <AppText variant="overline" tone={active ? 'primary' : 'secondary'} numberOfLines={1}>
+        <Icon icon={item.icon} color={active ? colors.onAccent : colors.textMuted} size={layout.iconSize.md} />
+        <AppText variant="overline" tone={active ? 'onAccent' : 'muted'} numberOfLines={1} style={styles.label}>
           {item.label}
         </AppText>
       </PressableScale>
@@ -57,7 +57,7 @@ export function GlassTabBar<K extends string>({ items, value, onChange, onPressA
       onLayout={floating && onFootprint ? (e) => onFootprint(e.nativeEvent.layout.height + Math.max(insets.bottom, space.md)) : undefined}
       style={floating ? [styles.anchor, { bottom: Math.max(insets.bottom, space.md) }] : styles.inline}
     >
-      <GlassView level="floating" radius={radius.full} style={styles.pill}>
+      <GlassView level="floating" radius={radius.tabBar} style={[styles.pill, elevation[scheme].floating]}>
         <View accessibilityRole="tablist" style={styles.row}>
           {items.slice(0, 2).map(renderTab)}
           <PressableScale
@@ -78,11 +78,12 @@ export function GlassTabBar<K extends string>({ items, value, onChange, onPressA
 }
 
 const styles = StyleSheet.create({
-  anchor: { position: 'absolute', left: space.lg, right: space.lg, alignItems: 'center' },
+  anchor: { position: 'absolute', left: space.md - 2, right: space.md - 2, alignItems: 'center' },
   inline: { alignItems: 'center', alignSelf: 'stretch' },
-  pill: { width: '100%', maxWidth: layout.maxContentWidth, padding: space.xs + 2 },
+  pill: { width: '100%', maxWidth: layout.maxContentWidth, padding: 6 },
   row: { flexDirection: 'row', alignItems: 'center', gap: space.xs },
   slot: { flex: 1 },
-  tab: { minHeight: 52, borderRadius: radius.full, alignItems: 'center', justifyContent: 'center', gap: space.xxs },
-  add: { width: 52, height: 52, borderRadius: radius.full, alignItems: 'center', justifyContent: 'center' },
+  tab: { height: 54, borderRadius: radius.tabItem, alignItems: 'center', justifyContent: 'center', gap: 3 },
+  label: { fontFamily: fonts.semibold },
+  add: { width: 48, height: 48, marginHorizontal: space.xs, borderRadius: radius.full, alignItems: 'center', justifyContent: 'center' },
 });

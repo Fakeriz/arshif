@@ -14,7 +14,7 @@ import { bpText, type AnnualReport } from '@/lib/tax';
  * transaksi (PDF Export, Premium). Teks dari katalog i18n, nominal diformat per mata uang.
  */
 
-type Ctx = { t: TFunction; lang: Lang; owner: string; accent: string };
+type Ctx = { t: TFunction; lang: Lang; owner: string };
 
 const decimal = (lang: Lang): ',' | '.' => (lang === 'id' || lang === 'tr' ? ',' : '.');
 const generated = (c: Ctx) => c.t('tools.pdf.footer', { date: shortDate(new Date().toISOString().slice(0, 10), c.lang) });
@@ -31,7 +31,7 @@ export function invoiceDocument(inv: Invoice, c: Ctx): string {
   if (inv.dueDate) meta.push([quote ? t('inv.doc.validUntil') : t('inv.doc.due'), shortDate(inv.dueDate, lang)]);
   meta.push([t('inv.doc.currency'), inv.currency]);
   return invoiceHtml({
-    lang, accent: c.accent,
+    lang,
     docType: quote ? t('inv.doc.quoteType') : t('inv.doc.invoiceType'),
     number: inv.number,
     status: inv.status === 'paid' ? t('inv.status.paid') : undefined,
@@ -80,7 +80,7 @@ export function annualReportDocument(r: AnnualReport, c: Ctx): string {
   if (r.skipped > 0) notes.push(t('tools.report.skipped', { count: r.skipped }));
   blocks.push({ kind: 'pairs', heading: t('tools.report.assumptions'), rows: notes.map((n) => [n, '']) });
   return reportHtml({
-    lang, accent: c.accent, owner: c.owner,
+    lang, owner: c.owner,
     title: t('tools.report.docTitle', { year: r.year }),
     subtitle: t('tools.report.docSubtitle', { country: t(`tools.tax.country${r.country === 'ID' ? 'Id' : r.country === 'MY' ? 'My' : 'Tr'}` as MsgKey), currency: r.currency }),
     blocks, disclaimer: t('tools.tax.disclaimer'), footer: generated(c),
@@ -133,7 +133,7 @@ export function monthlyReportDocument(txs: Transaction[], month: string, main: s
   ];
   if (s.skipped > 0) blocks.push({ kind: 'pairs', rows: [[t('tools.report.skipped', { count: s.skipped }), '']] });
   return reportHtml({
-    lang, accent: c.accent, owner: c.owner, title: t('tools.export.monthlyTitle'), subtitle: t('tools.export.monthlySubtitle', { month: label, currency: main }),
+    lang, owner: c.owner, title: t('tools.export.monthlyTitle'), subtitle: t('tools.export.monthlySubtitle', { month: label, currency: main }),
     blocks, footer: generated(c),
   });
 }
@@ -150,7 +150,7 @@ export function historyDocument(txs: Transaction[], accounts: Account[], from: s
       return [shortDate(x.date, lang), x.merchant || categoryLabel(t, x.categoryKey), categoryLabel(t, x.categoryKey), who, `${sign}${formatMoney(x.amount, x.currency)}`];
     });
   return reportHtml({
-    lang, accent: c.accent, owner: c.owner, title: t('tools.export.historyTitle'), subtitle: t('tools.export.historySubtitle', { from: shortDate(from, lang), to: shortDate(to, lang), count: rows.length }),
+    lang, owner: c.owner, title: t('tools.export.historyTitle'), subtitle: t('tools.export.historySubtitle', { from: shortDate(from, lang), to: shortDate(to, lang), count: rows.length }),
     blocks: [{ kind: 'table', columns: [t('tools.export.colDate'), t('tools.export.colDesc'), t('tools.report.category'), t('tools.export.colAccount'), t('tools.report.amount')], numeric: [false, false, false, false, true], rows, empty: t('tools.export.none') }],
     footer: generated(c),
   });

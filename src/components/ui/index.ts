@@ -1,4 +1,3 @@
-export { AccentPicker } from './AccentPicker';
 export { AmountField } from './AmountField';
 export { AmountInput } from './AmountInput';
 export { AppText } from './AppText';

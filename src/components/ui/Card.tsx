@@ -19,7 +19,8 @@ export type CardProps = {
 
 export function Card({ children, variant = 'glass', padding = 'lg', onPress, accessibilityLabel, style }: CardProps) {
   const { colors } = useTheme();
-  const pad: ViewStyle = { padding: padding === 0 ? 0 : space[padding] };
+  // Talmo .card: 18px atas, 20px sisi; padding lain tetap seragam.
+  const pad: ViewStyle = padding === 0 ? { padding: 0 } : padding === 'lg' ? { paddingVertical: 18, paddingHorizontal: space.xl } : { padding: space[padding] };
   const body =
     variant === 'glass' ? (
       <GlassView radius={radius.lg} style={[pad, style]} accessibilityLabel={onPress ? undefined : accessibilityLabel}>

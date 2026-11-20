@@ -4,7 +4,6 @@ import type { Lang } from '@/i18n/types';
 import type { Split } from '@/lib/budget';
 import { EMPTY_USAGE, isQuotaKey, type Usage } from '@/lib/quota';
 import { supabase } from '@/lib/supabase';
-import type { AccentKey } from '@/theme/tokens';
 import type { ThemeMode } from '@/theme/ThemeProvider';
 
 import {
@@ -36,7 +35,6 @@ export type Profile = {
   displayName: string | null;
   mainCurrency: string;
   lang: Lang;
-  accent: AccentKey;
   themeMode: ThemeMode;
   hideBalance: boolean;
   /** Aset ikut dijumlahkan ke saldo Beranda. */
@@ -54,7 +52,7 @@ export type Profile = {
 };
 
 type ProfileRow = {
-  display_name: string | null; main_currency: string; lang: Lang; accent: AccentKey; theme_mode: ThemeMode; hide_balance: boolean; include_assets?: boolean;
+  display_name: string | null; main_currency: string; lang: Lang; theme_mode: ThemeMode; hide_balance: boolean; include_assets?: boolean;
   payday: number; monthly_income: number; split_needs: number; split_wants: number; split_savings: number;
   notif_prefs: Profile['notifPrefs']; active_account_id: string | null; plan: Plan; onboarded_at: string | null;
   premium_until: string | null; premium_source: 'store' | 'web' | 'manual' | null; suspended_at: string | null;
@@ -67,7 +65,6 @@ export async function loadProfile(userId: string, email: string): Promise<Profil
     displayName: r.display_name,
     mainCurrency: r.main_currency,
     lang: r.lang,
-    accent: r.accent,
     themeMode: r.theme_mode,
     hideBalance: r.hide_balance,
     // Kolom belum ada (migrasi 18 belum jalan) → perilaku lama: aset ikut.
@@ -93,7 +90,7 @@ export async function loadPlan(userId: string): Promise<{ plan: Plan; premiumUnt
 }
 
 export type ProfilePatch = Partial<{
-  display_name: string; main_currency: string; lang: Lang; accent: AccentKey; theme_mode: ThemeMode; hide_balance: boolean; include_assets: boolean;
+  display_name: string; main_currency: string; lang: Lang; theme_mode: ThemeMode; hide_balance: boolean; include_assets: boolean;
   payday: number; monthly_income: number; split_needs: number; split_wants: number; split_savings: number;
   notif_prefs: Profile['notifPrefs']; active_account_id: string | null; onboarded_at: string;
 }>;
