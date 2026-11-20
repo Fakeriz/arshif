@@ -38,6 +38,13 @@ describe('deteksi duplikat rekening koran', () => {
     expect(findDuplicate({ ...row, amount: 87_501 }, seedTransactions, 'a-bca')).toBeNull();
     expect(findDuplicate({ ...row, date: '2026-11-02' }, seedTransactions, 'a-bca')).toBeNull();
   });
+
+  it('nominal sama tapi mata uang beda: bukan duplikat', () => {
+    const tx = seedTransactions.find((t) => t.accountId === 'a-bca' && t.type === 'expense')!;
+    const row = { date: tx.date, description: tx.merchant, type: tx.type as 'expense', amount: tx.amount, currency: tx.currency === 'IDR' ? 'MYR' : 'IDR', categoryKey: tx.categoryKey, time: null };
+    expect(findDuplicate(row, seedTransactions, 'a-bca')).toBeNull();
+    expect(findDuplicate({ ...row, currency: tx.currency }, seedTransactions, 'a-bca')).not.toBeNull();
+  });
 });
 
 describe('kuota Free vs Premium', () => {

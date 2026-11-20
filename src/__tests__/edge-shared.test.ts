@@ -116,6 +116,15 @@ describe('normalizeVoice', () => {
   it('keluaran kosong tetap valid', () => {
     expect(normalizeVoice({}, ctx)).toEqual({ transcript: '', items: [] });
   });
+
+  it('jam yang diucapkan ikut; tidak disebut atau tidak valid = null', () => {
+    const items = [
+      { type: 'expense', merchant: 'Kopi', amount: '25000', currency: 'IDR', categoryKey: 'hangout', date: '2026-11-04', time: '8:05' },
+      { type: 'expense', merchant: 'Parkir', amount: '5000', currency: 'IDR', categoryKey: 'fuel', date: '2026-11-04' },
+      { type: 'expense', merchant: 'Salah', amount: '5000', currency: 'IDR', categoryKey: 'fuel', date: '2026-11-04', time: '25:00' },
+    ];
+    expect(normalizeVoice({ items }, ctx).items.map((i) => i.time)).toEqual(['08:05', null, null]);
+  });
 });
 
 describe('normalizeStatement', () => {
@@ -134,6 +143,20 @@ describe('normalizeStatement', () => {
     );
     expect(r.pages).toBe(2);
     expect(r.rows.map((x) => [x.type, x.amount])).toEqual([['income', 14250000], ['expense', 32000]]);
+  });
+
+  it('mata uang dari dokumen, bukan akun tujuan: PDF bank Indonesia ke akun RM tetap IDR', () => {
+    const r = normalizeStatement(
+      { pages: 1, currency: 'IDR', rows: [{ date: '2026-10-26', description: 'QRIS KOPI', type: 'expense', amount: '32000', currency: '', categoryKey: 'hangout' }] },
+      'MYR',
+    );
+    expect(r.rows[0]).toMatchObject({ currency: 'IDR', amount: 32000 });
+  });
+
+  it('jam transaksi ikut bila tercetak ("14:32:05", "9.05"); tanpa jam = null', () => {
+    const row = (time?: string) => ({ date: '2026-10-26', description: 'QRIS KOPI', type: 'expense', amount: '32000', currency: 'IDR', categoryKey: 'hangout', time });
+    const r = normalizeStatement({ pages: 1, currency: 'IDR', rows: [row('14:32:05'), row('9.05'), row(), row('99:99')] }, 'IDR');
+    expect(r.rows.map((x) => x.time)).toEqual(['14:32', '09:05', null, null]);
   });
 });
 

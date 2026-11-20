@@ -17,7 +17,7 @@ export function similarity(a: string, b: string): number {
   return shared / (wa.size + wb.size - shared);
 }
 
-export type StatementRow = { date: string; description: string; amount: number; type: 'income' | 'expense' };
+export type StatementRow = { date: string; description: string; amount: number; currency: string; type: 'income' | 'expense' };
 
 /** "Kemungkinan duplikat": tanggal ±1 hari, nominal sama, deskripsi mirip (FR-PDF-2). */
 export function findDuplicate(row: StatementRow, existing: Transaction[], accountId: string): Transaction | null {
@@ -27,6 +27,7 @@ export function findDuplicate(row: StatementRow, existing: Transaction[], accoun
         tx.accountId === accountId &&
         tx.type === row.type &&
         tx.amount === row.amount &&
+        tx.currency === row.currency &&
         Math.abs(diffDays(tx.date, row.date)) <= 1 &&
         similarity(tx.merchant, row.description) >= 0.3,
     ) ?? null

@@ -13,7 +13,12 @@ const num01 = (v: unknown): number => {
   return Number.isFinite(n) ? Math.min(1, Math.max(0, n)) : 0;
 };
 const ymd = (v: unknown): string | null => (/^\d{4}-\d{2}-\d{2}$/.test(str(v)) ? str(v) : null);
-const hhmm = (v: unknown): string | null => (/^\d{2}:\d{2}$/.test(str(v)) ? str(v) : null);
+/** Jam "HH:MM" dari "9:05", "14.32", "14:32:05"; jam/menit di luar rentang = null. */
+const hhmm = (v: unknown): string | null => {
+  const m = /^(\d{1,2})[:.](\d{2})(?:[:.]\d{2})?$/.exec(str(v).trim());
+  if (!m || Number(m[1]) > 23 || Number(m[2]) > 59) return null;
+  return `${m[1]!.padStart(2, '0')}:${m[2]}`;
+};
 const category = (v: unknown, fallback = 'other'): (typeof CATEGORY_KEYS)[number] =>
   (CATEGORY_KEYS as readonly string[]).includes(str(v)) ? (str(v) as (typeof CATEGORY_KEYS)[number]) : (fallback as 'other');
 const arr = (v: unknown): Raw[] => (Array.isArray(v) ? (v.filter((x) => x && typeof x === 'object') as Raw[]) : []);
@@ -124,6 +129,7 @@ export function normalizeVoice(raw: unknown, ctx: { accountIds: string[]; defaul
         date: ymd(it.date) ?? ctx.today,
         note: cleanText(str(it.note)).slice(0, 200) || null,
         placeHint: cleanText(str(it.placeHint)).slice(0, 120) || null,
+        time: hhmm(it.time),
       };
     })
     .filter((x): x is NonNullable<typeof x> => x !== null)
@@ -133,9 +139,11 @@ export function normalizeVoice(raw: unknown, ctx: { accountIds: string[]; defaul
 
 export function normalizeStatement(raw: unknown, fallbackCurrency: string): ImportResult {
   const r = (raw ?? {}) as Raw;
+  // Mata uang dokumen dulu; akun tujuan hanya cadangan terakhir (PDF bank Indonesia ke akun RM tetap IDR).
+  const statementCurrency = normalizeCurrency(str(r.currency), fallbackCurrency);
   const rows = arr(r.rows)
     .map((row) => {
-      const currency = normalizeCurrency(str(row.currency), fallbackCurrency);
+      const currency = normalizeCurrency(str(row.currency), statementCurrency);
       const amount = positiveMinor(str(row.amount).replace(/^-/, ''), currency);
       const date = ymd(row.date);
       const description = cleanText(str(row.description)).slice(0, 200);
@@ -147,6 +155,7 @@ export function normalizeStatement(raw: unknown, fallbackCurrency: string): Impo
         amount,
         currency,
         categoryKey: category(row.categoryKey),
+        time: hhmm(row.time),
       };
     })
     .filter((x): x is NonNullable<typeof x> => x !== null)

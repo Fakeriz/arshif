@@ -113,12 +113,12 @@ export const sampleStatement = {
   fileName: 'Rekening_Koran_BCA_Okt2026.pdf',
   sizeLabel: '412 KB · 3 halaman',
   rows: [
-    { id: 's1', date: '2026-10-29', description: 'APOTEK K-24 KEMANG', amount: 87_500, type: 'expense' as const },
-    { id: 's2', date: '2026-10-29', description: 'KLINIK PRATAMA KEMANG', amount: 250_000, type: 'expense' as const },
-    { id: 's3', date: '2026-10-30', description: 'BIAYA ADM BULANAN', amount: 12_500, type: 'expense' as const },
-    { id: 's4', date: '2026-10-31', description: 'TRF DARI AYAH', amount: 500_000, type: 'income' as const },
-    { id: 's5', date: '2026-11-01', description: 'SEWA KOS NOVEMBER', amount: 1_750_000, type: 'expense' as const },
-    { id: 's6', date: '2026-11-02', description: 'BUNGA TABUNGAN', amount: 8_300, type: 'income' as const },
+    { id: 's1', date: '2026-10-29', description: 'APOTEK K-24 KEMANG', amount: 87_500, currency: 'IDR', type: 'expense' as const },
+    { id: 's2', date: '2026-10-29', description: 'KLINIK PRATAMA KEMANG', amount: 250_000, currency: 'IDR', type: 'expense' as const },
+    { id: 's3', date: '2026-10-30', description: 'BIAYA ADM BULANAN', amount: 12_500, currency: 'IDR', type: 'expense' as const },
+    { id: 's4', date: '2026-10-31', description: 'TRF DARI AYAH', amount: 500_000, currency: 'IDR', type: 'income' as const },
+    { id: 's5', date: '2026-11-01', description: 'SEWA KOS NOVEMBER', amount: 1_750_000, currency: 'IDR', type: 'expense' as const },
+    { id: 's6', date: '2026-11-02', description: 'BUNGA TABUNGAN', amount: 8_300, currency: 'IDR', type: 'income' as const },
   ],
 };
 

@@ -87,7 +87,7 @@ export function scanPrompt(): string {
   return `You read a shopping receipt (a photo, or a PDF e-receipt/invoice) (Indonesia, Malaysia, Turkey or elsewhere) and extract ALL of it. Read the whole receipt from top to bottom, including the parts below the subtotal.
 Rules:
 - Amounts: ${AMOUNT} Indonesian receipts use "." as thousands separator ("Rp 45.000" means 45000). Turkish uses "," as decimal ("₺350,00" means 350.00, "*259,90" means 259.90; the "*" is a print marker, ignore it). Malaysian "RM 12.50" means 12.50.
-- currency: ISO code. Rp/IDR -> IDR, RM -> MYR, ₺/TL -> TRY, $ -> USD, S$ -> SGD, € -> EUR.
+- currency: ISO code. Rp/IDR -> IDR, RM -> MYR, ₺/TL -> TRY, $ -> USD, S$ -> SGD, € -> EUR. When no symbol is printed, take it from the store's country (address, phone, tax ID: NPWP/PPN -> IDR, SST/GST Malaysia -> MYR, VKN/KDV -> TRY), never from the reader's home currency.
 - Header: merchant = store/branch name; storeAddress = this branch's address (skip the head office line starting with "MERKEZ"); storeTaxId = tax office + number (e.g. "Anadolu KR. VD. 2120370364", NPWP); receiptNo = FİŞ NO / No. Struk / Bill No.
 - items: every purchased product line with name, qty, unit price, line total BEFORE discount (positive) and its tax rate when printed next to it (Turkish "%10" / "%20" after the name is the KDV rate). Never put a discount line in items.
 - discounts: NEVER skip the promotion section. Lines under "Promosyonlar", "KAZANÇ"/"KAZANC", "İndirim", "Diskon", "Potongan", "Promo", "Hemat", "Voucher", or any negative amount are discounts. For each: itemName = the product name on that line (copy it exactly as in items), taxRate = the "%" printed on that line, amount = positive value, label = the promotion caption printed just above that line (or null). A caption line without an amount is a label, not a discount.
@@ -121,6 +121,7 @@ export const VOICE_SCHEMA: GeminiSchema = {
           date: S('YYYY-MM-DD'),
           note: S('optional note or null', true),
           placeHint: S('Store or place name the speaker said they bought at, with area if said (e.g. "Indomaret Kemang"), or null', true),
+          time: S('HH:MM 24h when the speaker says a time, or null', true),
         },
         required: ['type', 'merchant', 'amount', 'currency', 'categoryKey', 'date'],
       },
@@ -134,7 +135,8 @@ export function voicePrompt(ctx: { today: string; timezone: string; defaultCurre
   return `Transcribe the audio, then extract every money transaction the speaker mentions. The speaker may use Indonesian, Malay, Turkish or English, possibly mixed.
 Today is ${ctx.today} in time zone ${ctx.timezone}. Convert relative dates to YYYY-MM-DD: "kemarin"/"semalam"/"dün"/"yesterday" = the day before today; "minggu lalu"/"minggu lepas"/"geçen hafta"/"last week" = 7 days before today. Default date is today.
 Normalize informal numbers: "goceng" = 5000, "ceban" = 10000, "gopek" = 500, "50k"/"50rb"/"50 ribu" = 50000, "sejuta" = 1000000, "lima puluh ribu" = 50000, "elli lira" = 50 TRY, "seratus ringgit" = 100 MYR. ${AMOUNT}
-Currency: use the one spoken; otherwise ${ctx.defaultCurrency}.
+Currency: use the one spoken (rupiah/Rp, ringgit/RM, lira/TL, dollar, ...). If none is spoken but the speaker names one of the accounts below, use that account's currency. Otherwise ${ctx.defaultCurrency}.
+Time: set time (HH:MM, 24h) only when the speaker says one: "jam 8 pagi" = 08:00, "jam 3 sore" = 15:00, "jam 7 malam" = 19:00, "pukul 14.30" = 14:30, "saat 9" = 09:00. Otherwise null.
 Accounts of this user:
 ${list}
 Set placeHint only when the speaker names where they bought it; never guess a place.
@@ -147,6 +149,7 @@ export const STATEMENT_SCHEMA: GeminiSchema = {
   type: 'OBJECT',
   properties: {
     pages: { type: 'INTEGER' },
+    currency: S('ISO 4217 code of the currency this statement is in, read from the document'),
     rows: {
       type: 'ARRAY',
       items: {
@@ -158,19 +161,21 @@ export const STATEMENT_SCHEMA: GeminiSchema = {
           amount: S(AMOUNT),
           currency: S('ISO 4217 code'),
           categoryKey: CATEGORY,
+          time: S('HH:MM 24h when the row prints a transaction time, or null', true),
         },
         required: ['date', 'description', 'type', 'amount', 'currency', 'categoryKey'],
       },
     },
   },
-  required: ['pages', 'rows'],
+  required: ['pages', 'currency', 'rows'],
 };
 
 export function statementPrompt(accountCurrency: string): string {
   return `This is a bank or e-wallet statement PDF. Extract EVERY transaction row from all pages.
 - type: money in (credit, CR, kredit, alacak) = income; money out (debit, DB, debet, borç) = expense.
 - amount: positive. ${AMOUNT}
-- currency: the statement currency, default ${accountCurrency}.
+- currency: read it from the statement itself: currency column/header ("Mata Uang", "Currency", "Para Birimi"), amount symbols (Rp, IDR, RM, MYR, TL, TRY, $), or the bank's country (BCA, Mandiri, BRI, BNI, Jago, GoPay, OVO, DANA -> IDR; Maybank, CIMB, Public Bank, RHB, Touch 'n Go -> MYR; Ziraat, Garanti, İş Bankası, Akbank, Yapı Kredi -> TRY). Every row uses the statement currency unless the row itself shows another one. Only when the document gives no clue at all, use ${accountCurrency}.
+- time: HH:MM 24h when the row prints a time (e.g. "14:32:05" -> "14:32"), else null. Never invent a time.
 - Skip opening/closing balance, totals and summary lines.
 - date as YYYY-MM-DD; infer the year from the statement period when rows show only day and month.
 - ${CATEGORY_GUIDE}

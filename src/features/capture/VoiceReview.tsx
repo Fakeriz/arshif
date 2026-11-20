@@ -46,10 +46,11 @@ export function VoiceReview({ result, accounts, onSave }: { result: VoiceResult;
   const save = () => {
     setTried(true);
     if (invalid || drafts.length === 0) return;
-    const time = localHm();
+    const now = localHm();
     const txs = drafts.map((d) => ({
       id: newId(), type: d.type, merchant: d.merchant.trim(), categoryKey: d.categoryKey, accountId: d.accountPick,
-      date: d.date, time, amount: d.amountEdit as number, currency: d.currency, note: d.note ?? undefined, source: 'voice' as const, place: d.place ?? undefined,
+      // Jam yang diucapkan ("jam 8 pagi"); tidak disebut = jam sekarang.
+      date: d.date, time: d.time ?? now, amount: d.amountEdit as number, currency: d.currency, note: d.note ?? undefined, source: 'voice' as const, place: d.place ?? undefined,
     }));
     saving.run(() => onSave(txs));
   };

@@ -101,6 +101,8 @@ export const VoiceItem = z.object({
   note: z.string().max(200).nullable(),
   /** Nama tempat yang diucapkan ("di Indomaret Kemang"), dicocokkan ke Google Places di layar tinjau. */
   placeHint: z.string().max(120).nullable().default(null),
+  /** Jam yang diucapkan ("jam 8 pagi" = 08:00); null = tidak disebut. Default untuk server lama. */
+  time: z.string().regex(/^\d{2}:\d{2}$/).nullable().default(null),
 });
 export const VoiceResult = z.object({ transcript: z.string().max(2000), items: z.array(VoiceItem).max(20) });
 export type VoiceResult = z.infer<typeof VoiceResult>;
@@ -136,6 +138,8 @@ export const StatementRow = z.object({
   amount: Minor.positive(),
   currency: Currency,
   categoryKey: CategoryKey,
+  /** Jam transaksi bila dicetak di rekening koran; null = tidak ada. Default untuk server lama. */
+  time: z.string().regex(/^\d{2}:\d{2}$/).nullable().default(null),
 });
 export const ImportResult = z.object({ rows: z.array(StatementRow).max(1000), pages: z.number().int().nonnegative() });
 export type ImportResult = z.infer<typeof ImportResult>;

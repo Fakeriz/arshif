@@ -35,7 +35,7 @@ export function ImportReview({ result, accountId, accountName, existing, onImpor
   const submit = () => {
     const txs = rows.filter((r) => checked[r.key]).map((r) => ({
       id: newId(), type: r.type, merchant: prettifyDescription(r.description), categoryKey: r.categoryKey, accountId,
-      date: r.date, time: '00:00', amount: r.amount, currency: r.currency, source: 'import' as const,
+      date: r.date, time: r.time ?? '00:00', amount: r.amount, currency: r.currency, source: 'import' as const,
     }));
     saving.run(() => onImport(txs));
   };
@@ -54,7 +54,7 @@ export function ImportReview({ result, accountId, accountName, existing, onImpor
                 {prettifyDescription(r.description)}
               </AppText>
               <AppText variant="caption" tone="muted">
-                {shortDate(r.date, lang)}
+                {r.time ? `${shortDate(r.date, lang)} · ${r.time}` : shortDate(r.date, lang)}
               </AppText>
               {r.duplicate && <Badge label={t('capture.importReview.duplicate')} tone="warning" />}
             </View>
