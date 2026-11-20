@@ -48,6 +48,9 @@ async function test(name, fn) {
 function eq(actual, expected, msg = '') {
   if (JSON.stringify(actual) !== JSON.stringify(expected)) throw new Error(`${msg} diharapkan ${JSON.stringify(expected)}, didapat ${JSON.stringify(actual)}`);
 }
+function ok(cond, msg = '') {
+  if (!cond) throw new Error(msg || 'kondisi tidak terpenuhi');
+}
 async function rejects(promise, pattern) {
   try {
     await promise;
@@ -507,11 +510,42 @@ await test('refund_shift: hanya durasi pesanan yang di-refund yang hilang, sekal
   const len1 = new Date(o1.granted_until).getTime() - new Date(o1.granted_from).getTime();
   await sys(`update public.orders set status = 'refunded' where id = $1`, [o1.id]);
   const [{ end }] = await sys(`select public.refund_shift($1) as "end"`, [o1.id]);
-  eq(new Date(end).getTime(), new Date(o2.granted_until).getTime() - len1, 'tahunan bergeser maju sebesar 1 bulan');
+  // Pesanan pertama mulai "sekarang", jadi sisa yang belum terpakai = hampir seluruh durasinya.
+  ok(Math.abs(new Date(end).getTime() - (new Date(o2.granted_until).getTime() - len1)) < 60_000, 'tahunan bergeser maju sebesar sisa 1 bulan');
   const [{ end: end2 }] = await sys(`select public.refund_shift($1) as "end"`, [o1.id]);
   eq(new Date(end2).getTime(), new Date(end).getTime(), 'pengiriman ulang tidak menggeser dua kali');
   await sys(`delete from public.orders`);
   await sys(`insert into public.orders (user_id, provider, period, currency, amount, method) values ($1, 'xendit', 'monthly', 'IDR', 25000, 'qris'), ($2, 'paddle', 'yearly', 'USD', 1500, 'card')`, [A, B]);
+});
+
+await test('refund_shift: refund di tengah masa aktif tidak memotong hari yang sudah dibayar pesanan berikutnya', async () => {
+  await sys(`delete from public.orders`);
+  // A: 20 hari lalu sampai 10 hari lagi (sisa 10 hari). B: bertumpuk setelah A, 30 hari.
+  const [{ id: a }] = await sys(`insert into public.orders (user_id, provider, period, currency, amount, status, granted_from, granted_until)
+    values ($1, 'xendit', 'monthly', 'IDR', 25000, 'refunded', now() - interval '20 days', now() + interval '10 days') returning id`, [A]);
+  const [{ granted_until: bUntil }] = await sys(`insert into public.orders (user_id, provider, period, currency, amount, status, granted_from, granted_until)
+    values ($1, 'xendit', 'monthly', 'IDR', 25000, 'paid', now() + interval '10 days', now() + interval '40 days') returning granted_until`, [A]);
+  const [{ end }] = await sys(`select public.refund_shift($1) as "end"`, [a]);
+  const shifted = new Date(bUntil).getTime() - new Date(end).getTime();
+  ok(Math.abs(shifted - 10 * 86_400_000) < 60_000, `B hanya maju 10 hari (sisa A), bukan 30: ${shifted}`);
+  await sys(`delete from public.orders`);
+  await sys(`insert into public.orders (user_id, provider, period, currency, amount, method) values ($1, 'xendit', 'monthly', 'IDR', 25000, 'qris'), ($2, 'paddle', 'yearly', 'USD', 1500, 'card')`, [A, B]);
+});
+
+await test('Premium yang sudah lewat premium_until langsung memakai batas Free', async () => {
+  await sys(`update public.profiles set plan = 'premium', premium_until = now() - interval '1 minute' where id = $1`, [A]);
+  eq((await sys(`select public.plan_allows($1, 'pdfExport') as ok`, [A]))[0].ok, false, 'pdfExport tertutup setelah habis');
+  await sys(`update public.profiles set premium_until = now() + interval '1 day' where id = $1`, [A]);
+  eq((await sys(`select public.plan_allows($1, 'pdfExport') as ok`, [A]))[0].ok, true, 'masih aktif = Premium');
+  await sys(`update public.profiles set plan = 'free', premium_until = null where id = $1`, [A]);
+});
+
+await test('quota_refund mengembalikan ke periode saat kuota diambil', async () => {
+  const last = await sys(`select to_char((now() - interval '1 month') at time zone 'utc', 'YYYY-MM') as p`);
+  await sys(`insert into public.usage_counters (user_id, period, key, used) values ($1, $2, 'scan', 3)
+    on conflict (user_id, period, key) do update set used = 3`, [A, last[0].p]);
+  await sys(`select public.quota_refund($1, 'scan', now() - interval '1 month')`, [A]);
+  eq((await sys(`select used from public.usage_counters where user_id = $1 and period = $2 and key = 'scan'`, [A, last[0].p]))[0].used, 2);
 });
 
 await test('paket dan masa Premium tidak bisa diubah klien', async () => {

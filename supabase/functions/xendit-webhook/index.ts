@@ -4,14 +4,14 @@
  * Idempoten: webhook_events (provider, id+status) + transisi status bersyarat di orders.
  */
 import { adminClient } from '../_shared/auth.ts';
-import { minorToMajor, verifyStaticToken, xenditInvoiceStatus } from '../_shared/billing.ts';
+import { isUuid, minorToMajor, verifyStaticToken, xenditInvoiceStatus } from '../_shared/billing.ts';
 import { configured, XENDIT_CALLBACK_TOKEN } from '../_shared/env.ts';
 import { grantOrder, handleEventOnce, refundOrder, transitionOrder } from '../_shared/entitlement.ts';
 import { HttpError, json, readJson, serve } from '../_shared/http.ts';
 import { exponentOf } from '../_shared/money.ts';
 
 type InvoiceCallback = { id: string; external_id: string; status: string; amount: number; currency: string };
-type RefundCallback = { event: string; data: { id: string; invoice_id?: string | null } };
+type RefundCallback = { event: string; data: { id: string; invoice_id?: string | null; amount?: number | null } };
 
 serve(async (req) => {
   // Secret belum diisi: 503 not_configured (bukan 500), penyedia mengirim ulang setelah dikonfigurasi.
@@ -24,14 +24,23 @@ serve(async (req) => {
     const eventId = `refund:${body.data.id}`;
     const invoiceId = body.data.invoice_id;
     return handleEventOnce(db, 'xendit', eventId, async () => {
-      const { data: order, error } = await db.from('orders').select('id').eq('provider', 'xendit').eq('provider_ref', invoiceId).maybeSingle();
+      const { data: order, error } = await db.from('orders').select('id, amount, currency').eq('provider', 'xendit').eq('provider_ref', invoiceId).maybeSingle();
       if (error) throw new Error(`order_read_${error.code}`);
-      if (order) await refundOrder(db, order.id);
+      if (!order) return json({ ok: true, unknown: true });
+      // Refund sebagian (mis. kompensasi) tidak mencabut seluruh masa Premium: admin yang memutuskan (sama seperti Paddle).
+      const refunded = Number(body.data?.amount);
+      if (Number.isFinite(refunded) && refunded < minorToMajor(order.amount, exponentOf(order.currency))) {
+        await db.from('orders').update({ grant_error: 'partial_refund', updated_at: new Date().toISOString() }).eq('id', order.id);
+        return json({ ok: true, partial: true });
+      }
+      await refundOrder(db, order.id);
       return json({ ok: true });
     });
   }
 
   if (!body.id || !body.external_id || !body.status) throw new HttpError('bad_request', 400);
+  // Invoice yang tidak dibuat aplikasi ini (dasbor/integrasi lain): bukan uuid pesanan, jangan memicu kirim ulang.
+  if (!isUuid(body.external_id)) return json({ ok: true, unknown: true });
   const incoming = xenditInvoiceStatus(body.status);
   if (!incoming) return json({ ok: true, ignored: body.status });
   const eventId = `${body.id}:${body.status}`;

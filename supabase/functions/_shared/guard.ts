@@ -32,6 +32,8 @@ export async function runAiJob<T>(
   if (startError) throw new HttpError('server', 500);
   if (!jobId) throw new HttpError('rate_limited', 429);
 
+  // Waktu kuota diambil: pengembalian masuk ke periode ini walau pekerjaan selesai setelah pergantian bulan/hari.
+  const consumedAt = new Date().toISOString();
   if (quotaKey) {
     const { data: ok, error } = await db.rpc('quota_try_consume', { p_user: userId, p_key: quotaKey });
     if (error) {
@@ -49,7 +51,7 @@ export async function runAiJob<T>(
     await finish(db, jobId, 'ok', startedAt);
     return result;
   } catch (e) {
-    if (quotaKey) await db.rpc('quota_refund', { p_user: userId, p_key: quotaKey });
+    if (quotaKey) await db.rpc('quota_refund', { p_user: userId, p_key: quotaKey, p_at: consumedAt });
     const code = e instanceof HttpError ? e.code : e instanceof Error ? e.message : 'unknown';
     await finish(db, jobId, 'failed', startedAt, code);
     if (e instanceof HttpError) throw e;

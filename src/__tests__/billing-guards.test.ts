@@ -78,7 +78,7 @@ describe('runAiJob (audit 6)', () => {
 
     const bad = fakeDb({ ai_job_start: () => ({ data: 'job-3', error: null }), quota_try_consume: () => ({ data: true, error: null }) });
     await expect(runAiJob(bad.db, 'u1', 'coach', 'coachNarration', async () => Promise.reject(new HttpError('ai_failed', 502)))).rejects.toMatchObject({ code: 'ai_failed' });
-    expect(bad.calls).toContainEqual(expect.objectContaining({ kind: 'rpc', name: 'quota_refund', args: [{ p_user: 'u1', p_key: 'coachNarration' }] }));
+    expect(bad.calls).toContainEqual(expect.objectContaining({ kind: 'rpc', name: 'quota_refund', args: [{ p_user: 'u1', p_key: 'coachNarration', p_at: expect.any(String) }] }));
     expect(bad.calls).toContainEqual(expect.objectContaining({ name: 'ai_jobs', method: 'update', args: [expect.objectContaining({ status: 'failed', error: 'ai_failed' })] }));
   });
 });

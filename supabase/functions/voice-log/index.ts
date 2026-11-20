@@ -26,7 +26,10 @@ serve(async (req) => {
       VOICE_SCHEMA,
       { mimeType, base64: body.audio },
     );
-    return normalizeVoice(raw, { accountIds: accounts.map((a) => a.id), defaultCurrency: body.defaultCurrency, today: body.today });
+    const voice = normalizeVoice(raw, { accountIds: accounts.map((a) => a.id), defaultCurrency: body.defaultCurrency, today: body.today });
+    // Tidak ada transaksi terbaca (hening/tak jelas) = gagal; runAiJob mengembalikan kuota, sama seperti scan dan import.
+    if (voice.items.length === 0) throw new HttpError('unreadable', 422);
+    return voice;
   });
   return json(result);
 });

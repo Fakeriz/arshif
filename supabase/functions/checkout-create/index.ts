@@ -28,16 +28,20 @@ serve(async (req) => {
     : ['PADDLE_API_KEY', 'PADDLE_WEBHOOK_SECRET', `PADDLE_PRICE_${period.toUpperCase()}`, 'RC_SECRET_KEY'];
   if (!configured(...needed)) throw new HttpError('not_configured', 503, { message: provider });
 
-  const since = new Date(Date.now() - 10 * 60_000).toISOString();
-  const { count } = await db.from('orders').select('id', { count: 'exact', head: true }).eq('user_id', user.id).gte('created_at', since);
-  if ((count ?? 0) >= MAX_ORDERS_PER_10_MIN) throw new HttpError('rate_limited', 429);
-
   const { data: order, error } = await db
     .from('orders')
     .insert({ user_id: user.id, provider, period, currency, amount: price.amount, method })
     .select('id')
     .single();
   if (error || !order) throw new HttpError('server', 500);
+
+  // Dihitung SETELAH pesanan ini ditulis: permintaan serentak saling melihat, jadi tidak bisa lolos bersama.
+  const since = new Date(Date.now() - 10 * 60_000).toISOString();
+  const { count } = await db.from('orders').select('id', { count: 'exact', head: true }).eq('user_id', user.id).gte('created_at', since);
+  if ((count ?? 0) > MAX_ORDERS_PER_10_MIN) {
+    await db.from('orders').update({ status: 'failed', grant_error: 'rate_limited', updated_at: new Date().toISOString() }).eq('id', order.id);
+    throw new HttpError('rate_limited', 429);
+  }
 
   try {
     if (provider === 'xendit') {

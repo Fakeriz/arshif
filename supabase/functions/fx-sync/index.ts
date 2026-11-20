@@ -4,19 +4,13 @@
  * Bila API gagal, kurs lama tetap dipakai. Setiap percobaan dicatat di fx_sync_runs (status di panel admin).
  */
 import { adminClient, requireUser } from '../_shared/auth.ts';
+import { safeEqual } from '../_shared/billing.ts';
 import { CRON_SECRET } from '../_shared/env.ts';
 import { HttpError, json, serve } from '../_shared/http.ts';
 
 const API = 'https://api.frankfurter.dev/v1';
 const MIN_HISTORY_DAYS = 30;
 
-/** Bandingkan tanpa bocor waktu (secret tidak bisa ditebak per karakter). */
-function safeEqual(a: string, b: string): boolean {
-  if (a.length !== b.length) return false;
-  let diff = 0;
-  for (let i = 0; i < a.length; i++) diff |= a.charCodeAt(i) ^ b.charCodeAt(i);
-  return diff === 0;
-}
 
 type Row = { rate_date: string; code: string; per_usd: string; source: string };
 
