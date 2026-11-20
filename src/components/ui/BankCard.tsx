@@ -2,12 +2,14 @@ import { StyleSheet, View } from 'react-native';
 
 import { getBank } from '@/constants/banks';
 import { bankName, useT } from '@/i18n';
+import { cardProduct } from '@/lib/cardCatalog';
 import { formatMoney } from '@/lib/money';
 import { useTheme } from '@/theme/ThemeProvider';
 import { fonts, layout, radius, space } from '@/theme/tokens';
 
 import { AppText } from './AppText';
 import { PressableScale } from './PressableScale';
+import { ProductArt } from './ProductArt';
 
 export type BankCardProps = {
   bank: string;
@@ -23,6 +25,8 @@ export type BankCardProps = {
   width?: number;
   /** Keterangan singkat, mis. utilisasi limit kartu kredit/grup. */
   footnote?: string;
+  /** Tampilan kartu pilihan pengguna (id produk katalog). Kosong/tidak dikenal = desain bawaan bank. */
+  cardStyle?: string;
 };
 
 export const BANK_CARD_RATIO = 280 / 168;
@@ -31,15 +35,37 @@ export const BANK_CARD_RATIO = 280 / 168;
  * Kartu akun per bank (FR-ACC-2): warna khas bank, nama bank sebagai teks (bukan logo).
  * Kaca hanya di tepi (border) agar warna bank tetap jadi identitas kartu.
  */
-export function BankCard({ bank, accountType, last4, balance, currency, hidden, onPress, width, footnote }: BankCardProps) {
+export function BankCard({ bank, accountType, last4, balance, currency, hidden, onPress, width, footnote, cardStyle }: BankCardProps) {
   const { colors } = useTheme();
   const t = useT();
   const b = getBank(bank);
   const name = bankName(t, bank);
   const amount = hidden ? '••••••' : formatMoney(balance, currency);
   const a11y = `${t(last4 ? 'common.bankCardA11yLast4' : 'common.bankCardA11y', { bank: name, type: accountType, last4: last4 ?? '', amount: hidden ? t('common.balanceHidden') : amount })}${footnote ? `, ${footnote}` : ''}`;
-  const cardStyle = [styles.card, { backgroundColor: b.color, borderColor: colors.glassBorder }, width ? { width, height: width / BANK_CARD_RATIO } : null];
-  const content = (
+  const product = cardProduct(cardStyle);
+  const w = width ?? styles.card.width;
+  const h = w / BANK_CARD_RATIO;
+  // Tampilan pilihan: artwork (logo bank di pita atas, motif, skema) jadi latar; isi kartu tetap sama di atasnya.
+  const ink = product ? getBank(product.bank).onColor : b.onColor;
+  const frame = [styles.card, { backgroundColor: b.color, borderColor: colors.glassBorder }, width ? { width, height: h } : null];
+  const artFrame = [styles.card, styles.artCard, { borderColor: colors.glassBorder, width: w, height: h }];
+  const artContent = product ? (
+    <>
+      <View style={StyleSheet.absoluteFill} pointerEvents="none">
+        <ProductArt product={product} width={w} height={h} asBackground />
+      </View>
+      <View style={[styles.artFoot, { paddingRight: w * 0.3 }]}>
+        <AppText variant="caption" style={{ color: ink }} numberOfLines={1}>
+          {[accountType, last4 ? `•••• ${last4}` : null, footnote].filter(Boolean).join(' · ')}
+        </AppText>
+        <AppText variant="h2" numeric numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.6} style={{ color: ink }}>
+          {amount}
+        </AppText>
+      </View>
+    </>
+  ) : null;
+  const cardStyleProp = product ? artFrame : frame;
+  const content = artContent ?? (
     <>
       <View style={styles.head}>
         <AppText variant="h3" style={[styles.bankName, { color: b.onColor }]} numberOfLines={1}>
@@ -64,13 +90,13 @@ export function BankCard({ bank, accountType, last4, balance, currency, hidden, 
   // Tanpa onPress (mis. pratinjau di pemilih bank) kartu adalah gambar statis, bukan tombol nonaktif yang pudar.
   if (!onPress) {
     return (
-      <View accessible accessibilityLabel={a11y} style={cardStyle}>
+      <View accessible accessibilityLabel={a11y} style={cardStyleProp}>
         {content}
       </View>
     );
   }
   return (
-    <PressableScale onPress={onPress} accessibilityLabel={a11y} focusRadius={radius.lg} scaleTo={0.985} style={cardStyle}>
+    <PressableScale onPress={onPress} accessibilityLabel={a11y} focusRadius={radius.lg} scaleTo={0.985} style={cardStyleProp}>
       {content}
     </PressableScale>
   );
@@ -88,4 +114,7 @@ const styles = StyleSheet.create({
   head: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: space.md },
   bankName: { fontFamily: fonts.extrabold, flexShrink: 1 },
   foot: { gap: space.xxs },
+  // Artwork mengisi kartu sampai tepi; radius kartu akun tetap sama dengan desain bawaan.
+  artCard: { padding: 0, overflow: 'hidden', justifyContent: 'flex-end' },
+  artFoot: { gap: space.xxs, paddingLeft: space.xl, paddingBottom: space.lg },
 });

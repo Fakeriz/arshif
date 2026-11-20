@@ -25,6 +25,15 @@ jest.mock('react-native-reanimated', () => {
     withDelay: (_ms: number, anim: unknown) => anim,
     withSequence: (...anims: unknown[]) => anims[anims.length - 1],
     cancelAnimation: () => undefined,
+    // Deck akun Beranda: interpolasi linier (+ clamp) cukup untuk render deterministik.
+    Extrapolation: { CLAMP: 'clamp', EXTEND: 'extend', IDENTITY: 'identity' },
+    interpolate: (v: number, input: number[], output: number[], extrapolate?: string) => {
+      const [i0, i1] = [input[0], input[input.length - 1]];
+      const [o0, o1] = [output[0], output[output.length - 1]];
+      const t = i1 === i0 ? 0 : (v - i0) / (i1 - i0);
+      const clamped = extrapolate === 'clamp' ? Math.min(1, Math.max(0, t)) : t;
+      return o0 + (o1 - o0) * clamped;
+    },
   };
 });
 
@@ -32,3 +41,10 @@ jest.mock('react-native-reanimated', () => {
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const fx = require('./src/lib/fx');
 fx.setUsdRates(fx.SAMPLE_USD_RATES, '2026-11-05');
+
+// WebView (grafik TradingView) tidak punya modul native di Jest: render View yang menyimpan props untuk diperiksa tes.
+jest.mock('react-native-webview', () => {
+  const { View } = require('react-native');
+  const WebView = (props: Record<string, unknown>) => require('react').createElement(View, { testID: 'webview', ...props });
+  return { __esModule: true, WebView, default: WebView };
+});

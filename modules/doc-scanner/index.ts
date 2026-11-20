@@ -1,14 +1,16 @@
 import { requireOptionalNativeModule } from 'expo';
 
 type NativeDocScanner = {
-  /** Google Play services tersedia (dibutuhkan ML Kit Document Scanner). */
+  /** Android: Google Play services tersedia (ML Kit). iOS: perangkat mendukung VisionKit. */
   isAvailable(): boolean;
   /**
-   * Buka pemindai ML Kit (auto-crop, deteksi tepi). Hasil: URI file JPEG halaman pertama, atau null bila dibatalkan.
+   * Buka pemindai (deteksi tepi, potong otomatis): ML Kit Document Scanner di Android, VisionKit
+   * (VNDocumentCameraViewController) di iOS. Hasil: URI file JPEG halaman pertama, atau null bila dibatalkan.
+   * `galleryAllowed` hanya berlaku di Android; pemindai iOS tidak punya impor galeri.
    * Gagal: kode ERR_NO_ACTIVITY, ERR_BUSY, ERR_UNAVAILABLE, ERR_LAUNCH, ERR_NO_PAGE.
    */
   scan(galleryAllowed: boolean): Promise<string | null>;
 };
 
-/** null di iOS, web, Expo Go, dan development build lama tanpa modul ini. */
+/** null di web, Expo Go, dan build lama tanpa modul ini. */
 export const DocScannerNative = requireOptionalNativeModule<NativeDocScanner>('ArshifDocScanner');

@@ -3,7 +3,8 @@ import { DEFAULT_SPLIT, PAYDAY_MAX, PAYDAY_MIN, splitIsValid, type Split } from 
 import type { UserRate } from '@/lib/fx';
 import { EMPTY_USAGE, type QuotaKey, type Usage } from '@/lib/quota';
 
-export type NotifPrefs = Record<Exclude<NotificationType, 'system' | 'monthly_recap' | 'goal_reached' | 'subscription_renewal'>, boolean>;
+// price_alert tidak punya saklar global: alert dipasang sendiri per aset, jadi sudah pilihan eksplisit pengguna.
+export type NotifPrefs = Record<Exclude<NotificationType, 'system' | 'monthly_recap' | 'goal_reached' | 'subscription_renewal' | 'price_alert'>, boolean>;
 
 /** idle = belum login, loading = memuat dari Supabase, ready = data siap, error = gagal memuat. */
 export type LoadStatus = 'idle' | 'loading' | 'ready' | 'error';
@@ -36,6 +37,8 @@ export type AppState = {
   activeAccountId: string | null;
   /** Tanggal kurs yang dipakai untuk agregat ("Kurs per …"). */
   ratesDate: string | null;
+  /** true = semua sumber kurs gagal, kurs dari cache lokal ("kurs terakhir"). */
+  ratesStale: boolean;
   /** Anggaran per periode (FR-BDG-5), terbaru dulu. */
   budgets: BudgetRecord[];
   /** Grup limit gabungan kartu (FR-ACC-6). */
@@ -76,6 +79,7 @@ export type Action =
   | { type: 'prefs/notif'; key: keyof NotifPrefs; value: boolean }
   | { type: 'budget/split'; split: Split }
   | { type: 'account/setBank'; id: string; bank: string }
+  | { type: 'account/setCardStyle'; id: string; cardStyle: string | null }
   | { type: 'account/setActive'; id: string }
   | { type: 'account/credit'; id: string; patch: Pick<Account, 'creditLimit' | 'limitGroupId' | 'annualFee'> }
   | { type: 'prefs/payday'; payday: number }
@@ -114,6 +118,7 @@ export function initialState(): AppState {
     notifPrefs: { bill_due: true, budget_alert: true, weekly_recap: true, quota_warning: true },
     activeAccountId: null,
     ratesDate: null,
+    ratesStale: false,
     budgets: [],
     limitGroups: [],
     userRates: [],
@@ -247,6 +252,8 @@ export function reducer(state: AppState, action: Action): AppState {
       return { ...state, notifPrefs: { ...state.notifPrefs, [action.key]: action.value } };
     case 'account/setBank':
       return { ...state, accounts: state.accounts.map((a) => (a.id === action.id ? { ...a, bank: action.bank } : a)) };
+    case 'account/setCardStyle':
+      return { ...state, accounts: state.accounts.map((a) => (a.id === action.id ? { ...a, cardStyle: action.cardStyle ?? undefined } : a)) };
     case 'account/setActive':
       return state.accounts.some((a) => a.id === action.id) ? { ...state, activeAccountId: action.id } : state;
     case 'budget/split':

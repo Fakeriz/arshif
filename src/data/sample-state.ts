@@ -18,5 +18,6 @@ export function sampleState(): AppState {
     income: DEMO_INCOME,
     payday: DEMO_PAYDAY,
     ratesDate: '2026-11-05',
+    ratesStale: false,
   };
 }

@@ -9,6 +9,8 @@ const home: Messages['home'] = {
   hideBalance: 'Sembunyikan baki',
   balanceMeta: '{count} akaun · ditukar ke {currency} · kadar setakat {date}',
   balanceMeta_one: '{count} akaun · ditukar ke {currency} · kadar setakat {date}',
+  balanceMetaStale: '{count} akaun · ditukar ke {currency} · kadar terakhir {date}',
+  balanceMetaStale_one: '{count} akaun · ditukar ke {currency} · kadar terakhir {date}',
   balanceMetaSame: '{count} akaun · {currency}',
   balanceMetaSame_one: '{count} akaun · {currency}',
   accountLimitA11y: 'Had 4 akaun dicapai. Buka Premium untuk menambah akaun',

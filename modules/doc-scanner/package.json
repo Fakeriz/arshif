@@ -2,6 +2,6 @@
   "name": "arshif-doc-scanner",
   "version": "1.0.0",
   "private": true,
-  "description": "Scan dokumen struk: ML Kit Document Scanner (auto-crop + deteksi tepi) untuk Arshif",
+  "description": "Scan dokumen struk untuk Arshif: ML Kit Document Scanner (Android) dan VisionKit (iOS), dengan potong otomatis + deteksi tepi",
   "main": "index.ts"
 }

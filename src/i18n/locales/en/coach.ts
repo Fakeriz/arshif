@@ -68,6 +68,9 @@ const coach: Messages['coach'] = {
   replay: {
     perDay: 'Spent on {day}',
     perDayLabel: 'Spending per day',
+    moversUp: 'Up {amount} in 7 days, mainly from {label} {pct}.',
+    moversDown: 'Down {amount} in 7 days, mainly from {label} {pct}.',
+    portfolio: 'Portfolio at live prices',
     lastMonth: 'Last month',
     heroMonth: 'Your spending last month',
     monthRange: 'Recap for {range}',

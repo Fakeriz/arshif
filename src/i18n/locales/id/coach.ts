@@ -66,6 +66,9 @@ const coach = {
   replay: {
     perDay: 'Belanja {day}',
     perDayLabel: 'Belanja per hari',
+    moversUp: 'Naik {amount} dalam 7 hari, terutama karena {label} {pct}.',
+    moversDown: 'Turun {amount} dalam 7 hari, terutama karena {label} {pct}.',
+    portfolio: 'Portofolio di harga live',
     lastMonth: 'Bulan lalu',
     heroMonth: 'Belanjamu bulan lalu',
     monthRange: 'Recap bulan {range}',

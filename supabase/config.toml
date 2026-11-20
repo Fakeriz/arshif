@@ -452,6 +452,14 @@ import_map = "./functions/import_map.json"
 verify_jwt = false
 import_map = "./functions/import_map.json"
 
+[functions.symbol-search]
+verify_jwt = false
+import_map = "./functions/import_map.json"
+
+[functions.coach-price]
+verify_jwt = false
+import_map = "./functions/import_map.json"
+
 [functions.delete-account]
 verify_jwt = false
 import_map = "./functions/import_map.json"

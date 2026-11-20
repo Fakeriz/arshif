@@ -4,7 +4,10 @@ import { StyleSheet, View } from 'react-native';
 
 import { Screen } from '@/components/shell/Screen';
 import { ScreenHeader } from '@/components/shell/ScreenHeader';
-import { AppText, Badge, BankCard, Button, Card, EmptyState, ListItem, ProgressBar, Skeleton } from '@/components/ui';
+import { AppText, Badge, BankCard, Button, Card, EmptyState, ListItem, ProgressBar, Skeleton, useToast } from '@/components/ui';
+import { productLabel } from '@/components/ui/ProductArt';
+import { cardProduct } from '@/lib/cardCatalog';
+import { CardStyleModal } from '@/features/accounts/CardStylePicker';
 import { AnnualFeeSheet, CreditLimitSheet } from '@/features/accounts/sheets';
 import { UtilizationBlock } from '@/features/accounts/UtilizationBlock';
 import { BankPickerSheet } from '@/features/settings/BankPickerSheet';
@@ -20,7 +23,7 @@ import { useLoadState } from '@/state/loadState';
 import { useRetry } from '@/state/useRetry';
 import { radius, space } from '@/theme/tokens';
 
-type Sheet = 'bank' | 'limit' | 'fee' | null;
+type Sheet = 'bank' | 'limit' | 'fee' | 'style' | null;
 
 /** Detail akun: desain kartu, limit + utilisasi (kartu/grup), iuran tahunan (FR-ACC-3/6/7/8). */
 export default function AccountDetail() {
@@ -33,6 +36,7 @@ export default function AccountDetail() {
   const { accounts, transactions } = useLedger();
   const utilization = useCreditUtilization();
   const [sheet, setSheet] = useState<Sheet>(null);
+  const { show } = useToast();
   const account = accounts.find((a) => a.id === id);
 
   if (load !== 'ready') {
@@ -60,6 +64,8 @@ export default function AccountDetail() {
   }
 
   const credit = isCreditType(account.type);
+  // Id yang tidak dikenal katalog (mis. katalog berubah) diperlakukan seperti belum memilih.
+  const style = cardProduct(account.cardStyle);
   const u = utilization(account.id);
   const group = state.limitGroups.find((g) => g.id === account.limitGroupId);
   const patch = (p: Partial<Pick<Account, 'creditLimit' | 'limitGroupId' | 'annualFee'>>) =>
@@ -69,12 +75,36 @@ export default function AccountDetail() {
     <Screen>
       <ScreenHeader title={account.name} />
       <View style={styles.preview}>
-        <BankCard bank={account.bank} accountType={t(`domain.accountType.${account.type}`)} last4={account.last4} balance={account.balance} currency={account.currency} hidden={state.hideBalance} />
+        <BankCard
+          bank={account.bank}
+          accountType={t(`domain.accountType.${account.type}`)}
+          last4={account.last4}
+          balance={account.balance}
+          currency={account.currency}
+          hidden={state.hideBalance}
+          cardStyle={account.cardStyle}
+        />
       </View>
       <Card padding="md">
         <ListItem title={t('acct.detail.type')} trailing={t(`domain.accountType.${account.type}`)} divider />
         <ListItem title={t('acct.detail.currency')} trailing={account.currency} divider />
-        <ListItem title={t('acct.detail.design')} subtitle={bankName(t, account.bank)} chevron onPress={() => setSheet('bank')} />
+        <ListItem title={t('acct.detail.design')} subtitle={bankName(t, account.bank)} chevron divider onPress={() => setSheet('bank')} />
+        <ListItem
+          title={t('acct.cardStyle.row')}
+          subtitle={style ? productLabel(style, t) : t('acct.cardStyle.defaultArt')}
+          chevron
+          divider={!!style}
+          onPress={() => setSheet('style')}
+        />
+        {style && (
+          <ListItem
+            title={t('acct.cardStyle.reset')}
+            onPress={() => {
+              dispatch({ type: 'account/setCardStyle', id: account.id, cardStyle: null });
+              show({ tone: 'success', title: t('acct.cardStyle.resetDone') });
+            }}
+          />
+        )}
       </Card>
 
       {credit && (
@@ -119,6 +149,17 @@ export default function AccountDetail() {
         />
       )}
 
+      <CardStyleModal
+        visible={sheet === 'style'}
+        bank={account.bank}
+        currentId={style?.id ?? null}
+        onClose={() => setSheet(null)}
+        onApply={(cardStyle) => {
+          dispatch({ type: 'account/setCardStyle', id: account.id, cardStyle });
+          setSheet(null);
+          show({ tone: 'success', title: t('acct.cardStyle.saved') });
+        }}
+      />
       <BankPickerSheet
         account={sheet === 'bank' ? account : null}
         balance={account.balance}

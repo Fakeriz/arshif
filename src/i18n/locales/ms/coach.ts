@@ -68,6 +68,9 @@ const coach: Messages['coach'] = {
   replay: {
     perDay: 'Belanja {day}',
     perDayLabel: 'Belanja setiap hari',
+    moversUp: 'Naik {amount} dalam 7 hari, terutamanya kerana {label} {pct}.',
+    moversDown: 'Turun {amount} dalam 7 hari, terutamanya kerana {label} {pct}.',
+    portfolio: 'Portfolio pada harga langsung',
     lastMonth: 'Bulan lalu',
     heroMonth: 'Perbelanjaan anda bulan lalu',
     monthRange: 'Rekap bulan {range}',

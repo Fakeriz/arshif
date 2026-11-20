@@ -19,6 +19,8 @@ export type Account = {
   limitGroupId?: string;
   /** Iuran tahunan kartu kredit (FR-ACC-7). */
   annualFee?: AnnualFee;
+  /** Tampilan kartu pilihan pengguna: id produk di src/data/cardProducts.ts. Kosong = desain bawaan bank. */
+  cardStyle?: string;
 };
 
 export type AnnualFee = {
@@ -100,7 +102,7 @@ export type Transaction = {
   reimbursedBy?: string;
 };
 
-export type NotificationType = 'bill_due' | 'budget_alert' | 'weekly_recap' | 'quota_warning' | 'goal_reached' | 'subscription_renewal' | 'system';
+export type NotificationType = 'bill_due' | 'budget_alert' | 'weekly_recap' | 'quota_warning' | 'goal_reached' | 'subscription_renewal' | 'system' | 'price_alert';
 
 export type AppNotification = {
   id: string;

@@ -4,7 +4,7 @@
  */
 import { getQuote, TradingViewClient } from '@mathieuc/tradingview';
 
-import type { PriceProvider, Quote } from './asset-sync.ts';
+import { fromUnix, type PriceProvider, type Quote } from './asset-sync.ts';
 import { quoteMatches, tvCandidates } from './tradingview-symbols.ts';
 
 const TIMEOUT_MS = 15_000;
@@ -15,7 +15,7 @@ async function quoteFor(key: string, client: TradingViewClient): Promise<Quote> 
   for (const symbol of tvCandidates(key)) {
     try {
       const q = await getQuote({ symbol, client, timeoutMs: TIMEOUT_MS });
-      if (typeof q.lp === 'number' && quoteMatches(key, q.pro_name, q.currency_code)) return { price: q.lp, currency: q.currency_code! };
+      if (typeof q.lp === 'number' && quoteMatches(key, q.pro_name, q.currency_code)) return { price: q.lp, currency: q.currency_code!, quotedAt: fromUnix(q.lp_time) };
       last = `mismatch_${q.pro_name ?? symbol}`;
     } catch (e) {
       last = e instanceof Error ? e.message : String(e);

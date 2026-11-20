@@ -3,14 +3,16 @@ import { useMemo, useRef, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import { usePaywall } from '@/components/shell/Paywall';
-import { AppText, Card, CategoryIcon, CurrencyText, EmptyState, GlassView, Icon, MiniBars, PressableScale, ProBadge, RollingNumber, Tabs, TrendBadge } from '@/components/ui';
+import { AppText, Card, CategoryIcon, CurrencyText, EmptyState, formatPct, GlassView, Icon, MiniBars, PressableScale, ProBadge, RollingNumber, Tabs, TrendBadge } from '@/components/ui';
 import type { Transaction } from '@/data/types';
 import { categoryLabel, useI18n } from '@/i18n';
 import { CALENDARS } from '@/i18n/calendar';
+import { portfolioGain, portfolioMovers } from '@/lib/assets';
 import { shortDate, todayYmd, weekday } from '@/lib/dates';
 import { formatMoney } from '@/lib/money';
 import { monthlyRecap, weeklyRecap, type Achievement, type WeeklyRecap } from '@/lib/recap';
 import { useStore } from '@/state/AppStore';
+import { useAssets } from '@/state/assets';
 import { useTheme } from '@/theme/ThemeProvider';
 import { radius, space } from '@/theme/tokens';
 
@@ -72,6 +74,7 @@ export function RecapTab({ transactions, currency }: { transactions: Transaction
         ]}
       />
       {body}
+      <PortfolioCard currency={currency} />
     </View>
   );
 }
@@ -96,6 +99,42 @@ function DailyBars({ recap, currency }: { recap: WeeklyRecap; currency: string }
         selected={selected}
         onSelect={setSelected}
       />
+    </Card>
+  );
+}
+
+/**
+ * Portofolio di harga live (Live Market v2): nilai vs harga beli (Fase 2) dan penggerak 7 hari terakhir dari riwayat
+ * harga harian (Fase 5, mis. "naik karena BBCA +3,2%"). Tidak tampil bila keduanya belum ada datanya.
+ */
+function PortfolioCard({ currency }: { currency: string }) {
+  const { t, lang } = useI18n();
+  const { state } = useStore();
+  const { assets, prices, history } = useAssets();
+  const now = Date.now();
+  const gain = portfolioGain(assets, prices, now, currency);
+  const moves = portfolioMovers(assets, prices, history ?? {}, now, currency);
+  if (!gain && !moves) return null;
+  // "Naik karena X": aset yang bergerak searah total, terbesar dulu (bukan aset yang turun saat total naik).
+  const top = moves?.movers.find((m) => Math.sign(m.delta) === Math.sign(moves.total));
+  return (
+    <Card>
+      <View style={styles.portfolio}>
+        <AppText variant="caption" tone="secondary">
+          {t('coach.replay.portfolio')}
+        </AppText>
+        {gain && <CurrencyText amount={gain.value} currency={currency} kind="balance" variant="h2" hidden={state.hideBalance} />}
+        {gain && !state.hideBalance && <TrendBadge value={gain.pct} suffix={t('assets.detail.vsBuy')} />}
+        {moves && top && !state.hideBalance && moves.total !== 0 && (
+          <AppText variant="body">
+            {t(moves.total > 0 ? 'coach.replay.moversUp' : 'coach.replay.moversDown', {
+              amount: formatMoney(Math.abs(moves.total), currency),
+              label: top.label,
+              pct: `${top.pct < 0 ? '-' : '+'}${formatPct(t, lang, Math.abs(top.pct))}`,
+            })}
+          </AppText>
+        )}
+      </View>
     </Card>
   );
 }
@@ -257,6 +296,7 @@ const styles = StyleSheet.create({
   achievement: { flexDirection: 'row', alignItems: 'center', gap: space.md },
   badge: { width: 40, height: 40, borderRadius: radius.md, alignItems: 'center', justifyContent: 'center' },
   pair: { flexDirection: 'row', gap: space.md },
+  portfolio: { gap: space.xs, alignItems: 'flex-start' },
   half: { flex: 1, gap: space.xs },
   statRow: { flexDirection: 'row', alignItems: 'center', gap: space.lg, marginBottom: space.sm },
   stat: { alignItems: 'center', minWidth: 88 },

@@ -22,7 +22,7 @@ import { I18nProvider, useT as useI18nT } from '@/i18n';
 import { AppStoreProvider, useStore } from '@/state/AppStore';
 import { SmartLogProvider } from '@/state/smartlog';
 import type { AppState } from '@/state/reducer';
-import type { Asset } from '@/data/assets';
+import type { Asset, AssetPrice } from '@/data/assets';
 import { computeNetWorth } from '@/lib/assets';
 import { toMajor } from '@/lib/coachAsk';
 import { accountBalance } from '@/lib/transactions';
@@ -50,7 +50,7 @@ function Probe() {
   return null;
 }
 
-function wrap(ui: ReactNode, state: Partial<AppState> = {}, assets: Asset[] = []) {
+function wrap(ui: ReactNode, state: Partial<AppState> = {}, assets: Asset[] = [], prices: Record<string, AssetPrice> = {}) {
   return render(
     <SafeAreaProvider initialMetrics={{ frame: { x: 0, y: 0, width: 390, height: 844 }, insets: { top: 0, left: 0, right: 0, bottom: 0 } }}>
       <I18nProvider initialLang="id">
@@ -58,7 +58,7 @@ function wrap(ui: ReactNode, state: Partial<AppState> = {}, assets: Asset[] = []
           <ToastProvider>
             <AppStoreProvider preset={{ ...base, ...state }}>
               <PlanningProvider preset={{ goals: [], deposits: [], bills: [], debts: [], payments: [], subscriptions: [], splits: [] }}>
-                <AssetsProvider preset={{ assets, prices: {}, snapshots: [] }}>
+                <AssetsProvider preset={{ assets, prices, snapshots: [] }}>
                   <PaywallProvider>
                     <Probe />
                     {ui}
@@ -169,6 +169,18 @@ describe('Weekly Replay', () => {
       wrap(<RecapTab transactions={[]} currency="IDR" />);
     });
     expect(screen.getByText('Minggu ini masih kosong')).toBeTruthy();
+    expect(screen.queryByText('Portofolio di harga live')).toBeNull();
+  });
+
+  it('portofolio di harga live: TrendBadge vs harga beli memakai harga live, bukan harga beli', async () => {
+    const at = new Date().toISOString();
+    const bbca: Asset = { id: 'b', type: 'stock_id', symbol: 'BBCA', name: 'BBCA', quantity: 15, buyPrice: 5650, currency: 'IDR', priceKey: 'IDX:BBCA', createdAt: at };
+    await act(async () => {
+      wrap(<RecapTab transactions={[]} currency="IDR" />, {}, [bbca], { 'IDX:BBCA': { symbol: 'IDX:BBCA', price: 5200, currency: 'IDR', fetchedAt: at } });
+    });
+    expect(screen.getByText('Portofolio di harga live')).toBeTruthy();
+    // 15 × 5.200 = 78.000 vs 15 × 5.650 = 84.750: turun 8,0%.
+    expect(screen.getByLabelText('Turun 8,0% vs harga beli')).toBeTruthy();
   });
 });
 

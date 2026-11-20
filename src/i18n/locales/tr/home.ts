@@ -9,6 +9,8 @@ const home: Messages['home'] = {
   hideBalance: 'Bakiyeyi gizle',
   balanceMeta: '{count} hesap · {currency} cinsinden · kur tarihi {date}',
   balanceMeta_one: '{count} hesap · {currency} cinsinden · kur tarihi {date}',
+  balanceMetaStale: '{count} hesap · {currency} cinsinden · son bilinen kur {date}',
+  balanceMetaStale_one: '{count} hesap · {currency} cinsinden · son bilinen kur {date}',
   balanceMetaSame: '{count} hesap · {currency}',
   balanceMetaSame_one: '{count} hesap · {currency}',
   accountLimitA11y: '4 hesap sınırına ulaşıldı. Hesap eklemek için Premium’u aç',

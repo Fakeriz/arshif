@@ -261,7 +261,10 @@ export async function insertAccount(a: Omit<Account, 'id'>): Promise<Account> {
   const row = must(
     await supabase
       .from('accounts')
-      .insert({ bank: a.bank, name: a.name, type: a.type, currency: a.currency, opening_balance: a.openingBalance, last4: a.last4 ?? null, ...creditColumns(a) })
+      .insert({
+        bank: a.bank, name: a.name, type: a.type, currency: a.currency, opening_balance: a.openingBalance, last4: a.last4 ?? null,
+        card_style: a.cardStyle ?? null, ...creditColumns(a),
+      })
       .select('*')
       .single<AccountRow>(),
   );
@@ -270,6 +273,11 @@ export async function insertAccount(a: Omit<Account, 'id'>): Promise<Account> {
 
 export async function updateAccountBank(id: string, bank: string): Promise<void> {
   check(await supabase.from('accounts').update({ bank }).eq('id', id));
+}
+
+/** Tampilan kartu akun (migrasi 25). null = kembali ke desain bawaan bank. */
+export async function updateAccountCardStyle(id: string, cardStyle: string | null): Promise<void> {
+  check(await supabase.from('accounts').update({ card_style: cardStyle }).eq('id', id));
 }
 
 /** Item struk baru. Transaksi baru belum punya item lama, jadi cukup sisipkan. */

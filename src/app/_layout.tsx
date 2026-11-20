@@ -10,8 +10,9 @@ import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import * as SystemUI from 'expo-system-ui';
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { Platform, StyleSheet } from 'react-native';
+import Animated, { FadeIn } from 'react-native-reanimated';
 
 import { PaywallProvider } from '@/components/shell/Paywall';
 import { BootScreen, SuspendedScreen } from '@/components/shell/BootScreen';
@@ -26,6 +27,7 @@ import { PurchasesBridge } from '@/state/billing';
 import { SmartLogProvider } from '@/state/smartlog';
 import { SessionProvider, useSession } from '@/state/session';
 import { loadHapticLevel } from '@/theme/motion';
+import { motion } from '@/theme/tokens';
 import { ThemeProvider, useTheme } from '@/theme/ThemeProvider';
 
 SplashScreen.preventAutoHideAsync().catch(() => undefined);
@@ -97,84 +99,91 @@ function Routes() {
   const { state, reload } = useStore();
   const signedIn = !!session;
   const booting = !ready || (signedIn && (state.status === 'idle' || state.status === 'loading'));
+  const splashHidden = useRef(false);
 
   useEffect(() => {
-    if (!booting) SplashScreen.hideAsync().catch(() => undefined);
+    if (booting) return;
+    splashHidden.current = true;
+    SplashScreen.hideAsync().catch(() => undefined);
   }, [booting]);
 
-  // Native: splash masih tampil. Web tidak punya splash, jadi tampilkan layar muat (bukan layar kosong).
-  if (booting) return Platform.OS === 'web' ? <BootScreen /> : null;
+  // Native pertama kali: splash masih tampil. Web (tanpa splash) dan muat data setelah verifikasi OTP
+  // (splash sudah tertutup) memakai layar muat, bukan layar kosong.
+  if (booting) return Platform.OS === 'web' || splashHidden.current ? <BootScreen /> : null;
   if (signedIn && state.status === 'error') return <BootScreen onRetry={reload} />;
   if (signedIn && state.suspended) return <SuspendedScreen />;
 
   const onboarded = signedIn && state.onboarded;
   // Web: /admin yang dibuka sebelum login kembali ke /admin setelah login (bukan ke Home).
   const afterLogin = onboarded ? (readReturnTo() ?? '/') : '/setup';
+  // Pudar masuk dari layar muat/splash ke aplikasi (mis. setelah verifikasi OTP) agar tidak memotong keras.
   return (
-    <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.bg }, animation: 'slide_from_right' }}>
-      {/* Layar auth didaftarkan satu per satu (tanpa layout grup) supaya redirect guard jatuh ke "masuk"
-          dan "/" tetap milik (tabs)/index. */}
-      {/* Pricing publik: bisa dibuka dengan atau tanpa login. */}
-      <Stack.Screen name="harga" />
-      {/* Admin web: gerbangnya sendiri (login + role admin di server); tidak tersedia di aplikasi mobile. */}
-      <Stack.Screen name="admin" />
-      {/* redirectTo eksplisit di tiap grup: tanpa itu expo-router jatuh ke rute tak-terkunci pertama menurut
-          nama berkas, yaitu "harga", sehingga pengguna baru setelah verifikasi mendarat di Harga, bukan Setup. */}
-      <Stack.Protected guard={!signedIn} redirectTo={afterLogin}>
-        <Stack.Screen name="(auth)/masuk" />
-        <Stack.Screen name="(auth)/verifikasi" />
-      </Stack.Protected>
-      <Stack.Protected guard={signedIn && !onboarded} redirectTo={signedIn ? '/' : '/masuk'}>
-        <Stack.Screen name="setup" />
-      </Stack.Protected>
-      <Stack.Protected guard={onboarded} redirectTo={signedIn ? '/setup' : '/masuk'}>
-        <Stack.Screen name="(tabs)" />
-        <Stack.Screen name="pengaturan/index" />
-        <Stack.Screen name="pengaturan/paket" />
-        <Stack.Screen name="pengaturan/akun" />
-        <Stack.Screen name="pengaturan/keuangan" />
-        <Stack.Screen name="pengaturan/tampilan" />
-        <Stack.Screen name="pengaturan/notifikasi" />
-        <Stack.Screen name="pengaturan/data" />
-        <Stack.Screen name="coach" />
-        <Stack.Screen name="tambah" />
-        <Stack.Screen name="trx/[id]" />
-        <Stack.Screen name="scan" />
-        <Stack.Screen name="scan-review" />
-        <Stack.Screen name="voice" />
-        <Stack.Screen name="voice-review" />
-        <Stack.Screen name="import" />
-        <Stack.Screen name="import-review" />
-        <Stack.Screen name="rencana/goals/index" />
-        <Stack.Screen name="rencana/goals/[id]" />
-        <Stack.Screen name="rencana/tagihan" />
-        <Stack.Screen name="rencana/utang/index" />
-        <Stack.Screen name="rencana/utang/[id]" />
-        <Stack.Screen name="rencana/simulator" />
-        <Stack.Screen name="rencana/langganan" />
-        <Stack.Screen name="rencana/split/index" />
-        <Stack.Screen name="rencana/split/[id]" />
-        <Stack.Screen name="otomasi/index" />
-        <Stack.Screen name="otomasi/tinjau" />
-        <Stack.Screen name="otomasi/catat" />
-        <Stack.Screen name="premium/index" />
-        <Stack.Screen name="premium/order/[id]" />
-        <Stack.Screen name="premium/sukses" />
-        <Stack.Screen name="invoice/index" />
-        <Stack.Screen name="invoice/[id]" />
-        <Stack.Screen name="invoice/form" />
-        <Stack.Screen name="alat/index" />
-        <Stack.Screen name="alat/kurs" />
-        <Stack.Screen name="alat/cicilan" />
-        <Stack.Screen name="alat/pajak" />
-        <Stack.Screen name="alat/laporan" />
-        <Stack.Screen name="alat/ekspor" />
-        <Stack.Screen name="akun/[id]" />
-        <Stack.Screen name="aset/[id]" />
-        <Stack.Screen name="akun/grup" />
-        <Stack.Screen name="kurs-saya" />
-      </Stack.Protected>
-    </Stack>
+    <Animated.View style={styles.fill} entering={FadeIn.duration(motion.base)}>
+      <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.bg }, animation: 'slide_from_right' }}>
+        {/* Layar auth didaftarkan satu per satu (tanpa layout grup) supaya redirect guard jatuh ke "masuk"
+            dan "/" tetap milik (tabs)/index. */}
+        {/* Pricing publik: bisa dibuka dengan atau tanpa login. */}
+        <Stack.Screen name="harga" />
+        {/* Admin web: gerbangnya sendiri (login + role admin di server); tidak tersedia di aplikasi mobile. */}
+        <Stack.Screen name="admin" />
+        {/* redirectTo eksplisit di tiap grup: tanpa itu expo-router jatuh ke rute tak-terkunci pertama menurut
+            nama berkas, yaitu "harga", sehingga pengguna baru setelah verifikasi mendarat di Harga, bukan Setup. */}
+        <Stack.Protected guard={!signedIn} redirectTo={afterLogin}>
+          <Stack.Screen name="(auth)/masuk" />
+          <Stack.Screen name="(auth)/verifikasi" />
+        </Stack.Protected>
+        <Stack.Protected guard={signedIn && !onboarded} redirectTo={signedIn ? '/' : '/masuk'}>
+          <Stack.Screen name="setup" />
+        </Stack.Protected>
+        <Stack.Protected guard={onboarded} redirectTo={signedIn ? '/setup' : '/masuk'}>
+          <Stack.Screen name="(tabs)" />
+          <Stack.Screen name="pengaturan/index" />
+          <Stack.Screen name="pengaturan/paket" />
+          <Stack.Screen name="pengaturan/akun" />
+          <Stack.Screen name="pengaturan/keuangan" />
+          <Stack.Screen name="pengaturan/tampilan" />
+          <Stack.Screen name="pengaturan/notifikasi" />
+          <Stack.Screen name="pengaturan/data" />
+          <Stack.Screen name="coach" />
+          <Stack.Screen name="tambah" />
+          <Stack.Screen name="trx/[id]" />
+          <Stack.Screen name="scan" />
+          <Stack.Screen name="scan-review" />
+          <Stack.Screen name="voice" />
+          <Stack.Screen name="voice-review" />
+          <Stack.Screen name="import" />
+          <Stack.Screen name="import-review" />
+          <Stack.Screen name="rencana/goals/index" />
+          <Stack.Screen name="rencana/goals/[id]" />
+          <Stack.Screen name="rencana/tagihan" />
+          <Stack.Screen name="rencana/utang/index" />
+          <Stack.Screen name="rencana/utang/[id]" />
+          <Stack.Screen name="rencana/simulator" />
+          <Stack.Screen name="rencana/langganan" />
+          <Stack.Screen name="rencana/split/index" />
+          <Stack.Screen name="rencana/split/[id]" />
+          <Stack.Screen name="otomasi/index" />
+          <Stack.Screen name="otomasi/tinjau" />
+          <Stack.Screen name="otomasi/catat" />
+          <Stack.Screen name="premium/index" />
+          <Stack.Screen name="premium/order/[id]" />
+          <Stack.Screen name="premium/sukses" />
+          <Stack.Screen name="invoice/index" />
+          <Stack.Screen name="invoice/[id]" />
+          <Stack.Screen name="invoice/form" />
+          <Stack.Screen name="alat/index" />
+          <Stack.Screen name="alat/kurs" />
+          <Stack.Screen name="alat/cicilan" />
+          <Stack.Screen name="alat/pajak" />
+          <Stack.Screen name="alat/laporan" />
+          <Stack.Screen name="alat/ekspor" />
+          <Stack.Screen name="akun/[id]" />
+          <Stack.Screen name="aset/[id]" />
+          <Stack.Screen name="akun/grup" />
+          <Stack.Screen name="kurs-saya" />
+        </Stack.Protected>
+      </Stack>
+    </Animated.View>
   );
 }
 

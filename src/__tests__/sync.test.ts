@@ -5,9 +5,11 @@ import { syncAction } from '@/state/sync';
 
 const mockRatesOn = jest.fn();
 const mockInsert = jest.fn();
+const mockCardStyle = jest.fn();
 jest.mock('@/data/remote/api', () => ({
   ratesOn: (...a: unknown[]) => mockRatesOn(...a),
   insertTransactions: (...a: unknown[]) => mockInsert(...a),
+  updateAccountCardStyle: (...a: unknown[]) => mockCardStyle(...a),
 }));
 
 const idr: Account = { id: 'acc-idr', bank: 'bca', name: 'BCA', type: 'tabungan', currency: 'IDR', openingBalance: 0 };
@@ -52,5 +54,14 @@ describe('syncAction — impor massal', () => {
     const saved = await syncAction({ type: 'tx/addMany', txs }, state, 'u1');
     expect(saved).toHaveLength(300);
     expect(mockRatesOn).toHaveBeenCalledTimes(2);
+  });
+});
+
+describe('syncAction: tampilan kartu per akun', () => {
+  it('pilih dan hapus tampilan kartu ditulis ke server (kolom card_style)', async () => {
+    mockCardStyle.mockReset().mockResolvedValue(undefined);
+    await syncAction({ type: 'account/setCardStyle', id: 'acc-idr', cardStyle: 'bca-credit-visa-batman' }, state, 'u1');
+    await syncAction({ type: 'account/setCardStyle', id: 'acc-idr', cardStyle: null }, state, 'u1');
+    expect(mockCardStyle.mock.calls).toEqual([['acc-idr', 'bca-credit-visa-batman'], ['acc-idr', null]]);
   });
 });

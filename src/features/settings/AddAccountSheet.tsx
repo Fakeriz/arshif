@@ -2,7 +2,10 @@ import { useState } from 'react';
 import { ScrollView, StyleSheet, useWindowDimensions } from 'react-native';
 
 import { usePaywall } from '@/components/shell/Paywall';
-import { BottomSheet, Button, useToast } from '@/components/ui';
+import { BottomSheet, Button, Card, ListItem, useToast } from '@/components/ui';
+import { productLabel } from '@/components/ui/ProductArt';
+import { CardStyleModal } from '@/features/accounts/CardStylePicker';
+import { cardProduct } from '@/lib/cardCatalog';
 import { insertAccount, RemoteError } from '@/data/remote/api';
 import { StepAccount } from '@/features/setup/StepAccount';
 import { accountFromDraft, type SetupDraft } from '@/features/setup/draft';
@@ -23,7 +26,9 @@ export function AddAccountSheet({ visible, onClose }: { visible: boolean; onClos
   const [draft, setDraft] = useState<Draft>(blank);
   const [tried, setTried] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [picking, setPicking] = useState(false);
   const nameOk = draft.name.trim().length > 0;
+  const style = cardProduct(draft.cardStyle);
 
   const save = async () => {
     setTried(true);
@@ -52,7 +57,20 @@ export function AddAccountSheet({ visible, onClose }: { visible: boolean; onClos
     <BottomSheet visible={visible} onClose={onClose} title={t('settings.accounts.addTitle')}>
       <ScrollView style={{ maxHeight: height * 0.62 }} contentContainerStyle={styles.body} keyboardShouldPersistTaps="handled">
         <StepAccount value={draft} mainCurrency={state.mainCurrency} nameError={tried && !nameOk} onChange={setDraft} />
+        <Card padding="md">
+          <ListItem title={t('acct.cardStyle.row')} subtitle={style ? productLabel(style, t) : t('acct.cardStyle.defaultArt')} chevron onPress={() => setPicking(true)} />
+        </Card>
       </ScrollView>
+      <CardStyleModal
+        visible={picking}
+        bank={draft.bank}
+        currentId={style?.id ?? null}
+        onClose={() => setPicking(false)}
+        onApply={(cardStyle) => {
+          setDraft((d) => ({ ...d, cardStyle }));
+          setPicking(false);
+        }}
+      />
       <Button label={saving ? t('settings.accounts.adding') : t('settings.accounts.addTitle')} fullWidth onPress={() => void save()} disabled={saving} />
     </BottomSheet>
   );
