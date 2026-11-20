@@ -26,12 +26,12 @@ export function ChatBubble({ from, text }: ChatBubbleProps) {
 }
 
 /** Tiga titik "sedang mengetik" untuk balasan asisten. Diam saat reduced motion. */
-export function TypingDots() {
+export function TypingDots({ label }: { label?: string } = {}) {
   const { colors } = useTheme();
   const t = useT();
   const enter = useEnter({ y: 10, scale: 0.8 });
   return (
-    <Animated.View accessible accessibilityLabel={t('common.ui.typing')} aria-busy style={[styles.bubble, styles.theirs, styles.dots, { backgroundColor: colors.surfaceSunken }, enter]}>
+    <Animated.View accessible accessibilityLabel={label ?? t('common.ui.typing')} aria-busy aria-live="polite" style={[styles.bubble, styles.theirs, styles.dots, { backgroundColor: colors.surfaceSunken }, enter]}>
       {[0, 1, 2].map((i) => (
         <Dot key={i} index={i} />
       ))}

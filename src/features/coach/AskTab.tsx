@@ -1,9 +1,9 @@
-import { Lightbulb, SendHorizontal } from 'lucide-react-native';
+import { Lightbulb } from 'lucide-react-native';
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import { usePaywall } from '@/components/shell/Paywall';
-import { AppText, Button, Card, Chip, EmptyState, GlassView, Icon, Input, PressableScale, ProBadge, Skeleton } from '@/components/ui';
+import { AppText, Button, Card, ChatBubble, Chip, Composer, EmptyState, GlassView, Icon, ProBadge, TypingDots } from '@/components/ui';
 import { FnError, invokeFn } from '@/data/remote/functions';
 import { useI18n } from '@/i18n';
 import { buildAskContext } from '@/lib/coachAsk';
@@ -130,8 +130,8 @@ function AskChat() {
       ))}
       {pending && (
         <>
-          <Bubble turn={{ role: 'user', text: pending }} />
-          <Thinking />
+          <ChatBubble from="me" text={pending} />
+          <TypingDots label={t('coach.ask.thinking')} />
         </>
       )}
 
@@ -144,29 +144,20 @@ function AskChat() {
         </Card>
       )}
 
-      <View style={styles.inputRow}>
-        <View style={styles.flex}>
-          <Input
-            label={t('coach.ask.inputLabel')}
-            placeholder={t('coach.ask.placeholder')}
-            value={draft}
-            onChangeText={setDraft}
-            maxLength={300}
-            returnKeyType="send"
-            onSubmitEditing={() => void ask(draft)}
-            disabled={out || !!pending}
-          />
-        </View>
-        <PressableScale
-          accessibilityLabel={t('coach.ask.send')}
-          disabled={out || !!pending || draft.trim().length < 2}
-          aria-disabled={out || !!pending || draft.trim().length < 2}
-          onPress={() => void ask(draft)}
-          focusRadius={radius.full}
-          style={[styles.send, { backgroundColor: draft.trim().length >= 2 && !out && !pending ? colors.accent : colors.track }]}
-        >
-          <Icon icon={SendHorizontal} color={draft.trim().length >= 2 && !out && !pending ? colors.onAccent : colors.textMuted} />
-        </PressableScale>
+      <View style={styles.composer}>
+        <AppText variant="caption" tone="secondary">
+          {t('coach.ask.inputLabel')}
+        </AppText>
+        <Composer
+          accessibilityLabel={t('coach.ask.inputLabel')}
+          placeholder={t('coach.ask.placeholder')}
+          value={draft}
+          onChangeText={setDraft}
+          onSend={(text) => void ask(text)}
+          maxLength={300}
+          sendLabel={t('coach.ask.send')}
+          disabled={out || !!pending}
+        />
       </View>
       <AppText variant="caption" tone="muted" align="center">
         {t('coach.ask.disclaimer')}
@@ -178,13 +169,7 @@ function AskChat() {
 function Bubble({ turn }: { turn: Turn }) {
   const { colors } = useTheme();
   const { t } = useI18n();
-  if (turn.role === 'user') {
-    return (
-      <View style={[styles.bubble, styles.user, { backgroundColor: colors.accentSoft }]} accessibilityLabel={t('coach.ask.youSaid', { text: turn.text })}>
-        <AppText variant="body">{turn.text}</AppText>
-      </View>
-    );
-  }
+  if (turn.role === 'user') return <ChatBubble from="me" text={turn.text} />;
   // Jawaban Coach: jawaban langsung (paling menonjol), poin pendukung berangka, lalu satu langkah berikutnya.
   return (
     <GlassView radius={radius.lg} style={[styles.bubble, styles.coach, styles.answer]} accessibilityLabel={t('coach.ask.coachSaid', { text: turnText(turn) })}>
@@ -219,37 +204,6 @@ function Bubble({ turn }: { turn: Turn }) {
   );
 }
 
-/**
- * Skeleton saat Coach menyusun jawaban: bentuknya sama dengan kartu jawaban (jawaban, poin, langkah berikutnya),
- * jadi tata letak tidak meloncat saat jawaban datang. Berdenyut pelan; statis saat reduced motion.
- */
-function Thinking() {
-  const { colors } = useTheme();
-  const { t } = useI18n();
-  return (
-    <GlassView radius={radius.lg} style={[styles.bubble, styles.coach, styles.answer]}>
-      <View accessible accessibilityLabel={t('coach.ask.thinking')} aria-busy aria-live="polite" style={styles.thinking}>
-        <AppText variant="caption" tone="accent">
-          {t('coach.ask.thinkingTitle')}
-        </AppText>
-        <Skeleton height={14} width="92%" />
-        <Skeleton height={14} width="64%" />
-        <View style={styles.points}>
-          {(['88%', '76%', '58%'] as const).map((w) => (
-            <View key={w} style={styles.point}>
-              <View style={[styles.dot, { backgroundColor: colors.skeleton }]} />
-              <View style={styles.flex}>
-                <Skeleton height={12} width={w} />
-              </View>
-            </View>
-          ))}
-        </View>
-        <Skeleton height={52} radius={radius.md} />
-      </View>
-    </GlassView>
-  );
-}
-
 const styles = StyleSheet.create({
   wrap: { gap: space.lg },
   center: { alignItems: 'center' },
@@ -262,10 +216,7 @@ const styles = StyleSheet.create({
   point: { flexDirection: 'row', alignItems: 'flex-start', gap: space.sm },
   dot: { width: 6, height: 6, borderRadius: 3, marginTop: 8 },
   tip: { flexDirection: 'row', gap: space.sm, padding: space.md, borderRadius: radius.md, alignItems: 'flex-start' },
-  thinking: { gap: space.sm },
-  user: { alignSelf: 'flex-end', borderRadius: radius.lg, borderBottomRightRadius: radius.sm },
   coach: { alignSelf: 'flex-start', borderBottomLeftRadius: radius.sm },
-  inputRow: { flexDirection: 'row', alignItems: 'flex-end', gap: space.sm },
   flex: { flex: 1 },
-  send: { width: 48, height: 48, borderRadius: radius.full, alignItems: 'center', justifyContent: 'center', marginBottom: space.xxs },
+  composer: { gap: space.xs + 2 },
 });
