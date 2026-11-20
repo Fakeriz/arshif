@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { Platform, StyleSheet, View } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue } from 'react-native-reanimated';
 import Svg, { Circle, G, Path } from 'react-native-svg';
 
@@ -93,7 +93,7 @@ export function DonutChart({
                       d={annularSector(c, c, isActive ? rOuter + 2 : rOuter - 2, rInner, sl.start, sl.end)}
                       fill={seg.color}
                       opacity={selected && !isActive ? 0.3 : 1}
-                      onPress={() => toggle(seg.key)}
+                      {...pressProps(() => toggle(seg.key))}
                     />
                   );
                 })}
@@ -126,6 +126,16 @@ export function DonutChart({
       )}
     </View>
   );
+}
+
+/**
+ * react-native-svg di web memasang handler responder ke <path> DOM bila ada `onPress`
+ * ("Unknown event handler property"). Di web: klik biasa. `onPress: null` wajib, karena
+ * react-native-svg menimpa `onClick` dengan `onPress` bila `onPress !== null`.
+ * Keyboard tetap lewat DonutLegend.
+ */
+function pressProps(fn: () => void): object {
+  return Platform.OS === 'web' ? { onPress: null, onClick: fn } : { onPress: fn };
 }
 
 const styles = StyleSheet.create({
