@@ -39,6 +39,8 @@ const tx: Messages['tx'] = {
     category: 'Kategori',
     source: 'Kaynak',
     note: 'Not',
+    rateInfo: "İşlem kaydedildiğinde kullanılan kur, bugünün kuru değil. Banka masrafları dahil değil.",
+    rateInfoLabel: 'Bu kur hakkında',
     conversion: 'Döviz çevirisi',
     receiptAmount: 'Fiş tutarı',
     deductedFrom: '{account} hesabından düşülen',

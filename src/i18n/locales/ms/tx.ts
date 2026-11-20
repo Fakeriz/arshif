@@ -39,6 +39,8 @@ const tx: Messages['tx'] = {
     category: 'Kategori',
     source: 'Sumber',
     note: 'Nota',
+    rateInfo: "Kadar yang digunakan semasa transaksi disimpan, bukan kadar hari ini. Caj pentadbiran bank tidak dikira.",
+    rateInfoLabel: 'Tentang kadar ini',
     conversion: 'Penukaran mata wang',
     receiptAmount: 'Amaun resit',
     deductedFrom: 'Ditolak daripada {account}',

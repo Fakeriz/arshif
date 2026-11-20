@@ -44,6 +44,8 @@ const tx = {
     category: 'Kategori',
     source: 'Sumber',
     note: 'Catatan',
+    rateInfo: "Kurs yang dipakai saat transaksi disimpan, bukan kurs hari ini. Biaya admin bank tidak dihitung.",
+    rateInfoLabel: 'Tentang kurs ini',
     conversion: 'Konversi mata uang',
     receiptAmount: 'Nominal struk',
     deductedFrom: 'Dipotong dari {account}',

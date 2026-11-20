@@ -1,4 +1,4 @@
-import { Pencil, ScanText, Split, Trash2 } from 'lucide-react-native';
+import { Info, Pencil, ScanText, Split, Trash2 } from 'lucide-react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
@@ -7,7 +7,7 @@ import { categoryLabel, useI18n } from '@/i18n';
 import { usePaywall } from '@/components/shell/Paywall';
 import { Screen } from '@/components/shell/Screen';
 import { ScreenHeader } from '@/components/shell/ScreenHeader';
-import { AppText, Button, Card, CategoryIcon, CurrencyText, Dialog, EmptyState, useToast } from '@/components/ui';
+import { AppText, Button, Card, CategoryIcon, CurrencyText, Dialog, EmptyState, Icon, Tooltip, useToast } from '@/components/ui';
 import { invokeFn } from '@/data/remote/functions';
 import { failureOf } from '@/features/capture/CaptureError';
 import { putHandoff } from '@/features/capture/handoff';
@@ -18,6 +18,7 @@ import { ReceiptCard, ReceiptDetailsCard } from '@/features/transactions/Receipt
 import { dayLong } from '@/lib/dates';
 import { currencyMeta, formatMoney } from '@/lib/money';
 import { useStore } from '@/state/AppStore';
+import { useTheme } from '@/theme/ThemeProvider';
 import { space } from '@/theme/tokens';
 
 import { FUNCTIONS, ScanResult } from '../../../supabase/functions/_shared/contracts';
@@ -26,6 +27,7 @@ export default function TransactionDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const { t, lang } = useI18n();
+  const { colors } = useTheme();
   const { show } = useToast();
   const { state, dispatch, refreshUsage } = useStore();
   const paywall = usePaywall();
@@ -89,7 +91,12 @@ export default function TransactionDetail() {
       </Card>
       {converted && account && tx.accountAmount !== undefined && (
         <Card>
-          <AppText variant="h3">{t('tx.detail.conversion')}</AppText>
+          <View style={styles.convHead}>
+            <AppText variant="h3">{t('tx.detail.conversion')}</AppText>
+            <Tooltip text={t('tx.detail.rateInfo')} accessibilityLabel={t('tx.detail.rateInfoLabel')}>
+              <Icon icon={Info} color={colors.textMuted} size={18} />
+            </Tooltip>
+          </View>
           <InfoRow label={t('tx.detail.receiptAmount')} value={formatMoney(tx.amount, tx.currency)} divider />
           <InfoRow label={t('tx.detail.deductedFrom', { account: account.name })} value={formatMoney(tx.accountAmount, account.currency)} divider />
           <InfoRow label={t('tx.detail.rate')} value={`1 ${tx.currency} = ${effectiveRate(tx.amount, tx.currency, tx.accountAmount, account.currency)} ${account.currency}`} />
@@ -136,6 +143,7 @@ export default function TransactionDetail() {
 }
 
 const styles = StyleSheet.create({
+  convHead: { flexDirection: 'row', alignItems: 'center', gap: space.sm },
   hero: { alignItems: 'center', gap: space.sm, paddingVertical: space.lg },
   actions: { gap: space.sm },
 });

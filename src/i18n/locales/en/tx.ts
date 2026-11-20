@@ -39,6 +39,8 @@ const tx: Messages['tx'] = {
     category: 'Category',
     source: 'Source',
     note: 'Note',
+    rateInfo: "The rate used when the transaction was saved, not today's rate. Bank admin fees are not included.",
+    rateInfoLabel: 'About this rate',
     conversion: 'Currency conversion',
     receiptAmount: 'Receipt amount',
     deductedFrom: 'Charged to {account}',
