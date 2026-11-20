@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import { useT } from '@/i18n';
-import { AmountField, AppText, Button, Card, EmptyState, Input } from '@/components/ui';
+import { AmountField, AppText, Button, Card, EmptyState, Input, useSaveThen } from '@/components/ui';
 import type { Transaction } from '@/data/types';
 import { newId } from '@/lib/uuid';
 import { useActiveAccountId, type AccountWithBalance } from '@/state/AppStore';
@@ -34,6 +34,7 @@ export function VoiceReview({ result, accounts, onSave }: { result: VoiceResult;
     }),
   );
   const [tried, setTried] = useState(false);
+  const saving = useSaveThen();
   const patch = (key: string, p: Partial<Draft>) => setDrafts((l) => l.map((d) => (d.key === key ? { ...d, ...p } : d)));
   const invalid = drafts.some((d) => !d.amountEdit || !d.merchant.trim() || !d.accountPick);
 
@@ -41,12 +42,11 @@ export function VoiceReview({ result, accounts, onSave }: { result: VoiceResult;
     setTried(true);
     if (invalid || drafts.length === 0) return;
     const time = localHm();
-    onSave(
-      drafts.map((d) => ({
-        id: newId(), type: d.type, merchant: d.merchant.trim(), categoryKey: d.categoryKey, accountId: d.accountPick,
-        date: d.date, time, amount: d.amountEdit as number, currency: d.currency, note: d.note ?? undefined, source: 'voice',
-      })),
-    );
+    const txs = drafts.map((d) => ({
+      id: newId(), type: d.type, merchant: d.merchant.trim(), categoryKey: d.categoryKey, accountId: d.accountPick,
+      date: d.date, time, amount: d.amountEdit as number, currency: d.currency, note: d.note ?? undefined, source: 'voice' as const,
+    }));
+    saving.run(() => onSave(txs));
   };
 
   if (result.items.length === 0) return <EmptyState title={t('capture.voiceReview.noneTitle')} message={t('capture.voiceReview.noneMessage')} />;
@@ -79,7 +79,7 @@ export function VoiceReview({ result, accounts, onSave }: { result: VoiceResult;
           </View>
         </Card>
       ))}
-      <Button label={t('capture.voiceReview.saveAll', { count: drafts.length })} fullWidth onPress={save} />
+      <Button label={saving.done ? t('common.ui.saved') : t('capture.voiceReview.saveAll', { count: drafts.length })} done={saving.done} fullWidth onPress={save} />
       <AppText variant="caption" tone="muted" align="center">
         {t('capture.voiceReview.footer')}
       </AppText>

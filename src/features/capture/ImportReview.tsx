@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
-import { AppText, Badge, Button, Card, Checkbox, CurrencyText, EmptyState } from '@/components/ui';
+import { AppText, Badge, Button, Card, Checkbox, CurrencyText, EmptyState, useSaveThen } from '@/components/ui';
 import type { Transaction } from '@/data/types';
 import { useI18n } from '@/i18n';
 import { shortDate } from '@/lib/dates';
@@ -24,16 +24,16 @@ export function ImportReview({ result, accountId, accountName, existing, onImpor
   const [checked, setChecked] = useState<Record<string, boolean>>(() => Object.fromEntries(rows.map((r) => [r.key, !r.duplicate])));
   const count = rows.filter((r) => checked[r.key]).length;
   const dups = rows.filter((r) => r.duplicate).length;
+  const saving = useSaveThen();
 
   if (rows.length === 0) return <EmptyState title={t('capture.importReview.noneTitle')} message={t('capture.importReview.noneMessage')} />;
 
   const submit = () => {
-    onImport(
-      rows.filter((r) => checked[r.key]).map((r) => ({
-        id: newId(), type: r.type, merchant: prettifyDescription(r.description), categoryKey: r.categoryKey, accountId,
-        date: r.date, time: '00:00', amount: r.amount, currency: r.currency, source: 'import' as const,
-      })),
-    );
+    const txs = rows.filter((r) => checked[r.key]).map((r) => ({
+      id: newId(), type: r.type, merchant: prettifyDescription(r.description), categoryKey: r.categoryKey, accountId,
+      date: r.date, time: '00:00', amount: r.amount, currency: r.currency, source: 'import' as const,
+    }));
+    saving.run(() => onImport(txs));
   };
 
   return (
@@ -60,7 +60,7 @@ export function ImportReview({ result, accountId, accountName, existing, onImpor
           </View>
         ))}
       </Card>
-      <Button label={count === 0 ? t('capture.importReview.pickOne') : t('capture.importReview.submit', { count })} fullWidth disabled={count === 0} onPress={submit} />
+      <Button label={saving.done ? t('common.ui.saved') : count === 0 ? t('capture.importReview.pickOne') : t('capture.importReview.submit', { count })} done={saving.done} fullWidth disabled={count === 0} onPress={submit} />
       <AppText variant="caption" tone="muted" align="center">
         {t('capture.importReview.footer')}
       </AppText>

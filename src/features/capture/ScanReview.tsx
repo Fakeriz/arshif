@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import { useT } from '@/i18n';
-import { AmountField, AppText, Button, DateField, Input } from '@/components/ui';
+import { AmountField, AppText, Button, DateField, Input, useSaveThen } from '@/components/ui';
 import type { ReceiptDetails, ReceiptItem, Transaction } from '@/data/types';
 import { formatMoney } from '@/lib/money';
 import { discountsTotal, isLowConfidence, itemsTotal, subtotalMismatch, totalCheck } from '@/lib/receipt';
@@ -55,6 +55,7 @@ export function receiptFromScan(r: ScanResult): ReceiptDetails {
 export function ScanReview({ result: r, receiptPath, accounts, existing, onSave, onRetake }: Props) {
   const t = useT();
   const conf = (c: number) => (isLowConfidence(c) ? t('capture.confidence', { pct: pct(c) }) : undefined);
+  const saving = useSaveThen();
   const [merchant, setMerchant] = useState(r.merchant);
   const [date, setDate] = useState(r.date ?? localYmd());
   const [total, setTotal] = useState<number | null>(r.total);
@@ -80,22 +81,24 @@ export function ScanReview({ result: r, receiptPath, accounts, existing, onSave,
   const save = () => {
     setTried(true);
     if (!merchant.trim() || !YMD.test(date) || !total || total <= 0 || !accountId || !category) return;
-    onSave({
-      id: existing?.id ?? newId(),
-      type: 'expense',
-      merchant: merchant.trim(),
-      categoryKey: category,
-      accountId,
-      date,
-      time: r.time ?? existing?.time ?? localHm(),
-      amount: total,
-      currency: r.currency,
-      note: existing?.note,
-      source: existing?.source ?? 'scan',
-      receiptPath,
-      items: items.length ? items : undefined,
-      receipt,
-    });
+    saving.run(() =>
+      onSave({
+        id: existing?.id ?? newId(),
+        type: 'expense',
+        merchant: merchant.trim(),
+        categoryKey: category,
+        accountId,
+        date,
+        time: r.time ?? existing?.time ?? localHm(),
+        amount: total,
+        currency: r.currency,
+        note: existing?.note,
+        source: existing?.source ?? 'scan',
+        receiptPath,
+        items: items.length ? items : undefined,
+        receipt,
+      }),
+    );
   };
 
   return (
@@ -129,7 +132,7 @@ export function ScanReview({ result: r, receiptPath, accounts, existing, onSave,
       <ReceiptDetailsCard receipt={receipt} />
 
       <View style={styles.actions}>
-        <Button label={t('capture.scanReview.save')} fullWidth onPress={save} />
+        <Button label={saving.done ? t('common.ui.saved') : t('capture.scanReview.save')} done={saving.done} fullWidth onPress={save} />
         <Button label={existing ? t('common.back') : t('capture.scan.retake')} icon={existing ? undefined : RotateCcw} variant="secondary" fullWidth onPress={onRetake} />
       </View>
     </View>

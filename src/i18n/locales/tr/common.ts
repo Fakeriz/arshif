@@ -36,6 +36,7 @@ const common: Messages['common'] = {
   bankCardA11y: '{bank} {type}, bakiye {amount}',
   bankCardA11yLast4: '{bank} {type}, son dört hane {last4}, bakiye {amount}',
   ui: {
+    saved: 'Kaydedildi',
     pickDate: 'Tarih seçin',
     clearDate: 'Tarihi temizle',
     increase: 'Artır',

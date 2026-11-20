@@ -1,5 +1,7 @@
 import { Check, type LucideIcon } from 'lucide-react-native';
+import { useCallback, useState } from 'react';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
+import { useReducedMotion } from 'react-native-reanimated';
 
 import { useTheme } from '@/theme/ThemeProvider';
 import { elevation, fonts, layout, radius, space } from '@/theme/tokens';
@@ -94,6 +96,23 @@ export function Button({
       </View>
     </PressableScale>
   );
+}
+
+/**
+ * Tombol simpan (Motion Kit "Tombol simpan"): `run(fn)` memasang `done` (centang + label "Tersimpan")
+ * lalu menjalankan `fn` setelah jeda singkat, supaya konfirmasinya sempat terlihat sebelum layar ditutup.
+ */
+export function useSaveThen(delayMs = 450) {
+  const reduced = useReducedMotion();
+  const [done, setDone] = useState(false);
+  const run = useCallback(
+    (fn: () => void) => {
+      setDone(true);
+      setTimeout(fn, reduced ? 0 : delayMs);
+    },
+    [reduced, delayMs],
+  );
+  return { done, run };
 }
 
 const styles = StyleSheet.create({

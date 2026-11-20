@@ -5,7 +5,7 @@ export { Badge, ProBadge } from './Badge';
 export { BalanceText } from './BalanceText';
 export { BankCard } from './BankCard';
 export { BottomSheet } from './BottomSheet';
-export { Button } from './Button';
+export { Button, useSaveThen } from './Button';
 export { Card } from './Card';
 export { CashflowChart, type CashflowPoint } from './CashflowChart';
 export { CategoryIcon } from './CategoryIcon';

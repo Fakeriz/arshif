@@ -3,7 +3,7 @@ import { StyleSheet, View } from 'react-native';
 
 import { useT, type MsgKey } from '@/i18n';
 import { CurrencySheet } from '@/components/shell/CurrencySheet';
-import { AmountInput, Button, Chip, DateField, Input, Tabs } from '@/components/ui';
+import { AmountInput, Button, Chip, DateField, Input, Tabs, useSaveThen } from '@/components/ui';
 import type { Transaction, TxType } from '@/data/types';
 import { addDays, todayYmd } from '@/lib/dates';
 import { convert } from '@/lib/fx';
@@ -47,6 +47,7 @@ export function TransactionForm({ accounts, initial, onSubmit }: TransactionForm
 
   const errorKeys = submitted ? validateTx({ type, amount, merchant, accountId, toAccountId, categoryKey, date }) : {};
   const errors = Object.fromEntries(Object.entries(errorKeys).map(([k, v]) => [k, t(v)])) as Partial<Record<keyof typeof errorKeys, string>>;
+  const saving = useSaveThen();
   const account = accounts.find((a) => a.id === accountId);
 
   const pickAccount = (id: string) => {
@@ -66,24 +67,26 @@ export function TransactionForm({ accounts, initial, onSubmit }: TransactionForm
     const to = accounts.find((a) => a.id === toAccountId);
     const accountAmount = account.currency !== currency ? convert(amount, currency, account.currency) : undefined;
     const sourceAmount = accountAmount ?? amount;
-    onSubmit({
-      id: initial?.id ?? newId(),
-      type,
-      merchant: type === 'transfer' ? merchant.trim() || t('tx.form.transferTo', { account: to?.name ?? '' }).trim() : merchant.trim(),
-      categoryKey: type === 'transfer' ? 'savings' : (categoryKey as string),
-      accountId: account.id,
-      toAccountId: type === 'transfer' ? (toAccountId ?? undefined) : undefined,
-      toAmount: type === 'transfer' && to && to.currency !== account.currency ? convert(sourceAmount, account.currency, to.currency) : undefined,
-      date,
-      time: initial?.time ?? '09:30',
-      amount,
-      currency,
-      accountAmount,
-      note: note.trim() || undefined,
-      source: initial?.source ?? 'manual',
-      items: initial?.items,
-      receipt: initial?.receipt,
-    });
+    saving.run(() =>
+      onSubmit({
+        id: initial?.id ?? newId(),
+        type,
+        merchant: type === 'transfer' ? merchant.trim() || t('tx.form.transferTo', { account: to?.name ?? '' }).trim() : merchant.trim(),
+        categoryKey: type === 'transfer' ? 'savings' : (categoryKey as string),
+        accountId: account.id,
+        toAccountId: type === 'transfer' ? (toAccountId ?? undefined) : undefined,
+        toAmount: type === 'transfer' && to && to.currency !== account.currency ? convert(sourceAmount, account.currency, to.currency) : undefined,
+        date,
+        time: initial?.time ?? '09:30',
+        amount,
+        currency,
+        accountAmount,
+        note: note.trim() || undefined,
+        source: initial?.source ?? 'manual',
+        items: initial?.items,
+        receipt: initial?.receipt,
+      }),
+    );
   };
 
   return (
@@ -111,7 +114,7 @@ export function TransactionForm({ accounts, initial, onSubmit }: TransactionForm
         <Chip label={t('domain.date.yesterday')} selected={date === addDays(today, -1)} onPress={() => setDate(addDays(today, -1))} />
       </View>
       <Input label={t('tx.form.note')} value={note} onChangeText={setNote} placeholder={t('tx.form.notePlaceholder')} />
-      <Button label={initial ? t('tx.form.saveEdit') : t('tx.form.saveNew')} fullWidth onPress={submit} />
+      <Button label={saving.done ? t('common.ui.saved') : initial ? t('tx.form.saveEdit') : t('tx.form.saveNew')} done={saving.done} fullWidth onPress={submit} />
       <CurrencySheet
         visible={sheet}
         value={currency}

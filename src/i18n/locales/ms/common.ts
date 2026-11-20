@@ -36,6 +36,7 @@ const common: Messages['common'] = {
   bankCardA11y: '{bank} {type}, baki {amount}',
   bankCardA11yLast4: '{bank} {type}, berakhir {last4}, baki {amount}',
   ui: {
+    saved: 'Disimpan',
     pickDate: 'Pilih tarikh',
     clearDate: 'Padam tarikh',
     increase: 'Tambah',
