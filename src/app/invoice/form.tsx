@@ -27,6 +27,9 @@ type Draft = { id: string; name: string; qty: string; price: number | null };
  * Buat / ubah invoice atau penawaran (FR-INV-1). ?id= ubah, ?jenis=invoice|quote baru, ?dari=<id penawaran>
  * = invoice baru berisi data penawaran itu. Nomor dan jumlah akhir dihitung server.
  */
+/** Kontak boleh email atau lainnya (WA, telepon); centang hanya untuk email yang formatnya benar. */
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+
 export default function InvoiceForm() {
   const { id, jenis, dari } = useLocalSearchParams<{ id?: string; jenis?: InvoiceKind; dari?: string }>();
   const { t } = useI18n();
@@ -121,7 +124,7 @@ function Form({ kind, initial, isEdit }: { kind: InvoiceKind; initial?: Invoice;
       <Card padding="lg">
         <View style={styles.form}>
           <Input label={t('inv.form.client')} value={client} onChangeText={setClient} maxLength={80} placeholder={t('inv.form.clientPlaceholder')} error={errors.client} />
-          <Input label={t('inv.form.contact')} value={contact} onChangeText={setContact} maxLength={120} autoCapitalize="none" placeholder={t('inv.form.contactPlaceholder')} />
+          <Input label={t('inv.form.contact')} value={contact} onChangeText={setContact} maxLength={120} autoCapitalize="none" placeholder={t('inv.form.contactPlaceholder')} valid={EMAIL_RE.test(contact.trim())} />
         </View>
       </Card>
 

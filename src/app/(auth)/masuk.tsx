@@ -69,6 +69,8 @@ export default function MasukScreen() {
             onSubmitEditing={submit}
             error={error ? t(error) : undefined}
             hint={error ? undefined : t('auth.signIn.emailHint')}
+            // Centang meletup begitu format email benar (Motion Kit "Kolom tervalidasi").
+            valid={Email.safeParse(email).success}
             disabled={sending}
           />
           <Button label={t('auth.signIn.submit')} onPress={submit} loading={sending} disabled={sending || email.trim() === ''} fullWidth />
