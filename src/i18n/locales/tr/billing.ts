@@ -58,6 +58,7 @@ const billing: Messages['billing'] = {
     },
   },
   order: {
+    timeLeft: 'Ödeme için kalan süre',
     title: 'Ödeme durumu',
     status: { pending: 'Ödeme bekleniyor', paid: 'Ödendi', expired: 'Süresi doldu', failed: 'Başarısız', refunded: 'İade edildi' },
     pendingMessage: 'Ödemeyi {provider} sayfasında tamamla. Ödeme gelince bu durum kendiliğinden güncellenir.',

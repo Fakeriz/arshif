@@ -58,6 +58,7 @@ const billing: Messages['billing'] = {
     },
   },
   order: {
+    timeLeft: 'Time left to pay',
     title: 'Payment status',
     status: { pending: 'Waiting for payment', paid: 'Paid', expired: 'Expired', failed: 'Failed', refunded: 'Refunded' },
     pendingMessage: 'Finish paying on the {provider} page. This status updates by itself once the payment arrives.',

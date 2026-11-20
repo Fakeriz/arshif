@@ -57,6 +57,7 @@ const billing = {
     },
   },
   order: {
+    timeLeft: 'Sisa waktu bayar',
     title: 'Status pembayaran',
     status: { pending: 'Menunggu pembayaran', paid: 'Lunas', expired: 'Kedaluwarsa', failed: 'Gagal', refunded: 'Dikembalikan' },
     pendingMessage: 'Selesaikan pembayaran di halaman {provider}. Status di sini berubah sendiri begitu pembayaran masuk.',

@@ -58,6 +58,7 @@ const billing: Messages['billing'] = {
     },
   },
   order: {
+    timeLeft: 'Baki masa untuk bayar',
     title: 'Status bayaran',
     status: { pending: 'Menunggu bayaran', paid: 'Dibayar', expired: 'Tamat tempoh', failed: 'Gagal', refunded: 'Dikembalikan' },
     pendingMessage: 'Selesaikan bayaran di halaman {provider}. Status di sini berubah sendiri sebaik bayaran diterima.',

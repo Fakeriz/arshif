@@ -6,7 +6,7 @@ import { Platform, StyleSheet, View } from 'react-native';
 
 import { Screen } from '@/components/shell/Screen';
 import { ScreenHeader } from '@/components/shell/ScreenHeader';
-import { AppText, Badge, Button, Card, EmptyState, Icon, Skeleton } from '@/components/ui';
+import { AppText, Badge, Button, Card, Countdown, EmptyState, Icon, Skeleton } from '@/components/ui';
 import { loadOrder, type Order, type OrderStatus } from '@/data/remote/api';
 import { useI18n } from '@/i18n';
 import { isoDateLabel, isoDateTimeLabel } from '@/lib/dates';
@@ -36,6 +36,7 @@ export default function OrderStatusScreen() {
   const [error, setError] = useState(false);
   const [checkedAt, setCheckedAt] = useState<string | null>(null);
   const synced = useRef(false);
+  const [now, setNow] = useState(() => Date.now());
 
   const refresh = useCallback(async () => {
     try {
@@ -66,6 +67,14 @@ export default function OrderStatusScreen() {
     const timer = setInterval(() => void refresh(), POLL_MS);
     return () => clearInterval(timer);
   }, [settled, refresh]);
+
+  // Hitung mundur batas bayar (Motion Kit "Hitung mundur"), hanya selama pesanan menunggu pembayaran.
+  const pending = order?.status === 'pending';
+  useEffect(() => {
+    if (!pending) return;
+    const tick = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(tick);
+  }, [pending]);
 
   // Lunas + Premium sudah diberikan: perbarui paket di layar lalu ke halaman sukses.
   useEffect(() => {
@@ -135,6 +144,14 @@ export default function OrderStatusScreen() {
         <AppText variant="body" style={styles.message}>
           {message}
         </AppText>
+        {order.status === 'pending' && Date.parse(order.expiresAt) > now && (
+          <View style={styles.countdown}>
+            <AppText variant="caption" tone="muted">
+              {t('billing.order.timeLeft')}
+            </AppText>
+            <Countdown seconds={(Date.parse(order.expiresAt) - now) / 1000} variant="h1" />
+          </View>
+        )}
         {checkedAt && (
           <AppText variant="caption" tone="muted">
             {t('billing.order.checkedAt', { time: isoDateTimeLabel(checkedAt, lang) })}
@@ -182,6 +199,7 @@ export default function OrderStatusScreen() {
 }
 
 const styles = StyleSheet.create({
+  countdown: { marginTop: space.md, gap: space.xxs },
   skeleton: { gap: space.lg },
   statusRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   message: { marginTop: space.md, marginBottom: space.sm },
