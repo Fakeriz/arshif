@@ -1,4 +1,4 @@
-import { useRouter } from 'expo-router';
+import { useNavigation, useRouter } from 'expo-router';
 import { useRef, useState } from 'react';
 
 import { Screen } from '@/components/shell/Screen';
@@ -12,6 +12,8 @@ import { useLedger } from '@/state/derived';
 
 export default function ImportReviewScreen() {
   const router = useRouter();
+  // Simpan menunggu 450 ms (centang "Tersimpan"); pengguna yang sudah kembali sendiri tidak dipindah lagi.
+  const navigation = useNavigation();
   const t = useT();
   const { show } = useToast();
   const { dispatch } = useStore();
@@ -40,7 +42,7 @@ export default function ImportReviewScreen() {
           dispatch({ type: 'tx/addMany', txs });
           clearHandoff('import');
           show({ tone: 'success', title: t('capture.importReview.importedTitle', { count: txs.length }), message: t('capture.importReview.importedMessage', { account: account.name }) });
-          router.replace('/transaksi');
+          if (navigation.isFocused()) router.replace('/transaksi');
         }}
       />
     );

@@ -22,6 +22,7 @@ import { useLedger } from '@/state/derived';
 import { useInvoices } from '@/state/invoices';
 import { useTheme } from '@/theme/ThemeProvider';
 import { space } from '@/theme/tokens';
+import { goBack } from '@/components/shell/goBack';
 
 /** Detail invoice/penawaran: dokumen, status, tandai Dibayar (satu transaksi pemasukan), PDF. */
 export default function InvoiceDetail() {
@@ -35,7 +36,7 @@ export default function InvoiceDetail() {
       {inv ? (
         <Detail inv={inv} />
       ) : (
-        <EmptyState title={t('inv.notFoundTitle')} message={t('inv.notFoundMessage')} actionLabel={t('plan.common.back')} onAction={() => router.back()} />
+        <EmptyState title={t('inv.notFoundTitle')} message={t('inv.notFoundMessage')} actionLabel={t('plan.common.back')} onAction={() => goBack(router)} />
       )}
     </InvoiceScreen>
   );
@@ -175,7 +176,7 @@ function Detail({ inv }: { inv: Invoice }) {
           remove(inv.id)
             .then(() => {
               show({ tone: 'success', title: t('plan.common.deleted') });
-              router.back();
+              goBack(router);
             })
             .catch(() => show({ tone: 'error', title: t('plan.common.deleteFailed') }));
         }}

@@ -15,6 +15,8 @@ import type { ImportResult } from '../../../supabase/functions/_shared/contracts
 type Props = { result: ImportResult; accountId: string; accountName: string; existing: Transaction[]; onImport: (txs: Transaction[]) => void };
 
 /** Review import PDF (FR-PDF-3): baris yang mirip transaksi yang sudah ada tidak dicentang secara default (FR-PDF-2). */
+const PAGE_ROWS = 100;
+
 export function ImportReview({ result, accountId, accountName, existing, onImport }: Props) {
   const { t, lang } = useI18n();
   const rows = useMemo(
@@ -25,6 +27,8 @@ export function ImportReview({ result, accountId, accountName, existing, onImpor
   const count = rows.filter((r) => checked[r.key]).length;
   const dups = rows.filter((r) => r.duplicate).length;
   const saving = useSaveThen();
+  // Rekening koran bisa 1000 baris: render bertahap agar layar tidak membeku saat dibuka.
+  const [shown, setShown] = useState(PAGE_ROWS);
 
   if (rows.length === 0) return <EmptyState title={t('capture.importReview.noneTitle')} message={t('capture.importReview.noneMessage')} />;
 
@@ -42,7 +46,7 @@ export function ImportReview({ result, accountId, accountName, existing, onImpor
         {t('capture.importReview.rowsRead', { count: rows.length, account: accountName }) + (dups ? ` ${t('capture.importReview.dupsSkipped', { count: dups })}` : '')}
       </AppText>
       <Card padding="md">
-        {rows.map((r) => (
+        {rows.slice(0, shown).map((r) => (
           <View key={r.key} style={styles.row}>
             <Checkbox checked={!!checked[r.key]} onChange={(v) => setChecked((c) => ({ ...c, [r.key]: v }))} accessibilityLabel={`${prettifyDescription(r.description)}, ${shortDate(r.date, lang)}`} />
             <View style={styles.text}>
@@ -60,6 +64,9 @@ export function ImportReview({ result, accountId, accountName, existing, onImpor
           </View>
         ))}
       </Card>
+      {rows.length > shown && (
+        <Button label={t('capture.importReview.showMore', { count: Math.min(PAGE_ROWS, rows.length - shown) })} variant="secondary" fullWidth onPress={() => setShown((n) => n + PAGE_ROWS)} />
+      )}
       <Button label={saving.done ? t('common.ui.saved') : count === 0 ? t('capture.importReview.pickOne') : t('capture.importReview.submit', { count })} done={saving.done} fullWidth disabled={count === 0} onPress={submit} />
       <AppText variant="caption" tone="muted" align="center">
         {t('capture.importReview.footer')}

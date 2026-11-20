@@ -16,6 +16,7 @@ import { formatMoney } from '@/lib/money';
 import { useStore } from '@/state/AppStore';
 import { useAssets } from '@/state/assets';
 import { space } from '@/theme/tokens';
+import { goBack } from '@/components/shell/goBack';
 
 /** Detail aset (brief §6). Grafik harga (opsional di brief) belum dibuat: server hanya menyimpan harga terakhir, belum riwayat. */
 export default function AssetDetail() {
@@ -33,7 +34,7 @@ export default function AssetDetail() {
     return (
       <Screen>
         <ScreenHeader title={t('assets.detail.title')} />
-        <EmptyState title={t('plan.common.notFound')} message={t('plan.common.notFoundMessage')} actionLabel={t('plan.common.back')} onAction={() => router.back()} />
+        <EmptyState title={t('plan.common.notFound')} message={t('plan.common.notFoundMessage')} actionLabel={t('plan.common.back')} onAction={() => goBack(router)} />
       </Screen>
     );
   }
@@ -97,7 +98,7 @@ export default function AssetDetail() {
           removeAsset(asset.id)
             .then(() => {
               show({ tone: 'success', title: t('plan.common.deleted') });
-              router.back();
+              goBack(router);
             })
             .catch(() => show({ tone: 'error', title: t('plan.common.deleteFailed') }));
         }}

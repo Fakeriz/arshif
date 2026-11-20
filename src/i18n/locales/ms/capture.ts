@@ -141,6 +141,7 @@ const capture: Messages['capture'] = {
     rowsRead_one: '{count} baris dibaca untuk {account}.',
     dupsSkipped: '{count} baris menyerupai transaksi sedia ada, jadi tidak ditanda.',
     dupsSkipped_one: '{count} baris menyerupai transaksi sedia ada, jadi tidak ditanda.',
+    showMore: 'Tunjukkan {count} baris lagi',
     duplicate: 'Mungkin pendua',
     pickOne: 'Pilih sekurang-kurangnya satu baris',
     submit: 'Import {count} transaksi',

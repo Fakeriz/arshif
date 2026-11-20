@@ -1,4 +1,4 @@
-import { useRouter } from 'expo-router';
+import { useNavigation, useRouter } from 'expo-router';
 import { useRef, useState } from 'react';
 
 import { Screen } from '@/components/shell/Screen';
@@ -12,6 +12,8 @@ import { useLedger } from '@/state/derived';
 
 export default function VoiceReviewScreen() {
   const router = useRouter();
+  // Simpan menunggu 450 ms (centang "Tersimpan"); pengguna yang sudah kembali sendiri tidak dipindah lagi.
+  const navigation = useNavigation();
   const t = useT();
   const { show } = useToast();
   const { dispatch } = useStore();
@@ -34,7 +36,7 @@ export default function VoiceReviewScreen() {
             dispatch({ type: 'tx/addMany', txs });
             clearHandoff('voice');
             show({ tone: 'success', title: t('capture.voiceReview.savedTitle', { count: txs.length }), message: t('capture.voiceReview.savedMessage') });
-            router.replace('/transaksi');
+            if (navigation.isFocused()) router.replace('/transaksi');
           }}
         />
       ) : (

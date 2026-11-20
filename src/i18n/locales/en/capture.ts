@@ -141,6 +141,7 @@ const capture: Messages['capture'] = {
     rowsRead_one: '{count} line read for {account}.',
     dupsSkipped: '{count} lines look like existing transactions, so they are unchecked.',
     dupsSkipped_one: '{count} line looks like an existing transaction, so it is unchecked.',
+    showMore: 'Show {count} more rows',
     duplicate: 'Possible duplicate',
     pickOne: 'Select at least one line',
     submit: 'Import {count} transactions',

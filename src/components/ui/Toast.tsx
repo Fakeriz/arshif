@@ -40,7 +40,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   return (
     <ToastContext.Provider value={show}>
       {children}
-      {current && <ToastView key={current.id} item={current} onDone={() => setCurrent(null)} />}
+      {current && <ToastView key={current.id} item={current} onDone={() => setCurrent((c) => (c?.id === current.id ? null : c))} />}
     </ToastContext.Provider>
   );
 }

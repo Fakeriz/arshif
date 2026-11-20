@@ -16,6 +16,7 @@ import { useStore } from '@/state/AppStore';
 import { usePlanning } from '@/state/planning';
 import { useTheme } from '@/theme/ThemeProvider';
 import { radius, space } from '@/theme/tokens';
+import { goBack } from '@/components/shell/goBack';
 
 /**
  * Split bill (FR-SPLIT-1..3). id "baru" = baru (opsional ?tx= untuk mengisi dari struk). Bagi rata atau per item;
@@ -34,7 +35,7 @@ export default function SplitEditor() {
   if (status === 'ready' && !isNew && !existing) {
     return (
       <PlanScreen title={t('plan.split.title')}>
-        <EmptyState title={t('plan.common.notFound')} message={t('plan.common.notFoundMessage')} actionLabel={t('plan.common.back')} onAction={() => router.back()} />
+        <EmptyState title={t('plan.common.notFound')} message={t('plan.common.notFoundMessage')} actionLabel={t('plan.common.back')} onAction={() => goBack(router)} />
       </PlanScreen>
     );
   }
@@ -330,7 +331,7 @@ function Editor({ initial, isNew, fixedTotal }: { initial: SplitBill; isNew: boo
         onConfirm={() => {
           setConfirm(false);
           removeSplit(initial.id)
-            .then(() => router.back())
+            .then(() => goBack(router))
             .catch(() => show({ tone: 'error', title: t('plan.common.deleteFailed') }));
         }}
       />

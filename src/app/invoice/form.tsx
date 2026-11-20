@@ -20,6 +20,7 @@ import { useStore } from '@/state/AppStore';
 import { useInvoices } from '@/state/invoices';
 import { useTheme } from '@/theme/ThemeProvider';
 import { radius, space } from '@/theme/tokens';
+import { goBack } from '@/components/shell/goBack';
 
 type Draft = { id: string; name: string; qty: string; price: number | null };
 
@@ -43,9 +44,9 @@ export default function InvoiceForm() {
   return (
     <InvoiceScreen title={title}>
       {id && !existing ? (
-        <EmptyState title={t('inv.notFoundTitle')} message={t('inv.notFoundMessage')} actionLabel={t('plan.common.back')} onAction={() => router.back()} />
+        <EmptyState title={t('inv.notFoundTitle')} message={t('inv.notFoundMessage')} actionLabel={t('plan.common.back')} onAction={() => goBack(router)} />
       ) : existing?.status === 'paid' ? (
-        <EmptyState title={t('inv.form.lockedTitle')} message={t('inv.form.lockedMessage')} actionLabel={t('plan.common.back')} onAction={() => router.back()} />
+        <EmptyState title={t('inv.form.lockedTitle')} message={t('inv.form.lockedMessage')} actionLabel={t('plan.common.back')} onAction={() => goBack(router)} />
       ) : (
         <Form key={existing?.id ?? source?.id ?? kind} kind={kind} initial={existing ?? source} isEdit={!!existing} />
       )}

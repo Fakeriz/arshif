@@ -4,6 +4,7 @@ import type { ReactNode } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import { useT } from '@/i18n';
+import { goBack } from '@/components/shell/goBack';
 import { AppText, Icon, PressableScale } from '@/components/ui';
 import { useTheme } from '@/theme/ThemeProvider';
 import { elevation, layout, radius, space } from '@/theme/tokens';
@@ -22,7 +23,7 @@ export function ScreenHeader({ title, subtitle, right }: { title: string; subtit
         <PressableScale
           accessibilityLabel={t('common.back')}
           focusRadius={radius.full}
-          onPress={() => (router.canGoBack() ? router.back() : router.replace('/'))}
+          onPress={() => goBack(router)}
           style={[styles.btn, { backgroundColor: colors.surfaceRaised, borderColor: colors.border }, elevation[scheme].card]}
         >
           <Icon icon={ChevronLeft} color={colors.text} />

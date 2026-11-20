@@ -9,6 +9,7 @@ import { useT } from '@/i18n';
 import { formatMoney } from '@/lib/money';
 import { useLedger } from '@/state/derived';
 import { draftFromItem, useSmartLog } from '@/state/smartlog';
+import { goBack } from '@/components/shell/goBack';
 
 /** "Ubah dulu" dari To Review: isian notifikasi bisa dikoreksi (kartu, jenis, kategori) sebelum dicatat. */
 export default function ReviewEditScreen() {
@@ -25,7 +26,7 @@ export default function ReviewEditScreen() {
     <Screen>
       <ScreenHeader title={t('slog.review.editTitle')} />
       {!item ? (
-        <EmptyState title={t('slog.review.notFound')} actionLabel={t('common.back')} onAction={() => router.back()} />
+        <EmptyState title={t('slog.review.notFound')} actionLabel={t('common.back')} onAction={() => goBack(router)} />
       ) : (
         <TransactionForm
           accounts={accounts}
@@ -36,7 +37,7 @@ export default function ReviewEditScreen() {
             confirm(item, tx)
               .then(() => {
                 show({ tone: 'success', title: t('slog.review.confirmed'), message: `${tx.merchant} · ${formatMoney(tx.amount, tx.currency)}` });
-                router.back();
+                goBack(router);
               })
               .catch(() => {
                 show({ tone: 'error', title: t('slog.review.failed') });

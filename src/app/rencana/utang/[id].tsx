@@ -13,6 +13,7 @@ import { shortDate } from '@/lib/dates';
 import { formatMoney } from '@/lib/money';
 import { usePlanning } from '@/state/planning';
 import { space } from '@/theme/tokens';
+import { goBack } from '@/components/shell/goBack';
 
 export default function DebtDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -30,7 +31,7 @@ export default function DebtDetail() {
   return (
     <PlanScreen title={debt?.kind === 'receivable' ? t('plan.debts.tabs.receivable') : t('plan.debts.tabs.debt')}>
       {!debt ? (
-        <EmptyState title={t('plan.common.notFound')} message={t('plan.common.notFoundMessage')} actionLabel={t('plan.common.back')} onAction={() => router.back()} />
+        <EmptyState title={t('plan.common.notFound')} message={t('plan.common.notFoundMessage')} actionLabel={t('plan.common.back')} onAction={() => goBack(router)} />
       ) : (
         <>
           <DebtCard debt={debt} />
@@ -92,7 +93,7 @@ export default function DebtDetail() {
               removeDebt(debt.id)
                 .then(() => {
                   show({ tone: 'success', title: t('plan.common.deleted') });
-                  router.back();
+                  goBack(router);
                 })
                 .catch(() => show({ tone: 'error', title: t('plan.common.deleteFailed') }));
             }}

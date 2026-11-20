@@ -1,4 +1,4 @@
-import { useRouter } from 'expo-router';
+import { useNavigation, useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 
 import { Screen } from '@/components/shell/Screen';
@@ -11,9 +11,12 @@ import { useT } from '@/i18n';
 import { formatMoney } from '@/lib/money';
 import { useStore } from '@/state/AppStore';
 import { useLedger } from '@/state/derived';
+import { goBack } from '@/components/shell/goBack';
 
 export default function ScanReviewScreen() {
   const router = useRouter();
+  // Simpan menunggu 450 ms (centang "Tersimpan"); pengguna yang sudah kembali sendiri tidak dipindah lagi.
+  const navigation = useNavigation();
   const t = useT();
   const { show } = useToast();
   const { state, dispatch } = useStore();
@@ -42,7 +45,7 @@ export default function ScanReviewScreen() {
           existing={existing}
           onRetake={() => {
             clearHandoff('scan');
-            if (existing) router.back();
+            if (existing) goBack(router);
             else router.replace('/scan');
           }}
           onSave={(tx) => {
@@ -54,12 +57,12 @@ export default function ScanReviewScreen() {
             if (existing) {
               dispatch({ type: 'tx/update', tx });
               show({ tone: 'success', title: t('tx.form.updated') });
-              router.back();
+              if (navigation.isFocused()) goBack(router);
               return;
             }
             dispatch({ type: 'tx/add', tx });
             show({ tone: 'success', title: t('capture.scanReview.savedTitle'), message: t('capture.scanReview.savedMessage', { merchant: tx.merchant, amount: formatMoney(tx.amount, tx.currency) }) });
-            router.replace('/transaksi');
+            if (navigation.isFocused()) router.replace('/transaksi');
           }}
         />
       ) : (

@@ -8,6 +8,7 @@ import {
   Card,
   CashflowChart,
   CurrencyText,
+  Dialog,
   DonutChart,
   EmptyState,
   HealthGauge,
@@ -198,5 +199,17 @@ describe('Monokrom: tanpa glow, kartu solid', () => {
     );
     expect(hostTypes(screen.toJSON()).has('RNSVGRadialGradient')).toBe(false);
     expect(StyleSheet.flatten(screen.getByLabelText('kartu').props.style).backgroundColor).toBe('#161616');
+  });
+});
+
+describe('Dialog', () => {
+  it('saat menutup (animasi 150 ms) tombol konfirmasi tidak menjalankan aksi lagi', async () => {
+    const onConfirm = jest.fn();
+    const props = { title: 'Hapus transaksi?', confirmLabel: 'Hapus', onConfirm, onCancel: () => undefined };
+    const r = await wrap(<Dialog visible {...props} />);
+    await fireEvent.press(screen.getByText('Hapus'));
+    await r.rerender(<ThemeProvider initialMode="dark"><Dialog visible={false} {...props} /></ThemeProvider>);
+    await fireEvent.press(screen.getByText('Hapus'));
+    expect(onConfirm).toHaveBeenCalledTimes(1);
   });
 });

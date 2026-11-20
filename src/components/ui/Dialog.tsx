@@ -97,7 +97,8 @@ export function Dialog({
               label={confirmLabel}
               variant={tone === 'danger' ? 'danger' : 'primary'}
               size="md"
-              onPress={onConfirm}
+              // Selama animasi tutup (150 ms) dialog masih terpasang: ketukan ganda tidak boleh menjalankan aksi dua kali.
+              onPress={visible ? onConfirm : undefined}
               loading={loading}
               fullWidth
             />

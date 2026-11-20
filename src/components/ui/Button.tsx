@@ -108,6 +108,8 @@ export function useSaveThen(delayMs = 450) {
   const run = useCallback(
     (fn: () => void) => {
       setDone(true);
+      // Sengaja tidak dibatalkan saat layar ditinggal: datanya tetap disimpan; pemanggil hanya berpindah
+      // layar bila masih aktif (navigation.isFocused), jadi tombol kembali yang cepat tidak memicu lompatan ganda.
       setTimeout(fn, reduced ? 0 : delayMs);
     },
     [reduced, delayMs],

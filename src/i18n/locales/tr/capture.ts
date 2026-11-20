@@ -141,6 +141,7 @@ const capture: Messages['capture'] = {
     rowsRead_one: '{account} için {count} satır okundu.',
     dupsSkipped: '{count} satır mevcut işlemlere benziyor, bu yüzden işaretlenmedi.',
     dupsSkipped_one: '{count} satır mevcut bir işleme benziyor, bu yüzden işaretlenmedi.',
+    showMore: '{count} satır daha göster',
     duplicate: 'Olası kopya',
     pickOne: 'En az bir satır seç',
     submit: '{count} işlemi içe aktar',

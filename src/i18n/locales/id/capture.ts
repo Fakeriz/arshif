@@ -140,6 +140,7 @@ const capture = {
     rowsRead_one: '{count} baris terbaca untuk {account}.',
     dupsSkipped: '{count} baris mirip transaksi yang sudah ada, jadi tidak dicentang.',
     dupsSkipped_one: '{count} baris mirip transaksi yang sudah ada, jadi tidak dicentang.',
+    showMore: 'Tampilkan {count} baris lagi',
     duplicate: 'Kemungkinan duplikat',
     pickOne: 'Pilih minimal satu baris',
     submit: 'Import {count} transaksi',

@@ -16,6 +16,7 @@ import { useStore } from '@/state/AppStore';
 import { usePlanning } from '@/state/planning';
 import { haptic } from '@/theme/motion';
 import { space } from '@/theme/tokens';
+import { goBack } from '@/components/shell/goBack';
 
 export default function GoalDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -34,7 +35,7 @@ export default function GoalDetail() {
   return (
     <PlanScreen title={t('plan.goals.title')}>
       {!goal ? (
-        <EmptyState title={t('plan.common.notFound')} message={t('plan.common.notFoundMessage')} actionLabel={t('plan.common.back')} onAction={() => router.back()} />
+        <EmptyState title={t('plan.common.notFound')} message={t('plan.common.notFoundMessage')} actionLabel={t('plan.common.back')} onAction={() => goBack(router)} />
       ) : (
         <>
           <GoalCard goal={goal} />
@@ -98,7 +99,7 @@ export default function GoalDetail() {
               removeGoal(goal.id)
                 .then(() => {
                   show({ tone: 'success', title: t('plan.common.deleted') });
-                  router.back();
+                  goBack(router);
                 })
                 .catch(() => show({ tone: 'error', title: t('plan.common.deleteFailed') }));
             }}

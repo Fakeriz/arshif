@@ -20,6 +20,7 @@ import { currencyMeta, formatMoney } from '@/lib/money';
 import { useStore } from '@/state/AppStore';
 import { useTheme } from '@/theme/ThemeProvider';
 import { space } from '@/theme/tokens';
+import { goBack } from '@/components/shell/goBack';
 
 import { FUNCTIONS, ScanResult } from '../../../supabase/functions/_shared/contracts';
 
@@ -135,7 +136,7 @@ export default function TransactionDetail() {
           setConfirm(false);
           dispatch({ type: 'tx/delete', id: tx.id });
           show({ tone: 'success', title: t('tx.detail.deleted') });
-          router.back();
+          goBack(router);
         }}
       />
     </Screen>

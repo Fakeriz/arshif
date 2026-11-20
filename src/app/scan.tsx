@@ -21,6 +21,7 @@ import { useLimits } from '@/state/limits';
 import { haptic } from '@/theme/motion';
 import { useTheme } from '@/theme/ThemeProvider';
 import { radius, space } from '@/theme/tokens';
+import { goBack } from '@/components/shell/goBack';
 
 import { DocScannerNative } from '../../modules/doc-scanner';
 import { FUNCTIONS, ScanResult } from '../../supabase/functions/_shared/contracts';
@@ -160,7 +161,7 @@ function ScanInner() {
   return (
     <View style={[styles.root, { backgroundColor: colors.bg, paddingTop: insets.top + space.md, paddingBottom: insets.bottom + space.xl }]}>
       <View style={styles.top}>
-        <RoundButton label={t('common.close')} onPress={() => router.back()} icon={X} />
+        <RoundButton label={t('common.close')} onPress={() => goBack(router)} icon={X} />
         <AppText variant="h3" accessibilityRole="header" numberOfLines={1} style={styles.title}>
           {t('capture.scan.title')}
         </AppText>
