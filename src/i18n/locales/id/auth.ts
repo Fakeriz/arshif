@@ -35,6 +35,7 @@ const auth = {
     currency: {
       title: 'Mata uang utama',
       lead: 'Semua total, anggaran, dan kekayaan bersih dihitung dalam mata uang ini. Bisa diganti nanti di Pengaturan.',
+      other: 'Mata uang lain',
     },
     account: {
       title: 'Akun pertamamu',

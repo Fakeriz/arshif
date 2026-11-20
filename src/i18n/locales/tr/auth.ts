@@ -37,6 +37,7 @@ const auth: Messages['auth'] = {
     currency: {
       title: 'Ana para birimi',
       lead: 'Tüm toplamlar, bütçeler ve net varlık bu para biriminde gösterilir. Daha sonra Ayarlar’dan değiştirebilirsin.',
+      other: 'Başka para birimi',
     },
     account: {
       title: 'İlk hesabın',

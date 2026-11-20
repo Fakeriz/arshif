@@ -37,6 +37,7 @@ const auth: Messages['auth'] = {
     currency: {
       title: 'Main currency',
       lead: 'All totals, budgets, and net worth are shown in this currency. You can change it later in Settings.',
+      other: 'Other currency',
     },
     account: {
       title: 'Your first account',

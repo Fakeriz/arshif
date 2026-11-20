@@ -37,6 +37,7 @@ const auth: Messages['auth'] = {
     currency: {
       title: 'Mata wang utama',
       lead: 'Semua jumlah, belanjawan, dan nilai bersih dikira dalam mata wang ini. Boleh ditukar kemudian di Tetapan.',
+      other: 'Mata wang lain',
     },
     account: {
       title: 'Akaun pertama anda',
