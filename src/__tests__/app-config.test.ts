@@ -48,3 +48,11 @@ describe('web: panel admin tidak bisa dimuat di dalam situs lain (audit 17)', ()
     expect(vercel.rewrites).toEqual([{ source: '/(.*)', destination: '/index.html' }]);
   });
 });
+
+describe('web: layar tidak dimuat lazy', () => {
+  // asyncRoutes web membungkus tiap layar dengan React.lazy + Suspense: menu yang dibuka pertama kali
+  // tampil kosong ~300 ms (fallback expo-router di produksi = null, lalu React menahan isi 300 ms).
+  it('app.json: expo-router asyncRoutes false', () => {
+    expect(appJson.expo.plugins).toContainEqual(['expo-router', { asyncRoutes: false }]);
+  });
+});
