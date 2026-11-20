@@ -70,10 +70,7 @@ export default function CoachScreen() {
 
   return (
     <Screen onRefresh={retry} refreshing={refreshing}>
-      <ScreenHeader title={t('coach.title')} />
-      <AppText variant="caption" tone="secondary" align="center">
-        {t('coach.subtitle')}
-      </AppText>
+      <ScreenHeader title={t('coach.title')} subtitle={t('coach.subtitle')} />
       <Tabs
         variant="underline"
         accessibilityLabel={t('coach.sections')}

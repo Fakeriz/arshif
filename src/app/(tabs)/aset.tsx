@@ -23,8 +23,8 @@ import { useAssets } from '@/state/assets';
 import { useLimits } from '@/state/limits';
 import { useNetWorth, useNetWorthSnapshot } from '@/state/netWorth';
 import { usePlanning } from '@/state/planning';
-import { useTheme } from '@/theme/ThemeProvider';
-import { radius, space } from '@/theme/tokens';
+import { InkCard, useTheme } from '@/theme/ThemeProvider';
+import { layout, radius, space } from '@/theme/tokens';
 
 /** Tab Aset: kekayaan bersih dan rinciannya (brief Fase Aset §6). Angka total sama dengan Home. */
 export default function AsetScreen() {
@@ -66,7 +66,8 @@ export default function AsetScreen() {
         </View>
       ) : (
         <>
-          <View style={styles.hero}>
+          {/* Satu kartu tinta per layar: angka terpenting Aset (docs/design.md 2.4). */}
+          <InkCard style={styles.hero}>
             <AppText variant="caption" tone="secondary">
               {t('assets.netWorth')}
             </AppText>
@@ -79,7 +80,7 @@ export default function AsetScreen() {
                 </AppText>
               </>
             )}
-          </View>
+          </InkCard>
 
           <View style={styles.tiles}>
             <StatTile
@@ -218,7 +219,7 @@ export default function AsetScreen() {
 
 const styles = StyleSheet.create({
   skeleton: { gap: space.lg },
-  hero: { alignItems: 'center', gap: space.xs, paddingVertical: space.sm },
+  hero: { alignItems: 'center', gap: space.xs, borderRadius: radius.card, padding: layout.cardPadding, paddingVertical: space.xl },
   cardBody: { gap: space.md },
   banner: { flexDirection: 'row', gap: space.md, alignItems: 'flex-start' },
   flex: { flex: 1, gap: space.xxs },

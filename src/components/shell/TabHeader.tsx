@@ -13,7 +13,7 @@ export function TabHeader({ title, subtitle, right }: { title: string; subtitle?
           {title}
         </AppText>
         {subtitle && (
-          <AppText variant="caption" tone="secondary">
+          <AppText variant="body" tone="muted">
             {subtitle}
           </AppText>
         )}
@@ -24,6 +24,7 @@ export function TabHeader({ title, subtitle, right }: { title: string; subtitle?
 }
 
 const styles = StyleSheet.create({
-  row: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: space.md },
-  text: { flex: 1, gap: space.xxs },
+  // Ruang atas setara baris tombol di ScreenHeader, supaya judul tab tidak menempel ke tepi.
+  row: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: space.md, marginTop: space.lg },
+  text: { flex: 1, gap: space.sm },
 });

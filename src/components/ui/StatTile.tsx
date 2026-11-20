@@ -80,9 +80,9 @@ export function StatTile({
           </AppText>
         </View>
 
-        <CurrencyText amount={amount} currency={currency} variant={wide ? 'amountHero' : 'h2'} hidden={hidden} countUp />
+        <CurrencyText amount={amount} currency={currency} variant={wide ? 'amountHero' : 'h2'} hidden={hidden} countUp style={!wide && fitStyle(formatMoney(amount, currency))} />
         <View style={[styles.foot, wide && styles.footWide]}>
-          <TrendBadge value={change} invert={invert} suffix={changeSuffix} size={wide ? 'md' : 'sm'} />
+          {change !== null && <TrendBadge value={change} invert={invert} suffix={changeSuffix} size={wide ? 'md' : 'sm'} />}
           {hasSeries && !hidden && (
             <Sparkline
               values={series}
@@ -96,6 +96,11 @@ export function StatTile({
       </Card>
     </View>
   );
+}
+
+/** Tile setengah lebar: nominal panjang (mis. Rp 44.365.605) mengecil agar tidak terpotong "…". */
+function fitStyle(text: string) {
+  return text.length <= 11 ? undefined : text.length <= 14 ? { fontSize: 17, lineHeight: 22 } : { fontSize: 15, lineHeight: 20 };
 }
 
 const styles = StyleSheet.create({

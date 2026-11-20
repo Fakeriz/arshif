@@ -83,7 +83,7 @@ export function CurrencyText({
     </AppText>
   );
   if (kind !== 'over') return textEl;
-  // Over budget tidak hanya dibedakan warna: ikon menyertai agar tidak tertukar dengan aksen Merah.
+  // Over budget tidak hanya dibedakan warna: ikon menyertainya (WCAG 1.4.1).
   const iconSize = Math.round(typeScale[variant].fontSize * 0.85);
   return (
     <View style={styles.overRow}>

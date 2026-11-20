@@ -133,12 +133,7 @@ export default function PremiumScreen() {
 
   return (
     <Screen>
-      <ScreenHeader title={t('billing.premium.title')} />
-      <View style={styles.hero}>
-        <AppText variant="body" tone="secondary" align="center">
-          {alasan || t('billing.premium.subtitle')}
-        </AppText>
-      </View>
+      <ScreenHeader title={t('billing.premium.title')} subtitle={alasan || t('billing.premium.subtitle')} />
 
       {premium && (
         <Card>
@@ -253,7 +248,6 @@ export default function PremiumScreen() {
 }
 
 const styles = StyleSheet.create({
-  hero: { gap: space.sm, paddingVertical: space.md },
   activeHead: { flexDirection: 'row', alignItems: 'center', gap: space.sm, marginBottom: space.xs },
   section: { gap: space.lg },
   block: { gap: space.sm },

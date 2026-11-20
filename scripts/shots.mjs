@@ -5,6 +5,7 @@ import fs from 'node:fs';
 import { ids, resetUser, sessionFor, storageKey } from './e2e-live.mjs';
 
 const [base = 'http://localhost:8099', out = 'shots', filter] = process.argv.slice(2);
+const schemes = (process.env.SHOTS_SCHEMES || 'light,dark').split(',');
 fs.mkdirSync(out, { recursive: true });
 
 const ROUTES = [
@@ -19,8 +20,9 @@ await resetUser({ seed: true, onboarded: true });
 const session = await sessionFor();
 const b = await chromium.launch();
 const errors = [];
-for (const scheme of ['light', 'dark']) {
-  const ctx = await b.newContext({ viewport: { width: 390, height: 844 }, colorScheme: scheme, locale: 'id-ID' });
+for (const scheme of schemes) {
+  // SHOTS_HEIGHT besar = seluruh isi halaman terlihat (konten RN web ada di dalam ScrollView setinggi viewport).
+  const ctx = await b.newContext({ viewport: { width: 390, height: Number(process.env.SHOTS_HEIGHT) || 844 }, colorScheme: scheme, locale: 'id-ID' });
   await ctx.addInitScript(([k, v]) => localStorage.setItem(k, v), [storageKey(), JSON.stringify(session)]);
   const p = await ctx.newPage();
   p.on('pageerror', (e) => errors.push(`${p.url()}: ${String(e).slice(0, 160)}`));

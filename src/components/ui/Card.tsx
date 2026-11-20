@@ -20,7 +20,9 @@ export type CardProps = {
 export function Card({ children, variant = 'glass', padding = 'lg', onPress, accessibilityLabel, style }: CardProps) {
   const { colors } = useTheme();
   // Talmo .card: 18px atas, 20px sisi; padding lain tetap seragam.
-  const pad: ViewStyle = padding === 0 ? { padding: 0 } : padding === 'lg' ? { paddingVertical: 18, paddingHorizontal: space.xl } : { padding: space[padding] };
+  // Talmo .card: sisi 20 untuk semua kartu agar isi kartu bertumpuk sejajar; md hanya merapatkan atas-bawah.
+  const pad: ViewStyle =
+    padding === 0 ? { padding: 0 } : padding === 'lg' ? { paddingVertical: 18, paddingHorizontal: space.xl } : padding === 'md' ? { paddingVertical: space.md, paddingHorizontal: space.xl } : { padding: space[padding] };
   const body =
     variant === 'glass' ? (
       <GlassView radius={radius.lg} style={[pad, style]} accessibilityLabel={onPress ? undefined : accessibilityLabel}>
