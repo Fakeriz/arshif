@@ -3,10 +3,10 @@ import { HandCoins, Pencil, Trash2 } from 'lucide-react-native';
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
-import { AppText, Button, Card, Dialog, EmptyState, useToast } from '@/components/ui';
+import { AppText, Button, Card, Dialog, EmptyState, Group, useToast } from '@/components/ui';
 import { DebtCard } from '@/features/planning/DebtCard';
 import { DebtForm } from '@/features/planning/forms';
-import { PaySheet, PlanScreen, SectionLabel } from '@/features/planning/kit';
+import { PaySheet, PlanScreen } from '@/features/planning/kit';
 import { InfoRow } from '@/features/transactions/InfoRow';
 import { useI18n } from '@/i18n';
 import { shortDate } from '@/lib/dates';
@@ -45,7 +45,7 @@ export default function DebtDetail() {
           {debt.status === 'active' && (
             <Button label={debt.kind === 'debt' ? t('plan.debts.pay') : t('plan.debts.receive')} icon={HandCoins} fullWidth onPress={() => setPay(true)} />
           )}
-          <SectionLabel>{t('plan.common.history')}</SectionLabel>
+          <Group label={t('plan.common.history')}>
           <Card padding="md">
             {history.length === 0 ? (
               <AppText variant="body" tone="secondary">
@@ -55,6 +55,7 @@ export default function DebtDetail() {
               history.map((p, i) => <InfoRow key={p.id} label={shortDate(p.date, lang)} value={formatMoney(p.amount, debt.currency)} divider={i < history.length - 1} />)
             )}
           </Card>
+          </Group>
           <View style={styles.actions}>
             <Button label={t('plan.common.edit')} icon={Pencil} variant="secondary" fullWidth onPress={() => setEdit(true)} />
             <Button label={t('plan.common.delete')} icon={Trash2} variant="danger" fullWidth onPress={() => setConfirm(true)} />

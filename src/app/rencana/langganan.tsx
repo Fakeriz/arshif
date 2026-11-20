@@ -2,10 +2,10 @@ import { Pause, Pencil, Play, Trash2 } from 'lucide-react-native';
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
-import { AppText, BottomSheet, Button, Card, CategoryIcon, Dialog, EmptyState, ListItem, useToast } from '@/components/ui';
+import { AppText, BottomSheet, Button, Card, CategoryIcon, Dialog, EmptyState, Group, ListCard, ListItem, useToast } from '@/components/ui';
 import type { Subscription } from '@/data/planning';
 import { SubscriptionForm } from '@/features/planning/forms';
-import { AddButton, PlanScreen, SectionLabel, useSaveError } from '@/features/planning/kit';
+import { AddButton, PlanScreen, useSaveError } from '@/features/planning/kit';
 import { InfoRow } from '@/features/transactions/InfoRow';
 import { useI18n } from '@/i18n';
 import { shortDate } from '@/lib/dates';
@@ -97,9 +97,12 @@ export default function SubscriptionsScreen() {
               </AppText>
             )}
           </Card>
-          {active.length > 0 && <Card padding="sm">{active.map(row)}</Card>}
-          {stopped.length > 0 && <SectionLabel>{t('plan.subs.stoppedSection')}</SectionLabel>}
-          {stopped.length > 0 && <Card padding="sm">{stopped.map(row)}</Card>}
+          {active.length > 0 && <ListCard>{active.map(row)}</ListCard>}
+          {stopped.length > 0 && (
+            <Group label={t('plan.subs.stoppedSection')}>
+              <ListCard>{stopped.map(row)}</ListCard>
+            </Group>
+          )}
         </>
       )}
       <SubscriptionForm key={form ? 'open' : 'closed'} visible={form} onClose={() => setForm(false)} />

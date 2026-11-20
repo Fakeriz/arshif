@@ -3,9 +3,9 @@ import { CircleCheck, FileText, Pencil, Send, Share2, Trash2, Undo2 } from 'luci
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
-import { AppText, Button, Card, DateField, Dialog, EmptyState, useToast } from '@/components/ui';
+import { AppText, Button, Card, DateField, Dialog, EmptyState, Group, useToast } from '@/components/ui';
 import { InvoiceScreen, StatusBadge } from '@/features/invoice/kit';
-import { FormSheet, SectionLabel, useSaveError } from '@/features/planning/kit';
+import { FormSheet, useSaveError } from '@/features/planning/kit';
 import { invoiceDocument } from '@/features/tools/documents';
 import { ResultRow, usePdfShare } from '@/features/tools/kit';
 import { AccountPicker } from '@/features/transactions/pickers';
@@ -103,28 +103,29 @@ function Detail({ inv }: { inv: Invoice }) {
         <Button label={t('inv.toInvoice')} icon={FileText} fullWidth onPress={() => router.push({ pathname: '/invoice/form', params: { dari: inv.id } })} />
       )}
 
-      <SectionLabel>{t('inv.form.items')}</SectionLabel>
-      <Card padding="md">
-        {inv.items.map((i) => (
-          <View key={i.id} style={styles.item}>
-            <View style={styles.flex}>
-              <AppText variant="body">{i.name}</AppText>
-              <AppText variant="caption" tone="secondary" numeric>
-                {`${qtyText(i.qty, decimal)} × ${money(i.unitPrice)}`}
+      <Group label={t('inv.form.items')}>
+        <Card padding="md">
+          {inv.items.map((i) => (
+            <View key={i.id} style={styles.item}>
+              <View style={styles.flex}>
+                <AppText variant="body">{i.name}</AppText>
+                <AppText variant="caption" tone="secondary" numeric>
+                  {`${qtyText(i.qty, decimal)} × ${money(i.unitPrice)}`}
+                </AppText>
+              </View>
+              <AppText variant="bodyStrong" numeric>
+                {money(lineTotal(i))}
               </AppText>
             </View>
-            <AppText variant="bodyStrong" numeric>
-              {money(lineTotal(i))}
-            </AppText>
+          ))}
+          <View style={styles.totals}>
+            <ResultRow label={t('inv.doc.subtotal')} value={money(inv.subtotal)} />
+            {inv.discount > 0 && <ResultRow label={t('inv.doc.discount')} value={money(inv.discount)} minus />}
+            {inv.taxBp > 0 && <ResultRow label={t('inv.doc.tax', { rate: bpText(inv.taxBp, decimal) })} value={money(inv.tax)} />}
+            <ResultRow label={t('inv.doc.total')} value={money(inv.total)} strong />
           </View>
-        ))}
-        <View style={styles.totals}>
-          <ResultRow label={t('inv.doc.subtotal')} value={money(inv.subtotal)} />
-          {inv.discount > 0 && <ResultRow label={t('inv.doc.discount')} value={money(inv.discount)} minus />}
-          {inv.taxBp > 0 && <ResultRow label={t('inv.doc.tax', { rate: bpText(inv.taxBp, decimal) })} value={money(inv.tax)} />}
-          <ResultRow label={t('inv.doc.total')} value={money(inv.total)} strong />
-        </View>
-      </Card>
+        </Card>
+      </Group>
       {inv.notes ? (
         <Card variant="outline" padding="md">
           <AppText variant="caption" tone="secondary">

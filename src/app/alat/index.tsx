@@ -1,16 +1,12 @@
 import { useRouter, type Href } from 'expo-router';
 import { ArrowLeftRight, Calculator, ChartColumn, FileDown, Percent, type LucideIcon } from 'lucide-react-native';
-import { StyleSheet, View } from 'react-native';
 
 import { usePaywall } from '@/components/shell/Paywall';
-import { AppText, Card, Icon, ListItem, ProBadge } from '@/components/ui';
-import { SectionLabel } from '@/features/planning/kit';
+import { AppText, MenuGroup, ProBadge, type MenuEntry } from '@/components/ui';
 import { TaxDisclaimer, ToolScreen } from '@/features/tools/kit';
 import { useT } from '@/i18n';
 import { isLimited } from '@/lib/quota';
 import { useStore } from '@/state/AppStore';
-import { useTheme } from '@/theme/ThemeProvider';
-import { radius } from '@/theme/tokens';
 
 type Entry = { key: string; icon: LucideIcon; title: string; subtitle: string; href: Href; locked: boolean; reason?: string };
 
@@ -41,39 +37,14 @@ export default function ToolsHub() {
       <AppText variant="body" tone="secondary">
         {t('tools.hub.intro')}
       </AppText>
-      <Group entries={basic} onOpen={(e) => router.push(e.href)} />
-      <SectionLabel>{t('tools.hub.fullSection')}</SectionLabel>
-      <Group entries={full} onOpen={(e) => (e.locked ? paywall(e.reason ?? '') : router.push(e.href))} />
+      <MenuGroup entries={basic.map((e) => menu(e, () => router.push(e.href)))} />
+      <MenuGroup label={t('tools.hub.fullSection')} entries={full.map((e) => menu(e, () => (e.locked ? paywall(e.reason ?? '') : router.push(e.href))))} />
       <TaxDisclaimer />
     </ToolScreen>
   );
 }
 
-function Group({ entries, onOpen }: { entries: Entry[]; onOpen: (e: Entry) => void }) {
-  const { colors } = useTheme();
-  return (
-    <Card padding="md">
-      {entries.map((e, i) => (
-        <ListItem
-          key={e.key}
-          leading={
-            <View style={[styles.icon, { backgroundColor: e.locked ? colors.track : colors.accentSoft }]}>
-              <Icon icon={e.icon} color={e.locked ? colors.textSecondary : colors.accentText} />
-            </View>
-          }
-          title={e.title}
-          subtitle={e.subtitle}
-          subtitleLines={2}
-          trailing={e.locked ? <ProBadge size="sm" /> : undefined}
-          chevron={!e.locked}
-          divider={i < entries.length - 1}
-          onPress={() => onOpen(e)}
-        />
-      ))}
-    </Card>
-  );
+/** Entri terkunci: badge PRO menggantikan chevron, ketukan membuka paywall. */
+function menu(e: Entry, onPress: () => void): MenuEntry {
+  return { key: e.key, icon: e.icon, title: e.title, subtitle: e.subtitle, trailing: e.locked ? <ProBadge size="sm" /> : undefined, chevron: !e.locked, onPress };
 }
-
-const styles = StyleSheet.create({
-  icon: { width: 40, height: 40, borderRadius: radius.md, alignItems: 'center', justifyContent: 'center' },
-});

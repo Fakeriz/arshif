@@ -1,12 +1,10 @@
 import { useRouter } from 'expo-router';
-import { StyleSheet, View } from 'react-native';
 
 import { useT } from '@/i18n';
-import { AppText, Button, Card, EmptyState } from '@/components/ui';
+import { Button, EmptyState, Group, ListCard } from '@/components/ui';
 import type { Transaction } from '@/data/types';
 import { sortNewestFirst } from '@/lib/transactions';
 import type { AccountWithBalance } from '@/state/AppStore';
-import { space } from '@/theme/tokens';
 
 import { TransactionRow } from '../transactions/TransactionRow';
 
@@ -15,11 +13,11 @@ export function RecentTransactions({ transactions, accounts, mainCurrency }: { t
   const t = useT();
   const recent = sortNewestFirst(transactions).slice(0, 5);
   return (
-    <Card padding="md">
-      <View style={styles.head}>
-        <AppText variant="h3">{t('home.recent.title')}</AppText>
-        {recent.length > 0 && <Button label={t('home.recent.seeAll')} variant="ghost" size="sm" onPress={() => router.navigate('/transaksi')} />}
-      </View>
+    <Group
+      label={t('home.recent.title')}
+      right={recent.length > 0 ? <Button label={t('home.recent.seeAll')} variant="ghost" size="sm" onPress={() => router.navigate('/transaksi')} /> : undefined}
+    >
+      <ListCard>
       {recent.length === 0 ? (
         <EmptyState compact title={t('home.recent.emptyTitle')} message={t('home.recent.emptyMessage')} actionLabel={t('home.recent.emptyAction')} onAction={() => router.push('/tambah')} />
       ) : (
@@ -34,10 +32,8 @@ export function RecentTransactions({ transactions, accounts, mainCurrency }: { t
           />
         ))
       )}
-    </Card>
+      </ListCard>
+    </Group>
   );
 }
 
-const styles = StyleSheet.create({
-  head: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: space.xs },
-});

@@ -1,8 +1,8 @@
 import { useRouter, type Href } from 'expo-router';
 import { CalendarClock, HandCoins, PiggyBank, Repeat, Split, type LucideIcon } from 'lucide-react-native';
-import { StyleSheet, View } from 'react-native';
+import { StyleSheet } from 'react-native';
 
-import { AppText, Badge, Button, Card, Icon, ListItem, ListItemSkeleton } from '@/components/ui';
+import { AppText, Badge, Button, Card, Group, MenuGroup } from '@/components/ui';
 import { useI18n } from '@/i18n';
 import { todayYmd } from '@/lib/dates';
 import { convert, hasRate } from '@/lib/fx';
@@ -11,8 +11,7 @@ import { billGroup } from '@/lib/planning/bills';
 import { subscriptionTotals } from '@/lib/planning/subscriptions';
 import { useStore } from '@/state/AppStore';
 import { usePlanning } from '@/state/planning';
-import { useTheme } from '@/theme/ThemeProvider';
-import { radius, space } from '@/theme/tokens';
+import { space } from '@/theme/tokens';
 
 type Entry = { key: string; icon: LucideIcon; title: string; subtitle: string; href: Href; badge?: string };
 
@@ -20,7 +19,6 @@ type Entry = { key: string; icon: LucideIcon; title: string; subtitle: string; h
 export function PlanningEntries() {
   const { t } = useI18n();
   const router = useRouter();
-  const { colors } = useTheme();
   const { state } = useStore();
   const p = usePlanning();
   const main = state.mainCurrency;
@@ -29,15 +27,14 @@ export function PlanningEntries() {
 
   if (p.status === 'error') {
     return (
-      <Card padding="md">
-        <AppText variant="bodyStrong" accessibilityRole="header">
-          {t('plan.hub.title')}
-        </AppText>
-        <AppText variant="caption" tone="secondary" style={styles.gap}>
-          {t('plan.common.loadErrorTitle')}
-        </AppText>
-        <Button label={t('common.retry')} variant="secondary" size="sm" onPress={() => void p.reload()} />
-      </Card>
+      <Group label={t('plan.hub.title')}>
+        <Card padding="md">
+          <AppText variant="caption" tone="secondary" style={styles.gap}>
+            {t('plan.common.loadErrorTitle')}
+          </AppText>
+          <Button label={t('common.retry')} variant="secondary" size="sm" onPress={() => void p.reload()} />
+        </Card>
+      </Group>
     );
   }
 
@@ -78,35 +75,22 @@ export function PlanningEntries() {
   ];
 
   return (
-    <Card padding="sm">
-      <AppText variant="h3" accessibilityRole="header" style={styles.title}>
-        {t('plan.hub.title')}
-      </AppText>
-      {p.status !== 'ready'
-        ? entries.map((e, i) => <ListItemSkeleton key={e.key} divider={i < entries.length - 1} />)
-        : entries.map((e, i) => (
-            <ListItem
-              key={e.key}
-              leading={
-                <View style={[styles.icon, { backgroundColor: colors.accentSoft }]}>
-                  <Icon icon={e.icon} color={colors.accentText} size={20} />
-                </View>
-              }
-              title={e.title}
-              subtitle={e.subtitle}
-              trailing={e.badge ? <Badge label={e.badge} tone="negative" /> : undefined}
-              chevron
-              onPress={() => router.push(e.href)}
-              accessibilityLabel={[e.title, e.subtitle, e.badge].filter(Boolean).join('. ')}
-              divider={i < entries.length - 1}
-            />
-          ))}
-    </Card>
+    <MenuGroup
+      label={t('plan.hub.title')}
+      loading={p.status !== 'ready'}
+      entries={entries.map((e) => ({
+        key: e.key,
+        icon: e.icon,
+        title: e.title,
+        subtitle: e.subtitle,
+        accessibilityLabel: [e.title, e.subtitle, e.badge].filter(Boolean).join('. '),
+        trailing: e.badge ? <Badge label={e.badge} tone="negative" /> : undefined,
+        onPress: () => router.push(e.href),
+      }))}
+    />
   );
 }
 
 const styles = StyleSheet.create({
-  title: { paddingHorizontal: space.sm, paddingTop: space.sm },
-  icon: { width: 40, height: 40, borderRadius: radius.full, alignItems: 'center', justifyContent: 'center' },
-  gap: { marginVertical: space.sm },
+  gap: { marginBottom: space.sm },
 });

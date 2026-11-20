@@ -2,11 +2,11 @@ import { useRouter } from 'expo-router';
 import { Calculator } from 'lucide-react-native';
 import { useState } from 'react';
 
-import { Button, EmptyState, Tabs } from '@/components/ui';
+import { Button, EmptyState, Group, Tabs } from '@/components/ui';
 import type { DebtKind } from '@/data/planning';
 import { DebtCard } from '@/features/planning/DebtCard';
 import { DebtForm } from '@/features/planning/forms';
-import { AddButton, PlanScreen, SectionLabel } from '@/features/planning/kit';
+import { AddButton, PlanScreen } from '@/features/planning/kit';
 import { useI18n } from '@/i18n';
 import { useLimits } from '@/state/limits';
 import { usePlanning } from '@/state/planning';
@@ -52,10 +52,13 @@ export default function DebtsScreen() {
           {active.map((d) => (
             <DebtCard key={d.id} debt={d} onPress={() => open(d.id)} />
           ))}
-          {paid.length > 0 && <SectionLabel>{t('plan.debts.paidOff')}</SectionLabel>}
-          {paid.map((d) => (
-            <DebtCard key={d.id} debt={d} onPress={() => open(d.id)} />
-          ))}
+          {paid.length > 0 && (
+            <Group label={t('plan.debts.paidOff')}>
+              {paid.map((d) => (
+                <DebtCard key={d.id} debt={d} onPress={() => open(d.id)} />
+              ))}
+            </Group>
+          )}
         </>
       )}
       <DebtForm key={form ? `open-${kind}` : 'closed'} visible={form} onClose={() => setForm(false)} kind={kind} />

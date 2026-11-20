@@ -4,9 +4,9 @@ import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import { CurrencySheet } from '@/components/shell/CurrencySheet';
-import { AmountField, AppText, Button, Card, DateField, EmptyState, Icon, Input, ListItem, PressableScale, useToast } from '@/components/ui';
+import { AmountField, AppText, Button, Card, DateField, EmptyState, Group, Icon, Input, ListItem, PressableScale, useToast } from '@/components/ui';
 import { InvoiceScreen } from '@/features/invoice/kit';
-import { SectionLabel, useSaveError } from '@/features/planning/kit';
+import { useSaveError } from '@/features/planning/kit';
 import { ResultRow } from '@/features/tools/kit';
 import { currencyName, useI18n } from '@/i18n';
 import { addDays, isYmd, todayYmd } from '@/lib/dates';
@@ -120,74 +120,78 @@ function Form({ kind, initial, isEdit }: { kind: InvoiceKind; initial?: Invoice;
 
   return (
     <>
-      <SectionLabel>{kind === 'invoice' ? t('inv.form.billTo') : t('inv.form.preparedFor')}</SectionLabel>
-      <Card padding="lg">
-        <View style={styles.form}>
-          <Input label={t('inv.form.client')} value={client} onChangeText={setClient} maxLength={80} placeholder={t('inv.form.clientPlaceholder')} error={errors.client} />
-          <Input label={t('inv.form.contact')} value={contact} onChangeText={setContact} maxLength={120} autoCapitalize="none" placeholder={t('inv.form.contactPlaceholder')} valid={EMAIL_RE.test(contact.trim())} />
-        </View>
-      </Card>
+      <Group label={kind === 'invoice' ? t('inv.form.billTo') : t('inv.form.preparedFor')}>
+        <Card padding="lg">
+          <View style={styles.form}>
+            <Input label={t('inv.form.client')} value={client} onChangeText={setClient} maxLength={80} placeholder={t('inv.form.clientPlaceholder')} error={errors.client} />
+            <Input label={t('inv.form.contact')} value={contact} onChangeText={setContact} maxLength={120} autoCapitalize="none" placeholder={t('inv.form.contactPlaceholder')} valid={EMAIL_RE.test(contact.trim())} />
+          </View>
+        </Card>
+      </Group>
 
-      <SectionLabel>{t('inv.form.details')}</SectionLabel>
-      <Card padding="lg">
-        <View style={styles.form}>
-          <ListItem title={t('inv.form.currency')} subtitle={`${currency} · ${currencyName(t, currency)}`} chevron onPress={() => setPicking(true)} />
-          <DateField label={t('inv.form.issue')} value={issue} onChange={setIssue} error={errors.issue} />
-          <DateField label={kind === 'invoice' ? t('inv.form.due') : t('inv.form.validUntil')} value={due} onChange={setDue} error={errors.due} optional />
-        </View>
-      </Card>
+      <Group label={t('inv.form.details')}>
+        <Card padding="lg">
+          <View style={styles.form}>
+            <ListItem title={t('inv.form.currency')} subtitle={`${currency} · ${currencyName(t, currency)}`} chevron onPress={() => setPicking(true)} />
+            <DateField label={t('inv.form.issue')} value={issue} onChange={setIssue} error={errors.issue} />
+            <DateField label={kind === 'invoice' ? t('inv.form.due') : t('inv.form.validUntil')} value={due} onChange={setDue} error={errors.due} optional />
+          </View>
+        </Card>
+      </Group>
 
-      <SectionLabel>{t('inv.form.items')}</SectionLabel>
-      <Card padding="lg">
-        {errors.items ? (
-          <AppText variant="caption" tone="negative" style={styles.gapBottom}>
-            {errors.items}
-          </AppText>
-        ) : null}
-        {items.map((d, i) => {
-          const q = parseQty(d.qty);
-          return (
-            <View key={d.id} style={[styles.item, i < items.length - 1 && { borderBottomColor: colors.border, borderBottomWidth: StyleSheet.hairlineWidth }]}>
-              <View style={styles.itemHead}>
-                <AppText variant="caption" tone="secondary" style={styles.flex}>
-                  {t('inv.form.itemN', { n: i + 1 })}
-                </AppText>
-                {items.length > 1 && (
-                  <PressableScale accessibilityLabel={t('inv.form.removeItem', { n: i + 1 })} onPress={() => setItems((l) => l.filter((x) => x.id !== d.id))} style={styles.iconBtn} focusRadius={radius.full}>
-                    <Icon icon={Trash2} color={colors.textSecondary} size={18} />
-                  </PressableScale>
-                )}
-              </View>
-              <Input label={t('inv.form.itemName')} value={d.name} onChangeText={(v) => setItem(d.id, { name: v })} maxLength={120} placeholder={t('inv.form.itemPlaceholder')} />
-              <View style={styles.pair}>
-                <View style={styles.qty}>
-                  <Input
-                    label={t('inv.form.qty')}
-                    value={d.qty}
-                    onChangeText={(v) => setItem(d.id, { qty: v })}
-                    keyboardType="decimal-pad"
-                    maxLength={9}
-                    error={d.qty.trim() && q === null ? t('inv.form.qtyError') : undefined}
-                  />
+      <Group label={t('inv.form.items')}>
+        <Card padding="lg">
+          {errors.items ? (
+            <AppText variant="caption" tone="negative" style={styles.gapBottom}>
+              {errors.items}
+            </AppText>
+          ) : null}
+          {items.map((d, i) => {
+            const q = parseQty(d.qty);
+            return (
+              <View key={d.id} style={[styles.item, i < items.length - 1 && { borderBottomColor: colors.border, borderBottomWidth: StyleSheet.hairlineWidth }]}>
+                <View style={styles.itemHead}>
+                  <AppText variant="caption" tone="secondary" style={styles.flex}>
+                    {t('inv.form.itemN', { n: i + 1 })}
+                  </AppText>
+                  {items.length > 1 && (
+                    <PressableScale accessibilityLabel={t('inv.form.removeItem', { n: i + 1 })} onPress={() => setItems((l) => l.filter((x) => x.id !== d.id))} style={styles.iconBtn} focusRadius={radius.full}>
+                      <Icon icon={Trash2} color={colors.textSecondary} size={18} />
+                    </PressableScale>
+                  )}
                 </View>
-                <View style={styles.flex}>
-                  <AmountField label={t('inv.form.unitPrice')} value={d.price} onChange={(v) => setItem(d.id, { price: v })} currency={currency} />
+                <Input label={t('inv.form.itemName')} value={d.name} onChangeText={(v) => setItem(d.id, { name: v })} maxLength={120} placeholder={t('inv.form.itemPlaceholder')} />
+                <View style={styles.pair}>
+                  <View style={styles.qty}>
+                    <Input
+                      label={t('inv.form.qty')}
+                      value={d.qty}
+                      onChangeText={(v) => setItem(d.id, { qty: v })}
+                      keyboardType="decimal-pad"
+                      maxLength={9}
+                      error={d.qty.trim() && q === null ? t('inv.form.qtyError') : undefined}
+                    />
+                  </View>
+                  <View style={styles.flex}>
+                    <AmountField label={t('inv.form.unitPrice')} value={d.price} onChange={(v) => setItem(d.id, { price: v })} currency={currency} />
+                  </View>
                 </View>
               </View>
-            </View>
-          );
-        })}
-        <Button label={t('inv.form.addItem')} icon={Plus} variant="secondary" size="sm" onPress={() => setItems((l) => [...l, { id: newId(), name: '', qty: '1', price: null }])} disabled={items.length >= 50} />
-      </Card>
+            );
+          })}
+          <Button label={t('inv.form.addItem')} icon={Plus} variant="secondary" size="sm" onPress={() => setItems((l) => [...l, { id: newId(), name: '', qty: '1', price: null }])} disabled={items.length >= 50} />
+        </Card>
+      </Group>
 
-      <SectionLabel>{t('inv.form.adjust')}</SectionLabel>
-      <Card padding="lg">
-        <View style={styles.form}>
-          <AmountField label={t('inv.form.discount')} value={discount} onChange={setDiscount} currency={currency} error={errors.discount} />
-          <Input label={t('inv.form.tax')} value={taxText} onChangeText={setTaxText} keyboardType="decimal-pad" maxLength={6} placeholder="0" error={errors.tax} hint={t('inv.form.taxHint')} />
-          <Input label={t('inv.form.notes')} value={notes} onChangeText={setNotes} maxLength={500} multiline placeholder={t('inv.form.notesPlaceholder')} />
-        </View>
-      </Card>
+      <Group label={t('inv.form.adjust')}>
+        <Card padding="lg">
+          <View style={styles.form}>
+            <AmountField label={t('inv.form.discount')} value={discount} onChange={setDiscount} currency={currency} error={errors.discount} />
+            <Input label={t('inv.form.tax')} value={taxText} onChangeText={setTaxText} keyboardType="decimal-pad" maxLength={6} placeholder="0" error={errors.tax} hint={t('inv.form.taxHint')} />
+            <Input label={t('inv.form.notes')} value={notes} onChangeText={setNotes} maxLength={500} multiline placeholder={t('inv.form.notesPlaceholder')} />
+          </View>
+        </Card>
+      </Group>
 
       <Card padding="lg">
         <ResultRow label={t('inv.doc.subtotal')} value={money(totals.subtotal)} />

@@ -1,12 +1,12 @@
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
-import { AppText, Badge, Card, CategoryIcon, EmptyState, ListItem, Tabs } from '@/components/ui';
+import { AppText, Badge, CategoryIcon, EmptyState, Group, ListCard, ListItem, Tabs } from '@/components/ui';
 import type { Bill } from '@/data/planning';
 import { BillCalendar } from '@/features/planning/BillCalendar';
 import { BillSheet, dueLabel } from '@/features/planning/BillSheet';
 import { BillForm } from '@/features/planning/forms';
-import { AddButton, PlanScreen, SectionLabel } from '@/features/planning/kit';
+import { AddButton, PlanScreen } from '@/features/planning/kit';
 import { useI18n } from '@/i18n';
 import { diffDays, shortDate, todayYmd } from '@/lib/dates';
 import { formatMoney } from '@/lib/money';
@@ -70,9 +70,8 @@ export default function BillsScreen() {
             <EmptyState compact title={filter === 'unpaid' ? t('plan.bills.emptyUnpaid') : t('plan.bills.emptyPaid')} />
           ) : (
             groups.map((g) => (
-              <View key={g} style={styles.group}>
-                <SectionLabel>{t(`plan.bills.group.${g}`)}</SectionLabel>
-                <Card padding="sm">
+              <Group key={g} label={t(`plan.bills.group.${g}`)}>
+                <ListCard>
                   {grouped.get(g)!.map((b, i, list) => {
                     const days = diffDays(b.dueDate, today);
                     return (
@@ -98,8 +97,8 @@ export default function BillsScreen() {
                       />
                     );
                   })}
-                </Card>
-              </View>
+                </ListCard>
+              </Group>
             ))
           )}
         </>
@@ -111,6 +110,5 @@ export default function BillsScreen() {
 }
 
 const styles = StyleSheet.create({
-  group: { gap: space.sm },
   trailing: { alignItems: 'flex-end', gap: space.xxs },
 });

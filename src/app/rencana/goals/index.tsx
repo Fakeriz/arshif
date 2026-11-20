@@ -1,10 +1,10 @@
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 
-import { EmptyState } from '@/components/ui';
+import { EmptyState, Group } from '@/components/ui';
 import { GoalCard } from '@/features/planning/GoalCard';
 import { GoalForm } from '@/features/planning/forms';
-import { AddButton, PlanScreen, SectionLabel } from '@/features/planning/kit';
+import { AddButton, PlanScreen } from '@/features/planning/kit';
 import { useI18n } from '@/i18n';
 import { useLimits } from '@/state/limits';
 import { usePlanning } from '@/state/planning';
@@ -30,10 +30,13 @@ export default function GoalsScreen() {
           {active.map((g) => (
             <GoalCard key={g.id} goal={g} onPress={() => router.push({ pathname: '/rencana/goals/[id]', params: { id: g.id } })} />
           ))}
-          {done.length > 0 && <SectionLabel>{t('plan.goals.completed')}</SectionLabel>}
-          {done.map((g) => (
-            <GoalCard key={g.id} goal={g} onPress={() => router.push({ pathname: '/rencana/goals/[id]', params: { id: g.id } })} />
-          ))}
+          {done.length > 0 && (
+            <Group label={t('plan.goals.completed')}>
+              {done.map((g) => (
+                <GoalCard key={g.id} goal={g} onPress={() => router.push({ pathname: '/rencana/goals/[id]', params: { id: g.id } })} />
+              ))}
+            </Group>
+          )}
         </>
       )}
       <GoalForm key={form ? 'open' : 'closed'} visible={form} onClose={() => setForm(false)} />

@@ -5,12 +5,12 @@ import { StyleSheet, View } from 'react-native';
 
 import { Screen } from '@/components/shell/Screen';
 import { TabHeader } from '@/components/shell/TabHeader';
-import { AppText, BalanceText, Card, CurrencyText, EmptyState, Icon, ListItem, Skeleton, StatTile, Toggle, TrendBadge } from '@/components/ui';
+import { AppText, BalanceText, Card, CurrencyText, EmptyState, Group, Icon, ListCard, ListItem, Skeleton, StatTile, Toggle, TrendBadge } from '@/components/ui';
 import { AssetForm } from '@/features/assets/AssetForm';
 import { NetWorthChart } from '@/features/assets/NetWorthChart';
 import { priceLabel, quantityLabel } from '@/features/assets/view';
 import { MissingRatesBanner } from '@/features/fx/MissingRatesBanner';
-import { AddButton, SectionLabel } from '@/features/planning/kit';
+import { AddButton } from '@/features/planning/kit';
 import { useI18n } from '@/i18n';
 import { changeSince, livePricesDown, snapshotTrend, valueAsset } from '@/lib/assets';
 import { pctChange } from '@/lib/chart';
@@ -104,14 +104,14 @@ export default function AsetScreen() {
             />
           </View>
 
-          <Card padding="md">
+          <ListCard>
             <ListItem
               title={t('settings.includeAssets')}
               subtitle={t('settings.includeAssetsSub')}
               subtitleLines={2}
               trailing={<Toggle value={state.includeAssets} onChange={(value) => dispatch({ type: 'prefs/includeAssets', value })} accessibilityLabel={t('settings.includeAssets')} />}
             />
-          </Card>
+          </ListCard>
 
           <Card>
             <View style={styles.cardBody}>
@@ -135,80 +135,80 @@ export default function AsetScreen() {
             </Card>
           )}
 
-          <View style={styles.sectionRow}>
-            <SectionLabel>{t('assets.sectionAssets')}</SectionLabel>
-            <AddButton label={t('assets.add')} limited={limits.assets} reason={t('assets.limitReason')} onPress={() => setForm(true)} />
-          </View>
-          <Card padding="md">
-            <ListItem
-              title={t('assets.cash')}
-              subtitle={t('assets.cashMeta', { count: cashCount })}
-              leading={<Icon icon={Wallet} color={colors.textSecondary} />}
-              trailing={<CurrencyText amount={nw.cash} currency={currency} kind="balance" hidden={state.hideBalance} />}
-              divider={assets.length > 0 || nw.receivables > 0}
-            />
-            {nw.receivables > 0 && (
+          <Group
+            label={t('assets.sectionAssets')}
+            right={<AddButton label={t('assets.add')} limited={limits.assets} reason={t('assets.limitReason')} onPress={() => setForm(true)} />}
+          >
+            <ListCard>
               <ListItem
-                title={t('assets.receivables')}
-                trailing={<CurrencyText amount={nw.receivables} currency={currency} kind="balance" hidden={state.hideBalance} />}
-                onPress={() => router.push('/rencana/utang')}
-                chevron
-                divider={assets.length > 0}
+                title={t('assets.cash')}
+                subtitle={t('assets.cashMeta', { count: cashCount })}
+                leading={<Icon icon={Wallet} color={colors.textMuted} size={layout.iconSize.md - 2} />}
+                trailing={<CurrencyText amount={nw.cash} currency={currency} kind="balance" hidden={state.hideBalance} />}
+                divider={assets.length > 0 || nw.receivables > 0}
               />
-            )}
-            {assets.map((a, i) => {
-              const v = valueAsset(a, prices, now);
-              const main = v.value === null ? null : tryConvert(v.value, v.currency, currency);
-              const qty = quantityLabel(a, t, lang);
-              return (
+              {nw.receivables > 0 && (
                 <ListItem
-                  key={a.id}
-                  title={a.name}
-                  subtitle={[qty, priceLabel(v, t, lang)].filter(Boolean).join(' · ')}
-                  trailing={main === null ? undefined : <CurrencyText amount={main} currency={currency} kind="balance" hidden={state.hideBalance} />}
-                  onPress={() => router.push(`/aset/${a.id}`)}
+                  title={t('assets.receivables')}
+                  trailing={<CurrencyText amount={nw.receivables} currency={currency} kind="balance" hidden={state.hideBalance} />}
+                  onPress={() => router.push('/rencana/utang')}
                   chevron
-                  divider={i < assets.length - 1}
+                  divider={assets.length > 0}
                 />
-              );
-            })}
-          </Card>
-          {assets.length === 0 && (
-            <EmptyState compact title={t('assets.emptyTitle')} message={t('assets.emptyMessage')} />
-          )}
-          {nw.unvalued > 0 && (
-            <AppText variant="caption" tone="secondary">
-              {t('assets.unvalued', { count: nw.unvalued })}
-            </AppText>
-          )}
-
-          <SectionLabel>{t('assets.sectionDebts')}</SectionLabel>
-          <Card padding="md">
-            {!hasCredit && activeDebts.length === 0 ? (
-              <AppText variant="body" tone="secondary">
-                {t('assets.noDebts')}
-              </AppText>
-            ) : (
-              <>
-                {hasCredit && (
+              )}
+              {assets.map((a, i) => {
+                const v = valueAsset(a, prices, now);
+                const main = v.value === null ? null : tryConvert(v.value, v.currency, currency);
+                const qty = quantityLabel(a, t, lang);
+                return (
                   <ListItem
-                    title={t('assets.credit')}
-                    trailing={<CurrencyText amount={nw.credit} currency={currency} kind="balance" hidden={state.hideBalance} />}
-                    divider={activeDebts.length > 0}
-                  />
-                )}
-                {activeDebts.length > 0 && (
-                  <ListItem
-                    title={t('assets.debts')}
-                    subtitle={t('assets.debtsMeta', { count: activeDebts.length })}
-                    trailing={<CurrencyText amount={nw.debts} currency={currency} kind="balance" hidden={state.hideBalance} />}
-                    onPress={() => router.push('/rencana/utang')}
+                    key={a.id}
+                    title={a.name}
+                    subtitle={[qty, priceLabel(v, t, lang)].filter(Boolean).join(' · ')}
+                    trailing={main === null ? undefined : <CurrencyText amount={main} currency={currency} kind="balance" hidden={state.hideBalance} />}
+                    onPress={() => router.push(`/aset/${a.id}`)}
                     chevron
+                    divider={i < assets.length - 1}
                   />
-                )}
-              </>
+                );
+              })}
+            </ListCard>
+            {assets.length === 0 && <EmptyState compact title={t('assets.emptyTitle')} message={t('assets.emptyMessage')} />}
+            {nw.unvalued > 0 && (
+              <AppText variant="caption" tone="secondary">
+                {t('assets.unvalued', { count: nw.unvalued })}
+              </AppText>
             )}
-          </Card>
+          </Group>
+
+          <Group label={t('assets.sectionDebts')}>
+            <ListCard>
+              {!hasCredit && activeDebts.length === 0 ? (
+                <AppText variant="body" tone="secondary" style={styles.note}>
+                  {t('assets.noDebts')}
+                </AppText>
+              ) : (
+                <>
+                  {hasCredit && (
+                    <ListItem
+                      title={t('assets.credit')}
+                      trailing={<CurrencyText amount={nw.credit} currency={currency} kind="balance" hidden={state.hideBalance} />}
+                      divider={activeDebts.length > 0}
+                    />
+                  )}
+                  {activeDebts.length > 0 && (
+                    <ListItem
+                      title={t('assets.debts')}
+                      subtitle={t('assets.debtsMeta', { count: activeDebts.length })}
+                      trailing={<CurrencyText amount={nw.debts} currency={currency} kind="balance" hidden={state.hideBalance} />}
+                      onPress={() => router.push('/rencana/utang')}
+                      chevron
+                    />
+                  )}
+                </>
+              )}
+            </ListCard>
+          </Group>
 
           <AssetForm key={form ? 'open' : 'closed'} visible={form} onClose={() => setForm(false)} />
         </>
@@ -223,6 +223,7 @@ const styles = StyleSheet.create({
   cardBody: { gap: space.md },
   banner: { flexDirection: 'row', gap: space.md, alignItems: 'flex-start' },
   flex: { flex: 1, gap: space.xxs },
-  sectionRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: space.sm },
+  // Setinggi baris ListItem supaya kartu kosong sama dengan kartu satu baris.
+  note: { paddingVertical: 18 },
   tiles: { flexDirection: 'row', flexWrap: 'wrap', gap: space.md },
 });

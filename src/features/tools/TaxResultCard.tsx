@@ -1,7 +1,6 @@
 import { StyleSheet, View } from 'react-native';
 
-import { AppText, Card } from '@/components/ui';
-import { SectionLabel } from '@/features/planning/kit';
+import { AppText, Card, Group } from '@/components/ui';
 import { useI18n, type MsgKey } from '@/i18n';
 import { formatMoney } from '@/lib/money';
 import { bpText, type RateRow, type TaxLine, type TaxResult } from '@/lib/tax';
@@ -46,15 +45,16 @@ export function TaxResultCard({ result }: { result: TaxResult }) {
           ))}
         </View>
       </Card>
-      <SectionLabel>{t('tools.tax.ratesTitle', { year: 2026 })}</SectionLabel>
-      <Card padding="md">
-        {result.rates.map((r) => (
-          <ResultRow key={r.from} label={rateRowText(r, result.currency, t('tools.tax.upTo'), t('tools.tax.above'))} value={`${bpText(r.bp, decimalFor(lang))}%`} />
-        ))}
-        <AppText variant="caption" tone="muted" style={styles.source}>
-          {t(`tools.tax.${result.country === 'ID' ? 'id' : result.country === 'MY' ? 'my' : 'tr'}.source` as MsgKey)}
-        </AppText>
-      </Card>
+      <Group label={t('tools.tax.ratesTitle', { year: 2026 })}>
+        <Card padding="md">
+          {result.rates.map((r) => (
+            <ResultRow key={r.from} label={rateRowText(r, result.currency, t('tools.tax.upTo'), t('tools.tax.above'))} value={`${bpText(r.bp, decimalFor(lang))}%`} />
+          ))}
+          <AppText variant="caption" tone="muted" style={styles.source}>
+            {t(`tools.tax.${result.country === 'ID' ? 'id' : result.country === 'MY' ? 'my' : 'tr'}.source` as MsgKey)}
+          </AppText>
+        </Card>
+      </Group>
       <View style={styles.notes}>
         {result.notes.map((n) => (
           <AppText key={n} variant="caption" tone="secondary">

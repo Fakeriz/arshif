@@ -5,9 +5,8 @@ import { Platform, StyleSheet, View } from 'react-native';
 
 import { Screen } from '@/components/shell/Screen';
 import { ScreenHeader } from '@/components/shell/ScreenHeader';
-import { AppText, Button, Card } from '@/components/ui';
+import { AppText, Button, Card, MenuGroup, type MenuEntry } from '@/components/ui';
 import { isAdmin } from '@/data/remote/api';
-import { MenuGroup, type MenuEntry } from '@/features/settings/kit';
 import { LANGS, useI18n } from '@/i18n';
 import { isoDateLabel } from '@/lib/dates';
 import { supabase } from '@/lib/supabase';

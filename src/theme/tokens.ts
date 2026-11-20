@@ -272,8 +272,8 @@ export const fonts = {
 
 export const type = {
   /** Judul halaman besar (Talmo .phead h1, mobile 28px, 600, -0.025em). */
-  display: { fontFamily: fonts.semibold, fontSize: 34, lineHeight: 36, letterSpacing: -0.85 },
-  h1: { fontFamily: fonts.semibold, fontSize: 28, lineHeight: 30, letterSpacing: -0.7 },
+  display: { fontFamily: fonts.semibold, fontSize: 34, lineHeight: 42, letterSpacing: -0.85 },
+  h1: { fontFamily: fonts.semibold, fontSize: 28, lineHeight: 35, letterSpacing: -0.7 },
   h2: { fontFamily: fonts.semibold, fontSize: 20, lineHeight: 25, letterSpacing: -0.2 },
   /** Judul kartu (Talmo .chead h3: fs-lg 15, 600). */
   h3: { fontFamily: fonts.semibold, fontSize: 15, lineHeight: 19, letterSpacing: -0.08 },

@@ -163,13 +163,6 @@ export function PaySheet({ visible, onClose, title, note, currency, initial, max
   );
 }
 
-export function SectionLabel({ children }: { children: string }) {
-  return (
-    <AppText variant="caption" tone="secondary" style={styles.section} accessibilityRole="header">
-      {children}
-    </AppText>
-  );
-}
 
 const styles = StyleSheet.create({
   skeleton: { gap: space.lg },
@@ -177,5 +170,4 @@ const styles = StyleSheet.create({
   form: { gap: space.lg, paddingBottom: space.lg },
   choice: { gap: space.sm },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: space.sm },
-  section: { marginTop: space.sm },
 });

@@ -2,8 +2,7 @@ import { FileDown } from 'lucide-react-native';
 import { useMemo, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
-import { AppText, Button, Card, Chip, EmptyState, Tabs } from '@/components/ui';
-import { SectionLabel } from '@/features/planning/kit';
+import { AppText, Button, Card, Chip, EmptyState, Group, Tabs } from '@/components/ui';
 import { annualReportDocument } from '@/features/tools/documents';
 import { GatedBody, ResultRow, TaxDisclaimer, ToolScreen, useFeatureGate, usePdfExportGate, usePdfShare } from '@/features/tools/kit';
 import { categoryLabel, useI18n, type MsgKey } from '@/i18n';
@@ -89,44 +88,47 @@ function Report() {
             </View>
           </Card>
 
-          <SectionLabel>{t('tools.report.estimate')}</SectionLabel>
-          <Card padding="lg">
-            <ResultRow label={t('tools.report.income')} value={money(r.income)} />
-            {r.allowance > 0 && <ResultRow label={t(`tools.report.allowance${country}` as MsgKey)} value={money(r.allowance)} minus />}
-            <ResultRow label={t('tools.report.taxable')} value={money(r.taxable)} />
-            <ResultRow label={t('tools.report.taxEstimate')} value={money(r.tax)} strong />
-            <AppText variant="caption" tone="secondary" style={styles.gapTop}>
-              {t(`tools.report.basis${country}` as MsgKey)}
-            </AppText>
-            <AppText variant="caption" tone="muted">
-              {t('tools.report.seeEstimator', { country: t(`tools.tax.country${countryKey}` as MsgKey) })}
-            </AppText>
-          </Card>
-
-          <SectionLabel>{t('tools.report.byCategory')}</SectionLabel>
-          <Card padding="md">
-            {r.byCategory.length === 0 ? (
-              <AppText variant="body" tone="secondary">
-                {t('tools.report.noIncome')}
+          <Group label={t('tools.report.estimate')}>
+            <Card padding="lg">
+              <ResultRow label={t('tools.report.income')} value={money(r.income)} />
+              {r.allowance > 0 && <ResultRow label={t(`tools.report.allowance${country}` as MsgKey)} value={money(r.allowance)} minus />}
+              <ResultRow label={t('tools.report.taxable')} value={money(r.taxable)} />
+              <ResultRow label={t('tools.report.taxEstimate')} value={money(r.tax)} strong />
+              <AppText variant="caption" tone="secondary" style={styles.gapTop}>
+                {t(`tools.report.basis${country}` as MsgKey)}
               </AppText>
-            ) : (
-              r.byCategory.map((c) => <ResultRow key={c.key} label={categoryLabel(t, c.key)} value={money(c.amount)} />)
-            )}
-          </Card>
+              <AppText variant="caption" tone="muted">
+                {t('tools.report.seeEstimator', { country: t(`tools.tax.country${countryKey}` as MsgKey) })}
+              </AppText>
+            </Card>
+          </Group>
 
-          <SectionLabel>{t('tools.report.byMonth')}</SectionLabel>
-          <Card padding="md">
-            {r.months.map((m, i) =>
-              m.income === 0 && m.expense === 0 ? null : (
-                <View key={i} style={styles.month}>
-                  <AppText variant="bodyStrong">{monthName(i + 1, lang)}</AppText>
-                  <AppText variant="caption" tone="secondary" numeric>
-                    {t('tools.report.monthLine', { income: money(m.income), expense: money(m.expense) })}
-                  </AppText>
-                </View>
-              ),
-            )}
-          </Card>
+          <Group label={t('tools.report.byCategory')}>
+            <Card padding="md">
+              {r.byCategory.length === 0 ? (
+                <AppText variant="body" tone="secondary">
+                  {t('tools.report.noIncome')}
+                </AppText>
+              ) : (
+                r.byCategory.map((c) => <ResultRow key={c.key} label={categoryLabel(t, c.key)} value={money(c.amount)} />)
+              )}
+            </Card>
+          </Group>
+
+          <Group label={t('tools.report.byMonth')}>
+            <Card padding="md">
+              {r.months.map((m, i) =>
+                m.income === 0 && m.expense === 0 ? null : (
+                  <View key={i} style={styles.month}>
+                    <AppText variant="bodyStrong">{monthName(i + 1, lang)}</AppText>
+                    <AppText variant="caption" tone="secondary" numeric>
+                      {t('tools.report.monthLine', { income: money(m.income), expense: money(m.expense) })}
+                    </AppText>
+                  </View>
+                ),
+              )}
+            </Card>
+          </Group>
           {r.skipped > 0 && (
             <AppText variant="caption" tone="warning">
               {t('tools.report.skipped', { count: r.skipped })}

@@ -3,9 +3,9 @@ import { Plus, Share2, Trash2, UserPlus, X } from 'lucide-react-native';
 import { useMemo, useState } from 'react';
 import { Share, StyleSheet, View } from 'react-native';
 
-import { AmountField, AppText, AvatarStack, Button, Card, Checkbox, Chip, Dialog, EmptyState, Icon, Input, PressableScale, Tabs, Toggle, useToast } from '@/components/ui';
+import { AmountField, AppText, AvatarStack, Button, Card, Checkbox, Chip, Dialog, EmptyState, Group, Icon, Input, PressableScale, Tabs, Toggle, useToast } from '@/components/ui';
 import type { SplitBill, SplitItem, SplitParticipant } from '@/data/planning';
-import { PlanScreen, SectionLabel, useSaveError } from '@/features/planning/kit';
+import { PlanScreen, useSaveError } from '@/features/planning/kit';
 import { useI18n } from '@/i18n';
 import { formatMoney } from '@/lib/money';
 import { computeShares, shareText } from '@/lib/planning/split';
@@ -189,117 +189,120 @@ function Editor({ initial, isNew, fixedTotal }: { initial: SplitBill; isNew: boo
         </View>
       )}
 
-      <SectionLabel>{t('plan.split.people')}</SectionLabel>
-      <Card padding="md">
-        {/* Siapa saja yang ikut, sekilas (Motion Kit "Dompet bersama"); avatar baru meletup saat ditambah. */}
-        <View style={styles.avatars}>
-          <AvatarStack names={people.map((p) => p.name)} max={6} />
-        </View>
-        {people.map((p) => (
-          <View key={p.id} style={styles.personRow}>
-            <AppText variant="body" numberOfLines={1} style={styles.flex}>
-              {p.owner ? `${p.name} · ${t('plan.split.owner')}` : p.contact ? `${p.name} · ${p.contact}` : p.name}
-            </AppText>
-            {!p.owner && (
-              <PressableScale accessibilityLabel={t('plan.split.removePerson', { name: p.name })} onPress={() => setPeople((l) => l.filter((x) => x.id !== p.id))} style={styles.iconBtn} focusRadius={radius.full}>
-                <Icon icon={X} color={colors.textSecondary} size={18} />
-              </PressableScale>
-            )}
+      <Group label={t('plan.split.people')}>
+        <Card padding="md">
+          {/* Siapa saja yang ikut, sekilas (Motion Kit "Dompet bersama"); avatar baru meletup saat ditambah. */}
+          <View style={styles.avatars}>
+            <AvatarStack names={people.map((p) => p.name)} max={6} />
           </View>
-        ))}
-        <View style={styles.addBlock}>
-          <Input label={t('plan.split.personName')} value={newName} onChangeText={setNewName} maxLength={60} onSubmitEditing={addPerson} error={errors.people} />
-          <Input label={t('plan.split.personContact')} value={newContact} onChangeText={setNewContact} maxLength={80} autoCapitalize="none" />
-          <Button label={t('plan.split.addPerson')} icon={UserPlus} variant="secondary" size="sm" onPress={addPerson} disabled={!newName.trim()} />
-        </View>
-      </Card>
+          {people.map((p) => (
+            <View key={p.id} style={styles.personRow}>
+              <AppText variant="body" numberOfLines={1} style={styles.flex}>
+                {p.owner ? `${p.name} · ${t('plan.split.owner')}` : p.contact ? `${p.name} · ${p.contact}` : p.name}
+              </AppText>
+              {!p.owner && (
+                <PressableScale accessibilityLabel={t('plan.split.removePerson', { name: p.name })} onPress={() => setPeople((l) => l.filter((x) => x.id !== p.id))} style={styles.iconBtn} focusRadius={radius.full}>
+                  <Icon icon={X} color={colors.textSecondary} size={18} />
+                </PressableScale>
+              )}
+            </View>
+          ))}
+          <View style={styles.addBlock}>
+            <Input label={t('plan.split.personName')} value={newName} onChangeText={setNewName} maxLength={60} onSubmitEditing={addPerson} error={errors.people} />
+            <Input label={t('plan.split.personContact')} value={newContact} onChangeText={setNewContact} maxLength={80} autoCapitalize="none" />
+            <Button label={t('plan.split.addPerson')} icon={UserPlus} variant="secondary" size="sm" onPress={addPerson} disabled={!newName.trim()} />
+          </View>
+        </Card>
+      </Group>
 
       {mode === 'items' && (
         <>
-          <SectionLabel>{t('plan.split.items')}</SectionLabel>
-          <Card padding="md">
-            {errors.items ? (
-              <AppText variant="caption" tone="negative">
-                {errors.items}
-              </AppText>
-            ) : null}
-            {items.map((it) => (
-              <View key={it.id} style={[styles.item, { borderBottomColor: colors.border }]}>
-                <View style={styles.personRow}>
-                  <AppText variant="body" numberOfLines={1} style={styles.flex}>
-                    {it.name}
-                  </AppText>
-                  <AppText variant="bodyStrong" numeric>
-                    {money(it.amount)}
-                  </AppText>
-                  <PressableScale accessibilityLabel={t('plan.split.removeItem', { name: it.name })} onPress={() => setItems((l) => l.filter((x) => x.id !== it.id))} style={styles.iconBtn} focusRadius={radius.full}>
-                    <Icon icon={Trash2} color={colors.textSecondary} size={16} />
-                  </PressableScale>
+          <Group label={t('plan.split.items')}>
+            <Card padding="md">
+              {errors.items ? (
+                <AppText variant="caption" tone="negative">
+                  {errors.items}
+                </AppText>
+              ) : null}
+              {items.map((it) => (
+                <View key={it.id} style={[styles.item, { borderBottomColor: colors.border }]}>
+                  <View style={styles.personRow}>
+                    <AppText variant="body" numberOfLines={1} style={styles.flex}>
+                      {it.name}
+                    </AppText>
+                    <AppText variant="bodyStrong" numeric>
+                      {money(it.amount)}
+                    </AppText>
+                    <PressableScale accessibilityLabel={t('plan.split.removeItem', { name: it.name })} onPress={() => setItems((l) => l.filter((x) => x.id !== it.id))} style={styles.iconBtn} focusRadius={radius.full}>
+                      <Icon icon={Trash2} color={colors.textSecondary} size={16} />
+                    </PressableScale>
+                  </View>
+                  <View style={styles.chips} accessibilityLabel={t('plan.split.assign')}>
+                    {people.map((p) => (
+                      <Chip key={p.id} label={p.owner ? t('plan.split.me') : p.name} selected={it.assigned.includes(p.id)} onPress={() => toggleAssign(it.id, p.id)} />
+                    ))}
+                  </View>
+                  {it.assigned.length === 0 && (
+                    <AppText variant="caption" tone="muted">
+                      {t('plan.split.unassigned')}
+                    </AppText>
+                  )}
                 </View>
-                <View style={styles.chips} accessibilityLabel={t('plan.split.assign')}>
-                  {people.map((p) => (
-                    <Chip key={p.id} label={p.owner ? t('plan.split.me') : p.name} selected={it.assigned.includes(p.id)} onPress={() => toggleAssign(it.id, p.id)} />
-                  ))}
+              ))}
+              {!fixedTotal && (
+                <View style={styles.addBlock}>
+                  <Input label={t('plan.split.itemName')} value={itemName} onChangeText={setItemName} maxLength={80} />
+                  <AmountField label={`${t('plan.split.itemAmount')} (${cur})`} value={itemAmount} onChange={setItemAmount} currency={cur} />
+                  <Button label={t('plan.split.addItem')} icon={Plus} variant="secondary" size="sm" onPress={addItem} disabled={!itemName.trim() || !itemAmount} />
                 </View>
-                {it.assigned.length === 0 && (
-                  <AppText variant="caption" tone="muted">
-                    {t('plan.split.unassigned')}
-                  </AppText>
-                )}
-              </View>
-            ))}
-            {!fixedTotal && (
-              <View style={styles.addBlock}>
-                <Input label={t('plan.split.itemName')} value={itemName} onChangeText={setItemName} maxLength={80} />
-                <AmountField label={`${t('plan.split.itemAmount')} (${cur})`} value={itemAmount} onChange={setItemAmount} currency={cur} />
-                <Button label={t('plan.split.addItem')} icon={Plus} variant="secondary" size="sm" onPress={addItem} disabled={!itemName.trim() || !itemAmount} />
-              </View>
-            )}
-            {errors.mismatch ? (
-              <AppText variant="caption" tone="warning">
-                {errors.mismatch}
-              </AppText>
-            ) : null}
-          </Card>
+              )}
+              {errors.mismatch ? (
+                <AppText variant="caption" tone="warning">
+                  {errors.mismatch}
+                </AppText>
+              ) : null}
+            </Card>
+          </Group>
         </>
       )}
 
-      <SectionLabel>{t('plan.split.shares')}</SectionLabel>
-      <Card padding="md">
-        {people.map((p) => (
-          <View key={p.id} style={styles.shareRow}>
-            {p.owner ? (
-              <View style={styles.checkSpace} />
-            ) : (
-              <Checkbox checked={!!p.paidAt} onChange={(v) => void togglePaid(p, v)} accessibilityLabel={t('plan.split.paidToggle', { name: p.name })} />
-            )}
-            <View style={styles.flex}>
-              <AppText variant="body" numberOfLines={1}>
-                {p.owner ? `${p.name} · ${t('plan.split.owner')}` : p.name}
-              </AppText>
-              {p.debtId ? (
-                <AppText variant="caption" tone="muted">
-                  {t('plan.split.receivableLinked')}
+      <Group label={t('plan.split.shares')}>
+        <Card padding="md">
+          {people.map((p) => (
+            <View key={p.id} style={styles.shareRow}>
+              {p.owner ? (
+                <View style={styles.checkSpace} />
+              ) : (
+                <Checkbox checked={!!p.paidAt} onChange={(v) => void togglePaid(p, v)} accessibilityLabel={t('plan.split.paidToggle', { name: p.name })} />
+              )}
+              <View style={styles.flex}>
+                <AppText variant="body" numberOfLines={1}>
+                  {p.owner ? `${p.name} · ${t('plan.split.owner')}` : p.name}
                 </AppText>
-              ) : null}
+                {p.debtId ? (
+                  <AppText variant="caption" tone="muted">
+                    {t('plan.split.receivableLinked')}
+                  </AppText>
+                ) : null}
+              </View>
+              <AppText variant="bodyStrong" numeric tone={!p.owner && p.paidAt ? 'positive' : undefined}>
+                {money(shares[p.id] ?? 0)}
+              </AppText>
             </View>
-            <AppText variant="bodyStrong" numeric tone={!p.owner && p.paidAt ? 'positive' : undefined}>
-              {money(shares[p.id] ?? 0)}
-            </AppText>
-          </View>
-        ))}
-        <AppText variant="caption" tone="secondary" style={styles.gapTop}>
-          {t('plan.split.sumCheck', { sum: money(Object.values(shares).reduce((a, b) => a + b, 0)), total: money(billTotal) })}
-        </AppText>
-        <AppText variant="caption" tone="muted">
-          {t('plan.split.sharesNote')}
-        </AppText>
-        {others.length > 0 && (
+          ))}
           <AppText variant="caption" tone="secondary" style={styles.gapTop}>
-            {t('plan.split.paidCount', { paid: paidCount, count: others.length })}
+            {t('plan.split.sumCheck', { sum: money(Object.values(shares).reduce((a, b) => a + b, 0)), total: money(billTotal) })}
           </AppText>
-        )}
-      </Card>
+          <AppText variant="caption" tone="muted">
+            {t('plan.split.sharesNote')}
+          </AppText>
+          {others.length > 0 && (
+            <AppText variant="caption" tone="secondary" style={styles.gapTop}>
+              {t('plan.split.paidCount', { paid: paidCount, count: others.length })}
+            </AppText>
+          )}
+        </Card>
+      </Group>
 
       <Card padding="md">
         <View style={styles.toggleRow}>

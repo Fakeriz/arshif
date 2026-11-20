@@ -21,6 +21,7 @@ export { BlurTarget, BlurTargetArea, BlurTargetProvider, BlurTargetScope, GlassV
 export { GlassTabBar, type TabBarItem } from './GlassTabBar';
 export { Icon } from './Icon';
 export { GoalRing } from './GoalRing';
+export { Group, ListCard, MenuGroup, type MenuEntry } from './Group';
 export { Input } from './Input';
 export { ListItem, ListItemSkeleton } from './ListItem';
 export { PressableScale } from './PressableScale';
