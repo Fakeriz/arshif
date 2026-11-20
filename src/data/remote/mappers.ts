@@ -156,7 +156,7 @@ export const fromTransaction = (t: Transaction) => ({
 });
 
 /** Kolom rincian struk. Hanya dikirim bila transaksi punya rincian, jadi transaksi manual tidak menyentuhnya. */
-const receiptColumns = (r: ReceiptDetails) => ({
+export const receiptColumns = (r: ReceiptDetails) => ({
   subtotal: r.subtotal ?? null,
   discount_total: r.discountTotal ?? null,
   tax_total: r.taxTotal ?? null,

@@ -1,7 +1,7 @@
 import type { Transaction } from '@/data/types';
 import { accountBalance } from '@/lib/transactions';
 import { sampleState as initialState } from '@/data/sample-state';
-import { mergePending, reducer } from '@/state/reducer';
+import { mergePending, reducer, undoActions } from '@/state/reducer';
 
 const tx: Transaction = { id: 'new1', type: 'expense', merchant: 'Bakso Solo', categoryKey: 'food', accountId: 'a-gopay', date: '2026-11-05', time: '12:00', amount: 30_000, currency: 'IDR', source: 'scan' };
 const gopay = (s: ReturnType<typeof initialState>) => accountBalance(s.accounts.find((a) => a.id === 'a-gopay')!, s.transactions);
@@ -78,5 +78,40 @@ describe('simpan yang masih berjalan vs muat ulang (audit 14)', () => {
     const merged = mergePending([onServer, other], [edited, fresh]);
     expect(merged.map((t) => [t.id, t.merchant])).toEqual([['c', tx.merchant], ['a', 'Baru'], ['b', tx.merchant]]);
     expect(mergePending([onServer], [])).toEqual([onServer]);
+  });
+});
+
+describe('simpan gagal: layar kembali ke sebelum aksi (tanpa menunggu muat ulang)', () => {
+  const undo = (s: ReturnType<typeof initialState>, action: Parameters<typeof reducer>[1]) =>
+    undoActions(action, s).reduce(reducer, reducer(s, action));
+
+  it('tambah gagal: transaksi hilang lagi, saldo dan kuota kembali', () => {
+    const s0 = initialState();
+    const s2 = undo(s0, { type: 'tx/add', tx, consumes: 'scan' });
+    expect(s2.transactions.some((t) => t.id === tx.id)).toBe(false);
+    expect(gopay(s2)).toBe(gopay(s0));
+    expect(s2.usage.scan).toBe(s0.usage.scan);
+  });
+
+  it('ubah gagal: versi lama kembali; hapus gagal: transaksi muncul lagi', () => {
+    const s0 = initialState();
+    const old = s0.transactions[0];
+    expect(undo(s0, { type: 'tx/update', tx: { ...old, amount: old.amount + 1 } }).transactions.find((t) => t.id === old.id)?.amount).toBe(old.amount);
+    expect(undo(s0, { type: 'tx/delete', id: old.id }).transactions.find((t) => t.id === old.id)?.amount).toBe(old.amount);
+  });
+
+  it('preferensi gagal disimpan: nilai lama kembali', () => {
+    const s0 = initialState();
+    expect(undo(s0, { type: 'prefs/hideBalance', value: !s0.hideBalance }).hideBalance).toBe(s0.hideBalance);
+  });
+});
+
+describe('mergePending', () => {
+  it('versi lokal yang belum/baru tersimpan menang atas potret server; yang belum ada di server ditambahkan', () => {
+    const server = [{ ...tx, id: 's1' }, { ...tx, id: 's2', amount: 1 }];
+    const local = [{ ...tx, id: 's2', amount: 2 }, { ...tx, id: 'n1' }];
+    const merged = mergePending(server, local);
+    expect(merged.map((t) => t.id).sort()).toEqual(['n1', 's1', 's2']);
+    expect(merged.find((t) => t.id === 's2')?.amount).toBe(2);
   });
 });

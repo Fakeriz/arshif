@@ -44,3 +44,13 @@ describe('syncAction — kurs pada tanggal transaksi', () => {
     expect(saved.accountAmount).toBe(4_400_000);
   });
 });
+
+describe('syncAction — impor massal', () => {
+  it('ratusan baris asing: satu permintaan kurs per tanggal, bukan per baris', async () => {
+    mockRatesOn.mockResolvedValue({ table: { USD: '1', IDR: '16000', AED: '3.6725' }, date: '2026-11-07' });
+    const txs = Array.from({ length: 300 }, (_, i) => ({ ...tx, id: `tx-${i}`, date: i % 2 ? '2026-11-07' : '2026-11-06' }));
+    const saved = await syncAction({ type: 'tx/addMany', txs }, state, 'u1');
+    expect(saved).toHaveLength(300);
+    expect(mockRatesOn).toHaveBeenCalledTimes(2);
+  });
+});

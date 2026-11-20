@@ -8,14 +8,14 @@ import { keepReimbursement, type Action, type AppState } from './reducer';
  * Nominal di mata uang akun memakai kurs PADA TANGGAL transaksi (FR-FX-4: belanja memakai kurs harinya).
  * Form menghitung pratinjau dengan kurs terbaru; sebelum disimpan dihitung ulang di sini.
  */
-async function withRatesOfDay(tx: Transaction, state: AppState): Promise<Transaction> {
+async function withRatesOfDay(tx: Transaction, state: AppState, ratesOn: typeof api.ratesOn = api.ratesOn): Promise<Transaction> {
   const acc = state.accounts.find((a) => a.id === tx.accountId);
   const to = tx.toAccountId ? state.accounts.find((a) => a.id === tx.toAccountId) : undefined;
   const needFrom = acc && acc.currency !== tx.currency;
   const needTo = to && to.currency !== tx.currency;
   if (!needFrom && !needTo) return { ...tx, accountAmount: undefined, toAmount: tx.type === 'transfer' ? undefined : tx.toAmount };
   // Kurs harian server pada tanggal itu, dilengkapi "Kurs saya" untuk kode tanpa kurs harian.
-  const { table: daily } = await api.ratesOn(tx.date);
+  const { table: daily } = await ratesOn(tx.date);
   const table = withUserRates(daily, tx.date);
   const rated = (code: string) => code in table;
   // Tanpa kurs dan tanpa nominal akun yang diberikan, jangan pakai nominal mentah: AED 1.000,00 (100000 minor)
@@ -39,7 +39,10 @@ export async function syncAction(action: Action, state: AppState, userId: string
     case 'tx/add':
     case 'tx/addMany': {
       const txs = action.type === 'tx/add' ? [action.tx] : action.txs;
-      const rated = await Promise.all(txs.map((t) => withRatesOfDay(t, state)));
+      // Impor ratusan baris: satu permintaan kurs per tanggal, bukan per baris.
+      const byDate = new Map<string | null, ReturnType<typeof api.ratesOn>>();
+      const cachedRatesOn = (d: string | null) => byDate.get(d) ?? byDate.set(d, api.ratesOn(d)).get(d)!;
+      const rated = await Promise.all(txs.map((t) => withRatesOfDay(t, state, cachedRatesOn)));
       await api.insertTransactions(rated);
       return rated;
     }

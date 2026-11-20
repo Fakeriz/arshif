@@ -53,6 +53,8 @@ export type Action =
   | { type: 'load/start' }
   | { type: 'load/done'; data: Loaded }
   | { type: 'load/error' }
+  /** Kembalikan bagian state ke nilai sebelumnya (simpan ke server gagal). */
+  | { type: 'state/restore'; patch: Partial<AppState> }
   | { type: 'reset' }
   | { type: 'usage/set'; usage: Usage }
   | { type: 'plan/set'; plan: Plan; premiumUntil: string | null; premiumSource?: AppState['premiumSource'] }
@@ -139,6 +141,30 @@ export function mergePending(server: Transaction[], pending: Transaction[]): Tra
   return [...pending.filter((t) => !onServer.has(t.id)), ...server.map((t) => local.get(t.id) ?? t)];
 }
 
+/** Bagian state yang diubah sebuah aksi (dibandingkan per kunci tingkat atas). */
+export function changedSlices(before: AppState, action: Action): (keyof AppState)[] {
+  const after = reducer(before, action);
+  return (Object.keys(after) as (keyof AppState)[]).filter((k) => after[k] !== before[k]);
+}
+
+/**
+ * Aksi lokal yang membatalkan `action` setelah simpan ke server gagal, supaya layar tidak menampilkan
+ * perubahan yang tidak pernah tersimpan (muat ulang saja tidak cukup: saat offline muat ulang juga gagal).
+ * Transaksi dibatalkan per baris agar simpanan lain yang sedang berjalan tidak ikut terhapus.
+ */
+export function undoActions(action: Action, before: AppState): Action[] {
+  const prev = (id: string) => before.transactions.find((t) => t.id === id);
+  const txUndo: Action[] =
+    action.type === 'tx/add' ? [{ type: 'tx/delete', id: action.tx.id }]
+      : action.type === 'tx/addMany' ? action.txs.map((t) => ({ type: 'tx/delete', id: t.id }))
+        : action.type === 'tx/update' ? [prev(action.tx.id) ? { type: 'tx/update', tx: prev(action.tx.id)! } : { type: 'tx/delete', id: action.tx.id }]
+          : action.type === 'tx/delete' ? (prev(action.id) ? [{ type: 'tx/add', tx: prev(action.id)! }] : [])
+            : [];
+  // Bagian lain (pemakaian kuota, preferensi, anggaran) dikembalikan utuh ke nilai sebelum aksi.
+  const keys = changedSlices(before, action).filter((k) => k !== 'transactions');
+  return keys.length ? [...txUndo, { type: 'state/restore', patch: Object.fromEntries(keys.map((k) => [k, before[k]])) }] : txUndo;
+}
+
 export function keepReimbursement(next: Transaction, prev: Transaction | undefined): Transaction {
   if (!prev || next.reimburseStatus !== undefined || next.reimbursedBy !== undefined) return next;
   return next.type === 'expense' ? { ...next, reimburseStatus: prev.reimburseStatus, reimbursedBy: prev.reimbursedBy } : next;
@@ -163,6 +189,8 @@ export function reducer(state: AppState, action: Action): AppState {
       return { ...action.data, status: 'ready', ratesVersion: state.ratesVersion + 1 };
     case 'load/error':
       return { ...state, status: state.status === 'ready' ? 'ready' : 'error' };
+    case 'state/restore':
+      return { ...state, ...action.patch };
     case 'reset':
       return initialState();
     case 'usage/set':

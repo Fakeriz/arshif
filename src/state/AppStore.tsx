@@ -11,7 +11,7 @@ import { addDays } from '@/lib/dates';
 import { supabase } from '@/lib/supabase';
 import { useTheme } from '@/theme/ThemeProvider';
 
-import { initialState, keepReimbursement, mergePending, reducer, type Action, type AppState } from './reducer';
+import { changedSlices, initialState, keepReimbursement, mergePending, reducer, undoActions, type Action, type AppState } from './reducer';
 import { useSession } from './session';
 import { syncAction } from './sync';
 
@@ -53,6 +53,17 @@ export function AppStoreProvider({ children, preset }: { children: ReactNode; pr
   stateRef.current = state;
   // Transaksi yang penyimpanannya masih berjalan (id -> versi lokal terbaru). Muat ulang mempertahankannya.
   const pending = useRef(new Map<string, Transaction>());
+  // Transaksi yang penghapusannya masih berjalan: muat ulang tidak boleh memunculkannya lagi.
+  const deleting = useRef(new Set<string>());
+  // Muat ulang yang sedang berjalan: hasil yang usang (ada muat ulang lebih baru) dibuang, dan perubahan
+  // yang selesai disimpan SELAMA muat ulang (tidak ada di potret server) tetap dipertahankan.
+  const reloadSeq = useRef(0);
+  const reloading = useRef(false);
+  const settledDuringReload = useRef(new Map<string, Transaction>());
+  const deletedDuringReload = useRef(new Set<string>());
+  const dirtyDuringReload = useRef(new Set<keyof AppState>());
+  // Simpanan per transaksi diantrekan: tambah lalu hapus cepat tidak boleh tiba di server terbalik.
+  const chains = useRef(new Map<string, Promise<unknown>>());
   // Kode mata uang yang riwayat kursnya sudah dicoba dimuat.
   const historyTried = useRef(new Set<string>());
   // "Kurs saya" dipasang ke modul kurs saat render, supaya agregat di render yang sama sudah memakainya.
@@ -73,6 +84,11 @@ export function AppStoreProvider({ children, preset }: { children: ReactNode; pr
 
   const reload = useCallback(async () => {
     if (!userId) return;
+    const seq = ++reloadSeq.current;
+    reloading.current = true;
+    settledDuringReload.current.clear();
+    deletedDuringReload.current.clear();
+    dirtyDuringReload.current.clear();
     localDispatch({ type: 'load/start' });
     if (stateRef.current.status === 'ready') setRefreshing(true);
     try {
@@ -102,21 +118,28 @@ export function AppStoreProvider({ children, preset }: { children: ReactNode; pr
         applyPrefs.current.setLang(profile.lang);
         applyPrefs.current.setMode(profile.themeMode);
       }
-      localDispatch({
-        type: 'load/done',
-        data: {
+      if (seq !== reloadSeq.current) return;
+      const removed = new Set([...deleting.current, ...deletedDuringReload.current]);
+      const kept = [...pending.current.values(), ...settledDuringReload.current.values()];
+      const loaded = {
           email: profile.email, displayName: profile.displayName, onboarded: profile.onboarded, suspended: profile.suspended, accounts,
-          transactions: mergePending(transactions, [...pending.current.values()]),
+          transactions: mergePending(transactions, kept).filter((x) => !removed.has(x.id)),
           notifications,
           plan: profile.plan, premiumUntil: profile.premiumUntil, premiumSource: profile.premiumSource, usage, hideBalance: profile.hideBalance, includeAssets: profile.includeAssets, mainCurrency: profile.mainCurrency, income: profile.income,
           split: profile.split, payday: profile.payday, notifPrefs: profile.notifPrefs, activeAccountId: profile.activeAccountId, ratesDate: rates.date,
           budgets, limitGroups, userRates,
-        },
-      });
+      };
+      // Bagian yang diubah pengguna selama muat ulang memakai nilai lokal, bukan potret server yang lebih tua.
+      const current = stateRef.current as unknown as Record<string, unknown>;
+      for (const k of dirtyDuringReload.current) if (k in loaded) (loaded as Record<string, unknown>)[k] = current[k];
+      localDispatch({ type: 'load/done', data: loaded });
     } catch {
-      localDispatch({ type: 'load/error' });
+      if (seq === reloadSeq.current) localDispatch({ type: 'load/error' });
     } finally {
-      setRefreshing(false);
+      if (seq === reloadSeq.current) {
+        reloading.current = false;
+        setRefreshing(false);
+      }
     }
   }, [userId, email]);
 
@@ -197,7 +220,23 @@ export function AppStoreProvider({ children, preset }: { children: ReactNode; pr
 
   const track = (txs: Transaction[]) => txs.forEach((x) => pending.current.set(x.id, x));
   // Hanya dilepas bila belum ada versi lebih baru (edit setelah tambah) yang sedang disimpan.
-  const settle = (txs: Transaction[]) => txs.forEach((x) => pending.current.get(x.id) === x && pending.current.delete(x.id));
+  const settle = (txs: Transaction[]) =>
+    txs.forEach((x) => {
+      if (pending.current.get(x.id) !== x) return;
+      pending.current.delete(x.id);
+      if (reloading.current) settledDuringReload.current.set(x.id, x);
+    });
+  const settleDelete = (id: string) => {
+    deleting.current.delete(id);
+    if (reloading.current) deletedDuringReload.current.add(id);
+  };
+  const inOrder = <T,>(ids: string[], run: () => Promise<T>): Promise<T> => {
+    const prev = Promise.all(ids.map((id) => chains.current.get(id)?.catch(() => undefined)));
+    const p = prev.then(run);
+    ids.forEach((id) => chains.current.set(id, p));
+    void p.catch(() => undefined).then(() => ids.forEach((id) => chains.current.get(id) === p && chains.current.delete(id)));
+    return p;
+  };
 
   const dispatch = useCallback(
     (action: Action) => {
@@ -210,14 +249,21 @@ export function AppStoreProvider({ children, preset }: { children: ReactNode; pr
             : action.type === 'tx/update' ? [keepReimbursement(action.tx, before.transactions.find((x) => x.id === action.tx.id))]
               : [];
       track(saving);
-      syncAction(action, before, userId)
+      const deleted = action.type === 'tx/delete' ? action.id : null;
+      if (deleted) deleting.current.add(deleted);
+      if (reloading.current && !saving.length && !deleted) changedSlices(before, action).forEach((k) => dirtyDuringReload.current.add(k));
+      const ids = deleted ? [deleted] : saving.map((x) => x.id);
+      inOrder(ids, () => syncAction(action, before, userId))
         .then((rated) => {
           settle(saving);
+          if (deleted) settleDelete(deleted);
           rated.forEach((tx) => localDispatch({ type: 'tx/rates', tx }));
         })
         .catch(() => {
-          // Yang gagal dilepas dulu: muat ulang menampilkan versi server untuknya, simpan lain yang masih berjalan tetap.
           settle(saving);
+          if (deleted) settleDelete(deleted);
+          // Batalkan dulu di layar (muat ulang juga gagal saat offline), lalu ambil versi server.
+          undoActions(action, before).forEach(localDispatch);
           show({ tone: 'error', title: t('common.syncFailed'), message: t('common.syncFailedMessage') });
           void reload();
         });
@@ -237,7 +283,7 @@ export function AppStoreProvider({ children, preset }: { children: ReactNode; pr
       if (!userId) return tx;
       track([tx]);
       try {
-        const [rated] = await syncAction({ type: 'tx/add', tx }, before, userId);
+        const [rated] = await inOrder([tx.id], () => syncAction({ type: 'tx/add', tx }, before, userId));
         settle([tx]);
         localDispatch({ type: 'tx/rates', tx: rated });
         return rated;

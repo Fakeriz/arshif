@@ -8,8 +8,7 @@ import type { ThemeMode } from '@/theme/ThemeProvider';
 
 import {
   creditColumns, fromTransaction, toAccount, toBudget, toLimitGroup, toNotification, toTransaction,
-  type AccountRow, type BudgetRow, type LimitGroupRow, type NotificationRow, type TransactionRow,
-} from './mappers';
+  type AccountRow, type BudgetRow, type LimitGroupRow, type NotificationRow, type TransactionRow, receiptColumns } from './mappers';
 
 /** Gagal dari Supabase dijadikan Error biasa dengan kode PostgREST/Postgres bila ada. */
 export class RemoteError extends Error {
@@ -153,7 +152,11 @@ export async function loadLatestRates(): Promise<{ table: Record<string, string>
 export async function ratesOn(date: string | null): Promise<{ table: Record<string, string>; date: string | null }> {
   let q = supabase.from('fx_rates').select('rate_date, code, per_usd').order('rate_date', { ascending: false }).limit(400);
   if (date) q = q.lte('rate_date', date);
-  const rows = must(await q.returns<{ rate_date: string; code: string; per_usd: string | number }[]>());
+  let rows = must(await q.returns<{ rate_date: string; code: string; per_usd: string | number }[]>());
+  // Tanggal sebelum riwayat kurs tersimpan: pakai kurs tertua, sama dengan perhitungan di layar (fx.dailyOn).
+  if (date && rows.length === 0) {
+    rows = must(await supabase.from('fx_rates').select('rate_date, code, per_usd').order('rate_date', { ascending: true }).limit(400).returns<{ rate_date: string; code: string; per_usd: string | number }[]>());
+  }
   const table: Record<string, string> = {};
   for (const r of rows) if (!(r.code in table)) table[r.code] = String(r.per_usd);
   return { table, date: rows[0]?.rate_date ?? null };
@@ -258,10 +261,10 @@ export async function updateAccountBank(id: string, bank: string): Promise<void>
   check(await supabase.from('accounts').update({ bank }).eq('id', id));
 }
 
-async function replaceItems(txs: Transaction[]): Promise<void> {
+/** Item struk baru. Transaksi baru belum punya item lama, jadi cukup sisipkan. */
+async function insertItems(txs: Transaction[]): Promise<void> {
   const withItems = txs.filter((t) => t.items?.length);
   if (withItems.length === 0) return;
-  check(await supabase.from('transaction_items').delete().in('transaction_id', withItems.map((t) => t.id)));
   check(
     await supabase.from('transaction_items').insert(
       withItems.flatMap((t) =>
@@ -275,14 +278,19 @@ async function replaceItems(txs: Transaction[]): Promise<void> {
 export async function insertTransactions(txs: Transaction[]): Promise<void> {
   if (txs.length === 0) return;
   check(await supabase.from('transactions').upsert(txs.map(fromTransaction), { onConflict: 'id', ignoreDuplicates: true }));
-  await replaceItems(txs);
+  await insertItems(txs);
 }
+
+/** Rincian struk dikosongkan saat versi baru tidak punya rincian (mis. scan ulang tanpa rincian). */
+const NO_RECEIPT = receiptColumns({ discounts: [], taxLines: [] });
 
 /** Ubah transaksi: sumber input dan foto struk tidak ikut diubah (tidak di-grant untuk update). */
 export async function updateTransaction(t: Transaction): Promise<void> {
   const { id, source: _s, receipt_path: _r, ...patch } = fromTransaction(t);
-  check(await supabase.from('transactions').update(patch).eq('id', id));
-  await replaceItems([t]);
+  check(await supabase.from('transactions').update({ ...NO_RECEIPT, ...patch }).eq('id', id));
+  // Item lama SELALU dihapus: scan ulang tanpa item tidak boleh meninggalkan item lama di server.
+  check(await supabase.from('transaction_items').delete().eq('transaction_id', id));
+  await insertItems([t]);
 }
 
 /** Status reimbursement + tautan pemasukan pengganti. Server menormalkan status dari tautan. */

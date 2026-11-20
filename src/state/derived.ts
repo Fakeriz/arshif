@@ -9,21 +9,25 @@ import { cardUtilization } from '@/lib/credit';
 import { healthPillars, healthScore } from '@/lib/health';
 import { accountBalance } from '@/lib/transactions';
 
+import type { Transaction } from '@/data/types';
+
 import { usedCodes, useStore, type AccountWithBalance } from './AppStore';
 
+type Ledger = { accounts: AccountWithBalance[]; transactions: Transaction[]; mainCurrency: string };
+// Satu hitungan dibagi semua pemanggil: Beranda memanggil useLedger 3x dan Coach 4x+, masing-masing
+// dulu menghitung ulang saldo semua akun dari semua transaksi. Kunci = identitas bagian state yang dipakai.
+let ledgerCache: { key: unknown[]; value: Ledger } | null = null;
+
 /** Akun (dengan saldo) + transaksi. Kekayaan bersih: useNetWorth (state/netWorth), satu rumus untuk semua layar. */
-export function useLedger() {
+export function useLedger(): Ledger {
   const { state } = useStore();
-  return useMemo(() => {
-    const accounts: AccountWithBalance[] = state.accounts.map((a) => ({ ...a, balance: accountBalance(a, state.transactions) }));
-    return {
-      accounts,
-      transactions: state.transactions,
-      mainCurrency: state.mainCurrency,
-    };
-    // ratesDate/ratesVersion/userRates: kurs berubah = konversi ke mata uang utama ikut berubah.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [state.accounts, state.transactions, state.mainCurrency, state.ratesDate, state.ratesVersion, state.userRates]);
+  // ratesDate/ratesVersion/userRates: kurs berubah = konversi ke mata uang utama ikut berubah.
+  const key = [state.accounts, state.transactions, state.mainCurrency, state.ratesDate, state.ratesVersion, state.userRates];
+  if (!ledgerCache || key.some((k, i) => k !== ledgerCache!.key[i])) {
+    const accounts = state.accounts.map((a) => ({ ...a, balance: accountBalance(a, state.transactions) }));
+    ledgerCache = { key, value: { accounts, transactions: state.transactions, mainCurrency: state.mainCurrency } };
+  }
+  return ledgerCache.value;
 }
 
 /** Kode mata uang yang dipakai tapi belum punya kurs harian maupun "Kurs saya" (FR-FX-4). */
