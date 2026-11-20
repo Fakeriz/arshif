@@ -82,6 +82,13 @@ const billing: Messages['billing'] = {
     cta: 'Mula guna',
   },
   pricing: {
+    faqTitle: "Soalan lazim",
+    faq: {
+      receipt: { q: "Bagaimana resit dibaca?", a: "Ambil foto resit, kemudian jumlah, kedai, kategori, dan item diisi sendiri. Anda semak dan ubah dahulu sebelum disimpan." },
+      statement: { q: "Boleh import penyata bank?", a: "Boleh. Muat naik PDF penyata (maksimum 15 MB atau 30 halaman); baris yang mirip transaksi sedia ada tidak ditanda. PDF berkata laluan belum disokong." },
+      rates: { q: "Kadar tukaran dari mana?", a: "Kadar rujukan Bank Pusat Eropah melalui Frankfurter, dikemas kini setiap hari bekerja. Kadar bank atau pengurup wang boleh berbeza, dan anda boleh guna kadar sendiri." },
+      quota: { q: "Jika AI gagal, kuota dipotong?", a: "Tidak. Kerja AI yang gagal tidak memotong kuota, dan kuota ditetapkan semula setiap 1 hari bulan." },
+    },
     title: 'Harga',
     heading: 'Mula percuma. Premium bila anda perlukan lebih.',
     subheading: 'Bayar bulanan atau tahunan. Pelan tahunan berharga sama seperti 10 bulan.',

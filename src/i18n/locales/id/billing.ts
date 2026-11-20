@@ -81,6 +81,13 @@ const billing = {
     cta: 'Mulai pakai',
   },
   pricing: {
+    faqTitle: "Tanya jawab",
+    faq: {
+      receipt: { q: "Bagaimana struk dibaca?", a: "Foto struknya, lalu nominal, toko, kategori, dan item terisi sendiri. Kamu cek dan ubah dulu sebelum disimpan." },
+      statement: { q: "Bisa impor rekening koran?", a: "Bisa. Unggah PDF rekening koran (maksimal 15 MB atau 30 halaman); baris yang mirip transaksi lama tidak dicentang. PDF berkata sandi belum didukung." },
+      rates: { q: "Kurs dihitung dari mana?", a: "Kurs referensi Bank Sentral Eropa lewat Frankfurter, diperbarui tiap hari kerja. Kurs bank atau money changer bisa berbeda, dan kamu bisa memakai kurs sendiri." },
+      quota: { q: "Kalau AI gagal, kuota terpotong?", a: "Tidak. Pekerjaan AI yang gagal tidak memotong kuota, dan kuota direset setiap tanggal 1." },
+    },
     title: 'Harga',
     heading: 'Mulai gratis. Premium saat kamu butuh lebih.',
     subheading: 'Bayar bulanan atau tahunan. Paket tahunan seharga 10 bulan.',

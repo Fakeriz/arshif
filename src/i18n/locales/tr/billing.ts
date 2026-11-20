@@ -82,6 +82,13 @@ const billing: Messages['billing'] = {
     cta: 'Kullanmaya başla',
   },
   pricing: {
+    faqTitle: "Sorular",
+    faq: {
+      receipt: { q: "Fiş nasıl okunuyor?", a: "Fotoğrafını çek; tutar, mağaza, kategori ve kalemler kendiliğinden dolar. Kaydetmeden önce kontrol edip düzenlersin." },
+      statement: { q: "Banka ekstresi içe aktarabilir miyim?", a: "Evet. Ekstre PDF'ini yükle (en fazla 15 MB veya 30 sayfa); mevcut işlemlere benzeyen satırlar işaretlenmez. Şifreli PDF'ler henüz desteklenmiyor." },
+      rates: { q: "Kurlar nereden geliyor?", a: "Frankfurter üzerinden Avrupa Merkez Bankası referans kurları, her iş günü güncellenir. Banka veya döviz bürosu kurları farklı olabilir; kendi kurunu da girebilirsin." },
+      quota: { q: "Yapay zekâ başarısız olursa kota düşer mi?", a: "Hayır. Başarısız yapay zekâ işleri kotadan düşmez; kotalar her ayın 1'inde sıfırlanır." },
+    },
     title: 'Fiyatlar',
     heading: 'Ücretsiz başla. Daha fazlası gerektiğinde Premium.',
     subheading: 'Aylık veya yıllık öde. Yıllık plan 10 aylık fiyatına.',

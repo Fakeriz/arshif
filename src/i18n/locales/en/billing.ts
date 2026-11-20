@@ -82,6 +82,13 @@ const billing: Messages['billing'] = {
     cta: 'Start using it',
   },
   pricing: {
+    faqTitle: "Questions",
+    faq: {
+      receipt: { q: "How is a receipt read?", a: "Take a photo and the amount, store, category, and items fill in. You check and edit before saving." },
+      statement: { q: "Can I import a bank statement?", a: "Yes. Upload the statement PDF (up to 15 MB or 30 pages); rows that look like existing transactions are left unticked. Password-protected PDFs aren't supported yet." },
+      rates: { q: "Where do exchange rates come from?", a: "European Central Bank reference rates via Frankfurter, updated every working day. Bank or money changer rates can differ, and you can set your own rate." },
+      quota: { q: "If the AI fails, does it use my quota?", a: "No. Failed AI jobs don't use your quota, and quotas reset on the 1st of each month." },
+    },
     title: 'Pricing',
     heading: 'Start free. Go Premium when you need more.',
     subheading: 'Pay monthly or yearly. The yearly plan costs the same as 10 months.',
