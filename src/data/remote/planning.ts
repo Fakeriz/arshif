@@ -1,32 +1,14 @@
 import type { Bill, Debt, DebtPayment, Goal, GoalDeposit, SplitBill, SplitItem, SplitParticipant, Subscription } from '@/data/planning';
-import type { QuotaKey } from '@/lib/quota';
 import { supabase } from '@/lib/supabase';
 
-import { RemoteError } from './api';
+import { check as checkWith, must as mustWith, RemoteError, type Res } from './api';
+import { opt } from './mappers';
 
 /** Penulisan ditolak karena batas paket (trigger enforce_total_limit). Layar membuka paywall, bukan error mentah. */
-export class QuotaError extends Error {
-  constructor(readonly key: QuotaKey) {
-    super(`quota_${key}`);
-  }
-}
+const QUOTA = /quota_(goals|billsDebts|subscriptions)/;
+const check = <T,>(res: Res<T>) => checkWith(res, QUOTA);
+const must = <T,>(res: Res<T>) => mustWith(res, QUOTA);
 
-type Res<T> = { data: T | null; error: { message: string; code?: string } | null };
-function check<T>(res: Res<T>): T | null {
-  if (res.error) {
-    const quota = /quota_(goals|billsDebts|subscriptions)/.exec(res.error.message);
-    if (quota) throw new QuotaError(quota[1] as QuotaKey);
-    throw new RemoteError(res.error.message, res.error.code);
-  }
-  return res.data;
-}
-function must<T>(res: Res<T>): T {
-  const data = check(res);
-  if (data === null) throw new RemoteError('empty_result');
-  return data;
-}
-
-const opt = <T,>(v: T | null | undefined): T | undefined => (v === null || v === undefined ? undefined : v);
 const num = (v: unknown): number => Number(v);
 
 // ------------------------------------------------------------------ baris DB -> domain

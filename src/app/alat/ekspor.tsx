@@ -2,13 +2,11 @@ import { FileDown } from 'lucide-react-native';
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
-import { AppText, Button, Card, Chip } from '@/components/ui';
-import { localYmd } from '@/features/capture/clock';
-import { DateField, isYmd } from '@/features/planning/kit';
+import { AppText, Button, Card, Chip, DateField } from '@/components/ui';
 import { historyDocument, monthlyReportDocument, monthlySummary } from '@/features/tools/documents';
 import { GatedBody, ToolScreen, useFeatureGate, usePdfShare } from '@/features/tools/kit';
 import { useI18n } from '@/i18n';
-import { monthName } from '@/lib/dates';
+import { isYmd, monthName, todayYmd } from '@/lib/dates';
 import { formatMoney } from '@/lib/money';
 import { useStore } from '@/state/AppStore';
 import { useTheme } from '@/theme/ThemeProvider';
@@ -42,7 +40,7 @@ function Exports() {
   const { state } = useStore();
   const months = recentMonths(6);
   const [month, setMonth] = useState(months[0]);
-  const today = localYmd();
+  const today = todayYmd();
   const [from, setFrom] = useState(`${today.slice(0, 8)}01`);
   const [to, setTo] = useState(today);
   const monthly = usePdfShare();

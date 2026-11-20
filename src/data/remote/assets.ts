@@ -1,25 +1,12 @@
 import type { Asset, AssetPrice, AssetType, NetWorthSnapshot } from '@/data/assets';
 import { supabase } from '@/lib/supabase';
 
-import { RemoteError } from './api';
-import { QuotaError } from './planning';
+import { check as checkWith, must as mustWith, type Res } from './api';
+import { opt, optNum } from './mappers';
 
-type Res<T> = { data: T | null; error: { message: string; code?: string } | null };
-function check<T>(res: Res<T>): T | null {
-  if (res.error) {
-    if (/quota_assets/.test(res.error.message)) throw new QuotaError('assets');
-    throw new RemoteError(res.error.message, res.error.code);
-  }
-  return res.data;
-}
-function must<T>(res: Res<T>): T {
-  const data = check(res);
-  if (data === null) throw new RemoteError('empty_result');
-  return data;
-}
-
-const opt = <T,>(v: T | null | undefined): T | undefined => (v === null || v === undefined ? undefined : v);
-const optNum = (v: unknown): number | undefined => (v === null || v === undefined ? undefined : Number(v));
+const QUOTA = /quota_(assets)/;
+const check = <T,>(res: Res<T>) => checkWith(res, QUOTA);
+const must = <T,>(res: Res<T>) => mustWith(res, QUOTA);
 
 type AssetRow = {
   id: string; type: AssetType; symbol: string | null; name: string; quantity: string | number | null; buy_price: number | null; currency: string;

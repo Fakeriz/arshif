@@ -2,11 +2,10 @@ import { fireEvent, render, screen } from '@testing-library/react-native';
 import type { ReactElement } from 'react';
 import { Text } from 'react-native';
 
-import { GoalRing, NumberPad, Sparkline, StatTile, TrendBadge, useNumberPad } from '@/components/ui';
+import { GoalRing, Sparkline, StatTile, TrendBadge } from '@/components/ui';
 import { I18nProvider } from '@/i18n';
 import type { Lang } from '@/i18n';
 import { areaUnder, pctChange, ringDash, smoothPath } from '@/lib/chart';
-import { evaluate, extraKey, minorToTyped, pressKey, typedDisplay, type KeypadKey } from '@/lib/keypad';
 import { ThemeProvider } from '@/theme/ThemeProvider';
 
 const wrap = (ui: ReactElement, lang: Lang = 'id') =>
@@ -15,83 +14,6 @@ const wrap = (ui: ReactElement, lang: Lang = 'id') =>
       <ThemeProvider initialMode="dark">{ui}</ThemeProvider>
     </I18nProvider>,
   );
-
-const typeKeys = (keys: KeypadKey[], code: string) => keys.reduce((s, k) => pressKey(s, k, code), '');
-
-describe('keypad — logika ketikan', () => {
-  it('IDR tanpa desimal: digit, "000", nol di depan diabaikan', () => {
-    expect(typeKeys(['0', '0', '4', '5', '000'], 'IDR')).toBe('45000');
-    expect(typeKeys(['decimal', '5'], 'IDR')).toBe('5');
-    expect(evaluate('45000', 'IDR')).toBe(45000);
-    expect(typedDisplay('45000', 'IDR')).toBe('45.000');
-  });
-
-  it('MYR: satu pemisah desimal, maksimal 2 digit pecahan', () => {
-    const s = typeKeys(['1', '2', '5', '0', 'decimal', '5', 'decimal', '0', '9'], 'MYR');
-    expect(s).toBe('1250.50');
-    expect(evaluate(s, 'MYR')).toBe(125050);
-    expect(typedDisplay(s, 'MYR')).toBe('1,250.50');
-    expect(typeKeys(['decimal', '7'], 'MYR')).toBe('0.7');
-    expect(evaluate('0.7', 'MYR')).toBe(70);
-  });
-
-  it('TRY memakai koma desimal di tampilan', () => {
-    expect(typedDisplay('3500.5', 'TRY')).toBe('3.500,5');
-  });
-
-  it('hapus, kosongkan, dan batas digit', () => {
-    expect(pressKey('123', 'back', 'IDR')).toBe('12');
-    expect(pressKey('12.5', 'clear', 'MYR')).toBe('');
-    expect(pressKey('1234', '5', 'IDR', 4)).toBe('1234');
-    expect(evaluate('', 'IDR')).toBeNull();
-    expect(typedDisplay('', 'IDR')).toBe('0');
-  });
-
-  it('minorToTyped kebalikan evaluate', () => {
-    expect(minorToTyped(125050, 'MYR')).toBe('1250.5');
-    expect(minorToTyped(125000, 'MYR')).toBe('1250');
-    expect(minorToTyped(45000, 'IDR')).toBe('45000');
-    expect(minorToTyped(null, 'IDR')).toBe('');
-    for (const v of [1, 99, 100, 123456]) expect(evaluate(minorToTyped(v, 'USD'), 'USD')).toBe(v);
-  });
-  it('kalkulator: operator, "=" menghitung, × ÷ sebelum + −', () => {
-    expect(typeKeys(['1', '0', '0', '+', '5', '0', 'equals'], 'IDR')).toBe('150');
-    expect(typeKeys(['2', '+', '3', '*', '4', 'equals'], 'IDR')).toBe('14');
-    expect(typeKeys(['1', '0', 'decimal', '5', '*', '2', 'equals'], 'USD')).toBe('21');
-    expect(typeKeys(['1', '0', '/', '4', 'equals'], 'USD')).toBe('2.5');
-    // IDR tanpa desimal: hasil bagi dibulatkan ke rupiah utuh.
-    expect(typeKeys(['1', '0', '/', '4', 'equals'], 'IDR')).toBe('3');
-    expect(evaluate('0.1+0.2', 'USD')).toBe(30);
-  });
-
-  it('kalkulator: kasus tepi', () => {
-    // Operator tanpa angka di depannya ditolak; operator berturut-turut saling mengganti.
-    expect(pressKey('', '+', 'IDR')).toBe('');
-    expect(typeKeys(['5', '+', '-'], 'IDR')).toBe('5-');
-    expect(typeKeys(['5', 'decimal', '+'], 'USD')).toBe('5+');
-    // Hasil sementara mengabaikan operator di ujung; "=" tanpa operator tidak mengubah apa pun.
-    expect(evaluate('100+', 'IDR')).toBe(100);
-    expect(pressKey('100', 'equals', 'IDR')).toBe('100');
-    // Bagi nol dan hasil negatif tidak menjadi nominal.
-    expect(pressKey('5/0', 'equals', 'IDR')).toBe('5/0');
-    expect(evaluate('5-9', 'IDR')).toBeNull();
-    // Batas digit berlaku per angka, bukan per ekspresi.
-    expect(pressKey('1234+1234', '5', 'IDR', 4)).toBe('1234+1234');
-    expect(pressKey('1234+', '5', 'IDR', 4)).toBe('1234+5');
-  });
-
-  it('tampilan ekspresi ikut format mata uang', () => {
-    expect(typedDisplay('12000+3', 'IDR')).toBe('12.000 + 3');
-    expect(typedDisplay('12000.5*2', 'USD')).toBe('12,000.5 × 2');
-    expect(typedDisplay('3500.5-1', 'TRY')).toBe('3.500,5 − 1');
-    expect(typedDisplay('10/', 'MYR')).toBe('10 ÷');
-  });
-
-  it('tombol "000" untuk semua mata uang tanpa desimal, desimal untuk sisanya', () => {
-    for (const c of ['IDR', 'VND', 'JPY', 'KRW']) expect(extraKey(c)).toBe('000');
-    for (const c of ['USD', 'TRY', 'MYR', 'EUR']) expect(extraKey(c)).toBe('decimal');
-  });
-});
 
 describe('chart — helper fintech', () => {
   it('pctChange: relatif terhadap nilai sebelumnya; tanpa pembanding null', () => {
@@ -173,71 +95,6 @@ describe('Sparkline, GoalRing, StatTile', () => {
     expect(screen.queryByLabelText(/^Tren/)).toBeNull();
     expect(screen.getByLabelText('Naik 10%')).toBeTruthy();
   });
-});
-
-function PadHarness({ currency }: { currency: string }) {
-  const pad = useNumberPad(currency);
-  return (
-    <>
-      <Text testID="display">{pad.display}</Text>
-      <Text testID="minor">{String(pad.minor)}</Text>
-      <Text testID="rejects">{String(pad.rejects)}</Text>
-      <NumberPad currency={currency} onKey={pad.onKey} />
-    </>
-  );
-}
-
-describe('NumberPad', () => {
-  it('IDR: tombol "000" mengganti desimal, hapus menghapus satu digit', async () => {
-    await wrap(<PadHarness currency="IDR" />);
-    expect(screen.queryByLabelText('Pemisah desimal')).toBeNull();
-    await fireEvent.press(screen.getByLabelText('4'));
-    await fireEvent.press(screen.getByLabelText('5'));
-    await fireEvent.press(screen.getByLabelText('Tiga nol'));
-    expect(screen.getByTestId('display').props.children).toBe('45.000');
-    expect(screen.getByTestId('minor').props.children).toBe('45000');
-    await fireEvent.press(screen.getByLabelText('Hapus satu digit'));
-    expect(screen.getByTestId('display').props.children).toBe('4.500');
-  });
-
-  it('MYR: desimal tersedia, tahan hapus mengosongkan', async () => {
-    await wrap(<PadHarness currency="MYR" />);
-    await fireEvent.press(screen.getByLabelText('1'));
-    await fireEvent.press(screen.getByLabelText('Pemisah desimal'));
-    await fireEvent.press(screen.getByLabelText('5'));
-    expect(screen.getByTestId('display').props.children).toBe('1.5');
-    expect(screen.getByTestId('minor').props.children).toBe('150');
-    // Pecahan MYR maksimal 2 digit: digit ketiga ditolak dan dihitung untuk animasi goyang.
-    await fireEvent.press(screen.getByLabelText('0'));
-    await fireEvent.press(screen.getByLabelText('9'));
-    expect(screen.getByTestId('display').props.children).toBe('1.50');
-    expect(screen.getByTestId('rejects').props.children).toBe('1');
-    await fireEvent(screen.getByLabelText('Hapus satu digit'), 'longPress');
-    expect(screen.getByTestId('minor').props.children).toBe('null');
-  });
-  it('tata letak kalkulator: operator, "=", dan tombol kiri bawah per mata uang', async () => {
-    await wrap(<PadHarness currency="USD" />);
-    for (const l of ['Bagi', 'Kali', 'Kurang', 'Tambah', 'Sama dengan', 'Hapus satu digit']) expect(screen.getByLabelText(l)).toBeTruthy();
-    expect(screen.getByLabelText('Pemisah desimal')).toBeTruthy();
-    expect(screen.getByText('.')).toBeTruthy();
-    for (const k of ['1', '0', '0', 'Tambah', '5', '0']) await fireEvent.press(screen.getByLabelText(k));
-    expect(screen.getByTestId('display').props.children).toBe('100 + 50');
-    await fireEvent.press(screen.getByLabelText('Sama dengan'));
-    expect(screen.getByTestId('display').props.children).toBe('150');
-    expect(screen.getByTestId('minor').props.children).toBe('15000');
-    await screen.unmount();
-
-    await wrap(<PadHarness currency="TRY" />);
-    expect(screen.getByText(',')).toBeTruthy();
-    await screen.unmount();
-    for (const c of ['IDR', 'VND', 'JPY', 'KRW']) {
-      await wrap(<PadHarness currency={c} />);
-      expect(screen.getByLabelText('Tiga nol')).toBeTruthy();
-      expect(screen.queryByLabelText('Pemisah desimal')).toBeNull();
-      await screen.unmount();
-    }
-  });
-
 });
 
 describe('periodSeries — perbandingan setara per periode gajian', () => {

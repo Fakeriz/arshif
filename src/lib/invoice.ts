@@ -38,13 +38,6 @@ export type Invoice = {
   createdAt: string;
 };
 
-/** Status yang boleh dituju dari status sekarang lewat tombol (Dibayar lewat alur khusus). */
-export function nextStatuses(kind: InvoiceKind, status: InvoiceStatus): InvoiceStatus[] {
-  if (status === 'paid') return [];
-  if (kind === 'invoice') return status === 'draft' ? ['sent', 'paid'] : status === 'sent' ? ['draft', 'paid'] : [];
-  return status === 'draft' ? ['sent', 'accepted'] : status === 'sent' ? ['draft', 'accepted'] : ['sent'];
-}
-
 /** qty dalam seperseratus (1,5 -> 150). null = tidak valid (<= 0, > 100.000, lebih dari 2 desimal). */
 export function qtyCenti(qty: number): number | null {
   if (!Number.isFinite(qty) || qty <= 0 || qty > 100000) return null;
@@ -99,7 +92,3 @@ export function isOverdue(inv: Pick<Invoice, 'kind' | 'status' | 'dueDate'>, tod
   return inv.kind === 'invoice' && inv.status !== 'paid' && !!inv.dueDate && inv.dueDate < today;
 }
 
-/** Awal bulan berjalan (UTC, sama dengan periode kuota server) untuk hitungan "bulan ini". */
-export function monthKeyUtc(d = new Date()): string {
-  return d.toISOString().slice(0, 7);
-}

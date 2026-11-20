@@ -2,9 +2,8 @@ import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import { CurrencySheet } from '@/components/shell/CurrencySheet';
-import { AmountField, AppText, Chip, Input, useToast } from '@/components/ui';
+import { AmountField, AppText, Chip, DateField, Input, useToast } from '@/components/ui';
 import type { Bill, Debt, DebtKind, Goal, Subscription, SubscriptionCycle } from '@/data/planning';
-import { localYmd } from '@/features/capture/clock';
 import { AccountPicker, CategoryPicker } from '@/features/transactions/pickers';
 import { useT } from '@/i18n';
 import type { Frequency } from '@/lib/planning/schedule';
@@ -13,8 +12,9 @@ import { useStore } from '@/state/AppStore';
 import { useLedger } from '@/state/derived';
 import { usePlanning } from '@/state/planning';
 import { space } from '@/theme/tokens';
+import { isYmd, todayYmd } from '@/lib/dates';
 
-import { ChoiceRow, DateField, FormSheet, isYmd, useSaveError } from './kit';
+import { ChoiceRow, FormSheet, useSaveError } from './kit';
 
 /** Mata uang: chip yang membuka daftar mata uang. */
 export function CurrencyField({ value, onChange, locked }: { value: string; onChange: (c: string) => void; locked?: boolean }) {
@@ -105,7 +105,7 @@ export function BillForm({ visible, onClose, bill }: { visible: boolean; onClose
   const [amount, setAmount] = useState<number | null>(bill?.amount ?? null);
   const [currency, setCurrency] = useState(bill?.currency ?? state.mainCurrency);
   const [frequency, setFrequency] = useState<Frequency>(bill?.frequency ?? 'monthly');
-  const [dueDate, setDueDate] = useState(bill?.dueDate ?? localYmd());
+  const [dueDate, setDueDate] = useState(bill?.dueDate ?? todayYmd());
   const [accountId, setAccountId] = useState<string | null>(bill?.accountId ?? null);
   const [category, setCategory] = useState<string | null>(bill?.categoryKey ?? 'bills');
   const [tried, setTried] = useState(false);
@@ -227,7 +227,7 @@ export function SubscriptionForm({ visible, onClose, sub }: { visible: boolean; 
   const [amount, setAmount] = useState<number | null>(sub?.amount ?? null);
   const [currency, setCurrency] = useState(sub?.currency ?? state.mainCurrency);
   const [cycle, setCycle] = useState<SubscriptionCycle>(sub?.cycle ?? 'monthly');
-  const [nextRenewal, setNextRenewal] = useState(sub?.nextRenewal ?? localYmd());
+  const [nextRenewal, setNextRenewal] = useState(sub?.nextRenewal ?? todayYmd());
   const [accountId, setAccountId] = useState<string | null>(sub?.accountId ?? null);
   const [category, setCategory] = useState(sub?.categoryKey ?? 'entertainment');
   const [tried, setTried] = useState(false);

@@ -1,6 +1,7 @@
-import { localHm, localYmd } from '@/features/capture/clock';
+import { localHm } from '@/features/capture/clock';
 
 import { parseNotification, type Capture, type Parsed } from './parser';
+import { todayYmd } from '../dates';
 
 type IngestStatus = 'disabled' | 'quota' | 'review' | 'applied' | 'confirmed' | 'dismissed' | 'undone';
 export type Ingest = (c: Capture, p: Parsed, date: string, time: string) => Promise<{ status: IngestStatus; id?: string; repeat?: boolean }>;
@@ -38,7 +39,7 @@ export async function processCaptures(captures: Capture[], ingest: Ingest, now =
       continue;
     }
     const at = new Date(c.postedAt);
-    const date = localYmd(at);
+    const date = todayYmd(at);
     const time = localHm(at);
     let res: Awaited<ReturnType<Ingest>>;
     try {

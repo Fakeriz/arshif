@@ -16,6 +16,9 @@ export function todayYmd(now: Date = new Date()): string {
   return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
 }
 
+/** "YYYY-MM-DD" yang valid (bulan 01-12, tanggal ada). Satu-satunya pemeriksa tanggal teks di aplikasi. */
+export const isYmd = (s: string): boolean => /^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$/.test(s) && !Number.isNaN(Date.parse(`${s}T00:00:00Z`));
+
 export type YMD = { y: number; m: number; d: number };
 
 export function parseYMD(s: string): YMD {
@@ -80,14 +83,6 @@ export function dayLong(s: string, lang: Lang): string {
 export function shortDate(s: string, lang: Lang): string {
   const { m, d } = parseYMD(s);
   return `${d} ${CALENDARS[lang].monthsShort[m - 1]}`;
-}
-
-/** Kunci salam `domain.greeting.<key>` menurut jam. */
-export function greetingKey(hour: number): 'morning' | 'afternoon' | 'evening' | 'night' {
-  if (hour < 11) return 'morning';
-  if (hour < 15) return 'afternoon';
-  if (hour < 19) return 'evening';
-  return 'night';
 }
 
 /** Timestamp ISO -> "6 Des 2026" di zona waktu perangkat (masa aktif Premium, tanggal pesanan). */

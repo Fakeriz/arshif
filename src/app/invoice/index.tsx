@@ -3,11 +3,10 @@ import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import { AppText, Card, EmptyState, Tabs } from '@/components/ui';
-import { localYmd } from '@/features/capture/clock';
 import { InvoiceScreen, StatusBadge } from '@/features/invoice/kit';
 import { AddButton } from '@/features/planning/kit';
 import { useI18n } from '@/i18n';
-import { shortDate } from '@/lib/dates';
+import { shortDate, todayYmd } from '@/lib/dates';
 import type { InvoiceKind } from '@/lib/invoice';
 import { formatMoney } from '@/lib/money';
 import { isLimited, QUOTAS } from '@/lib/quota';
@@ -27,7 +26,7 @@ export default function InvoiceList() {
   const limited = isLimited(state.plan, 'invoice', used);
   const reason = t('inv.limitReason', { free: QUOTAS.free.invoice ?? 0 });
   const list = invoices.filter((i) => i.kind === kind);
-  const today = localYmd();
+  const today = todayYmd();
   const create = () => router.push({ pathname: '/invoice/form', params: { jenis: kind } });
   const addLabel = kind === 'invoice' ? t('inv.newInvoice') : t('inv.newQuote');
 

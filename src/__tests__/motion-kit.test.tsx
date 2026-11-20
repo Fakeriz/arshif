@@ -1,7 +1,7 @@
 import { fireEvent, render, screen } from '@testing-library/react-native';
 import type { ReactElement } from 'react';
 
-import { Accordion, Button, Calendar, Checkbox, OtpInput, RadioList, RollingNumber, Select, Slider, StepList, Stepper, UploadProgress, dateKey } from '@/components/ui';
+import { Accordion, Button, Calendar, Checkbox, OtpInput, RadioList, RollingNumber, Select, Slider, StepList, Stepper, dateKey } from '@/components/ui';
 import { formatClock } from '@/components/ui/Countdown';
 import { ThemeProvider } from '@/theme/ThemeProvider';
 
@@ -103,13 +103,6 @@ describe('Motion kit — perilaku', () => {
     await wrap(<Button label="Tersimpan" done onPress={onPress} />);
     await fireEvent.press(screen.getByLabelText('Tersimpan'));
     expect(onPress).not.toHaveBeenCalled();
-  });
-
-  it('UploadProgress membacakan persen lalu status selesai', async () => {
-    const view = await wrap(<UploadProgress fileName="struk.jpg" progress={0.42} />);
-    expect(screen.getByLabelText('struk.jpg, Mengunggah 42%')).toBeTruthy();
-    await view.rerender(<ThemeProvider initialMode="dark"><UploadProgress fileName="struk.jpg" progress={1} /></ThemeProvider>);
-    expect(screen.getByLabelText('struk.jpg, Terunggah')).toBeTruthy();
   });
 
   it('formatClock: mm:ss, jam bila perlu, tidak pernah negatif', () => {

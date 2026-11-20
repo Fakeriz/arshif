@@ -11,7 +11,7 @@ import { AppText, EmptyState, Icon, PressableScale } from '@/components/ui';
 import { invokeFn } from '@/data/remote/functions';
 import { levelFromMetering, readRecording } from '@/features/capture/audio';
 import { CaptureError, failureOf, type CaptureFailure } from '@/features/capture/CaptureError';
-import { localTimezone, localYmd } from '@/features/capture/clock';
+import { localTimezone } from '@/features/capture/clock';
 import { putHandoff } from '@/features/capture/handoff';
 import { ProcessingView } from '@/features/capture/ProcessingView';
 import { Waveform } from '@/features/capture/Waveform';
@@ -23,6 +23,7 @@ import { useTheme } from '@/theme/ThemeProvider';
 import { radius, space } from '@/theme/tokens';
 
 import { FUNCTIONS, VoiceResult } from '../../supabase/functions/_shared/contracts';
+import { todayYmd } from '@/lib/dates';
 
 const MAX_SECONDS = 60;
 const MIN_MILLIS = 1000;
@@ -65,7 +66,7 @@ export default function VoiceScreen() {
       if (!recorder.uri || millis < MIN_MILLIS) return setPhase({ kind: 'failed', failure: 'too_short' });
       const { audio, mimeType } = await readRecording(recorder.uri);
       const accounts = state.accounts.map((a) => ({ id: a.id, name: a.name, bank: a.bank, currency: a.currency }));
-      const result = await invokeFn(FUNCTIONS.voice, { audio, mimeType, lang, today: localYmd(), timezone: localTimezone(), defaultCurrency: state.mainCurrency, accounts }, VoiceResult);
+      const result = await invokeFn(FUNCTIONS.voice, { audio, mimeType, lang, today: todayYmd(), timezone: localTimezone(), defaultCurrency: state.mainCurrency, accounts }, VoiceResult);
       refreshUsage();
       putHandoff('voice', { result });
       router.replace('/voice-review');

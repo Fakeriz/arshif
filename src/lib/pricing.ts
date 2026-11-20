@@ -14,8 +14,6 @@ export const PRICES: Record<CheckoutCurrency, Record<Period, number>> = {
   USD: { monthly: 150, yearly: 1500 },
 };
 
-export const PROVIDER: Record<CheckoutCurrency, 'xendit' | 'paddle'> = { IDR: 'xendit', MYR: 'xendit', USD: 'paddle' };
-
 /** Mata uang checkout yang paling dekat dengan mata uang utama pengguna. TRY dan lainnya lewat Paddle (USD). */
 export function checkoutCurrencyFor(mainCurrency: string): CheckoutCurrency {
   return mainCurrency === 'IDR' || mainCurrency === 'MYR' ? mainCurrency : 'USD';

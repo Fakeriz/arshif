@@ -1,24 +1,11 @@
 import type { Invoice, InvoiceItem, InvoiceKind, InvoiceStatus } from '@/lib/invoice';
-import type { QuotaKey } from '@/lib/quota';
 import { supabase } from '@/lib/supabase';
 
-import { RemoteError } from './api';
-import { QuotaError } from './planning';
+import { check as checkWith, must as mustWith, type Res } from './api';
 
-type Res<T> = { data: T | null; error: { message: string; code?: string } | null };
-function check<T>(res: Res<T>): T | null {
-  if (res.error) {
-    const quota = /quota_(invoice|taxFull|pdfExport)/.exec(res.error.message);
-    if (quota) throw new QuotaError(quota[1] as QuotaKey);
-    throw new RemoteError(res.error.message, res.error.code);
-  }
-  return res.data;
-}
-function must<T>(res: Res<T>): T {
-  const data = check(res);
-  if (data === null) throw new RemoteError('empty_result');
-  return data;
-}
+const QUOTA = /quota_(invoice|taxFull|pdfExport)/;
+const check = <T,>(res: Res<T>) => checkWith(res, QUOTA);
+const must = <T,>(res: Res<T>) => mustWith(res, QUOTA);
 
 type InvoiceRow = {
   id: string; kind: InvoiceKind; number: string; status: InvoiceStatus; client_name: string; client_contact: string | null;

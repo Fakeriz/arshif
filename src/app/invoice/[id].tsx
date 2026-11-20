@@ -3,16 +3,15 @@ import { CircleCheck, FileText, Pencil, Send, Share2, Trash2, Undo2 } from 'luci
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
-import { AppText, Button, Card, Dialog, EmptyState, useToast } from '@/components/ui';
-import { localYmd } from '@/features/capture/clock';
+import { AppText, Button, Card, DateField, Dialog, EmptyState, useToast } from '@/components/ui';
 import { InvoiceScreen, StatusBadge } from '@/features/invoice/kit';
-import { DateField, FormSheet, isYmd, SectionLabel, useSaveError } from '@/features/planning/kit';
+import { FormSheet, SectionLabel, useSaveError } from '@/features/planning/kit';
 import { invoiceDocument } from '@/features/tools/documents';
 import { ResultRow, usePdfShare } from '@/features/tools/kit';
 import { AccountPicker } from '@/features/transactions/pickers';
 import { InfoRow } from '@/features/transactions/InfoRow';
 import { useI18n } from '@/i18n';
-import { isoDateLabel, shortDate } from '@/lib/dates';
+import { isoDateLabel, isYmd, shortDate, todayYmd } from '@/lib/dates';
 import { lineTotal, qtyText, type Invoice } from '@/lib/invoice';
 import { formatMoney } from '@/lib/money';
 import { QUOTAS } from '@/lib/quota';
@@ -83,7 +82,7 @@ function Detail({ inv }: { inv: Invoice }) {
           <AppText variant="h3" numberOfLines={1} style={styles.flex}>
             {inv.number}
           </AppText>
-          <StatusBadge inv={inv} today={localYmd()} />
+          <StatusBadge inv={inv} today={todayYmd()} />
         </View>
         <AppText variant="body" tone="secondary" numberOfLines={2}>
           {inv.clientContact ? `${inv.clientName} · ${inv.clientContact}` : inv.clientName}
@@ -193,7 +192,7 @@ function PaidSheet({ inv, visible, onClose, onSubmit }: PaidSheetProps) {
   const accounts = useLedger().accounts;
   const activeId = useActiveAccountId();
   const [accountId, setAccountId] = useState<string | null>(accounts.find((a) => a.currency === inv.currency)?.id ?? activeId);
-  const [date, setDate] = useState(localYmd());
+  const [date, setDate] = useState(todayYmd());
   const [tried, setTried] = useState(false);
   const [saving, setSaving] = useState(false);
   const account = accounts.find((a) => a.id === accountId);

@@ -7,7 +7,7 @@ import { Screen } from '@/components/shell/Screen';
 import { ScreenHeader } from '@/components/shell/ScreenHeader';
 import { AppText, Card, EmptyState, Icon, Skeleton, useToast } from '@/components/ui';
 import { featureGate } from '@/data/remote/invoices';
-import { QuotaError } from '@/data/remote/planning';
+import { QuotaError } from '@/data/remote/api';
 import { useT } from '@/i18n';
 import { PdfUnavailableError, sharePdf } from '@/lib/pdf/share';
 import { isLimited } from '@/lib/quota';

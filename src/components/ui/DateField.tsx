@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import { useI18n } from '@/i18n';
-import { dayLong, parseYMD } from '@/lib/dates';
+import { dayLong, isYmd, parseYMD } from '@/lib/dates';
 import { useTheme } from '@/theme/ThemeProvider';
 import { layout, radius, space } from '@/theme/tokens';
 
@@ -14,7 +14,6 @@ import { Calendar, dateKey } from './Calendar';
 import { Icon } from './Icon';
 import { PressableScale } from './PressableScale';
 
-const YMD = /^\d{4}-\d{2}-\d{2}$/;
 
 export type DateFieldProps = {
   label: string;
@@ -36,7 +35,7 @@ export function DateField({ label, value, onChange, error, optional, warning, mi
   const { colors, scheme } = useTheme();
   const { t, lang } = useI18n();
   const [open, setOpen] = useState(false);
-  const valid = YMD.test(value);
+  const valid = isYmd(value);
   const selected = valid ? (({ y, m, d }) => new Date(y, m - 1, d))(parseYMD(value)) : null;
   const message = typeof error === 'string' ? error : error ? t('common.ui.pickDate') : undefined;
 

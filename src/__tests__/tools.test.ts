@@ -1,4 +1,4 @@
-import { invoiceTotals, lineTotal, nextStatuses, parsePercentBp, parseQty, qtyText } from '@/lib/invoice';
+import { invoiceTotals, lineTotal, parsePercentBp, parseQty, qtyText } from '@/lib/invoice';
 import { loanSchedule } from '@/lib/loan';
 import { esc, invoiceHtml, reportHtml } from '@/lib/pdf/html';
 import { pdfName } from '@/lib/pdf/share';
@@ -173,12 +173,6 @@ describe('invoice', () => {
     expect(parsePercentBp('7,5')).toBe(750);
     expect(parsePercentBp('101')).toBeNull();
     expect(qtyText(2.25, ',')).toBe('2,25');
-  });
-
-  it('status: Dibayar terakhir, penawaran tidak bisa dibayar', () => {
-    expect(nextStatuses('invoice', 'draft')).toEqual(['sent', 'paid']);
-    expect(nextStatuses('invoice', 'paid')).toEqual([]);
-    expect(nextStatuses('quote', 'sent')).toEqual(['draft', 'accepted']);
   });
 
   it('HTML PDF meng-escape isi pengguna', () => {

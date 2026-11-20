@@ -6,7 +6,7 @@ import { AppText, GlassView, Tabs } from '@/components/ui';
 import { CashflowSection, DonutSection, GaugeSection } from '@/features/design-sheet/ChartSections';
 import { BadgeChipSection, ButtonSection, InputSection, TabsSection } from '@/features/design-sheet/ControlSections';
 import { ListSection, MoneySection, ProgressSection } from '@/features/design-sheet/DataSections';
-import { GoalSection, NumberPadSection, SparklineSection, StatTileSection } from '@/features/design-sheet/FintechSections';
+import { GoalSection, SparklineSection, StatTileSection } from '@/features/design-sheet/FintechSections';
 import { OverlaySection, StateSection } from '@/features/design-sheet/FeedbackSections';
 import { ColorSection, ShapeSection, TypeSection } from '@/features/design-sheet/FoundationSections';
 import { MotionChoiceSection, MotionFeedbackSection, MotionInputSection, MotionNumberSection } from '@/features/design-sheet/MotionSections';
@@ -60,7 +60,6 @@ function DesignSheet() {
           <StatTileSection />
           <SparklineSection />
           <GoalSection />
-          <NumberPadSection />
           <MotionChoiceSection />
           <MotionNumberSection />
           <MotionInputSection />

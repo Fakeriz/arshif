@@ -7,8 +7,7 @@ import { usePaywall } from '@/components/shell/Paywall';
 import { Screen } from '@/components/shell/Screen';
 import { ScreenHeader } from '@/components/shell/ScreenHeader';
 import { AmountField, AppText, BottomSheet, Button, Chip, DateField, EmptyState, Input, ProBadge, Skeleton, useToast } from '@/components/ui';
-import { QuotaError } from '@/data/remote/planning';
-import { localYmd } from '@/features/capture/clock';
+import { QuotaError } from '@/data/remote/api';
 import { AccountPicker } from '@/features/transactions/pickers';
 import { useT } from '@/i18n';
 import { formatMoney } from '@/lib/money';
@@ -17,11 +16,8 @@ import { useActiveAccountId } from '@/state/AppStore';
 import { useLedger } from '@/state/derived';
 import { usePlanning, type PayInput } from '@/state/planning';
 import { radius, space } from '@/theme/tokens';
+import { isYmd, todayYmd } from '@/lib/dates';
 
-export { DateField };
-
-export const YMD_RE = /^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$/;
-export const isYmd = (s: string): boolean => YMD_RE.test(s) && !Number.isNaN(Date.parse(`${s}T00:00:00Z`));
 
 /** Layar Planning: header + status muat bersama (memuat, gagal, siap). */
 export function PlanScreen({ title, right, children, tabs }: { title: string; right?: ReactNode; children: ReactNode; tabs?: boolean }) {
@@ -126,7 +122,7 @@ export function PaySheet({ visible, onClose, title, note, currency, initial, max
   const activeId = useActiveAccountId();
   const [amount, setAmount] = useState<number | null>(initial);
   const [accountId, setAccountId] = useState<string | null>(defaultAccountId ?? activeId);
-  const [date, setDate] = useState(localYmd());
+  const [date, setDate] = useState(todayYmd());
   const [tried, setTried] = useState(false);
   const [saving, setSaving] = useState(false);
   const [done, setDone] = useState(false);

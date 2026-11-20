@@ -4,13 +4,12 @@ import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import { CurrencySheet } from '@/components/shell/CurrencySheet';
-import { AmountField, AppText, Button, Card, EmptyState, Icon, Input, ListItem, PressableScale, useToast } from '@/components/ui';
-import { localYmd } from '@/features/capture/clock';
+import { AmountField, AppText, Button, Card, DateField, EmptyState, Icon, Input, ListItem, PressableScale, useToast } from '@/components/ui';
 import { InvoiceScreen } from '@/features/invoice/kit';
-import { DateField, isYmd, SectionLabel, useSaveError } from '@/features/planning/kit';
+import { SectionLabel, useSaveError } from '@/features/planning/kit';
 import { ResultRow } from '@/features/tools/kit';
 import { currencyName, useI18n } from '@/i18n';
-import { addDays } from '@/lib/dates';
+import { addDays, isYmd, todayYmd } from '@/lib/dates';
 import { invoiceTotals, parsePercentBp, parseQty, qtyText, type Invoice, type InvoiceKind } from '@/lib/invoice';
 import { currencyMeta, formatMoney } from '@/lib/money';
 import { QUOTAS } from '@/lib/quota';
@@ -63,7 +62,7 @@ function Form({ kind, initial, isEdit }: { kind: InvoiceKind; initial?: Invoice;
   const { state } = useStore();
   const { create, update } = useInvoices();
   const decimal = lang === 'id' || lang === 'tr' ? ',' : '.';
-  const today = localYmd();
+  const today = todayYmd();
 
   const [client, setClient] = useState(initial?.clientName ?? '');
   const [contact, setContact] = useState(initial?.clientContact ?? '');

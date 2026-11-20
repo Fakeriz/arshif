@@ -5,7 +5,6 @@ import { Share, StyleSheet, View } from 'react-native';
 
 import { AmountField, AppText, AvatarStack, Button, Card, Checkbox, Chip, Dialog, EmptyState, Icon, Input, PressableScale, Tabs, Toggle, useToast } from '@/components/ui';
 import type { SplitBill, SplitItem, SplitParticipant } from '@/data/planning';
-import { localYmd } from '@/features/capture/clock';
 import { PlanScreen, SectionLabel, useSaveError } from '@/features/planning/kit';
 import { useI18n } from '@/i18n';
 import { formatMoney } from '@/lib/money';
@@ -17,6 +16,7 @@ import { usePlanning } from '@/state/planning';
 import { useTheme } from '@/theme/ThemeProvider';
 import { radius, space } from '@/theme/tokens';
 import { goBack } from '@/components/shell/goBack';
+import { todayYmd } from '@/lib/dates';
 
 /**
  * Split bill (FR-SPLIT-1..3). id "baru" = baru (opsional ?tx= untuk mengisi dari struk). Bagi rata atau per item;
@@ -47,7 +47,7 @@ export default function SplitEditor() {
       const added = tx?.receipt?.taxIncluded === false ? (tx.receipt.taxTotal ?? 0) : 0;
       return {
         id: newId(), title: tx?.merchant ?? '', currency: tx?.currency ?? state.mainCurrency, total: tx?.amount ?? 0, tax: added, service: tx?.receipt?.service ?? 0,
-        mode: items.length ? 'items' : 'equal', date: tx?.date ?? localYmd(), transactionId: tx?.id, items, participants: [owner],
+        mode: items.length ? 'items' : 'equal', date: tx?.date ?? todayYmd(), transactionId: tx?.id, items, participants: [owner],
       };
     })();
   return (
@@ -147,14 +147,14 @@ function Editor({ initial, isNew, fixedTotal }: { initial: SplitBill; isNew: boo
   };
 
   const togglePaid = async (p: SplitParticipant, paid: boolean) => {
-    const next = people.map((x) => (x.id === p.id ? { ...x, paidAt: paid ? localYmd() : undefined } : x));
+    const next = people.map((x) => (x.id === p.id ? { ...x, paidAt: paid ? todayYmd() : undefined } : x));
     setPeople(next);
     try {
       // Split yang sudah tersimpan: status bayar langsung disimpan, tidak menunggu tombol Simpan.
       if (!isNew) await saveSplit(build(next), false);
       // Piutang terkait ditutup (tanpa transaksi: uangnya diterima di luar aplikasi).
       const debt = paid && p.debtId ? debts.find((d) => d.id === p.debtId && d.status === 'active') : undefined;
-      if (debt) await settleDebt(debt, localYmd());
+      if (debt) await settleDebt(debt, todayYmd());
     } catch {
       show({ tone: 'error', title: t('plan.common.saveFailed') });
     }

@@ -2,7 +2,7 @@ import type { Account, AppNotification, BudgetRecord, LimitGroup, Plan, Transact
 import type { RateRow, UserRate } from '@/lib/fx';
 import type { Lang } from '@/i18n/types';
 import type { Split } from '@/lib/budget';
-import { EMPTY_USAGE, isQuotaKey, type Usage } from '@/lib/quota';
+import { EMPTY_USAGE, isQuotaKey, type QuotaKey, type Usage } from '@/lib/quota';
 import { supabase } from '@/lib/supabase';
 import type { ThemeMode } from '@/theme/ThemeProvider';
 
@@ -16,15 +16,26 @@ export class RemoteError extends Error {
     super(message);
   }
 }
-type Res<T> = { data: T | null; error: { message: string; code?: string } | null };
-/** Untuk tulis tanpa hasil (update/delete). */
-function check<T>(res: Res<T>): T | null {
-  if (res.error) throw new RemoteError(res.error.message, res.error.code);
+/** Batas paket tercapai (trigger kuota di server: pesan `quota_<key>`). */
+export class QuotaError extends Error {
+  constructor(readonly key: QuotaKey) {
+    super(`quota_${key}`);
+  }
+}
+
+export type Res<T> = { data: T | null; error: { message: string; code?: string } | null };
+/** Untuk tulis tanpa hasil (update/delete). `quota`: pola `quota_(...)` yang diubah menjadi QuotaError. */
+export function check<T>(res: Res<T>, quota?: RegExp): T | null {
+  if (res.error) {
+    const hit = quota?.exec(res.error.message);
+    if (hit) throw new QuotaError(hit[1] as QuotaKey);
+    throw new RemoteError(res.error.message, res.error.code);
+  }
   return res.data;
 }
 /** Untuk baca: data wajib ada. */
-function must<T>(res: Res<T>): T {
-  const data = check(res);
+export function must<T>(res: Res<T>, quota?: RegExp): T {
+  const data = check(res, quota);
   if (data === null) throw new RemoteError('empty_result');
   return data;
 }

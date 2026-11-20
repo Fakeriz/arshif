@@ -5,12 +5,9 @@ import {
   AppText,
   Card,
   GoalRing,
-  NumberPad,
-  NumberPadDisplay,
   Sparkline,
   StatTile,
   TrendBadge,
-  useNumberPad,
 } from '@/components/ui';
 import { formatCompact } from '@/lib/money';
 import { space } from '@/theme/tokens';
@@ -112,31 +109,6 @@ export function GoalSection() {
   );
 }
 
-function PadDemo({ currency }: { currency: string }) {
-  const pad = useNumberPad(currency);
-  return (
-    <Card style={styles.padCard}>
-      <NumberPadDisplay display={pad.display} currency={currency} rejects={pad.rejects} />
-      <NumberPad currency={currency} onKey={pad.onKey} />
-    </Card>
-  );
-}
-
-export function NumberPadSection() {
-  return (
-    <Section
-      index="Fintech"
-      title="NumberPad"
-      note="Keypad kalkulator nominal: ÷ × − + dan = menghitung (× ÷ lebih dulu). Mata uang tanpa desimal (IDR, JPY, KRW, VND) mendapat tombol 000, yang lain pemisah desimalnya sendiri. Tahan hapus untuk mengosongkan."
-    >
-      <View style={styles.pair}>
-        <PadDemo currency="IDR" />
-        <PadDemo currency="MYR" />
-      </View>
-    </Section>
-  );
-}
-
 const styles = StyleSheet.create({
   pair: { flexDirection: 'row', flexWrap: 'wrap', gap: space.md },
   flex: { flex: 1 },
@@ -144,5 +116,4 @@ const styles = StyleSheet.create({
   rateRow: { flexDirection: 'row', alignItems: 'center', gap: space.md },
   rateFig: { alignItems: 'flex-end', gap: space.xs },
   goalRow: { flexDirection: 'row', alignItems: 'center', gap: space.lg },
-  padCard: { flexGrow: 1, flexBasis: 0, minWidth: 240, gap: space.lg },
 });

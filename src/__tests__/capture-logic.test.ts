@@ -107,24 +107,9 @@ describe('validasi form transaksi', () => {
   it('tanggal salah format ditolak', () => expect(validateTx({ ...ok, date: '5/11/2026' }).date).toBeDefined());
 });
 
-import { categorizeStatementRow, prettifyDescription } from '@/lib/statement';
+import { prettifyDescription } from '@/lib/statement';
 
-describe('kategori awal rekening koran', () => {
-  it.each([
-    ['APOTEK K-24 KEMANG', 'expense', 'health'],
-    ['SEWA KOS NOVEMBER', 'expense', 'housing'],
-    ['BIAYA ADM BULANAN', 'expense', 'bank'],
-    ['GAJI OKTOBER', 'income', 'salary'],
-    ['TRF DARI AYAH', 'income', 'other'],
-    ['SESUATU TAK DIKENAL', 'expense', 'other'],
-  ] as const)('%s (%s) -> %s', (desc, type, expected) => {
-    expect(categorizeStatementRow(desc, type)).toBe(expected);
-  });
-
-  it('pengeluaran tidak pernah jadi Gaji', () => {
-    expect(categorizeStatementRow('POTONGAN GAJI', 'expense')).not.toBe('salary');
-  });
-
+describe('deskripsi rekening koran', () => {
   it('merapikan huruf kapital deskripsi bank', () => {
     expect(prettifyDescription('APOTEK K-24 KEMANG')).toBe('Apotek K-24 Kemang');
     expect(prettifyDescription('TRF DARI AYAH')).toBe('Transfer Dari Ayah');

@@ -56,7 +56,3 @@ export function remaining(plan: Plan, key: QuotaKey, used: number): number | nul
   return limit === null ? null : Math.max(0, limit - used);
 }
 
-/** Fitur yang di paket Free terkunci sepenuhnya (ditandai badge PRO). */
-export function isProOnly(key: QuotaKey): boolean {
-  return QUOTAS.free[key] === 0;
-}

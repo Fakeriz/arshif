@@ -1,4 +1,4 @@
-import { Bell, Info, MoreHorizontal, Search, Share2 } from 'lucide-react-native';
+import { Info, Search } from 'lucide-react-native';
 import { useEffect, useState, type ReactNode } from 'react';
 import { StyleSheet, View } from 'react-native';
 
@@ -24,15 +24,11 @@ import {
   RollingNumber,
   Select,
   Slider,
-  SpeedDial,
-  StarRating,
   StepList,
   Stepper,
   Toggle,
   Tooltip,
   TypingDots,
-  UploadProgress,
-  VoicePlayer,
   dateKey,
 } from '@/components/ui';
 import { formatCompact, formatMoney } from '@/lib/money';
@@ -64,7 +60,6 @@ export function MotionChoiceSection() {
   const [accounts, setAccounts] = useState<string[]>(['Ringgit', 'Tunai']);
   const [currency, setCurrency] = useState<'IDR' | 'MYR' | 'TRY'>('MYR');
   const [group, setGroup] = useState<'category' | 'account' | 'currency' | 'date'>('currency');
-  const [stars, setStars] = useState(4);
   const [steps, setSteps] = useState(1);
 
   return (
@@ -110,12 +105,6 @@ export function MotionChoiceSection() {
           { key: 'date', label: 'Tanggal' },
         ]}
       />
-      <Card>
-        <View style={styles.center}>
-          <AppText variant="h3">Ringkasan minggu ini membantu?</AppText>
-          <StarRating value={stars} onChange={setStars} accessibilityLabel="Nilai ringkasan minggu ini" />
-        </View>
-      </Card>
       <Card>
         <StepList steps={['Foto struk', 'Cek jumlah', 'Simpan']} done={steps} onChange={setSteps} />
       </Card>
@@ -279,40 +268,19 @@ const FAQ = [
 export function MotionFeedbackSection() {
   const { colors } = useTheme();
   const [phase, setPhase] = useState<'idle' | 'loading' | 'done'>('idle');
-  const [upload, setUpload] = useState(1);
   const [faq, setFaq] = useState<(typeof FAQ)[number]['key'] | null>('scan');
-  const [dial, setDial] = useState(true);
-  const [alerts, setAlerts] = useState(3);
   const [people, setPeople] = useState(['Maya', 'Lutfi', 'Sari']);
-  const [playing, setPlaying] = useState(false);
-  const [pos, setPos] = useState(0.35);
 
   useEffect(() => {
     if (phase === 'idle') return;
     const id = setTimeout(() => setPhase(phase === 'loading' ? 'done' : 'idle'), phase === 'loading' ? 1200 : 1600);
     return () => clearTimeout(id);
   }, [phase]);
-  useEffect(() => {
-    if (upload >= 1) return;
-    const id = setTimeout(() => setUpload((p) => Math.min(1, p + 0.07)), 110);
-    return () => clearTimeout(id);
-  }, [upload]);
-  useEffect(() => {
-    if (!playing) return;
-    const id = setInterval(() => setPos((p) => (p + 0.01 >= 1 ? 0 : p + 0.01)), 140);
-    return () => clearInterval(id);
-  }, [playing]);
 
   const pool = ['Maya', 'Lutfi', 'Sari', 'Jonas', 'Putri', 'Dimas'];
   return (
-    <Section index="Gerak · Umpan balik" title="Status, unggah & aksi" note="Setiap aksi dijawab: ikon berganti dengan letupan, aksi muncul bergiliran, isi lipatan masuk dengan geser.">
+    <Section index="Gerak · Umpan balik" title="Status & aksi" note="Setiap aksi dijawab: ikon berganti dengan letupan, isi lipatan masuk dengan geser.">
       <Button label={phase === 'idle' ? 'Simpan Rp 84.000' : phase === 'loading' ? 'Menyimpan…' : 'Tersimpan'} loading={phase === 'loading'} done={phase === 'done'} onPress={() => setPhase('loading')} fullWidth />
-      <Card onPress={() => setUpload(0)} accessibilityLabel="Ulangi unggah struk">
-        <UploadProgress fileName="struk-kedai-ibu.jpg" progress={upload} />
-      </Card>
-      <Card>
-        <VoicePlayer title="Catatan suara" subtitle="“Kopi dua puluh lima ribu, tunai”" playing={playing} onToggle={() => setPlaying((p) => !p)} progress={pos} durationSec={14} />
-      </Card>
       <Row>
         <Card style={styles.half}>
           <View style={styles.center}>
@@ -336,15 +304,6 @@ export function MotionFeedbackSection() {
           </View>
         </Card>
       </Row>
-      <SpeedDial
-        open={dial}
-        onToggle={() => setDial((o) => !o)}
-        actions={[
-          { key: 'share', label: 'Bagikan ringkasan', icon: Share2, onPress: () => undefined },
-          { key: 'alerts', label: 'Pengingat', icon: Bell, badge: alerts, onPress: () => setAlerts((a) => (a === 0 ? 3 : 0)) },
-          { key: 'more', label: 'Lainnya', icon: MoreHorizontal, onPress: () => undefined },
-        ]}
-      />
       <Card padding="lg">
         <Accordion items={[...FAQ]} value={faq} onChange={setFaq} />
       </Card>

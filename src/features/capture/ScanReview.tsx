@@ -10,14 +10,14 @@ import { discountsTotal, isLowConfidence, itemsTotal, subtotalMismatch, totalChe
 import { newId } from '@/lib/uuid';
 import { useActiveAccountId, type AccountWithBalance } from '@/state/AppStore';
 import { space } from '@/theme/tokens';
+import { isYmd, todayYmd } from '@/lib/dates';
 
 import type { ScanResult } from '../../../supabase/functions/_shared/contracts';
 import { AccountPicker, CategoryPicker } from '../transactions/pickers';
 import { ReceiptCard, ReceiptDetailsCard } from '../transactions/ReceiptSections';
-import { localHm, localYmd } from './clock';
+import { localHm } from './clock';
 
 const pct = (c: number) => `${Math.round(c * 100)}%`;
-const YMD = /^\d{4}-\d{2}-\d{2}$/;
 
 type Props = {
   result: ScanResult;
@@ -57,7 +57,7 @@ export function ScanReview({ result: r, receiptPath, accounts, existing, onSave,
   const conf = (c: number) => (isLowConfidence(c) ? t('capture.confidence', { pct: pct(c) }) : undefined);
   const saving = useSaveThen();
   const [merchant, setMerchant] = useState(r.merchant);
-  const [date, setDate] = useState(r.date ?? localYmd());
+  const [date, setDate] = useState(r.date ?? todayYmd());
   const [total, setTotal] = useState<number | null>(r.total);
   const [category, setCategory] = useState<string | null>(r.categoryKey);
   const activeId = useActiveAccountId();
@@ -71,7 +71,7 @@ export function ScanReview({ result: r, receiptPath, accounts, existing, onSave,
   const mismatch = r.subtotal !== null && items.length > 0 ? subtotalMismatch(items, r.subtotal) : { mismatch: false, diff: 0 };
   const errors = {
     merchant: tried && !merchant.trim() ? t('capture.scanReview.merchantError') : undefined,
-    date: tried && !YMD.test(date) ? t('capture.scanReview.dateError') : undefined,
+    date: tried && !isYmd(date) ? t('capture.scanReview.dateError') : undefined,
     total: tried && (!total || total <= 0) ? t('capture.scanReview.totalError') : undefined,
   };
   const money = (v: number) => formatMoney(v, r.currency);
@@ -80,7 +80,7 @@ export function ScanReview({ result: r, receiptPath, accounts, existing, onSave,
 
   const save = () => {
     setTried(true);
-    if (!merchant.trim() || !YMD.test(date) || !total || total <= 0 || !accountId || !category) return;
+    if (!merchant.trim() || !isYmd(date) || !total || total <= 0 || !accountId || !category) return;
     saving.run(() =>
       onSave({
         id: existing?.id ?? newId(),

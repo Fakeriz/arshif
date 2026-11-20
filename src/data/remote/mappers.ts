@@ -36,7 +36,8 @@ export type TransactionRow = {
   payment_method?: string | null; store_address?: string | null; store_tax_id?: string | null;
 };
 
-const optNum = (v: unknown): number | undefined => (v == null || v === '' || !Number.isFinite(Number(v)) ? undefined : Number(v));
+export const opt = <T,>(v: T | null | undefined): T | undefined => (v === null || v === undefined ? undefined : v);
+export const optNum = (v: unknown): number | undefined => (v == null || v === '' || !Number.isFinite(Number(v)) ? undefined : Number(v));
 const optStr = (v: unknown): string | undefined => (typeof v === 'string' && v ? v : undefined);
 const objects = (v: unknown): Record<string, unknown>[] => (Array.isArray(v) ? v.filter((x) => x && typeof x === 'object') : []);
 

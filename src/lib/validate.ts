@@ -1,5 +1,6 @@
 import type { TxType } from '@/data/types';
 import type { MsgKey } from '@/i18n';
+import { isYmd } from './dates';
 
 export type TxDraft = {
   type: TxType;
@@ -25,6 +26,6 @@ export function validateTx(d: TxDraft): TxErrors {
     if (!d.merchant.trim()) e.merchant = d.type === 'income' ? 'domain.validation.incomeSource' : 'domain.validation.merchant';
     if (!d.categoryKey) e.categoryKey = 'domain.validation.category';
   }
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(d.date)) e.date = 'domain.validation.date';
+  if (!isYmd(d.date)) e.date = 'domain.validation.date';
   return e;
 }
