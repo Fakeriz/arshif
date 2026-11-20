@@ -15,6 +15,7 @@ import { Platform, StyleSheet } from 'react-native';
 import Animated, { FadeIn } from 'react-native-reanimated';
 
 import { PaywallProvider } from '@/components/shell/Paywall';
+import { ScanSourceProvider } from '@/components/shell/ScanSourceSheet';
 import { BootScreen, SuspendedScreen } from '@/components/shell/BootScreen';
 import { readReturnTo } from '@/lib/returnTo';
 import { BlurTargetArea, BlurTargetScope, ToastProvider } from '@/components/ui';
@@ -71,6 +72,7 @@ function Shell() {
             <AssetsProvider>
               <InvoicesProvider>
                 <PaywallProvider>
+                  <ScanSourceProvider>
                   <SmartLogProvider>
                     <PurchasesBridge />
                     <StatusBar style={scheme === 'dark' ? 'light' : 'dark'} />
@@ -79,6 +81,7 @@ function Shell() {
                       <Routes />
                     </BlurTargetArea>
                   </SmartLogProvider>
+                  </ScanSourceProvider>
                 </PaywallProvider>
               </InvoicesProvider>
             </AssetsProvider>

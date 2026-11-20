@@ -40,6 +40,23 @@ const capture = {
     permissionTitle: 'Akses kamera belum diizinkan',
     permissionMessage: 'Izinkan kamera di pengaturan ponsel, atau pilih foto struk dari galeri.',
   },
+  source: {
+    title: 'Scan struk',
+    subtitle: 'Pilih cara memasukkan struk. AI membaca toko, tanggal, total, dan item.',
+    camera: 'Ambil foto',
+    cameraSub: 'Foto struk dengan kamera',
+    gallery: 'Pilih dari galeri',
+    gallerySub: 'Satu foto struk yang sudah ada',
+    multi: 'Beberapa struk',
+    multiSub: 'Maks {count} foto, jadi {count} transaksi · 1 kuota scan per struk',
+    multiSub_one: 'Maks {count} foto · 1 kuota scan per struk',
+    pdf: 'Import PDF struk',
+    pdfSub: 'Struk elektronik dari e-commerce, ojol, atau email · 1 kuota scan',
+    partialFailed: '{count} struk tidak terbaca. Kuotanya tidak terpotong.',
+    partialFailed_one: '{count} struk tidak terbaca. Kuotanya tidak terpotong.',
+    queueLeft: '{count} lagi',
+    queueLeft_one: '{count} lagi',
+  },
   scanReview: {
     title: 'Cek hasil scan',
     savedTitle: 'Struk tersimpan',
@@ -153,6 +170,7 @@ const capture = {
     loading: 'Memuat foto struk',
     failed: 'Foto struk gagal dimuat. Coba buka lagi nanti.',
     a11y: 'Foto struk {merchant}',
+    openPdf: 'Buka PDF struk',
   },
 };
 

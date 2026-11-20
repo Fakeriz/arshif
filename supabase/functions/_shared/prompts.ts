@@ -84,7 +84,7 @@ export const SCAN_SCHEMA: GeminiSchema = {
 };
 
 export function scanPrompt(): string {
-  return `You read a photographed shopping receipt (Indonesia, Malaysia, Turkey or elsewhere) and extract ALL of it. Read the whole receipt from top to bottom, including the parts below the subtotal.
+  return `You read a shopping receipt (a photo, or a PDF e-receipt/invoice) (Indonesia, Malaysia, Turkey or elsewhere) and extract ALL of it. Read the whole receipt from top to bottom, including the parts below the subtotal.
 Rules:
 - Amounts: ${AMOUNT} Indonesian receipts use "." as thousands separator ("Rp 45.000" means 45000). Turkish uses "," as decimal ("₺350,00" means 350.00, "*259,90" means 259.90; the "*" is a print marker, ignore it). Malaysian "RM 12.50" means 12.50.
 - currency: ISO code. Rp/IDR -> IDR, RM -> MYR, ₺/TL -> TRY, $ -> USD, S$ -> SGD, € -> EUR.

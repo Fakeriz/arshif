@@ -41,6 +41,23 @@ const capture: Messages['capture'] = {
     permissionTitle: 'Akses kamera belum dibenarkan',
     permissionMessage: 'Benarkan kamera dalam tetapan telefon, atau pilih gambar resit dari galeri.',
   },
+  source: {
+    title: 'Imbas resit',
+    subtitle: 'Pilih cara menambah resit. AI membaca kedai, tarikh, jumlah, dan item.',
+    camera: 'Ambil foto',
+    cameraSub: 'Foto resit dengan kamera',
+    gallery: 'Pilih dari galeri',
+    gallerySub: 'Satu foto resit yang sedia ada',
+    multi: 'Beberapa resit',
+    multiSub: 'Maks {count} foto, jadi {count} transaksi · 1 kuota imbasan setiap resit',
+    multiSub_one: 'Maks {count} foto · 1 kuota imbasan setiap resit',
+    pdf: 'Import PDF resit',
+    pdfSub: 'E-resit daripada beli-belah, e-hailing, atau e-mel · 1 kuota imbasan',
+    partialFailed: '{count} resit tidak dapat dibaca. Kuota tidak ditolak.',
+    partialFailed_one: '{count} resit tidak dapat dibaca. Kuota tidak ditolak.',
+    queueLeft: '{count} lagi',
+    queueLeft_one: '{count} lagi',
+  },
   scanReview: {
     title: 'Semak hasil imbasan',
     savedTitle: 'Resit disimpan',
@@ -154,6 +171,7 @@ const capture: Messages['capture'] = {
     loading: 'Memuatkan gambar resit',
     failed: 'Gambar resit gagal dimuatkan. Cuba buka semula nanti.',
     a11y: 'Gambar resit {merchant}',
+    openPdf: 'Buka PDF resit',
   },
 };
 

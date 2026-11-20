@@ -41,6 +41,23 @@ const capture: Messages['capture'] = {
     permissionTitle: 'Camera access not allowed',
     permissionMessage: 'Allow the camera in your phone settings, or choose a receipt photo from your gallery.',
   },
+  source: {
+    title: 'Scan receipt',
+    subtitle: 'Choose how to add the receipt. AI reads the store, date, total, and items.',
+    camera: 'Take photo',
+    cameraSub: 'Photograph the receipt with your camera',
+    gallery: 'Choose from gallery',
+    gallerySub: 'One receipt photo you already have',
+    multi: 'Multiple receipts',
+    multiSub: 'Up to {count} photos, saved as {count} transactions · 1 scan quota each',
+    multiSub_one: 'Up to {count} photo · 1 scan quota each',
+    pdf: 'Import PDF receipt',
+    pdfSub: 'E-receipt from shopping, ride apps, or email · 1 scan quota',
+    partialFailed: '{count} receipts could not be read. No quota was used for them.',
+    partialFailed_one: '{count} receipt could not be read. No quota was used for it.',
+    queueLeft: '{count} more',
+    queueLeft_one: '{count} more',
+  },
   scanReview: {
     title: 'Check scan result',
     savedTitle: 'Receipt saved',
@@ -154,6 +171,7 @@ const capture: Messages['capture'] = {
     loading: 'Loading receipt photo',
     failed: 'Could not load the receipt photo. Try again later.',
     a11y: 'Receipt photo for {merchant}',
+    openPdf: 'Open receipt PDF',
   },
 };
 

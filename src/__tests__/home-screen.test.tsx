@@ -5,6 +5,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import HomeScreen from '@/app/(tabs)/index';
 import { PaywallProvider } from '@/components/shell/Paywall';
+import { ScanSourceProvider } from '@/components/shell/ScanSourceSheet';
 import { ToastProvider } from '@/components/ui';
 import { sampleState } from '@/data/sample-state';
 import { resetSessionDismiss } from '@/features/home/sessionDismiss';
@@ -34,9 +35,9 @@ const home = () =>
             <AppStoreProvider preset={{ ...base, notifPrefs: { ...base.notifPrefs, weekly_recap: true } }}>
               <PlanningProvider preset={{ goals: [], deposits: [], bills: [], debts: [], payments: [], subscriptions: [], splits: [] }}>
                 <AssetsProvider preset={{ assets: [], prices: {}, snapshots: [] }}>
-                  <PaywallProvider>
+                  <PaywallProvider><ScanSourceProvider>
                     <HomeScreen />
-                  </PaywallProvider>
+                  </ScanSourceProvider></PaywallProvider>
                 </AssetsProvider>
               </PlanningProvider>
             </AppStoreProvider>

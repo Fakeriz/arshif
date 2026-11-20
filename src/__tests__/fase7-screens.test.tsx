@@ -10,6 +10,7 @@ import { CurrencySheet } from '@/components/shell/CurrencySheet';
 import { moreOptions } from '@/components/shell/captureOptions';
 import { AskTab } from '@/features/coach/AskTab';
 import { PaywallProvider } from '@/components/shell/Paywall';
+import { ScanSourceProvider } from '@/components/shell/ScanSourceSheet';
 import { ToastProvider } from '@/components/ui';
 import type { Bill } from '@/data/planning';
 import { sampleState } from '@/data/sample-state';
@@ -59,10 +60,10 @@ function wrap(ui: ReactNode, state: Partial<AppState> = {}, assets: Asset[] = []
             <AppStoreProvider preset={{ ...base, ...state }}>
               <PlanningProvider preset={{ goals: [], deposits: [], bills: [], debts: [], payments: [], subscriptions: [], splits: [] }}>
                 <AssetsProvider preset={{ assets, prices, snapshots: [] }}>
-                  <PaywallProvider>
+                  <PaywallProvider><ScanSourceProvider>
                     <Probe />
                     {ui}
-                  </PaywallProvider>
+                  </ScanSourceProvider></PaywallProvider>
                 </AssetsProvider>
               </PlanningProvider>
             </AppStoreProvider>

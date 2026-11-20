@@ -7,6 +7,7 @@ import HomeScreen from '@/app/(tabs)/index';
 import AsetScreen from '@/app/(tabs)/aset';
 import AssetDetail from '@/app/aset/[id]';
 import { PaywallProvider } from '@/components/shell/Paywall';
+import { ScanSourceProvider } from '@/components/shell/ScanSourceSheet';
 import { ToastProvider } from '@/components/ui';
 import type { Asset, AssetPrice } from '@/data/assets';
 import type { Debt } from '@/data/planning';
@@ -58,7 +59,7 @@ function wrap(ui: ReactNode, opts: { assets?: Partial<AssetsData>; planning?: Pa
             <AppStoreProvider preset={{ ...base, ...opts.state }}>
               <PlanningProvider preset={{ ...NO_PLANNING, ...opts.planning }}>
                 <AssetsProvider preset={{ assets: [], prices: {}, snapshots: [], ...opts.assets }}>
-                  <PaywallProvider>{ui}</PaywallProvider>
+                  <PaywallProvider><ScanSourceProvider>{ui}</ScanSourceProvider></PaywallProvider>
                 </AssetsProvider>
               </PlanningProvider>
             </AppStoreProvider>

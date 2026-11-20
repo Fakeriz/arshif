@@ -10,6 +10,7 @@ import { radius, space } from '@/theme/tokens';
 
 import { captureOptions, type CaptureKey, type MoreOption } from './captureOptions';
 import { usePaywall } from './Paywall';
+import { useScanSource } from './ScanSourceSheet';
 
 /** Satu kelompok di sheet: judul seksi (opsional) + cara mencatat dan/atau entri fitur lain. */
 export type CaptureSection = { key: string; title?: string; keys?: CaptureKey[]; extras?: MoreOption[] };
@@ -27,6 +28,7 @@ type CaptureSheetProps = {
 export function CaptureSheet({ visible, onClose, title, subtitle, sections }: CaptureSheetProps) {
   const router = useRouter();
   const paywall = usePaywall();
+  const scanSource = useScanSource();
   const t = useT();
   const { colors } = useTheme();
   const all = captureOptions(useLimits(), t);
@@ -62,6 +64,7 @@ export function CaptureSheet({ visible, onClose, title, subtitle, sections }: Ca
               onPress={() => {
                 onClose();
                 if (o.limited) paywall(o.reason);
+                else if (o.key === 'scan') scanSource();
                 else openCapture(o.href, (h) => router.push(h));
               }}
             />

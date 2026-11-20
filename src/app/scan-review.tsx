@@ -6,7 +6,7 @@ import { ScreenHeader } from '@/components/shell/ScreenHeader';
 import { EmptyState, useToast } from '@/components/ui';
 import { openCapture } from '@/features/capture/scanLaunch';
 import { discardPrivate } from '@/data/remote/upload';
-import { clearHandoff, peekHandoff } from '@/features/capture/handoff';
+import { clearHandoff, peekHandoff, putHandoff } from '@/features/capture/handoff';
 import { ScanReview } from '@/features/capture/ScanReview';
 import { useT } from '@/i18n';
 import { formatMoney } from '@/lib/money';
@@ -25,19 +25,25 @@ export default function ScanReviewScreen() {
   const [data] = useState(() => peekHandoff('scan'));
   const existing = data?.txId ? state.transactions.find((tx) => tx.id === data.txId) : undefined;
   const saved = useRef(false);
+  const [queueLeft] = useState(() => (data?.txId ? 0 : (peekHandoff('scanQueue')?.length ?? 0)));
+  const retaking = useRef(false);
 
-  // Keluar dari review tanpa menyimpan: foto struk baru tidak dipakai, jangan dibiarkan di storage.
-  // Foto milik transaksi yang dibaca ulang tetap disimpan.
+  // Keluar dari review tanpa menyimpan: foto struk baru (dan sisa antrean Beberapa struk) tidak dipakai, jangan dibiarkan
+  // di storage. Foto milik transaksi yang dibaca ulang tetap disimpan. Foto ulang: antrean tetap menunggu.
   useEffect(() => {
     const path = data?.txId ? undefined : data?.receiptPath;
     return () => {
-      if (path && !saved.current) void discardPrivate('receipts', path);
+      if (saved.current) return;
+      if (path) void discardPrivate('receipts', path);
+      if (retaking.current) return;
+      for (const q of peekHandoff('scanQueue') ?? []) void discardPrivate('receipts', q.receiptPath);
+      clearHandoff('scanQueue');
     };
   }, [data]);
 
   return (
     <Screen>
-      <ScreenHeader title={t('capture.scanReview.title')} />
+      <ScreenHeader title={queueLeft ? `${t('capture.scanReview.title')} · ${t('capture.source.queueLeft', { count: queueLeft })}` : t('capture.scanReview.title')} />
       {data ? (
         <ScanReview
           result={data.result}
@@ -46,6 +52,7 @@ export default function ScanReviewScreen() {
           existing={existing}
           onRetake={() => {
             clearHandoff('scan');
+            retaking.current = true;
             if (existing) goBack(router);
             else openCapture('/scan' as const, (h) => router.replace(h));
           }}
@@ -63,6 +70,17 @@ export default function ScanReviewScreen() {
             }
             dispatch({ type: 'tx/add', tx });
             show({ tone: 'success', title: t('capture.scanReview.savedTitle'), message: t('capture.scanReview.savedMessage', { merchant: tx.merchant, amount: formatMoney(tx.amount, tx.currency) }) });
+            // Beberapa struk: lanjut ke struk berikutnya (layar baru lewat replace, jadi state review mulai dari awal).
+            const [next, ...rest] = peekHandoff('scanQueue') ?? [];
+            if (next && navigation.isFocused()) {
+              putHandoff('scan', next);
+              putHandoff('scanQueue', rest);
+              router.replace({ pathname: '/scan-review', params: { left: rest.length } });
+              return;
+            }
+            // Sudah keluar sendiri sebelum lanjut: sisa antrean tidak dipakai.
+            for (const q of next ? [next, ...rest] : []) void discardPrivate('receipts', q.receiptPath);
+            clearHandoff('scanQueue');
             if (navigation.isFocused()) router.replace('/transaksi');
           }}
         />

@@ -9,7 +9,8 @@ import { SCAN_SCHEMA, scanPrompt } from '../_shared/prompts.ts';
 
 const MAX_BYTES = 8 * 1024 * 1024; // FR-OCR-1
 
-const MIME: Record<string, string> = { jpg: 'image/jpeg', jpeg: 'image/jpeg', png: 'image/png', heic: 'image/heic', webp: 'image/webp' };
+// pdf = struk elektronik (Import PDF struk); Gemini membaca PDF inline seperti gambar.
+const MIME: Record<string, string> = { jpg: 'image/jpeg', jpeg: 'image/jpeg', png: 'image/png', heic: 'image/heic', webp: 'image/webp', pdf: 'application/pdf' };
 
 serve(async (req) => {
   const user = await requireUser(req);

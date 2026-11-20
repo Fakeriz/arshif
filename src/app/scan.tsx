@@ -1,20 +1,20 @@
 import * as ImagePicker from 'expo-image-picker';
 import { Camera, Images, X } from 'lucide-react-native';
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { Platform, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ForceDark } from '@/components/shell/ForceDark';
 import { usePaywall } from '@/components/shell/Paywall';
-import { AppText, Button, EmptyState, GlassView, Icon, PressableScale } from '@/components/ui';
+import { AppText, Button, EmptyState, GlassView, Icon, PressableScale, useToast } from '@/components/ui';
 import { invokeFn } from '@/data/remote/functions';
 import { discardPrivate, uploadPrivate } from '@/data/remote/upload';
 import { CaptureError, failureOf, type CaptureFailure } from '@/features/capture/CaptureError';
-import { putHandoff } from '@/features/capture/handoff';
+import { peekHandoff, putHandoff } from '@/features/capture/handoff';
 import { compressReceipt, MAX_RECEIPT_BYTES } from '@/features/capture/image';
 import { ProcessingView } from '@/features/capture/ProcessingView';
-import { takePendingPick } from '@/features/capture/scanLaunch';
+import { pickReceipts, SCAN_SOURCES, takePendingPick, type PickedReceipt, type ScanSource } from '@/features/capture/scanLaunch';
 import { useI18n } from '@/i18n';
 import { useStore } from '@/state/AppStore';
 import { useLimits } from '@/state/limits';
@@ -27,7 +27,8 @@ import { DocScannerNative } from '../../modules/doc-scanner';
 import { FUNCTIONS, ScanResult } from '../../supabase/functions/_shared/contracts';
 
 /** launching = kamera/pemindai sedang terbuka di atas layar ini; choose = tombol ambil foto / pilih dari galeri. */
-type Phase = { kind: 'launching' } | { kind: 'choose' } | { kind: 'uploading' } | { kind: 'processing' } | { kind: 'failed'; failure: CaptureFailure };
+/** n/total: struk ke-n dari beberapa struk (multi). */
+type Phase = { kind: 'launching' } | { kind: 'choose' } | { kind: 'uploading'; n: number; total: number } | { kind: 'processing'; n: number; total: number } | { kind: 'failed'; failure: CaptureFailure };
 
 /**
  * Pemindai dokumen (FR-OCR-6), deteksi tepi + potong otomatis lewat modul native `doc-scanner`:
@@ -66,52 +67,80 @@ function ScanInner() {
   const { userId, refreshUsage } = useStore();
   const limits = useLimits();
   const paywall = usePaywall();
+  const { show } = useToast();
+  const params = useLocalSearchParams<{ src?: string }>();
+  // Tanpa src (Foto ulang, layar lama): kamera.
+  const source: ScanSource = SCAN_SOURCES.find((s) => s === params.src) ?? 'camera';
   // Web: foto yang sedang diambil dari ketukan "Struk OCR"; tanpa itu (mis. halaman dimuat ulang) tampil tombol pilihan.
   const [webPick] = useState(takePendingPick);
   const [phase, setPhase] = useState<Phase>(autoLaunch || webPick ? { kind: 'launching' } : { kind: 'choose' });
 
-  /** Gambar yang sudah dipindai/dipilih masuk pipeline OCR yang sama: kompres, unggah, Gemini di server. */
-  const process = async (asset: { uri: string; width?: number }) => {
+  /** Unggah + baca satu struk lewat pipeline OCR yang sama (Gemini di server). Foto dikompres dulu; PDF apa adanya. */
+  const scanOne = async (file: PickedReceipt, n: number, total: number) => {
     let receiptPath: string | null = null;
     try {
-      if (!userId) return setPhase({ kind: 'failed', failure: 'session' });
-      haptic('success');
-      setPhase({ kind: 'uploading' });
-      const uri = await compressReceipt(asset.uri, asset.width);
-      receiptPath = await uploadPrivate({ bucket: 'receipts', userId, uri, ext: 'jpg', contentType: 'image/jpeg', maxBytes: MAX_RECEIPT_BYTES });
-      setPhase({ kind: 'processing' });
+      setPhase({ kind: 'uploading', n, total });
+      const uri = file.pdf ? file.uri : await compressReceipt(file.uri, file.width);
+      const [ext, contentType] = file.pdf ? ['pdf', 'application/pdf'] : ['jpg', 'image/jpeg'];
+      receiptPath = await uploadPrivate({ bucket: 'receipts', userId: userId!, uri, ext, contentType, maxBytes: MAX_RECEIPT_BYTES });
+      setPhase({ kind: 'processing', n, total });
       const result = await invokeFn(FUNCTIONS.scan, { path: receiptPath, lang }, ScanResult);
-      refreshUsage();
-      putHandoff('scan', { result, receiptPath });
-      router.replace('/scan-review');
+      return { result, receiptPath };
     } catch (e) {
       if (receiptPath) void discardPrivate('receipts', receiptPath);
-      refreshUsage();
-      const failure = failureOf(e);
-      if (failure === 'quota') {
-        setPhase({ kind: 'choose' });
-        paywall(t('capture.scan.limitReason'));
-      } else setPhase({ kind: 'failed', failure });
+      throw e;
     }
+  };
+
+  /**
+   * Beberapa struk dibaca berurutan (kuota dihitung server satu per satu). Yang gagal dilewati dan kuotanya tidak terpotong;
+   * yang berhasil dicek satu per satu di layar review (antrean di handoff).
+   */
+  const process = async (files: PickedReceipt[]) => {
+    if (!userId) return setPhase({ kind: 'failed', failure: 'session' });
+    haptic('success');
+    const done: { result: ScanResult; receiptPath: string }[] = [];
+    let firstFailure: CaptureFailure | null = null;
+    for (const [i, file] of files.entries()) {
+      try {
+        done.push(await scanOne(file, i + 1, files.length));
+      } catch (e) {
+        firstFailure ??= failureOf(e);
+        if (firstFailure === 'quota' || firstFailure === 'session') break;
+      }
+    }
+    refreshUsage();
+    const [first, ...rest] = done;
+    if (!first) {
+      if (firstFailure === 'quota') {
+        setPhase({ kind: 'choose' });
+        return paywall(t('capture.scan.limitReason'));
+      }
+      return setPhase({ kind: 'failed', failure: firstFailure ?? 'server' });
+    }
+    if (done.length < files.length) show({ tone: 'error', title: t('capture.source.partialFailed', { count: files.length - done.length }) });
+    putHandoff('scan', { result: first.result, receiptPath: first.receiptPath });
+    // Foto ulang di tengah antrean: struk baru dicek dulu, antrean lama tetap menunggu di belakangnya.
+    putHandoff('scanQueue', [...rest, ...(peekHandoff('scanQueue') ?? [])]);
+    router.replace('/scan-review');
   };
 
   /**
    * Batal. Pemindai ML Kit (Android) sudah punya galeri di dalamnya, jadi batal = kembali ke layar sebelumnya.
    * Pemindai iOS dan kamera bawaan tidak punya galeri: tampilkan pilihan ambil foto / galeri.
    */
-  const cancelled = (hadGallery: boolean) => (autoLaunch && hadGallery ? goBack(router) : setPhase({ kind: 'choose' }));
+  const cancelled = (hadGallery: boolean) => (autoLaunch && (hadGallery || source !== 'camera') ? goBack(router) : setPhase({ kind: 'choose' }));
 
-  const take = async (source: 'camera' | 'gallery') => {
+  const take = async (from: ScanSource) => {
     try {
       // Web: izin kamera diurus browser; await di sini memutus ketukan pengguna sehingga kamera tidak terbuka.
-      if (source === 'camera' && Platform.OS !== 'web') {
+      if (from === 'camera' && Platform.OS !== 'web') {
         const perm = await ImagePicker.requestCameraPermissionsAsync();
         if (!perm.granted) return setPhase({ kind: 'failed', failure: 'permission' });
       }
-      const opts: ImagePicker.ImagePickerOptions = { mediaTypes: ['images'], quality: 1 };
-      const picked = source === 'camera' ? await ImagePicker.launchCameraAsync(opts) : await ImagePicker.launchImageLibraryAsync(opts);
-      if (picked.canceled || !picked.assets[0]) return cancelled(false);
-      await process(picked.assets[0]);
+      const files = await pickReceipts(from, limits.scanLeft ?? undefined);
+      if (!files.length) return cancelled(false);
+      await process(files);
     } catch (e) {
       setPhase({ kind: 'failed', failure: failureOf(e) });
     }
@@ -128,7 +157,7 @@ function ScanInner() {
       return take('camera');
     }
     if (!uri) return cancelled(Platform.OS === 'android');
-    await process({ uri });
+    await process([{ uri }]);
   };
 
   const launched = useRef(false);
@@ -137,13 +166,13 @@ function ScanInner() {
     if (webPick) {
       launched.current = true;
       webPick
-        .then((picked) => (picked.canceled || !picked.assets[0] ? cancelled(false) : process(picked.assets[0])))
+        .then((files) => (files.length ? process(files) : cancelled(false)))
         .catch((e) => setPhase({ kind: 'failed', failure: failureOf(e) }));
       return;
     }
     if (!autoLaunch) return;
     launched.current = true;
-    void openCamera();
+    void (source === 'camera' ? openCamera() : take(source));
     // Sekali saat layar dibuka; ketukan "Foto ulang" memanggil openCamera sendiri.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [limits.scan]);
@@ -154,7 +183,7 @@ function ScanInner() {
   } else if (phase.kind === 'uploading' || phase.kind === 'processing') {
     center = (
       <ProcessingView
-        title={phase.kind === 'uploading' ? t('capture.scan.uploading') : t('capture.scan.processingTitle')}
+        title={`${phase.kind === 'uploading' ? t('capture.scan.uploading') : t('capture.scan.processingTitle')}${phase.total > 1 ? ` (${phase.n}/${phase.total})` : ''}`}
         message={t('capture.scan.processingMessage')}
         steps={[t('capture.steps.uploadPhoto'), t('capture.steps.readReceipt'), t('capture.steps.review')]}
         done={phase.kind === 'uploading' ? 0 : 1}

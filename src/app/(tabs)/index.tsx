@@ -7,6 +7,7 @@ import { captureOptions, moreOptions } from '@/components/shell/captureOptions';
 import { usePaywall } from '@/components/shell/Paywall';
 import { Screen } from '@/components/shell/Screen';
 import { EmptyState, PromoCard, QuickActions, SwipeDismiss } from '@/components/ui';
+import { useScanSource } from '@/components/shell/ScanSourceSheet';
 import { openCapture as launch } from '@/features/capture/scanLaunch';
 import { AccountDeck } from '@/features/home/AccountDeck';
 import { BalanceBlock } from '@/features/home/BalanceBlock';
@@ -42,7 +43,8 @@ export default function HomeScreen() {
   const moreItems = moreOptions(limits, t);
   const scan = capture.find((o) => o.key === 'scan')!;
   const voice = capture.find((o) => o.key === 'voice')!;
-  const openCapture = (o: typeof scan) => (o.limited ? paywall(o.reason) : launch(o.href, (h) => router.push(h)));
+  const scanSource = useScanSource();
+  const openCapture = (o: typeof scan) => (o.limited ? paywall(o.reason) : o.key === 'scan' ? scanSource() : launch(o.href, (h) => router.push(h)));
 
   if (demo === 'error') {
     return (

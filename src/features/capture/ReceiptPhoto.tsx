@@ -1,8 +1,9 @@
 import { Image } from 'expo-image';
 import { useEffect, useState } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { FileText } from 'lucide-react-native';
+import { Linking, StyleSheet, View } from 'react-native';
 
-import { AppText, Card, Skeleton } from '@/components/ui';
+import { AppText, Button, Card, Skeleton } from '@/components/ui';
 import { receiptUrl } from '@/data/remote/api';
 import { useT } from '@/i18n';
 import { radius, space } from '@/theme/tokens';
@@ -31,6 +32,9 @@ export function ReceiptPhoto({ path, merchant }: { path: string; merchant: strin
           <AppText variant="caption" tone="muted" accessibilityRole="alert">
             {t('capture.receipt.failed')}
           </AppText>
+        ) : state.url && path.endsWith('.pdf') ? (
+          // Struk PDF (Import PDF struk) tidak bisa dirender expo-image: buka di penampil PDF sistem/browser.
+          <Button label={t('capture.receipt.openPdf')} icon={FileText} variant="secondary" fullWidth onPress={() => void Linking.openURL(state.url!)} />
         ) : state.url ? (
           <Image
             source={{ uri: state.url }}

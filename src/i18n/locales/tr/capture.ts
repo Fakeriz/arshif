@@ -41,6 +41,23 @@ const capture: Messages['capture'] = {
     permissionTitle: 'Kamera izni verilmedi',
     permissionMessage: 'Telefon ayarlarından kameraya izin ver ya da galeriden bir fiş fotoğrafı seç.',
   },
+  source: {
+    title: 'Fiş tara',
+    subtitle: 'Fişi nasıl ekleyeceğini seç. Yapay zekâ mağazayı, tarihi, toplamı ve ürünleri okur.',
+    camera: 'Fotoğraf çek',
+    cameraSub: 'Fişi kamerayla çek',
+    gallery: 'Galeriden seç',
+    gallerySub: 'Elindeki tek bir fiş fotoğrafı',
+    multi: 'Birden fazla fiş',
+    multiSub: 'En fazla {count} fotoğraf, {count} işlem olur · fiş başına 1 tarama hakkı',
+    multiSub_one: 'En fazla {count} fotoğraf · fiş başına 1 tarama hakkı',
+    pdf: 'PDF fiş içe aktar',
+    pdfSub: 'Alışveriş, ulaşım uygulaması veya e-postadan e-fiş · 1 tarama hakkı',
+    partialFailed: '{count} fiş okunamadı. Tarama hakkından düşülmedi.',
+    partialFailed_one: '{count} fiş okunamadı. Tarama hakkından düşülmedi.',
+    queueLeft: '{count} kaldı',
+    queueLeft_one: '{count} kaldı',
+  },
   scanReview: {
     title: 'Tarama sonucunu kontrol et',
     savedTitle: 'Fiş kaydedildi',
@@ -154,6 +171,7 @@ const capture: Messages['capture'] = {
     loading: 'Fiş fotoğrafı yükleniyor',
     failed: 'Fiş fotoğrafı yüklenemedi. Daha sonra tekrar dene.',
     a11y: '{merchant} fiş fotoğrafı',
+    openPdf: 'Fiş PDF’ini aç',
   },
 };
 

@@ -7,11 +7,13 @@ import type { ImportResult, ScanResult, VoiceResult } from '../../../supabase/fu
 type Handoff = {
   /** txId terisi = baca ulang struk transaksi yang sudah ada (foto miliknya, jangan dihapus). */
   scan: { result: ScanResult; receiptPath: string; txId?: string } | null;
+  /** Struk berikutnya dari Beberapa struk, dicek setelah `scan` disimpan. */
+  scanQueue: { result: ScanResult; receiptPath: string }[] | null;
   voice: { result: VoiceResult } | null;
   import: { result: ImportResult; accountId: string } | null;
 };
 
-const box: Handoff = { scan: null, voice: null, import: null };
+const box: Handoff = { scan: null, scanQueue: null, voice: null, import: null };
 
 export function putHandoff<K extends keyof Handoff>(key: K, value: NonNullable<Handoff[K]>): void {
   box[key] = value;
