@@ -6,6 +6,8 @@ const tx = {
   filter: 'Filter',
   filterResult: 'Hasil filter',
   search: 'Cari transaksi',
+  searchResults: '{count} hasil',
+  searchResults_one: '{count} hasil',
   searchPlaceholder: 'Toko, catatan, kategori',
   errorTitle: 'Transaksi gagal dimuat',
   errorMessage: 'Periksa koneksimu lalu coba lagi. Datamu aman.',

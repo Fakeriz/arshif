@@ -7,6 +7,8 @@ const tx: Messages['tx'] = {
   filter: 'Filter',
   filterResult: 'Filtered total',
   search: 'Search transactions',
+  searchResults: '{count} results',
+  searchResults_one: '{count} result',
   searchPlaceholder: 'Store, note, category',
   errorTitle: 'Couldn’t load transactions',
   errorMessage: 'Check your connection and try again. Your data is safe.',

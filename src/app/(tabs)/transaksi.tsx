@@ -6,7 +6,7 @@ import { ScrollView, StyleSheet, View } from 'react-native';
 import { categoryLabel, useT, type MsgKey } from '@/i18n';
 import { Screen } from '@/components/shell/Screen';
 import { TabHeader } from '@/components/shell/TabHeader';
-import { AppText, Chip, CurrencyText, EmptyState, Input } from '@/components/ui';
+import { AppText, Badge, Chip, CurrencyText, EmptyState, Input, PopIn } from '@/components/ui';
 import { ReviewBanner } from '@/features/smartlog/ReviewBanner';
 import { MissingRatesBanner } from '@/features/fx/MissingRatesBanner';
 import { FilterSheet } from '@/features/transactions/FilterSheet';
@@ -87,6 +87,14 @@ export default function TransaksiScreen() {
             onChangeText={(query) => setFilter((f) => ({ ...f, query }))}
             returnKeyType="search"
             autoCorrect={false}
+            // Jumlah hasil muncul saat mengetik (Motion Kit "Pencarian"); abu bila tidak ada.
+            trailing={
+              <PopIn visible={(filter.query ?? '').trim().length >= 2} from={0.5}>
+                <View aria-live="polite">
+                  <Badge label={t('tx.searchResults', { count: shown.length })} tone={shown.length ? 'accent' : 'neutral'} />
+                </View>
+              </PopIn>
+            }
           />
           <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chips} contentContainerStyle={styles.chipRow}>
             {TYPES.map((ty) => (

@@ -7,6 +7,8 @@ const tx: Messages['tx'] = {
   filter: 'Tapis',
   filterResult: 'Hasil tapisan',
   search: 'Cari transaksi',
+  searchResults: '{count} hasil',
+  searchResults_one: '{count} hasil',
   searchPlaceholder: 'Kedai, nota, kategori',
   errorTitle: 'Transaksi gagal dimuatkan',
   errorMessage: 'Semak sambungan anda dan cuba lagi. Data anda selamat.',

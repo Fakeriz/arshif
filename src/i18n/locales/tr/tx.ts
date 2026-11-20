@@ -7,6 +7,8 @@ const tx: Messages['tx'] = {
   filter: 'Filtre',
   filterResult: 'Filtre sonucu',
   search: 'İşlem ara',
+  searchResults: '{count} sonuç',
+  searchResults_one: '{count} sonuç',
   searchPlaceholder: 'Mağaza, not, kategori',
   errorTitle: 'İşlemler yüklenemedi',
   errorMessage: 'Bağlantını kontrol edip tekrar dene. Verilerin güvende.',
