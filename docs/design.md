@@ -104,7 +104,7 @@ Satu keluarga: **Plus Jakarta Sans** (keputusan PRD tetap). Angka memakai `fontV
 | `overline` | 11 / 14 | SemiBold | Label kecil (sentence case, tanpa jarak huruf lebar) |
 | `button` | 13.5 / 18 | SemiBold | Label tombol (lg: 15) |
 
-Bobot judul 600 (SemiBold), bukan Bold, seperti Talmo.
+Bobot judul 600 (SemiBold), bukan Bold, seperti Talmo. Teks di kolom isian memakai varian `input` (16/22): di bawah 16px Safari iOS memperbesar halaman saat kolom difokus.
 
 Hierarki di dalam kartu selalu: `h3` (text) → `caption` (textSecondary) → konten.
 
@@ -124,7 +124,6 @@ Hierarki di dalam kartu selalu: `h3` (text) → `caption` (textSecondary) → ko
 | `field` | 11 | Input satu baris, select |
 | `badge` | 999 | Badge hitungan & status (pill 20) |
 | `control` | 999 | Toggle, tombol ikon bulat |
-| `tabBar` / `tabItem` | 22 / 16 | Tab bar mengambang dan item aktifnya |
 | `bar` | 6 | Batang grafik |
 | `sheet` | 28 | Bottom sheet, dialog |
 
@@ -170,7 +169,7 @@ Tombol `lg 50 / md 40 / sm 32` (bawaan `md`), input 42, segmented item 40 + padd
 | **Baris daftar (`ListItem`)** | Padding vertikal 14, celah 14, garis pemisah `border`; judul `bodyStrong`, keterangan `caption` redup. |
 | **Grup menu (`MenuGroup`)** | Label grup `caption` SemiBold redup; kartu padding sisi 20; ikon 18 `textMuted` tanpa kotak (Talmo `.menu__item`). |
 | **Header layar (`ScreenHeader`)** | Baris tombol bulat 44 (kembali kiri, aksi kanan), lalu judul `h1` rata kiri + subjudul opsional. |
-| **Tab bar** | Kotak mengambang radius 22, padding 6, `surfaceRaised` + bayangan floating; item 54 radius 16, label 11 SemiBold; aktif = blok tinta. Tombol "+ Catat" bulat tinta 48 tetap di tengah. |
+| **Tab bar** | Pill kaca mengambang (radius penuh), tab aktif berlatar `accentSoft` dengan ikon dan label tinta; tombol "+ Catat" bulat tinta 52 di tengah. |
 | **Empty state** | Ikon 20 dalam lingkaran 52 `surfaceRaised` bergaris, judul `h3`, pesan `caption` redup, satu tombol `md`. |
 | **Fade-out list** | Item yang terpotong di dasar kartu memudar (`opacity.faded`) sebagai isyarat ada lanjutan. |
 

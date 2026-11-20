@@ -244,9 +244,6 @@ export const radius = {
   bar: 6,
   /** Bottom sheet & dialog. */
   sheet: 28,
-  /** Tab bar mengambang dan item aktifnya (Talmo .tabbar mobile). */
-  tabBar: 22,
-  tabItem: 16,
   /** Ikon kosong (Talmo .empty__icon). */
   emptyIcon: 15,
 } as const;
@@ -282,6 +279,8 @@ export const type = {
   h3: { fontFamily: fonts.semibold, fontSize: 15, lineHeight: 19, letterSpacing: -0.08 },
   body: { fontFamily: fonts.medium, fontSize: 14, lineHeight: 20 },
   bodyStrong: { fontFamily: fonts.semibold, fontSize: 14, lineHeight: 20 },
+  /** Teks yang diketik di kolom isian. Minimal 16px: Safari iOS memperbesar halaman bila kolom yang difokus < 16px. */
+  input: { fontFamily: fonts.medium, fontSize: 16, lineHeight: 22 },
   /** Subjudul kartu, deskripsi baris, label (Talmo fs-sm 12.5). */
   caption: { fontFamily: fonts.medium, fontSize: 12.5, lineHeight: 17 },
   /** Label kecil (Talmo .eyebrow / fs-2xs 11, 600). Tanpa huruf kapital berjarak. */

@@ -63,7 +63,7 @@ export function Input({
           placeholderTextColor={colors.textMuted}
           selectionColor={colors.accent}
           secureTextEntry={secureTextEntry && hidden}
-          style={[styles.input, typeScale.body, { color: colors.text }]}
+          style={[styles.input, typeScale.input, { color: colors.text }]}
           onFocus={(e) => {
             setFocused(true);
             onFocus?.(e);

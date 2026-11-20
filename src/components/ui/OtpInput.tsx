@@ -122,6 +122,7 @@ const styles = StyleSheet.create({
   activeBox: { borderWidth: 1.5 },
   caret: { width: 2, height: 22, borderRadius: 1 },
   // Hampir transparan (bukan 0) supaya tetap bisa difokus dan ditempeli di semua platform.
-  input: { ...StyleSheet.absoluteFill, opacity: 0.011, fontSize: 1, color: 'transparent' },
+  // fontSize 16 walau tak terlihat: kolom < 16px membuat Safari iOS memperbesar halaman saat difokus.
+  input: { ...StyleSheet.absoluteFill, opacity: 0.011, fontSize: 16, color: 'transparent' },
   message: { flexDirection: 'row', alignItems: 'center', gap: space.xs },
 });

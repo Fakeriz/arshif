@@ -33,7 +33,7 @@ export function Composer({ value, onChangeText, onSend, placeholder, disabled, m
         editable={!disabled}
         returnKeyType="send"
         onSubmitEditing={send}
-        style={[styles.input, typeScale.body, { color: colors.text }]}
+        style={[styles.input, typeScale.input, { color: colors.text }]}
       />
       <PopIn visible={ready} from={0.3}>
         <PressableScale accessibilityLabel={sendLabel ?? t('common.ui.send')} onPress={send} hapticOnPress focusRadius={radius.full} style={[styles.send, { backgroundColor: colors.accent }]}>
