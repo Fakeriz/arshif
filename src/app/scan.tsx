@@ -14,6 +14,7 @@ import { CaptureError, failureOf, type CaptureFailure } from '@/features/capture
 import { putHandoff } from '@/features/capture/handoff';
 import { compressReceipt, MAX_RECEIPT_BYTES } from '@/features/capture/image';
 import { ProcessingView } from '@/features/capture/ProcessingView';
+import { takePendingPick } from '@/features/capture/scanLaunch';
 import { useI18n } from '@/i18n';
 import { useStore } from '@/state/AppStore';
 import { useLimits } from '@/state/limits';
@@ -41,7 +42,7 @@ function scannerReady(): boolean {
   }
 }
 
-/** Browser tidak mengizinkan membuka kamera/berkas tanpa ketukan pengguna, jadi web memakai tombol. */
+/** Browser tidak mengizinkan membuka kamera/berkas tanpa ketukan pengguna: di web kamera dibuka oleh tombol yang membuka layar ini (openCapture). */
 const autoLaunch = Platform.OS !== 'web';
 
 export default function ScanScreen() {
@@ -65,7 +66,9 @@ function ScanInner() {
   const { userId, refreshUsage } = useStore();
   const limits = useLimits();
   const paywall = usePaywall();
-  const [phase, setPhase] = useState<Phase>(autoLaunch ? { kind: 'launching' } : { kind: 'choose' });
+  // Web: foto yang sedang diambil dari ketukan "Struk OCR"; tanpa itu (mis. halaman dimuat ulang) tampil tombol pilihan.
+  const [webPick] = useState(takePendingPick);
+  const [phase, setPhase] = useState<Phase>(autoLaunch || webPick ? { kind: 'launching' } : { kind: 'choose' });
 
   /** Gambar yang sudah dipindai/dipilih masuk pipeline OCR yang sama: kompres, unggah, Gemini di server. */
   const process = async (asset: { uri: string; width?: number }) => {
@@ -100,7 +103,8 @@ function ScanInner() {
 
   const take = async (source: 'camera' | 'gallery') => {
     try {
-      if (source === 'camera') {
+      // Web: izin kamera diurus browser; await di sini memutus ketukan pengguna sehingga kamera tidak terbuka.
+      if (source === 'camera' && Platform.OS !== 'web') {
         const perm = await ImagePicker.requestCameraPermissionsAsync();
         if (!perm.granted) return setPhase({ kind: 'failed', failure: 'permission' });
       }
@@ -129,7 +133,15 @@ function ScanInner() {
 
   const launched = useRef(false);
   useEffect(() => {
-    if (!autoLaunch || launched.current || limits.scan) return;
+    if (launched.current || limits.scan) return;
+    if (webPick) {
+      launched.current = true;
+      webPick
+        .then((picked) => (picked.canceled || !picked.assets[0] ? cancelled(false) : process(picked.assets[0])))
+        .catch((e) => setPhase({ kind: 'failed', failure: failureOf(e) }));
+      return;
+    }
+    if (!autoLaunch) return;
     launched.current = true;
     void openCamera();
     // Sekali saat layar dibuka; ketukan "Foto ulang" memanggil openCamera sendiri.

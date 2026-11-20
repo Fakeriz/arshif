@@ -7,6 +7,7 @@ import { captureOptions, moreOptions } from '@/components/shell/captureOptions';
 import { usePaywall } from '@/components/shell/Paywall';
 import { Screen } from '@/components/shell/Screen';
 import { EmptyState, PromoCard, QuickActions, SwipeDismiss } from '@/components/ui';
+import { openCapture as launch } from '@/features/capture/scanLaunch';
 import { AccountDeck } from '@/features/home/AccountDeck';
 import { BalanceBlock } from '@/features/home/BalanceBlock';
 import { MissingRatesBanner } from '@/features/fx/MissingRatesBanner';
@@ -41,7 +42,7 @@ export default function HomeScreen() {
   const moreItems = moreOptions(limits, t);
   const scan = capture.find((o) => o.key === 'scan')!;
   const voice = capture.find((o) => o.key === 'voice')!;
-  const openCapture = (o: typeof scan) => (o.limited ? paywall(o.reason) : router.push(o.href));
+  const openCapture = (o: typeof scan) => (o.limited ? paywall(o.reason) : launch(o.href, (h) => router.push(h)));
 
   if (demo === 'error') {
     return (

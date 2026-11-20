@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Screen } from '@/components/shell/Screen';
 import { ScreenHeader } from '@/components/shell/ScreenHeader';
 import { EmptyState, useToast } from '@/components/ui';
+import { openCapture } from '@/features/capture/scanLaunch';
 import { discardPrivate } from '@/data/remote/upload';
 import { clearHandoff, peekHandoff } from '@/features/capture/handoff';
 import { ScanReview } from '@/features/capture/ScanReview';
@@ -46,7 +47,7 @@ export default function ScanReviewScreen() {
           onRetake={() => {
             clearHandoff('scan');
             if (existing) goBack(router);
-            else router.replace('/scan');
+            else openCapture('/scan' as const, (h) => router.replace(h));
           }}
           onSave={(tx) => {
             // Ketukan ganda sebelum navigasi selesai: tiap ketukan membuat id baru, jadi yang kedua diabaikan.
@@ -66,7 +67,7 @@ export default function ScanReviewScreen() {
           }}
         />
       ) : (
-        <EmptyState title={t('capture.scanReview.missingTitle')} message={t('capture.scanReview.missingMessage')} actionLabel={t('capture.scan.title')} onAction={() => router.replace('/scan')} />
+        <EmptyState title={t('capture.scanReview.missingTitle')} message={t('capture.scanReview.missingMessage')} actionLabel={t('capture.scan.title')} onAction={() => openCapture('/scan' as const, (h) => router.replace(h))} />
       )}
     </Screen>
   );

@@ -3,6 +3,7 @@ import { StyleSheet, View } from 'react-native';
 
 import { useT } from '@/i18n';
 import { AppText, BottomSheet, Icon, ListItem, ProBadge } from '@/components/ui';
+import { openCapture } from '@/features/capture/scanLaunch';
 import { useLimits } from '@/state/limits';
 import { useTheme } from '@/theme/ThemeProvider';
 import { radius, space } from '@/theme/tokens';
@@ -61,7 +62,7 @@ export function CaptureSheet({ visible, onClose, title, subtitle, sections }: Ca
               onPress={() => {
                 onClose();
                 if (o.limited) paywall(o.reason);
-                else router.push(o.href);
+                else openCapture(o.href, (h) => router.push(h));
               }}
             />
           ))}
