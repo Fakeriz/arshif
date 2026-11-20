@@ -15,7 +15,7 @@ export type TabsProps<K extends string> = {
   items: TabItem<K>[];
   value: K;
   onChange: (key: K) => void;
-  /** segmented = Talmo .seg (track abu, thumb kertas); underline = Talmo .tabs. */
+  /** segmented = Motion Kit .am-seg (track cekung pill, thumb kertas); underline = Talmo .tabs. */
   variant?: 'segmented' | 'underline';
   /** ink = thumb tinta + teks terbalik (Talmo .seg--ink), untuk pilihan tampilan utama. */
   tone?: 'plain' | 'ink';
@@ -45,8 +45,9 @@ export function Tabs<K extends string>({
 
   const indicator = useAnimatedStyle(() => ({ transform: [{ translateX: x.value }] }));
   const ink = segmented && tone === 'ink';
-  // Talmo: thumb = warna kartu (gelap: solid-2) dengan bayangan tipis; ink = isi aksen tanpa bayangan.
-  const thumb = ink ? colors.accent : scheme === 'dark' ? colors.surfaceRaised : colors.surface;
+  // Thumb kertas terangkat di atas track cekung; ink = isi aksen tanpa bayangan.
+  // Gelap: kartu lebih gelap dari track agar thumb tetap terbaca.
+  const thumb = ink ? colors.accent : scheme === 'dark' ? colors.surface : colors.surfaceRaised;
 
   return (
     <View
@@ -56,7 +57,7 @@ export function Tabs<K extends string>({
       style={[
         styles.wrap,
         segmented
-          ? { backgroundColor: colors.surfaceAlt, borderColor: colors.border, padding: pad, borderRadius: radius.seg, borderWidth: layout.hairline }
+          ? { backgroundColor: colors.surfaceSunken, padding: pad, borderRadius: radius.seg }
           : { borderBottomWidth: layout.hairline, borderBottomColor: colors.border, gap: space.xs },
       ]}
     >
@@ -86,7 +87,7 @@ export function Tabs<K extends string>({
             style={segmented ? styles.segItem : styles.tab}
           >
             <AppText
-              variant={segmented ? 'caption' : 'bodyStrong'}
+              variant="bodyStrong"
               tone={active ? (ink ? 'onAccent' : 'primary') : 'muted'}
               numberOfLines={1}
               style={styles.label}
@@ -102,11 +103,12 @@ export function Tabs<K extends string>({
 
 const styles = StyleSheet.create({
   wrap: { flexDirection: 'row', position: 'relative' },
+  // Lebar dari slot; isi tidak memakai flex agar tinggi tetap (flex: 1 di web menimpa height).
   tabSlot: { flex: 1 },
-  segItem: { flex: 1, height: layout.segItemHeight, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 11, borderRadius: radius.segItem },
-  tab: { flex: 1, height: 42, alignItems: 'center', justifyContent: 'center', paddingHorizontal: space.md },
+  segItem: { height: layout.segItemHeight, alignItems: 'center', justifyContent: 'center', paddingHorizontal: space.md, borderRadius: radius.segItem },
+  tab: { height: 42, alignItems: 'center', justifyContent: 'center', paddingHorizontal: space.md },
   label: { fontFamily: fonts.semibold },
   thumb: { position: 'absolute', borderRadius: radius.segItem },
-  thumbShadow: { shadowColor: '#000000', shadowOpacity: 0.12, shadowRadius: 2, shadowOffset: { width: 0, height: 1 }, elevation: 1 },
+  thumbShadow: { shadowColor: '#000000', shadowOpacity: 0.1, shadowRadius: 8, shadowOffset: { width: 0, height: 2 }, elevation: 2 },
   underline: { position: 'absolute', bottom: -1, left: 0, height: 2 },
 });

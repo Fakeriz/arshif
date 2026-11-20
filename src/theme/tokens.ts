@@ -233,9 +233,9 @@ export const radius = {
   button: { sm: 9, md: 11, lg: 13 },
   /** Chip filter (Talmo .chip). */
   chip: 9,
-  /** Segmented control: track dan thumb (Talmo .seg). */
-  seg: 10,
-  segItem: 8,
+  /** Segmented control: track dan thumb pill (Arshif Motion Kit .am-seg). */
+  seg: 999,
+  segItem: 999,
   /** Input satu baris dan select (Talmo .input). */
   field: 11,
   /** Badge hitungan & status (Talmo .badge/.stat: pill). */
@@ -308,9 +308,9 @@ export const layout = {
   hairline: 1,
   buttonHeight: { lg: 50, md: 40, sm: 32 },
   inputHeight: 42,
-  /** Segmented control: tinggi item + padding track (Talmo .seg). */
-  segItemHeight: 28,
-  segPad: 3,
+  /** Segmented control: tinggi item + padding track (Arshif Motion Kit .am-seg). */
+  segItemHeight: 40,
+  segPad: 4,
   /** Jarak tepi layar dan padding dalam kartu. */
   screenGutter: 16,
   cardPadding: 16,

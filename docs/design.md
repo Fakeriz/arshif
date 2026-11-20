@@ -120,7 +120,7 @@ Hierarki di dalam kartu selalu: `h3` (text) → `caption` (textSecondary) → ko
 | `inset` | 14 | Panel di dalam kartu, textarea |
 | `button` | sm 9 / md 11 / lg 13 | Tombol (Talmo `.btn--sm/.btn/.btn--lg`) |
 | `chip` | 9 | Chip filter |
-| `seg` / `segItem` | 10 / 8 | Track dan thumb segmented control |
+| `seg` / `segItem` | 999 / 999 | Track dan thumb segmented control (pill) |
 | `field` | 11 | Input satu baris, select |
 | `badge` | 999 | Badge hitungan & status (pill 20) |
 | `control` | 999 | Toggle, tombol ikon bulat |
@@ -146,7 +146,7 @@ Aturan bersarang: radius dalam = radius luar − padding (20 − 16 ≈ 4 → di
 
 ### Ukuran kontrol
 
-Tombol `lg 50 / md 40 / sm 32` (bawaan `md`), input 42, segmented item 28 + padding 3, toggle 42×24, ikon Lucide stroke 1.75 ukuran 16/20/24.
+Tombol `lg 50 / md 40 / sm 32` (bawaan `md`), input 42, segmented item 40 + padding 4, toggle 42×24, ikon Lucide stroke 1.75 ukuran 16/20/24.
 
 ---
 
@@ -160,7 +160,7 @@ Tombol `lg 50 / md 40 / sm 32` (bawaan `md`), input 42, segmented item 28 + padd
 | **Button secondary** | Isi kertas (`surface`; gelap `surfaceAlt`) + garis `borderStrong`, teks `text`. |
 | **Button danger** | Seperti secondary, teks `negative`. |
 | **Button ghost** | Teks `accentText` saja. |
-| **Segmented (`Tabs`)** | Track `surfaceAlt` + garis `border`, radius 10, padding 3; item tinggi 28, `caption` SemiBold redup; terpilih: thumb kertas dengan bayangan tipis. Varian `tone="ink"`: thumb tinta, teks `onAccent`. |
+| **Segmented (`Tabs`)** | Gaya Arshif Motion Kit: track pill `surfaceSunken`, padding 4, tanpa garis; item tinggi 40, `bodyStrong` redup; terpilih: thumb pill (`surfaceRaised`, gelap `surface`) dengan bayangan lembut. Varian `tone="ink"`: thumb tinta. Jangan dibungkus `Card` sendiri. |
 | **Tabs underline** | Tinggi 42, `bodyStrong` redup, terpilih `text` + garis bawah tinta 2 px. |
 | **Chip** | Tinggi 36, radius 9, isi kertas + garis `border`, `caption` SemiBold redup. Terpilih: isi tinta, teks `onAccent`, tanpa centang. |
 | **Input / Select** | Radius 11, tinggi 42, isi kertas (gelap `surfaceAlt`) + garis `borderStrong`; fokus garis tinta 1.5 px. |

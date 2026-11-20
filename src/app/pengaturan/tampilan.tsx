@@ -1,4 +1,4 @@
-import { AppText, Card, Tabs } from '@/components/ui';
+import { AppText, Tabs } from '@/components/ui';
 import { SettingsScreen, SettingsSection } from '@/features/settings/kit';
 import { useT } from '@/i18n';
 import { HAPTIC_LEVELS, haptic, useHapticLevel } from '@/theme/motion';
@@ -14,23 +14,19 @@ export default function TampilanScreen() {
   return (
     <SettingsScreen title={t('settings.appearance')}>
       <SettingsSection label={t('settings.theme')}>
-        <Card padding="md">
-          <Tabs items={MODES.map((key) => ({ key, label: t(`settings.themeMode.${key}`) }))} value={mode} onChange={(m) => withThemeTransition(() => setMode(m))} accessibilityLabel={t('settings.theme')} />
-        </Card>
+        <Tabs items={MODES.map((key) => ({ key, label: t(`settings.themeMode.${key}`) }))} value={mode} onChange={(m) => withThemeTransition(() => setMode(m))} accessibilityLabel={t('settings.theme')} />
       </SettingsSection>
       <SettingsSection label={t('settings.haptics')}>
-        <Card padding="md">
-          <Tabs
-            items={HAPTIC_LEVELS.map((key) => ({ key, label: t(`settings.hapticLevel.${key}`) }))}
-            value={hapticLevel}
-            onChange={(level) => {
-              setHapticLevel(level);
-              // Contoh langsung dari intensitas yang baru dipilih.
-              haptic('selection');
-            }}
-            accessibilityLabel={t('settings.haptics')}
-          />
-        </Card>
+        <Tabs
+          items={HAPTIC_LEVELS.map((key) => ({ key, label: t(`settings.hapticLevel.${key}`) }))}
+          value={hapticLevel}
+          onChange={(level) => {
+            setHapticLevel(level);
+            // Contoh langsung dari intensitas yang baru dipilih.
+            haptic('selection');
+          }}
+          accessibilityLabel={t('settings.haptics')}
+        />
         <AppText variant="caption" tone="muted">
           {t('settings.hapticsSub')}
         </AppText>
