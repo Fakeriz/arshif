@@ -303,6 +303,10 @@ describe('Weekly Replay (FR-COACH-5)', () => {
     expect(r.biggest?.merchant).toBe('Toko Buku');
     expect(r.biggestSaving).toEqual({ categoryKey: 'food', saved: 150_000 });
     expect(r.achievements).toEqual(['noSpend', 'spentLess', 'saved', 'cooked']);
+    // Grafik per hari: satu batang per hari jendela, jumlahnya sama dengan total belanja.
+    expect(r.daily.map((d) => d.date)).toEqual(['2026-11-02', '2026-11-03', '2026-11-04', '2026-11-05']);
+    expect(r.daily.reduce((s, d) => s + d.spent, 0)).toBe(r.spent);
+    expect(r.daily.filter((d) => d.spent === 0)).toHaveLength(r.noSpendDays);
   });
 
   it('minggu lalu penuh, dan kosong bila belum ada data', () => {

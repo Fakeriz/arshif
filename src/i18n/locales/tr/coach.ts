@@ -66,6 +66,8 @@ const coach: Messages['coach'] = {
     example3: 'Bu dönem en çok hangi kategoride harcadım?',
   },
   replay: {
+    perDay: '{day} harcaması',
+    perDayLabel: 'Günlük harcama',
     lastMonth: 'Geçen ay',
     heroMonth: 'Geçen ayki harcaman',
     monthRange: '{range} ay özeti',

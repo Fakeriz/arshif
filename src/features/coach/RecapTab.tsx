@@ -1,12 +1,13 @@
 import { CalendarCheck, Crown, HandCoins, PiggyBank, TrendingDown, Trophy, Utensils, type LucideIcon } from 'lucide-react-native';
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import { usePaywall } from '@/components/shell/Paywall';
-import { AppText, Card, CategoryIcon, CurrencyText, EmptyState, GlassView, Icon, PressableScale, ProBadge, Tabs, TrendBadge } from '@/components/ui';
+import { AppText, Card, CategoryIcon, CurrencyText, EmptyState, GlassView, Icon, MiniBars, PressableScale, ProBadge, RollingNumber, Tabs, TrendBadge } from '@/components/ui';
 import type { Transaction } from '@/data/types';
 import { categoryLabel, useI18n } from '@/i18n';
-import { shortDate, todayYmd } from '@/lib/dates';
+import { CALENDARS } from '@/i18n/calendar';
+import { shortDate, todayYmd, weekday } from '@/lib/dates';
 import { formatMoney } from '@/lib/money';
 import { monthlyRecap, weeklyRecap, type Achievement, type WeeklyRecap } from '@/lib/recap';
 import { useStore } from '@/state/AppStore';
@@ -75,6 +76,30 @@ export function RecapTab({ transactions, currency }: { transactions: Transaction
   );
 }
 
+/** Belanja per hari (Motion Kit "Grafik batang"): ketuk batang, angkanya bergulir ke hari itu. */
+function DailyBars({ recap, currency }: { recap: WeeklyRecap; currency: string }) {
+  const { t, lang } = useI18n();
+  const [selected, setSelected] = useState(recap.daily.length - 1);
+  const prev = useRef(selected);
+  const direction = recap.daily[selected].spent >= recap.daily[prev.current].spent ? 1 : -1;
+  prev.current = selected;
+  const day = recap.daily[selected];
+  return (
+    <Card>
+      <AppText variant="caption" tone="secondary">
+        {t('coach.replay.perDay', { day: shortDate(day.date, lang) })}
+      </AppText>
+      <RollingNumber value={formatMoney(day.spent, currency)} variant="h2" direction={direction} />
+      <MiniBars
+        accessibilityLabel={t('coach.replay.perDayLabel')}
+        data={recap.daily.map((d) => ({ label: CALENDARS[lang].daysShort[weekday(d.date)], value: d.spent, valueLabel: formatMoney(d.spent, currency) }))}
+        selected={selected}
+        onSelect={setSelected}
+      />
+    </Card>
+  );
+}
+
 function Replay({ recap, currency }: { recap: WeeklyRecap; currency: string }) {
   const { colors } = useTheme();
   const { t, lang } = useI18n();
@@ -99,6 +124,8 @@ function Replay({ recap, currency }: { recap: WeeklyRecap; currency: string }) {
           </AppText>
         )}
       </GlassView>
+
+      {recap.daily.length > 1 && <DailyBars recap={recap} currency={currency} />}
 
       {recap.achievements.length > 0 && (
         <Card>

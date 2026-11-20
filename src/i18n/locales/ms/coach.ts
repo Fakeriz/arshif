@@ -66,6 +66,8 @@ const coach: Messages['coach'] = {
     example3: 'Kategori mana paling banyak perbelanjaan tempoh ini?',
   },
   replay: {
+    perDay: 'Belanja {day}',
+    perDayLabel: 'Belanja setiap hari',
     lastMonth: 'Bulan lalu',
     heroMonth: 'Perbelanjaan anda bulan lalu',
     monthRange: 'Rekap bulan {range}',

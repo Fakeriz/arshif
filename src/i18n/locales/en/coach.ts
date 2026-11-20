@@ -66,6 +66,8 @@ const coach: Messages['coach'] = {
     example3: 'Which category am I spending the most on this period?',
   },
   replay: {
+    perDay: 'Spent on {day}',
+    perDayLabel: 'Spending per day',
     lastMonth: 'Last month',
     heroMonth: 'Your spending last month',
     monthRange: 'Recap for {range}',

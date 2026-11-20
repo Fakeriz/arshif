@@ -64,6 +64,8 @@ const coach = {
     example3: 'Kategori mana yang paling boros periode ini?',
   },
   replay: {
+    perDay: 'Belanja {day}',
+    perDayLabel: 'Belanja per hari',
     lastMonth: 'Bulan lalu',
     heroMonth: 'Belanjamu bulan lalu',
     monthRange: 'Recap bulan {range}',

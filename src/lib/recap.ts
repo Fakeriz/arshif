@@ -27,6 +27,8 @@ export type WeeklyRecap = {
   /** Hari tanpa pengeluaran di jendela. */
   noSpendDays: number;
   txCount: number;
+  /** Belanja per hari di jendela (definisi sama dengan `spent`), lama ke baru; kosong untuk recap bulanan. */
+  daily: { date: string; spent: number }[];
   achievements: Achievement[];
   /** Setoran tabungan/goal minggu itu (kategori Tabungan). */
   savedAmount: number;
@@ -130,6 +132,10 @@ function buildRecap(txs: Transaction[], main: string, week: WeeklyRecap['week'],
     biggestSaving,
     noSpendDays,
     txCount: all.length,
+    daily: week === 'month' ? [] : Array.from({ length: days }, (_, i) => {
+      const date = addDays(start, i);
+      return { date, spent: sum(cur.filter((t) => t.date === date)) };
+    }),
     achievements,
     savedAmount,
     debtPaid,
