@@ -21,7 +21,7 @@ export type SelectProps<K extends string> = { label: string; items: SelectItem<K
  * form pendek di dalam kartu/sheet. Menu turun dengan pegas, opsinya masuk bergiliran.
  */
 export function Select<K extends string>({ label, items, value, onChange }: SelectProps<K>) {
-  const { colors } = useTheme();
+  const { colors, scheme } = useTheme();
   const { spring, timing } = useMotion();
   const [open, setOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
@@ -56,7 +56,8 @@ export function Select<K extends string>({ label, items, value, onChange }: Sele
         onPress={() => setOpen((o) => !o)}
         scaleTo={0.985}
         focusRadius={radius.field}
-        style={[styles.trigger, { backgroundColor: colors.surfaceSunken, borderColor: open ? colors.accent : colors.border }]}
+        // Sama dengan Input: kertas bergaris, garis tinta saat terbuka.
+        style={[styles.trigger, { backgroundColor: scheme === 'dark' ? colors.surfaceAlt : colors.surface, borderColor: open ? colors.text : colors.borderStrong }]}
       >
         <AppText variant="bodyStrong" numberOfLines={1} style={styles.flex}>
           {current?.label}
