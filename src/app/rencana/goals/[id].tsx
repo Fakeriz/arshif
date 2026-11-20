@@ -1,12 +1,12 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Pencil, PiggyBank, Trash2 } from 'lucide-react-native';
 import { useState } from 'react';
-import { StyleSheet, View } from 'react-native';
 
 import { AppText, Button, Card, Dialog, EmptyState, Group, useToast } from '@/components/ui';
 import { Confetti } from '@/features/planning/Confetti';
 import { GoalCard } from '@/features/planning/GoalCard';
 import { GoalForm } from '@/features/planning/forms';
+import { HeaderActions } from '@/components/shell/HeaderActions';
 import { PaySheet, PlanScreen } from '@/features/planning/kit';
 import { InfoRow } from '@/features/transactions/InfoRow';
 import { useI18n } from '@/i18n';
@@ -15,7 +15,6 @@ import { formatMoney } from '@/lib/money';
 import { useStore } from '@/state/AppStore';
 import { usePlanning } from '@/state/planning';
 import { haptic } from '@/theme/motion';
-import { space } from '@/theme/tokens';
 import { goBack } from '@/components/shell/goBack';
 
 export default function GoalDetail() {
@@ -33,7 +32,7 @@ export default function GoalDetail() {
   const history = deposits.filter((d) => d.goalId === id);
 
   return (
-    <PlanScreen title={t('plan.goals.title')}>
+    <PlanScreen title={t('plan.goals.title')} right={goal ? <HeaderActions actions={[{ key: 'edit', label: t('plan.common.edit'), icon: Pencil, onPress: () => setEdit(true) }, { key: 'delete', label: t('plan.common.delete'), icon: Trash2, danger: true, onPress: () => setConfirm(true) }]} /> : undefined}>
       {!goal ? (
         <EmptyState title={t('plan.common.notFound')} message={t('plan.common.notFoundMessage')} actionLabel={t('plan.common.back')} onAction={() => goBack(router)} />
       ) : (
@@ -58,10 +57,6 @@ export default function GoalDetail() {
               )}
             </Card>
           </Group>
-          <View style={styles.actions}>
-            <Button label={t('plan.common.edit')} icon={Pencil} variant="secondary" fullWidth onPress={() => setEdit(true)} />
-            <Button label={t('plan.common.delete')} icon={Trash2} variant="danger" fullWidth onPress={() => setConfirm(true)} />
-          </View>
           <PaySheet
             key={pay ? 'pay' : 'idle'}
             visible={pay}
@@ -111,5 +106,3 @@ export default function GoalDetail() {
     </PlanScreen>
   );
 }
-
-const styles = StyleSheet.create({ actions: { gap: space.sm, marginTop: space.sm } });

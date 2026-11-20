@@ -102,6 +102,9 @@ describe('tab Aset', () => {
     await screen.unmount();
     await wrap(<AsetScreen />, opts);
     expect(screen.getByLabelText(full)).toBeTruthy();
+    // Toggle ada di menu titik tiga kanan atas, bukan di badan layar.
+    expect(screen.queryByLabelText('Gabungkan aset ke saldo Beranda')).toBeNull();
+    await fireEvent.press(screen.getByLabelText('Aksi lainnya'));
     const toggle = screen.getByLabelText('Gabungkan aset ke saldo Beranda');
     expect(toggle.props.accessibilityState?.checked ?? toggle.props['aria-checked']).toBe(false);
     await fireEvent.press(toggle);

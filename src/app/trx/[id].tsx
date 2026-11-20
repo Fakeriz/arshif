@@ -6,6 +6,7 @@ import { StyleSheet, View } from 'react-native';
 import { categoryLabel, useI18n } from '@/i18n';
 import { usePaywall } from '@/components/shell/Paywall';
 import { Screen } from '@/components/shell/Screen';
+import { HeaderActions } from '@/components/shell/HeaderActions';
 import { ScreenHeader } from '@/components/shell/ScreenHeader';
 import { AppText, Button, Card, CategoryIcon, CurrencyText, Dialog, EmptyState, Group, Icon, Tooltip, useToast } from '@/components/ui';
 import { PlaceMap } from '@/features/places/PlaceField';
@@ -73,7 +74,20 @@ export default function TransactionDetail() {
 
   return (
     <Screen>
-      <ScreenHeader title={t('tx.detail.title')} />
+      <ScreenHeader
+        title={t('tx.detail.title')}
+        right={
+          <HeaderActions
+            actions={[
+              ...(tx.type === 'expense'
+                ? [{ key: 'split', label: t('plan.split.fromReceipt'), icon: Split, onPress: () => router.push({ pathname: '/rencana/split/[id]', params: { id: 'baru', tx: tx.id } }) }]
+                : []),
+              { key: 'edit', label: t('tx.detail.edit'), icon: Pencil, onPress: () => router.push({ pathname: '/tambah', params: { id: tx.id } }) },
+              { key: 'delete', label: t('tx.detail.delete'), icon: Trash2, danger: true, onPress: () => setConfirm(true) },
+            ]}
+          />
+        }
+      />
       <View style={styles.hero}>
         <CategoryIcon category={tx.categoryKey} size={56} />
         <AppText variant="h2" align="center">
@@ -125,22 +139,9 @@ export default function TransactionDetail() {
       {tx.receipt && <ReceiptDetailsCard receipt={tx.receipt} />}
       {tx.receiptPath && <ReceiptPhoto path={tx.receiptPath} merchant={tx.merchant} />}
       <ReimbursementCard tx={tx} />
-      {tx.type === 'expense' && (
-        <Button
-          label={t('plan.split.fromReceipt')}
-          icon={Split}
-          variant="secondary"
-          fullWidth
-          onPress={() => router.push({ pathname: '/rencana/split/[id]', params: { id: 'baru', tx: tx.id } })}
-        />
-      )}
       {tx.receiptPath && tx.type === 'expense' && (
         <Button label={t('tx.receipt.reread')} icon={ScanText} variant="secondary" fullWidth loading={rereading} disabled={rereading} onPress={() => void reread(tx.receiptPath!, tx.id)} />
       )}
-      <View style={styles.actions}>
-        <Button label={t('tx.detail.edit')} icon={Pencil} variant="secondary" fullWidth onPress={() => router.push({ pathname: '/tambah', params: { id: tx.id } })} />
-        <Button label={t('tx.detail.delete')} icon={Trash2} variant="danger" fullWidth onPress={() => setConfirm(true)} />
-      </View>
       <Dialog
         visible={confirm}
         tone="danger"
@@ -162,6 +163,5 @@ export default function TransactionDetail() {
 const styles = StyleSheet.create({
   convHead: { flexDirection: 'row', alignItems: 'center', gap: space.sm },
   hero: { alignItems: 'center', gap: space.sm, paddingVertical: space.lg },
-  actions: { gap: space.sm },
   place: { gap: space.xxs, paddingVertical: space.md, paddingHorizontal: space.xl },
 });

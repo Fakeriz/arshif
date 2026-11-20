@@ -4,6 +4,7 @@ const common: Messages['common'] = {
   cancel: 'Vazgeç',
   close: 'Kapat',
   back: 'Geri',
+  moreActions: 'Diğer işlemler',
   save: 'Kaydet',
   retry: 'Tekrar dene',
   loading: 'Yükleniyor',

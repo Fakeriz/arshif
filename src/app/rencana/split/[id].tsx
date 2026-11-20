@@ -5,6 +5,7 @@ import { Share, StyleSheet, View } from 'react-native';
 
 import { AmountField, AppText, AvatarStack, Button, Card, Checkbox, Chip, Dialog, EmptyState, Group, Icon, Input, PressableScale, Tabs, Toggle, useToast } from '@/components/ui';
 import type { SplitBill, SplitItem, SplitParticipant } from '@/data/planning';
+import { HeaderActions } from '@/components/shell/HeaderActions';
 import { PlanScreen, useSaveError } from '@/features/planning/kit';
 import { useI18n } from '@/i18n';
 import { formatMoney } from '@/lib/money';
@@ -39,6 +40,8 @@ export default function SplitEditor() {
       </PlanScreen>
     );
   }
+  // Editor merender headernya sendiri; tunggu data siap supaya form tidak terisi dari data kosong (skeleton dari PlanScreen).
+  if (status !== 'ready') return <PlanScreen title={isNew ? t('plan.split.newTitle') : t('plan.split.editTitle')}>{null}</PlanScreen>;
   const initial: SplitBill =
     existing ??
     (() => {
@@ -51,13 +54,12 @@ export default function SplitEditor() {
       };
     })();
   return (
-    <PlanScreen title={isNew ? t('plan.split.newTitle') : t('plan.split.editTitle')}>
-      <Editor key={initial.id} initial={initial} isNew={isNew} fixedTotal={!!initial.transactionId} />
-    </PlanScreen>
+    <Editor key={initial.id} title={isNew ? t('plan.split.newTitle') : t('plan.split.editTitle')} initial={initial} isNew={isNew} fixedTotal={!!initial.transactionId} />
   );
 }
 
-function Editor({ initial, isNew, fixedTotal }: { initial: SplitBill; isNew: boolean; fixedTotal: boolean }) {
+/** Form split beserta headernya: Bagikan dan Hapus di kanan atas; Simpan tetap di bawah form. */
+function Editor({ title: screenTitle, initial, isNew, fixedTotal }: { title: string; initial: SplitBill; isNew: boolean; fixedTotal: boolean }) {
   const { t } = useI18n();
   const { colors } = useTheme();
   const router = useRouter();
@@ -173,7 +175,17 @@ function Editor({ initial, isNew, fixedTotal }: { initial: SplitBill; isNew: boo
   };
 
   return (
-    <>
+    <PlanScreen
+      title={screenTitle}
+      right={
+        <HeaderActions
+          actions={[
+            { key: 'share', label: t('plan.split.share'), icon: Share2, disabled: others.length === 0 || billTotal <= 0, onPress: share },
+            ...(isNew ? [] : [{ key: 'delete', label: t('plan.common.delete'), icon: Trash2, danger: true, onPress: () => setConfirm(true) }]),
+          ]}
+        />
+      }
+    >
       <Input label={t('plan.split.billTitle')} value={title} onChangeText={setTitle} placeholder={t('plan.split.billTitlePlaceholder')} maxLength={80} error={errors.title} />
       <Tabs accessibilityLabel={t('plan.split.mode')} value={mode} onChange={setMode} items={[{ key: 'equal', label: t('plan.split.modes.equal') }, { key: 'items', label: t('plan.split.modes.items') }]} />
       {mode === 'equal' || fixedTotal ? (
@@ -321,8 +333,6 @@ function Editor({ initial, isNew, fixedTotal }: { initial: SplitBill; isNew: boo
 
       <View style={styles.actions}>
         <Button label={saving ? t('plan.common.saving') : t('plan.common.save')} fullWidth loading={saving} disabled={saving} onPress={() => void save()} />
-        <Button label={t('plan.split.share')} icon={Share2} variant="secondary" fullWidth onPress={share} disabled={others.length === 0 || billTotal <= 0} />
-        {!isNew && <Button label={t('plan.common.delete')} icon={Trash2} variant="danger" fullWidth onPress={() => setConfirm(true)} />}
       </View>
       <Dialog
         visible={confirm}
@@ -338,7 +348,7 @@ function Editor({ initial, isNew, fixedTotal }: { initial: SplitBill; isNew: boo
             .catch(() => show({ tone: 'error', title: t('plan.common.deleteFailed') }));
         }}
       />
-    </>
+    </PlanScreen>
   );
 }
 

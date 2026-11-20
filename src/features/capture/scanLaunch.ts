@@ -2,7 +2,7 @@ import * as DocumentPicker from 'expo-document-picker';
 import * as ImagePicker from 'expo-image-picker';
 import { Platform } from 'react-native';
 
-import { motion } from '@/theme/tokens';
+import { afterSheetClose } from '@/components/shell/HeaderActions';
 
 import { DocScannerNative } from '../../../modules/doc-scanner';
 
@@ -86,13 +86,9 @@ export function startScan(source: ScanSource, go: (href: '/scan') => void, limit
   );
 }
 
-/**
- * startScan dari tombol di dalam sheet yang baru ditutup. Web: langsung (pemilih harus di dalam ketukan).
- * Native: tunggu sheet (Modal) selesai menutup, iOS menolak membuka kamera/galeri di atas Modal yang sedang menutup.
- */
+/** startScan dari tombol di dalam sheet yang baru ditutup (lihat afterSheetClose). */
 export function startScanFromSheet(source: ScanSource, go: (href: '/scan') => void, limit = MAX_MULTI): void {
-  if (Platform.OS === 'web') startScan(source, go, limit);
-  else setTimeout(() => startScan(source, go, limit), motion.base + 50);
+  afterSheetClose(() => startScan(source, go, limit));
 }
 
 /**

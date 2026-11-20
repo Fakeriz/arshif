@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import { AppText, Button, Card, DateField, Dialog, EmptyState, Group, useToast } from '@/components/ui';
+import { HeaderActions, type HeaderAction } from '@/components/shell/HeaderActions';
 import { InvoiceScreen, StatusBadge } from '@/features/invoice/kit';
 import { FormSheet, useSaveError } from '@/features/planning/kit';
 import { invoiceDocument } from '@/features/tools/documents';
@@ -30,18 +31,16 @@ export default function InvoiceDetail() {
   const router = useRouter();
   const { invoices } = useInvoices();
   const inv = invoices.find((i) => i.id === id);
+  if (inv) return <Detail inv={inv} title={inv.kind === 'invoice' ? t('inv.invoiceTitle') : t('inv.quoteTitle')} />;
   return (
-    <InvoiceScreen title={inv ? (inv.kind === 'invoice' ? t('inv.invoiceTitle') : t('inv.quoteTitle')) : t('inv.title')}>
-      {inv ? (
-        <Detail inv={inv} />
-      ) : (
-        <EmptyState title={t('inv.notFoundTitle')} message={t('inv.notFoundMessage')} actionLabel={t('plan.common.back')} onAction={() => goBack(router)} />
-      )}
+    <InvoiceScreen title={t('inv.title')}>
+      <EmptyState title={t('inv.notFoundTitle')} message={t('inv.notFoundMessage')} actionLabel={t('plan.common.back')} onAction={() => goBack(router)} />
     </InvoiceScreen>
   );
 }
 
-function Detail({ inv }: { inv: Invoice }) {
+/** Layar detail beserta headernya: aksi status/edit/hapus di kanan atas (titik tiga bila lebih dari dua). */
+function Detail({ inv, title }: { inv: Invoice; title: string }) {
   const { t, lang } = useI18n();
   const { colors } = useTheme();
   const router = useRouter();
@@ -75,8 +74,16 @@ function Detail({ inv }: { inv: Invoice }) {
   const sharePdf = () =>
     pdf.run(() => invoiceDocument(inv, { t, lang, owner: state.displayName ?? '' }), inv.number);
 
+  const actions: HeaderAction[] = [
+    ...(inv.status === 'draft' ? [{ key: 'sent', label: t('inv.markSent'), icon: Send, disabled: busy, onPress: () => void changeStatus('sent') }] : []),
+    ...(!isInvoice && inv.status !== 'accepted' ? [{ key: 'accepted', label: t('inv.markAccepted'), icon: CircleCheck, disabled: busy, onPress: () => void changeStatus('accepted') }] : []),
+    ...(inv.status === 'sent' || inv.status === 'accepted' ? [{ key: 'draft', label: t('inv.backToDraft'), icon: Undo2, disabled: busy, onPress: () => void changeStatus('draft') }] : []),
+    ...(!paid ? [{ key: 'edit', label: t('plan.common.edit'), icon: Pencil, onPress: () => router.push({ pathname: '/invoice/form', params: { id: inv.id } }) }] : []),
+    { key: 'delete', label: t('plan.common.delete'), icon: Trash2, danger: true, onPress: () => setConfirm(true) },
+  ];
+
   return (
-    <>
+    <InvoiceScreen title={title} right={<HeaderActions actions={actions} />}>
       <Card padding="lg">
         <View style={styles.head}>
           <AppText variant="h3" numberOfLines={1} style={styles.flex}>
@@ -135,14 +142,8 @@ function Detail({ inv }: { inv: Invoice }) {
         </Card>
       ) : null}
 
-      <View style={styles.actions}>
-        <Button label={pdf.busy ? t('tools.pdf.making') : t('inv.sharePdf')} icon={Share2} variant="secondary" fullWidth loading={pdf.busy} disabled={pdf.busy} onPress={() => void sharePdf()} />
-        {inv.status === 'draft' && <Button label={t('inv.markSent')} icon={Send} variant="secondary" fullWidth disabled={busy} onPress={() => void changeStatus('sent')} />}
-        {!isInvoice && inv.status !== 'accepted' && <Button label={t('inv.markAccepted')} icon={CircleCheck} variant="secondary" fullWidth disabled={busy} onPress={() => void changeStatus('accepted')} />}
-        {(inv.status === 'sent' || inv.status === 'accepted') && <Button label={t('inv.backToDraft')} icon={Undo2} variant="ghost" fullWidth disabled={busy} onPress={() => void changeStatus('draft')} />}
-        {!paid && <Button label={t('plan.common.edit')} icon={Pencil} variant="secondary" fullWidth onPress={() => router.push({ pathname: '/invoice/form', params: { id: inv.id } })} />}
-        <Button label={t('plan.common.delete')} icon={Trash2} variant="danger" fullWidth onPress={() => setConfirm(true)} />
-      </View>
+      {/* PDF = hasil utama dokumen ini dan butuh status memuat, jadi tetap di badan layar. */}
+      <Button label={pdf.busy ? t('tools.pdf.making') : t('inv.sharePdf')} icon={Share2} variant="secondary" fullWidth loading={pdf.busy} disabled={pdf.busy} onPress={() => void sharePdf()} />
       {paid && (
         <AppText variant="caption" tone="muted">
           {t('inv.paidLocked')}
@@ -181,7 +182,7 @@ function Detail({ inv }: { inv: Invoice }) {
             .catch(() => show({ tone: 'error', title: t('plan.common.deleteFailed') }));
         }}
       />
-    </>
+    </InvoiceScreen>
   );
 }
 
@@ -242,5 +243,4 @@ const styles = StyleSheet.create({
   total: { marginTop: space.md, marginBottom: space.sm },
   item: { flexDirection: 'row', alignItems: 'flex-start', gap: space.md, paddingVertical: space.sm },
   totals: { marginTop: space.sm },
-  actions: { gap: space.sm, marginTop: space.sm },
 });

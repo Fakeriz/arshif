@@ -4,6 +4,7 @@ const common: Messages['common'] = {
   cancel: 'Cancel',
   close: 'Close',
   back: 'Back',
+  moreActions: 'More actions',
   save: 'Save',
   retry: 'Try again',
   loading: 'Loading',

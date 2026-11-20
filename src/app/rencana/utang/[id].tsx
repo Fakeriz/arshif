@@ -1,18 +1,17 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { HandCoins, Pencil, Trash2 } from 'lucide-react-native';
 import { useState } from 'react';
-import { StyleSheet, View } from 'react-native';
 
 import { AppText, Button, Card, Dialog, EmptyState, Group, useToast } from '@/components/ui';
 import { DebtCard } from '@/features/planning/DebtCard';
 import { DebtForm } from '@/features/planning/forms';
+import { HeaderActions } from '@/components/shell/HeaderActions';
 import { PaySheet, PlanScreen } from '@/features/planning/kit';
 import { InfoRow } from '@/features/transactions/InfoRow';
 import { useI18n } from '@/i18n';
 import { shortDate } from '@/lib/dates';
 import { formatMoney } from '@/lib/money';
 import { usePlanning } from '@/state/planning';
-import { space } from '@/theme/tokens';
 import { goBack } from '@/components/shell/goBack';
 
 export default function DebtDetail() {
@@ -29,7 +28,10 @@ export default function DebtDetail() {
   const split = debt?.splitBillId ? splits.find((s) => s.id === debt.splitBillId) : undefined;
 
   return (
-    <PlanScreen title={debt?.kind === 'receivable' ? t('plan.debts.tabs.receivable') : t('plan.debts.tabs.debt')}>
+    <PlanScreen
+      title={debt?.kind === 'receivable' ? t('plan.debts.tabs.receivable') : t('plan.debts.tabs.debt')}
+      right={debt ? <HeaderActions actions={[{ key: 'edit', label: t('plan.common.edit'), icon: Pencil, onPress: () => setEdit(true) }, { key: 'delete', label: t('plan.common.delete'), icon: Trash2, danger: true, onPress: () => setConfirm(true) }]} /> : undefined}
+    >
       {!debt ? (
         <EmptyState title={t('plan.common.notFound')} message={t('plan.common.notFoundMessage')} actionLabel={t('plan.common.back')} onAction={() => goBack(router)} />
       ) : (
@@ -56,10 +58,6 @@ export default function DebtDetail() {
             )}
           </Card>
           </Group>
-          <View style={styles.actions}>
-            <Button label={t('plan.common.edit')} icon={Pencil} variant="secondary" fullWidth onPress={() => setEdit(true)} />
-            <Button label={t('plan.common.delete')} icon={Trash2} variant="danger" fullWidth onPress={() => setConfirm(true)} />
-          </View>
           <PaySheet
             key={pay ? `pay-${debt.balance}` : 'idle'}
             visible={pay}
@@ -104,5 +102,3 @@ export default function DebtDetail() {
     </PlanScreen>
   );
 }
-
-const styles = StyleSheet.create({ actions: { gap: space.sm, marginTop: space.sm } });

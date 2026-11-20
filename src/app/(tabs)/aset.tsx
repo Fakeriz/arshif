@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import { Screen } from '@/components/shell/Screen';
+import { HeaderMenu } from '@/components/shell/HeaderActions';
 import { TabHeader } from '@/components/shell/TabHeader';
 import { AppText, BalanceText, Card, CurrencyText, EmptyState, Group, Icon, ListCard, ListItem, Skeleton, StatTile, Toggle, TrendBadge } from '@/components/ui';
 import { AssetForm } from '@/features/assets/AssetForm';
@@ -55,7 +56,23 @@ export default function AsetScreen() {
 
   return (
     <Screen tabs onRefresh={status === 'ready' ? refresh : undefined}>
-      <TabHeader title={t('shell.assets.title')} subtitle={t('shell.assets.subtitle')} />
+      <TabHeader
+        title={t('shell.assets.title')}
+        subtitle={t('shell.assets.subtitle')}
+        right={
+          // Pengaturan tampilan aset: di menu titik tiga, bukan kartu di tengah layar.
+          <HeaderMenu>
+            {() => (
+              <ListItem
+                title={t('settings.includeAssets')}
+                subtitle={t('settings.includeAssetsSub')}
+                subtitleLines={2}
+                trailing={<Toggle value={state.includeAssets} onChange={(value) => dispatch({ type: 'prefs/includeAssets', value })} accessibilityLabel={t('settings.includeAssets')} />}
+              />
+            )}
+          </HeaderMenu>
+        }
+      />
       {status === 'error' ? (
         <EmptyState kind="error" title={t('assets.loadErrorTitle')} message={t('assets.loadErrorMessage')} actionLabel={t('common.retry')} onAction={refresh} />
       ) : status !== 'ready' ? (
@@ -103,15 +120,6 @@ export default function AsetScreen() {
               hidden={state.hideBalance}
             />
           </View>
-
-          <ListCard>
-            <ListItem
-              title={t('settings.includeAssets')}
-              subtitle={t('settings.includeAssetsSub')}
-              subtitleLines={2}
-              trailing={<Toggle value={state.includeAssets} onChange={(value) => dispatch({ type: 'prefs/includeAssets', value })} accessibilityLabel={t('settings.includeAssets')} />}
-            />
-          </ListCard>
 
           <Card>
             <View style={styles.cardBody}>

@@ -3,6 +3,7 @@ const common = {
   cancel: 'Batal',
   close: 'Tutup',
   back: 'Kembali',
+  moreActions: 'Aksi lainnya',
   save: 'Simpan',
   retry: 'Coba lagi',
   loading: 'Memuat',

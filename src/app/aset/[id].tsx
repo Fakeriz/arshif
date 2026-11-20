@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import { Screen } from '@/components/shell/Screen';
+import { HeaderActions } from '@/components/shell/HeaderActions';
 import { ScreenHeader } from '@/components/shell/ScreenHeader';
 import { AppText, Badge, Button, Card, CurrencyText, Dialog, EmptyState, TrendBadge, useToast } from '@/components/ui';
 import { AssetForm } from '@/features/assets/AssetForm';
@@ -64,7 +65,17 @@ export default function AssetDetail() {
 
   return (
     <Screen>
-      <ScreenHeader title={asset.name} />
+      <ScreenHeader
+        title={asset.name}
+        right={
+          <HeaderActions
+            actions={[
+              { key: 'edit', label: t('plan.common.edit'), icon: Pencil, onPress: () => setEdit(true) },
+              { key: 'delete', label: t('plan.common.delete'), icon: Trash2, danger: true, onPress: () => setConfirm(true) },
+            ]}
+          />
+        }
+      />
       <Card>
         <View style={styles.hero}>
           <AppText variant="caption" tone="secondary">
@@ -113,10 +124,6 @@ export default function AssetDetail() {
           ))}
         </Card>
       )}
-      <View style={styles.actions}>
-        <Button label={t('plan.common.edit')} icon={Pencil} variant="secondary" fullWidth onPress={() => setEdit(true)} />
-        <Button label={t('plan.common.delete')} icon={Trash2} variant="danger" fullWidth onPress={() => setConfirm(true)} />
-      </View>
       <AssetForm key={edit ? `edit-${asset.id}` : 'closed'} visible={edit} onClose={() => setEdit(false)} asset={asset} />
       <Dialog
         visible={confirm}
@@ -141,7 +148,6 @@ export default function AssetDetail() {
 
 const styles = StyleSheet.create({
   hero: { alignItems: 'center', gap: space.xs },
-  actions: { gap: space.sm, marginTop: space.sm },
   trouble: { gap: space.md },
   chart: { gap: space.md },
 });
