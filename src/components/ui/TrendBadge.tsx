@@ -99,7 +99,7 @@ const styles = StyleSheet.create({
     paddingLeft: space.xs + 2,
     paddingRight: space.sm,
     paddingVertical: space.xxs + 1,
-    borderRadius: radius.full,
+    borderRadius: radius.badge,
   },
   pillSm: { paddingLeft: space.xs, paddingRight: space.xs + 2, paddingVertical: 1 },
   strong: { fontFamily: fonts.semibold },

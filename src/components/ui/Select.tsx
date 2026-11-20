@@ -55,7 +55,7 @@ export function Select<K extends string>({ label, items, value, onChange }: Sele
         aria-expanded={open}
         onPress={() => setOpen((o) => !o)}
         scaleTo={0.985}
-        focusRadius={radius.control}
+        focusRadius={radius.field}
         style={[styles.trigger, { backgroundColor: colors.surfaceSunken, borderColor: open ? colors.accent : colors.border }]}
       >
         <AppText variant="bodyStrong" numberOfLines={1} style={styles.flex}>
@@ -108,7 +108,7 @@ function Option({ label, selected, index, onPress }: { label: string; selected: 
 const styles = StyleSheet.create({
   wrap: { gap: space.xs + 2 },
   flex: { flex: 1 },
-  trigger: { flexDirection: 'row', alignItems: 'center', gap: space.sm, minHeight: layout.inputHeight, paddingHorizontal: space.lg, borderRadius: radius.control, borderWidth: layout.hairline },
+  trigger: { flexDirection: 'row', alignItems: 'center', gap: space.sm, minHeight: layout.inputHeight, paddingHorizontal: space.lg, borderRadius: radius.field, borderWidth: layout.hairline },
   menuWrap: { transformOrigin: 'top' },
   menu: { padding: space.xs + 2, gap: space.xxs },
   option: { flexDirection: 'row', alignItems: 'center', gap: space.sm, minHeight: 40, paddingHorizontal: space.md, borderRadius: radius.inset },

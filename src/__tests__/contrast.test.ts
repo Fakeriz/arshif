@@ -1,7 +1,9 @@
 import { composite, contrastRatio, hue } from '@/lib/contrast';
 import {
   ACCENT_OPTIONS,
+  brass,
   buildPalette,
+  inkCard,
   categoryHues,
   chartArea,
   palettes,
@@ -90,6 +92,20 @@ describe.each(schemes)('kontras tema %s', (scheme) => {
   it('garis grafik kekayaan bersih >= 3:1 di kartu', () => {
     const card = composite(palettes[scheme].glass, palettes[scheme].bg);
     expect(contrastRatio(chartArea[scheme].line, card)).toBeGreaterThanOrEqual(AA_GRAPHIC);
+  });
+
+  it.each(['text', 'textMuted', 'brass', 'positive', 'negative'] as const)('kartu tinta: %s >= 4.5:1', (key) => {
+    expect(contrastRatio(inkCard[scheme][key], inkCard[scheme].bg)).toBeGreaterThanOrEqual(AA_TEXT);
+  });
+
+  it.each(['positive', 'negative'] as const)('kartu tinta: badge tren %s di atas tinta soft >= 4.5:1', (key) => {
+    const ink = inkCard[scheme];
+    const soft = composite(ink[`${key}Soft`], ink.bg);
+    expect(contrastRatio(ink[key], soft)).toBeGreaterThanOrEqual(AA_TEXT);
+  });
+
+  it.each(['bg', 'surface', 'surfaceSunken'] as const)('tag mata uang brass di atas %s >= 4.5:1', (bgKey) => {
+    expect(contrastRatio(brass[scheme], palettes[scheme][bgKey])).toBeGreaterThanOrEqual(AA_TEXT);
   });
 
   it('aksen Merah: over budget memakai rona berbeda (>= 15°) dari aksen', () => {

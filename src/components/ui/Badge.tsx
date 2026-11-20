@@ -67,7 +67,7 @@ const styles = StyleSheet.create({
     gap: space.xs,
     paddingHorizontal: space.sm,
     paddingVertical: space.xs,
-    borderRadius: radius.full,
+    borderRadius: radius.badge,
   },
   sm: { paddingHorizontal: space.xs + 2, paddingVertical: space.xxs },
 });

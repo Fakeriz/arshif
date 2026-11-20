@@ -1,6 +1,6 @@
 # Arshif: Design System "Monokrom"
 
-Revisi arah desain dari "Kaca & Aksen" ke **Monokrom**: tenang, padat informasi, dan terasa seperti alat keuangan yang serius. Referensi visual: kit kartu bergaya shadcn (versi gelap & terang) yang berisi riwayat kontribusi, saldo klaim, target tabungan, ambang payout, dividen, notifikasi, dan pengaturan akun.
+Revisi arah desain dari "Kaca & Aksen" ke **Monokrom**: tenang, padat informasi, dan terasa seperti alat keuangan yang serius. Referensi visual: kit kartu bergaya shadcn (versi gelap & terang), dan sejak 2026-11-20 palet batu & kertas serta bahasa gerak dari Talmo Studio. Desain semua layar ada di file `.pen` (pen.dev).
 
 Sumber kebenaran nilai: `src/theme/tokens.ts`. Dokumen ini menjelaskan *kenapa* dan *bagaimana memakainya*.
 
@@ -11,7 +11,7 @@ Sumber kebenaran nilai: `src/theme/tokens.ts`. Dokumen ini menjelaskan *kenapa* 
 1. **Angka adalah pahlawan.** Saldo, target, dan nominal tampil besar dan tebal; semua elemen lain mundur ke abu-abu.
 2. **Warna = makna, bukan dekorasi.** Antarmuka hitam-putih-abu. Warna hanya muncul untuk naik/turun, peringatan, status, dan ikon kategori.
 3. **Kedalaman lewat nada, bukan efek.** Tidak ada blur atau glow di panel. Lapisan dibedakan oleh selisih nada: kanvas → kartu → panel inset.
-4. **Satu bentuk kontrol.** Semua tombol, input satu baris, select, chip, dan badge berbentuk pill.
+4. **Bentuk mengikuti peran.** Yang ditekan (tombol, chip, toggle) berbentuk pill; isian (input, select) kotak lembut radius 14; badge radius 8. Perbedaan bentuk membuat isian dan tombol langsung terbedakan.
 5. **Primary terbalik.** Tombol utama memakai warna teks sebagai latar: terang di tema gelap, hitam di tema terang.
 6. **Aksesibel sejak token.** Setiap pasangan teks/latar ≥ 4.5:1, grafis ≥ 3:1, diuji otomatis di `__tests__/contrast.test.ts`.
 
@@ -21,52 +21,66 @@ Sumber kebenaran nilai: `src/theme/tokens.ts`. Dokumen ini menjelaskan *kenapa* 
 
 ### 2.1 Netral (per tema)
 
+Palet **batu & kertas** (revisi 2026-11-20, mengikuti bahasa visual Talmo Studio): kanvas batu hangat, kartu kertas, panel inset abu kecokelatan. Netral hangat membuat kartu tinta (2.4) dan angka lebih menonjol dibanding abu-putih dingin.
+
 | Token | Gelap | Terang | Pakai untuk |
 |---|---|---|---|
-| `bg` | `#09090B` | `#F3F3F3` | Kanvas layar |
-| `surface` / `glass` | `#121214` | `#FFFFFF` | Kartu utama |
-| `surfaceRaised` / `glassStrong` | `#1F1F1F` | `#FFFFFF` | Sheet, dialog, tab bar, popover |
-| `surfaceSunken` | `#262626` | `#F4F4F4` | Panel inset di dalam kartu, isian input, tombol secondary |
-| `border` / `glassBorder` | `rgba(255,255,255,.06)` | `rgba(0,0,0,.06)` | Garis kartu, pemisah baris |
-| `borderStrong` | `rgba(255,255,255,.12)` | `rgba(0,0,0,.12)` | Tombol outline, checkbox kosong, kartu `outline` |
-| `text` | `#FAFAFA` | `#0A0A0A` | Judul, angka, label utama |
-| `textSecondary` | `#ABABAB` | `#525252` | Subjudul kartu, deskripsi |
-| `textMuted` | `#8F8F8F` | `#636363` | Label sumbu, placeholder, meta |
-| `track` | `rgba(255,255,255,.10)` | `rgba(0,0,0,.08)` | Jalur progress bar, toggle mati |
-| `overlay` | `rgba(0,0,0,.64)` | `rgba(0,0,0,.32)` | Latar di balik sheet/dialog |
+| `bg` | `#0D0D0D` | `#E5E5E2` | Kanvas layar (batu) |
+| `surface` / `glass` | `#161616` | `#F2F2F2` | Kartu utama (kertas) |
+| `surfaceRaised` / `glassStrong` | `#262626` | `#FAFAFA` | Sheet, dialog, tab bar, popover |
+| `surfaceSunken` | `#2B2B2B` | `#D8D6D4` | Panel inset di dalam kartu, isian input, tombol secondary |
+| `border` / `glassBorder` | `rgba(255,255,255,.08)` | `rgba(8,8,8,.075)` | Garis kartu, pemisah baris |
+| `borderStrong` | `rgba(255,255,255,.15)` | `rgba(8,8,8,.15)` | Tombol outline, checkbox kosong, kartu `outline` |
+| `text` | `#E0E0E0` | `#0A0A0A` | Judul, angka, label utama |
+| `textSecondary` | `#C9C9C9` | `#575655` | Subjudul kartu, deskripsi |
+| `textMuted` | `#A4A4A4` | `#575655` | Label sumbu, placeholder, meta |
+| `track` | `rgba(255,255,255,.10)` | `rgba(8,8,8,.10)` | Jalur progress bar, toggle mati |
+| `overlay` | `rgba(0,0,0,.6)` | `rgba(0,0,0,.32)` | Latar di balik sheet/dialog |
 
 > Nama `glass*` dipertahankan agar komponen lama tetap jalan, tapi nilainya kini **solid**. Komponen baru sebaiknya memakai `surface` / `surfaceRaised`.
+>
+> Teks gelap di tema gelap sengaja `#E0E0E0`, bukan putih penuh, agar tidak menyilaukan. Di tema terang `textSecondary` dan `textMuted` sama (`#575655`): abu yang lebih terang gagal 4.5:1 di atas panel inset `#D8D6D4`.
 
 ### 2.2 Semantik
 
 | Token | Gelap | Terang | Aturan |
 |---|---|---|---|
-| `positive` | `#5BD69A` | `#15803D` | Pemasukan, kenaikan, target tercapai |
-| `negative` | `#F87171` | `#B91C1C` | Pengeluaran berlebih, over budget, error |
-| `warning` | `#E5B54A` | `#8A5A00` | Status "Pending Setup", jatuh tempo dekat |
-| `info` | `#8AB4F8` | `#1D4ED8` | Tautan informatif, tips |
+| `positive` | `#7FC79B` | `#2E6B46` | Pemasukan, kenaikan, target tercapai |
+| `negative` | `#F08A80` | `#A8322B` | Pengeluaran berlebih, over budget, error |
+| `warning` | `#E0B05C` | `#8A5A00` | Status "Pending Setup", jatuh tempo dekat |
+| `info` | `#9DB8DE` | `#3D5A80` | Tautan informatif, tips |
 
-Setiap token punya pasangan `*Soft` (tinta 8–12%) untuk latar badge status. Badge status selalu memakai **titik berwarna + teks netral** (contoh: ● Pending Setup), bukan teks berwarna penuh.
+Hijau dan merah tanah yang kalem, bukan warna lampu lalu lintas. Setiap token punya pasangan `*Soft` (tinta 10–14%) untuk latar badge status. Badge status selalu memakai **titik berwarna + teks netral** (contoh: ● Pending Setup), bukan teks berwarna penuh.
+
+**Teks berwarna semantik hanya di atas `bg` atau `surface`**, jangan di atas `surfaceSunken`: hijau terang di atas `#D8D6D4` hanya 4.38:1.
 
 ### 2.3 Aksen
 
-`netral` adalah **default baru**: `accent` = warna teks, `onAccent` = warna kanvas, tanpa glow.
-Aksen berwarna lama (Merah, Kuningan, Zamrud, Biru, Ungu) tetap tersedia di Pengaturan (FR-SET-4). Tidak ada aksen yang memakai glow: `AmbientGlow` sudah dihapus.
+`netral` adalah **default**: `accent` = warna teks, `onAccent` = warna kertas, tanpa glow.
+Aksen berwarna lama (Merah, Kuningan, Zamrud, Biru, Ungu) tetap tersedia di Pengaturan (FR-SET-4) dan lolos AA di palet batu. Tidak ada aksen yang memakai glow: `AmbientGlow` sudah dihapus.
 
 | | Gelap | Terang |
 |---|---|---|
-| `accent` (isi tombol primary) | `#EDEDED` | `#0A0A0A` |
-| `onAccent` | `#0A0A0A` | `#FFFFFF` |
-| `accentText` (link, tombol ghost) | `#FAFAFA` | `#0A0A0A` |
-| `accentSoft` (chip/nav terpilih) | `rgba(255,255,255,.08)` | `rgba(0,0,0,.05)` |
-| `focus` (ring fokus) | `#D4D4D4` | `#525252` |
+| `accent` (isi tombol primary) | `#E0E0E0` | `#0A0A0A` |
+| `onAccent` | `#0A0A0A` | `#F4F4F4` |
+| `accentText` (link, tombol ghost) | `#E0E0E0` | `#0A0A0A` |
+| `accentSoft` (chip/nav terpilih) | `rgba(255,255,255,.08)` | `rgba(8,8,8,.06)` |
+| `focus` (ring fokus) | `#C9C9C9` | `#575655` |
 
-### 2.4 Grafik
+### 2.4 Kartu tinta & brass
+
+- **Kartu tinta (`inkCard`)**: tepat **satu per layar**, memegang angka terpenting layar itu (kekayaan bersih, saldo akun, total tagihan). Ini titik fokus dan motif identitas Arshif.
+  - Terang: isi `#0A0A0A`, teks `#E0E0E0`, redup `#A4A4A4`.
+  - Gelap: **terbalik**, isi `#E0E0E0`, teks `#0A0A0A`, redup `#575655`, naik `#22573A`, turun `#8C2621` (lebih gelap agar badge tren tetap 4.5:1). Kartu gelap di atas kanvas `#0D0D0D` tidak lagi menonjol, jadi dibalik agar tetap titik paling kontras.
+  - Pakai komponen `InkCard` (`src/theme/ThemeProvider.tsx`): ia menimpa warna teks, naik/turun, dan track untuk semua anak, jadi `AppText`, `BalanceText`, dan `TrendBadge` otomatis benar. Contoh: `BalanceBlock` di Beranda.
+- **Brass (`brass`)**: satu-satunya aksen berwarna, **khusus tag mata uang** (IDR/MYR/TRY/USD), karena multi-mata uang adalah pembeda produk. Terang `#735214`, gelap `#D9B26A`. Tidak dipakai untuk tombol, bar budget, atau dekorasi.
+
+### 2.5 Grafik
 
 - **`chartRamp`**: 5 tingkat abu, dari data lama/kecil (paling pudar) ke sorotan (paling kontras). Bulan berjalan atau batang terpilih = indeks terakhir.
   - Gelap: `#3A3A3A → #525252 → #737373 → #A3A3A3 → #E5E5E5`
   - Terang: `#D4D4D4 → #A3A3A3 → #737373 → #404040 → #171717`
-- **`chartArea`**: grafik garis, isian tipis di bawah garis abu (`#A3A3A3` gelap, `#737373` terang agar garis tetap 3:1 di kartu putih), tanpa titik data kecuali disentuh.
+- **`chartArea`**: grafik garis, isian tipis di bawah garis abu (`#A3A3A3` gelap, `#737373` terang agar garis tetap 3:1 di kartu kertas), tanpa titik data kecuali disentuh.
 - Batang memakai radius atas `radius.bar` (6), jarak antar batang ≈ 25% lebar batang.
 - **`categoryHues`** tetap dipakai untuk donut kategori dan ikon kategori, satu-satunya tempat warna bebas muncul.
 
@@ -102,7 +116,9 @@ Hierarki di dalam kartu selalu: `h3` (text) → `caption` (textSecondary) → ko
 |---|---|---|
 | `card` | 20 | Kartu utama |
 | `inset` | 14 | Panel di dalam kartu, textarea, baris daftar berlatar |
-| `control` | 999 | Tombol, input, select, chip, badge, toggle |
+| `control` | 999 | Tombol, chip, toggle |
+| `field` | 14 | Input satu baris, select |
+| `badge` | 8 | Badge status dan delta (`TrendBadge`) |
 | `bar` | 6 | Batang grafik |
 | `sheet` | 28 | Bottom sheet, dialog |
 
@@ -117,8 +133,8 @@ Aturan bersarang: radius dalam = radius luar − padding (20 − 16 ≈ 4 → di
 
 ### Elevasi (`elevation`)
 
-- **Gelap:** tanpa bayangan; kartu `#121214` di kanvas `#09090B` sudah cukup.
-- **Terang:** kartu putih dengan bayangan sangat tipis (`opacity .04, radius 12`) + garis `border`.
+- **Gelap:** tanpa bayangan; kartu `#161616` di kanvas `#0D0D0D` sudah cukup.
+- **Terang:** kartu kertas `#F2F2F2` dengan bayangan tipis (`#080808`, `opacity .12, radius 20, y 12`) + garis `border`.
 - `floating` (tab bar, sheet, toast) memakai bayangan lebih tegas di kedua tema.
 - Blur hanya untuk tab bar mengambang (`layout.blur.floating`); panel tidak blur.
 
@@ -138,9 +154,9 @@ Tombol `lg 48 / md 40 / sm 32`, input 44, ikon Lucide stroke 1.75 ukuran 16/20/2
 | **Button secondary** | Pill, isi `surfaceSunken`, teks `text`. |
 | **Button outline** | Pill, transparan, border `borderStrong`. Untuk "Cancel", "View Analytics". |
 | **Button ghost** | Teks `accentText` saja, untuk "FORGOT?" (gaya `overline`). |
-| **Input / Select** | Pill tinggi 44, isi `surfaceSunken`, tanpa border; placeholder `textMuted`; ikon kanan 16 `textMuted`. Fokus: ring 2 px `focus`. |
+| **Input / Select** | Radius `field` (14) tinggi 44, isi `surfaceSunken`, tanpa border; placeholder `textMuted`; ikon kanan 16 `textMuted`. Fokus: ring 2 px `focus`. |
 | **Textarea** | Radius `inset`, min 88 tinggi, isi `surfaceSunken`. |
-| **Badge** | Pill tinggi 22, `caption` 12 SemiBold. Varian: solid (`accent`/`onAccent`), soft (`surfaceSunken`), outline, status (titik 6 px semantik + teks). Delta kecil ("+10%") memakai badge solid. |
+| **Badge** | Radius `badge` (8) tinggi 22, `caption` 12 SemiBold. Varian: solid (`accent`/`onAccent`), soft (`surfaceSunken`), outline, status (titik 6 px semantik + teks). Delta kecil ("+10%") memakai badge solid. |
 | **Checkbox** | 16×16, radius 4. Tercentang: isi `accent`, centang `onAccent`. Kosong: `surfaceSunken`. Label `bodyStrong` + deskripsi `caption`. |
 | **Toggle** | Pill 36×20; aktif `accent`, mati `track`. |
 | **Progress bar** | Tinggi 6, pill, jalur `track`, isi `text`. Di bawahnya: kiri "65% achieved" (`caption` secondary), kanan nominal (`amount`). |
@@ -157,7 +173,7 @@ Tombol `lg 48 / md 40 / sm 32`, input 44, ikon Lucide stroke 1.75 ukuran 16/20/2
 - **Kartu saldo:** overline label → `amountHero` → badge status → panel inset berisi rincian (label `caption` kiri, `amount` kanan, garis pemisah sebelum total) → catatan `caption`.
 - **Target tabungan:** tumpukan panel inset; tiap panel: overline nama → nominal `amountHero` → progress → keterangan. Target yang belum aktif tampil dengan `textMuted`.
 - **Riwayat/arus kas:** grafik batang `chartRamp`, label bulan `caption` muted di bawah, panel inset ringkasan di bawah grafik, tombol primary "Lihat laporan".
-- **Form (target, ambang):** label `bodyStrong` → input pill; dua field sebaris jika pendek (nominal + tanggal). Nominal besar yang sedang diatur ditampilkan sebagai `amountHero` di kanan label.
+- **Form (target, ambang):** label `bodyStrong` → input radius `field`; dua field sebaris jika pendek (nominal + tanggal). Nominal besar yang sedang diatur ditampilkan sebagai `amountHero` di kanan label.
 - **Zona bahaya:** dipisah garis, ikon `negative`, teks tetap netral; aksi destruktif lewat dialog konfirmasi.
 
 ---
@@ -200,7 +216,7 @@ Sudah dilakukan di token:
 
 Langkah lanjutan di komponen:
 1. `Button`, `Input`, `Chip`, `Badge`, `Toggle` → `radius.control`.
-2. `Card` → `radius.card`, tambah `elevation[scheme].card`; `GlassView` boleh render `View` biasa bila `layout.blur.panel === 0`. Bagian `GlassView` selesai: panel selalu solid `glass` (`#121214` gelap), tanpa blur; hanya lapisan `floating` yang memakai `glassStrong`.
+2. `Card` → `radius.card`, tambah `elevation[scheme].card`; `GlassView` boleh render `View` biasa bila `layout.blur.panel === 0`. Bagian `GlassView` selesai: panel selalu solid `glass` (`#161616` gelap), tanpa blur; hanya lapisan `floating` yang memakai `glassStrong`.
 3. `AmbientGlow` → dihapus total untuk semua aksen. Selesai: komponen, ekspornya, dan pemakaiannya di `Screen`, `BootScreen`, `design.tsx` sudah dihapus.
 4. `CashflowChart`, `HealthGauge`, `ProgressBar` → `chartRamp` / `text` sebagai isi.
 5. Visual check tiap layar lawan referensi (aturan PRD), dua tema.
