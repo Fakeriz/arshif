@@ -28,6 +28,8 @@ export const GEMINI_API_KEY = (): string => required('GEMINI_API_KEY');
  */
 export const GEMINI_MODELS = (): string[] =>
   [Deno.env.get('GEMINI_MODEL') || 'gemini-3.1-flash-lite', Deno.env.get('GEMINI_FALLBACK_MODEL') || 'gemini-3.5-flash'].filter((m, i, a) => a.indexOf(m) === i);
+/** Google Maps Platform: Places API (New) + Maps Static API. Hanya di server. */
+export const GOOGLE_MAPS_API_KEY = (): string => required('GOOGLE_MAPS_API_KEY');
 export const CRON_SECRET = (): string => required('CRON_SECRET');
 
 // ------------------------------------------------------------------ pembayaran (Fase 3). Semua lewat `supabase secrets set`.

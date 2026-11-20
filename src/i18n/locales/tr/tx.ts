@@ -123,6 +123,28 @@ const tx: Messages['tx'] = {
     rowPending: 'Geri ödeme bekleniyor',
     rowDone: 'Geri ödendi',
   },
+  place: {
+    label: "Konum",
+    add: "Konum ekle",
+    change: "Değiştir",
+    remove: "Konumu kaldır",
+    openMaps: "{name} konumunu Google Haritalar'da aç",
+    guessScan: "Fişteki adresten tahmin edildi. Kontrol et, yanlışsa Değiştir’e dokun.",
+    guessVoice: "Söylediğin yerden tahmin edildi. Kontrol et, yanlışsa Değiştir’e dokun.",
+    guessGps: "Şu anki konumundan tahmin edildi. Kontrol et, yanlışsa Değiştir’e dokun.",
+    sheetTitle: "Konum seç",
+    searchLabel: "Yer ara",
+    searchPlaceholder: "Mağaza adı veya adres",
+    useMine: "Şu anki konumumu kullan",
+    useMineSub: "Sana en yakın yerler",
+    noResultsTitle: "Yer bulunamadı",
+    noResultsMessage: "Semt adını eklemeyi dene, ör. \"Migros Kadıköy\".",
+    notConfigured: "Konum arama sunucuda henüz etkin değil.",
+    rateLimited: "Çok fazla arama yapıldı. Biraz bekleyip tekrar dene.",
+    failed: "Konumlar yüklenemedi. Bağlantını kontrol edip tekrar dene.",
+    permissionDenied: "Konum izni reddedildi. Telefon ayarlarından aç veya yazarak ara.",
+    gpsFailed: "Konumun okunamadı. Yazarak ara.",
+  },
 };
 
 export default tx;

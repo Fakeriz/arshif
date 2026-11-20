@@ -123,6 +123,28 @@ const tx: Messages['tx'] = {
     rowPending: 'Menunggu diganti',
     rowDone: 'Sudah diganti',
   },
+  place: {
+    label: "Lokasi",
+    add: "Tambah lokasi",
+    change: "Tukar",
+    remove: "Buang lokasi",
+    openMaps: "Buka {name} di Google Maps",
+    guessScan: "Diteka daripada alamat pada resit. Semak dulu, ketik Tukar jika salah.",
+    guessVoice: "Diteka daripada tempat yang anda sebut. Semak dulu, ketik Tukar jika salah.",
+    guessGps: "Diteka daripada kedudukan anda sekarang. Semak dulu, ketik Tukar jika salah.",
+    sheetTitle: "Pilih lokasi",
+    searchLabel: "Cari tempat",
+    searchPlaceholder: "Nama kedai atau alamat",
+    useMine: "Guna lokasi saya sekarang",
+    useMineSub: "Tempat terdekat dengan anda",
+    noResultsTitle: "Tempat tidak dijumpai",
+    noResultsMessage: "Cuba tambah nama kawasan, cth. \"Tesco Ampang\".",
+    notConfigured: "Carian lokasi belum diaktifkan di pelayan.",
+    rateLimited: "Terlalu banyak carian. Tunggu sebentar dan cuba lagi.",
+    failed: "Lokasi gagal dimuatkan. Semak sambungan anda dan cuba lagi.",
+    permissionDenied: "Kebenaran lokasi ditolak. Hidupkan dalam tetapan telefon, atau cari dengan menaip.",
+    gpsFailed: "Kedudukan anda tidak dapat dibaca. Cari dengan menaip.",
+  },
 };
 
 export default tx;

@@ -123,6 +123,7 @@ export function normalizeVoice(raw: unknown, ctx: { accountIds: string[]; defaul
         categoryKey: category(it.categoryKey),
         date: ymd(it.date) ?? ctx.today,
         note: cleanText(str(it.note)).slice(0, 200) || null,
+        placeHint: cleanText(str(it.placeHint)).slice(0, 120) || null,
       };
     })
     .filter((x): x is NonNullable<typeof x> => x !== null)

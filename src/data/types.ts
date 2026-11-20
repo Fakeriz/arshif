@@ -65,6 +65,9 @@ export type ReceiptDetails = {
   storeTaxId?: string;
 };
 
+/** Tempat beli: dari struk/ucapan (tebakan AI), GPS, atau dicari sendiri. */
+export type TxPlace = { name: string; address?: string; lat: number; lng: number; placeId?: string };
+
 export type Transaction = {
   id: string;
   type: TxType;
@@ -90,6 +93,7 @@ export type Transaction = {
   receiptPath?: string;
   items?: ReceiptItem[];
   receipt?: ReceiptDetails;
+  place?: TxPlace;
   /** Reimbursement (FR-TRX-4, hanya pengeluaran): pending sampai pemasukan pengganti ditautkan. */
   reimburseStatus?: 'pending' | 'reimbursed';
   /** id pemasukan pengganti. */

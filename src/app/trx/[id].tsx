@@ -7,7 +7,8 @@ import { categoryLabel, useI18n } from '@/i18n';
 import { usePaywall } from '@/components/shell/Paywall';
 import { Screen } from '@/components/shell/Screen';
 import { ScreenHeader } from '@/components/shell/ScreenHeader';
-import { AppText, Button, Card, CategoryIcon, CurrencyText, Dialog, EmptyState, Icon, Tooltip, useToast } from '@/components/ui';
+import { AppText, Button, Card, CategoryIcon, CurrencyText, Dialog, EmptyState, Group, Icon, Tooltip, useToast } from '@/components/ui';
+import { PlaceMap } from '@/features/places/PlaceField';
 import { invokeFn } from '@/data/remote/functions';
 import { failureOf } from '@/features/capture/CaptureError';
 import { putHandoff } from '@/features/capture/handoff';
@@ -90,6 +91,21 @@ export default function TransactionDetail() {
         <InfoRow label={t('tx.detail.source')} value={t(`tx.source.${tx.source}`)} divider={!!tx.note} />
         {tx.note && <InfoRow label={t('tx.detail.note')} value={tx.note} />}
       </Card>
+      {tx.place && (
+        <Group label={t('tx.place.label')}>
+          <Card padding={0}>
+            <PlaceMap place={tx.place} />
+            <View style={styles.place}>
+              <AppText variant="bodyStrong">{tx.place.name}</AppText>
+              {tx.place.address ? (
+                <AppText variant="caption" tone="muted">
+                  {tx.place.address}
+                </AppText>
+              ) : null}
+            </View>
+          </Card>
+        </Group>
+      )}
       {converted && account && tx.accountAmount !== undefined && (
         <Card>
           <View style={styles.convHead}>
@@ -147,4 +163,5 @@ const styles = StyleSheet.create({
   convHead: { flexDirection: 'row', alignItems: 'center', gap: space.sm },
   hero: { alignItems: 'center', gap: space.sm, paddingVertical: space.lg },
   actions: { gap: space.sm },
+  place: { gap: space.xxs, paddingVertical: space.md, paddingHorizontal: space.xl },
 });

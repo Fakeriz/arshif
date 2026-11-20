@@ -4,7 +4,9 @@ import { StyleSheet, View } from 'react-native';
 
 import { useT } from '@/i18n';
 import { AmountField, AppText, Button, Card, EmptyState, Input, useSaveThen } from '@/components/ui';
-import type { Transaction } from '@/data/types';
+import type { Transaction, TxPlace } from '@/data/types';
+import { PlaceField, type PlaceGuess } from '@/features/places/PlaceField';
+import { todayYmd } from '@/lib/dates';
 import { newId } from '@/lib/uuid';
 import { useActiveAccountId, type AccountWithBalance } from '@/state/AppStore';
 import { space } from '@/theme/tokens';
@@ -13,7 +15,7 @@ import type { VoiceResult } from '../../../supabase/functions/_shared/contracts'
 import { AccountPicker, CategoryPicker } from '../transactions/pickers';
 import { localHm } from './clock';
 
-type Draft = VoiceResult['items'][number] & { key: string; amountEdit: number | null; hint: string | null; accountPick: string };
+type Draft = VoiceResult['items'][number] & { key: string; amountEdit: number | null; hint: string | null; accountPick: string; place: TxPlace | null; guess?: PlaceGuess };
 
 /** Review Voice Log (FR-VOICE-3): satu kartu per transaksi, bisa diedit atau dibuang sebelum "Simpan semua". */
 export function VoiceReview({ result, accounts, onSave }: { result: VoiceResult; accounts: AccountWithBalance[]; onSave: (txs: Transaction[]) => void }) {
@@ -29,6 +31,9 @@ export function VoiceReview({ result, accounts, onSave }: { result: VoiceResult;
         key: newId(),
         amountEdit: i.amount,
         accountPick: known ?? fallback?.id ?? '',
+        place: null,
+        // Tempat yang diucapkan dicari; tanpa itu, GPS hanya untuk satu transaksi hari ini (posisi sekarang = tempat beli).
+        guess: i.placeHint ? { query: i.placeHint, from: 'voice' as const } : result.items.length === 1 && i.date === todayYmd() ? { gps: true as const } : undefined,
         hint: known || !i.accountHint ? null : t('capture.voiceReview.accountNotFound', { hint: i.accountHint, account: fallback?.name ?? '' }),
       };
     }),
@@ -44,7 +49,7 @@ export function VoiceReview({ result, accounts, onSave }: { result: VoiceResult;
     const time = localHm();
     const txs = drafts.map((d) => ({
       id: newId(), type: d.type, merchant: d.merchant.trim(), categoryKey: d.categoryKey, accountId: d.accountPick,
-      date: d.date, time, amount: d.amountEdit as number, currency: d.currency, note: d.note ?? undefined, source: 'voice' as const,
+      date: d.date, time, amount: d.amountEdit as number, currency: d.currency, note: d.note ?? undefined, source: 'voice' as const, place: d.place ?? undefined,
     }));
     saving.run(() => onSave(txs));
   };
@@ -76,6 +81,7 @@ export function VoiceReview({ result, accounts, onSave }: { result: VoiceResult;
                 {d.hint}
               </AppText>
             )}
+            <PlaceField value={d.place} onChange={(place) => patch(d.key, { place })} guess={d.guess} />
           </View>
         </Card>
       ))}

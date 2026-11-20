@@ -1,4 +1,4 @@
-import type { Account, AccountType, AppNotification, BudgetRecord, LimitGroup, ReceiptDetails, ReceiptDiscount, ReceiptTaxLine, Transaction, TxSource, TxType } from '@/data/types';
+import type { Account, AccountType, AppNotification, BudgetRecord, LimitGroup, ReceiptDetails, ReceiptDiscount, ReceiptTaxLine, Transaction, TxPlace, TxSource, TxType } from '@/data/types';
 import type { MsgKey } from '@/i18n/translate';
 
 /** Baris DB (snake_case) → tipe domain klien. Nominal bigint datang sebagai number dari PostgREST. */
@@ -34,6 +34,7 @@ export type TransactionRow = {
   subtotal?: number | null; discount_total?: number | null; tax_total?: number | null; tax_included?: boolean | null;
   service_amount?: number | null; discounts?: unknown; tax_lines?: unknown; receipt_no?: string | null;
   payment_method?: string | null; store_address?: string | null; store_tax_id?: string | null;
+  place_name?: string | null; place_address?: string | null; place_lat?: number | null; place_lng?: number | null; place_id?: string | null;
 };
 
 export const opt = <T,>(v: T | null | undefined): T | undefined => (v === null || v === undefined ? undefined : v);
@@ -68,6 +69,11 @@ function toReceipt(r: TransactionRow): ReceiptDetails | undefined {
   const empty = !discounts.length && !taxLines.length && Object.entries(receipt).every(([k, v]) => k === 'discounts' || k === 'taxLines' || v === undefined);
   return empty ? undefined : receipt;
 }
+
+const toPlace = (r: TransactionRow): TxPlace | undefined =>
+  r.place_name && r.place_lat != null && r.place_lng != null
+    ? { name: r.place_name, address: optStr(r.place_address), lat: Number(r.place_lat), lng: Number(r.place_lng), placeId: optStr(r.place_id) }
+    : undefined;
 
 export type NotificationRow = {
   id: string; type: AppNotification['type']; title_key: string; message_key: string;
@@ -129,6 +135,7 @@ export const toTransaction = (r: TransactionRow): Transaction => ({
         .map((i) => ({ name: i.name, qty: Number(i.qty), unitPrice: Number(i.unit_price), total: Number(i.total), discount: optNum(i.discount) || undefined, taxRate: optNum(i.tax_rate) }))
     : undefined,
   receipt: toReceipt(r),
+  place: toPlace(r),
   reimburseStatus: r.reimburse_status ?? undefined,
   reimbursedBy: r.reimbursed_by ?? undefined,
 });
@@ -154,6 +161,12 @@ export const fromTransaction = (t: Transaction) => ({
   reimburse_status: t.type === 'expense' ? (t.reimburseStatus ?? null) : null,
   reimbursed_by: t.type === 'expense' ? (t.reimbursedBy ?? null) : null,
   ...(t.receipt ? receiptColumns(t.receipt) : {}),
+  // Selalu dikirim: ubah transaksi tanpa lokasi = lokasi lama dihapus.
+  place_name: t.place?.name ?? null,
+  place_address: t.place?.address ?? null,
+  place_lat: t.place?.lat ?? null,
+  place_lng: t.place?.lng ?? null,
+  place_id: t.place?.placeId ?? null,
 });
 
 /** Kolom rincian struk. Hanya dikirim bila transaksi punya rincian, jadi transaksi manual tidak menyentuhnya. */

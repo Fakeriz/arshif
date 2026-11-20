@@ -4,7 +4,8 @@ import { StyleSheet, View } from 'react-native';
 
 import { useT } from '@/i18n';
 import { AmountField, AppText, Button, DateField, Input, useSaveThen } from '@/components/ui';
-import type { ReceiptDetails, ReceiptItem, Transaction } from '@/data/types';
+import type { ReceiptDetails, ReceiptItem, Transaction, TxPlace } from '@/data/types';
+import { PlaceField, type PlaceGuess } from '@/features/places/PlaceField';
 import { formatMoney } from '@/lib/money';
 import { discountsTotal, isLowConfidence, itemsTotal, subtotalMismatch, totalCheck } from '@/lib/receipt';
 import { newId } from '@/lib/uuid';
@@ -67,6 +68,9 @@ export function ScanReview({ result: r, receiptPath, accounts, existing, onSave,
   );
   const [receipt] = useState(() => receiptFromScan(r));
   const [tried, setTried] = useState(false);
+  const [place, setPlace] = useState<TxPlace | null>(existing?.place ?? null);
+  // Tebakan sekali dari nama + alamat cabang di struk; transaksi yang sudah punya lokasi tidak ditebak ulang.
+  const [guess] = useState<PlaceGuess | undefined>(() => (existing?.place || !r.merchant.trim() ? undefined : { query: [r.merchant, r.storeAddress].filter(Boolean).join(', '), from: 'scan' }));
 
   const mismatch = r.subtotal !== null && items.length > 0 ? subtotalMismatch(items, r.subtotal) : { mismatch: false, diff: 0 };
   const errors = {
@@ -97,6 +101,7 @@ export function ScanReview({ result: r, receiptPath, accounts, existing, onSave,
         receiptPath,
         items: items.length ? items : undefined,
         receipt,
+        place: place ?? undefined,
       }),
     );
   };
@@ -111,6 +116,7 @@ export function ScanReview({ result: r, receiptPath, accounts, existing, onSave,
       <AmountField label={t('capture.scanReview.total', { currency: r.currency })} value={total} onChange={setTotal} currency={r.currency} error={errors.total} warning={hasBreakdown && total && !formula.ok ? t('tx.receipt.totalWarning') : conf(r.confidence.total)} />
       <CategoryPicker type="expense" scroll value={category} onChange={setCategory} />
       <AccountPicker label={t('capture.scanReview.paidFrom')} accounts={accounts} value={accountId} onChange={setAccountId} />
+      <PlaceField value={place} onChange={setPlace} guess={guess} />
 
       {hasBreakdown && (
         <ReceiptCard

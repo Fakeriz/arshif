@@ -120,6 +120,7 @@ export const VOICE_SCHEMA: GeminiSchema = {
           categoryKey: CATEGORY,
           date: S('YYYY-MM-DD'),
           note: S('optional note or null', true),
+          placeHint: S('Store or place name the speaker said they bought at, with area if said (e.g. "Indomaret Kemang"), or null', true),
         },
         required: ['type', 'merchant', 'amount', 'currency', 'categoryKey', 'date'],
       },
@@ -136,6 +137,7 @@ Normalize informal numbers: "goceng" = 5000, "ceban" = 10000, "gopek" = 500, "50
 Currency: use the one spoken; otherwise ${ctx.defaultCurrency}.
 Accounts of this user:
 ${list}
+Set placeHint only when the speaker names where they bought it; never guess a place.
 Set accountId only when the speaker clearly refers to one of these accounts (e.g. "pakai GoPay", "cash" = a cash account). Otherwise accountId = null and put the spoken words in accountHint.
 ${CATEGORY_GUIDE}
 If nothing financial is said, return an empty items array.`;

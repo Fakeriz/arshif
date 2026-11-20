@@ -135,6 +135,28 @@ const tx = {
     rowPending: 'Menunggu diganti',
     rowDone: 'Sudah diganti',
   },
+  place: {
+    label: "Lokasi",
+    add: "Tambah lokasi",
+    change: "Ganti",
+    remove: "Hapus lokasi",
+    openMaps: "Buka {name} di Google Maps",
+    guessScan: "Ditebak dari alamat di struk. Cek dulu, ketuk Ganti bila salah.",
+    guessVoice: "Ditebak dari tempat yang kamu sebut. Cek dulu, ketuk Ganti bila salah.",
+    guessGps: "Ditebak dari posisimu sekarang. Cek dulu, ketuk Ganti bila salah.",
+    sheetTitle: "Pilih lokasi",
+    searchLabel: "Cari tempat",
+    searchPlaceholder: "Nama toko atau alamat",
+    useMine: "Pakai lokasi saya sekarang",
+    useMineSub: "Tempat terdekat dari posisimu",
+    noResultsTitle: "Tempat tidak ditemukan",
+    noResultsMessage: "Coba tambahkan nama daerah, mis. \"Indomaret Kemang\".",
+    notConfigured: "Pencarian lokasi belum aktif di server.",
+    rateLimited: "Terlalu banyak pencarian. Tunggu sebentar lalu coba lagi.",
+    failed: "Lokasi gagal dimuat. Periksa koneksimu lalu coba lagi.",
+    permissionDenied: "Izin lokasi ditolak. Aktifkan di pengaturan HP, atau cari tempat dengan mengetik.",
+    gpsFailed: "Posisimu tidak terbaca. Cari tempat dengan mengetik.",
+  },
 };
 
 export default tx;

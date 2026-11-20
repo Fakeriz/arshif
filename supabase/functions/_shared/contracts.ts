@@ -9,6 +9,7 @@ import { z } from 'zod';
 
 export const LANGS = ['id', 'ms', 'tr', 'en'] as const;
 export const Lang = z.enum(LANGS);
+export type Lang = z.infer<typeof Lang>;
 
 export const CATEGORY_KEYS = [
   'groceries', 'food', 'transport', 'fuel', 'housing', 'utilities', 'phone', 'health', 'education', 'hangout',
@@ -98,9 +99,33 @@ export const VoiceItem = z.object({
   categoryKey: CategoryKey,
   date: Ymd,
   note: z.string().max(200).nullable(),
+  /** Nama tempat yang diucapkan ("di Indomaret Kemang"), dicocokkan ke Google Places di layar tinjau. */
+  placeHint: z.string().max(120).nullable().default(null),
 });
 export const VoiceResult = z.object({ transcript: z.string().max(2000), items: z.array(VoiceItem).max(20) });
 export type VoiceResult = z.infer<typeof VoiceResult>;
+
+// ------------------------------------------------------------------ places (lokasi transaksi, Google Places)
+const LatLng = z.object({ lat: z.number().min(-90).max(90), lng: z.number().min(-180).max(180) });
+export const PlacesRequest = z.discriminatedUnion('action', [
+  /** Cari teks ("Indomaret Kemang"); near = bias ke sekitar posisi pengguna bila ada. */
+  z.object({ action: z.literal('search'), query: z.string().trim().min(2).max(200), lang: Lang, near: LatLng.nullable().default(null) }),
+  /** Tempat terdekat dari GPS. */
+  z.object({ action: z.literal('nearby'), lang: Lang, at: LatLng }),
+  /** Gambar peta statis untuk pin (kunci API tetap di server). */
+  z.object({ action: z.literal('map'), at: LatLng, dark: z.boolean().default(false) }),
+]);
+export const Place = z.object({
+  name: z.string().min(1).max(120),
+  address: z.string().max(240).nullable(),
+  lat: z.number().min(-90).max(90),
+  lng: z.number().min(-180).max(180),
+  placeId: z.string().max(300).nullable(),
+});
+export type Place = z.infer<typeof Place>;
+export const PlacesResult = z.object({ places: z.array(Place).max(8) });
+/** data URI PNG. */
+export const PlaceMapResult = z.object({ image: z.string().startsWith('data:image/png;base64,').max(400_000) });
 
 // ------------------------------------------------------------------ import-statement (FR-PDF-1..4)
 export const ImportRequest = z.object({ path: StoragePath, accountId: Uuid, lang: Lang });
@@ -236,4 +261,5 @@ export const FUNCTIONS = {
   checkout: 'checkout-create',
   entitlementSync: 'entitlement-sync',
   adminUser: 'admin-user',
+  places: 'places',
 } as const;

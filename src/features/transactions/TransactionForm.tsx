@@ -4,7 +4,8 @@ import { StyleSheet, View } from 'react-native';
 import { useT, type MsgKey } from '@/i18n';
 import { CurrencySheet } from '@/components/shell/CurrencySheet';
 import { AmountInput, Button, Chip, DateField, Input, Tabs, useSaveThen } from '@/components/ui';
-import type { Transaction, TxType } from '@/data/types';
+import type { Transaction, TxPlace, TxType } from '@/data/types';
+import { PlaceField } from '@/features/places/PlaceField';
 import { addDays, todayYmd } from '@/lib/dates';
 import { convert } from '@/lib/fx';
 import { validateTx } from '@/lib/validate';
@@ -42,6 +43,7 @@ export function TransactionForm({ accounts, initial, onSubmit }: TransactionForm
   const today = todayYmd();
   const [date, setDate] = useState(initial?.date ?? today);
   const [note, setNote] = useState(initial?.note ?? '');
+  const [place, setPlace] = useState<TxPlace | null>(initial?.place ?? null);
   const [submitted, setSubmitted] = useState(false);
   const [sheet, setSheet] = useState(false);
 
@@ -85,6 +87,7 @@ export function TransactionForm({ accounts, initial, onSubmit }: TransactionForm
         source: initial?.source ?? 'manual',
         items: initial?.items,
         receipt: initial?.receipt,
+        place: type === 'transfer' ? undefined : (place ?? undefined),
       }),
     );
   };
@@ -106,6 +109,7 @@ export function TransactionForm({ accounts, initial, onSubmit }: TransactionForm
             error={errors.merchant}
           />
           <CategoryPicker type={type} value={categoryKey} onChange={setCategoryKey} error={errors.categoryKey} />
+          <PlaceField value={place} onChange={setPlace} />
         </>
       )}
       <DateField label={t('tx.form.date')} value={date} onChange={setDate} error={errors.date} />

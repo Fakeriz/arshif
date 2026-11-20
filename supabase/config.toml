@@ -485,3 +485,7 @@ import_map = "./functions/import_map.json"
 [functions.planning-reminders]
 verify_jwt = false
 import_map = "./functions/import_map.json"
+
+[functions.places]
+verify_jwt = false
+import_map = "./functions/import_map.json"

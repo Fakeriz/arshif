@@ -123,6 +123,28 @@ const tx: Messages['tx'] = {
     rowPending: 'Awaiting payback',
     rowDone: 'Paid back',
   },
+  place: {
+    label: "Location",
+    add: "Add location",
+    change: "Change",
+    remove: "Remove location",
+    openMaps: "Open {name} in Google Maps",
+    guessScan: "Guessed from the address on the receipt. Check it, tap Change if wrong.",
+    guessVoice: "Guessed from the place you mentioned. Check it, tap Change if wrong.",
+    guessGps: "Guessed from where you are now. Check it, tap Change if wrong.",
+    sheetTitle: "Choose location",
+    searchLabel: "Search places",
+    searchPlaceholder: "Store name or address",
+    useMine: "Use my current location",
+    useMineSub: "Places nearest to you",
+    noResultsTitle: "No places found",
+    noResultsMessage: "Try adding the area, e.g. \"Tesco Ampang\".",
+    notConfigured: "Location search is not enabled on the server yet.",
+    rateLimited: "Too many searches. Wait a moment and try again.",
+    failed: "Couldn't load locations. Check your connection and try again.",
+    permissionDenied: "Location permission denied. Turn it on in your phone settings, or search by typing.",
+    gpsFailed: "Couldn't read your position. Search by typing.",
+  },
 };
 
 export default tx;
