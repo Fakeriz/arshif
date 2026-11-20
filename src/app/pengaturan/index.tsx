@@ -6,7 +6,7 @@ import { Platform, StyleSheet, View } from 'react-native';
 import { Screen } from '@/components/shell/Screen';
 import { HeaderButton } from '@/components/shell/HeaderActions';
 import { ScreenHeader } from '@/components/shell/ScreenHeader';
-import { AppText, Button, Card, Dialog, MenuGroup, type MenuEntry } from '@/components/ui';
+import { AppText, Card, Dialog, MenuGroup, type MenuEntry } from '@/components/ui';
 import { isAdmin } from '@/data/remote/api';
 import { LANGS, useI18n } from '@/i18n';
 import { isoDateLabel } from '@/lib/dates';
@@ -83,8 +83,7 @@ export default function PengaturanScreen() {
       <MenuGroup label={t('settings.groups.prefs')} entries={prefs} />
       <MenuGroup label={t('settings.groups.data')} entries={data} />
 
-      <Button label={t('settings.signOut')} icon={LogOut} variant="secondary" fullWidth onPress={() => setSigningOut(true)} />
-      {/* Keluar (ikon kanan atas atau tombol bawah) selalu dikonfirmasi dulu. Sesi dihapus dari perangkat, gerbang rute kembali ke layar masuk. */}
+      {/* Keluar (ikon kanan atas) selalu dikonfirmasi dulu. Sesi dihapus dari perangkat, gerbang rute kembali ke layar masuk. */}
       <Dialog
         visible={signingOut}
         title={t('settings.signOutTitle')}

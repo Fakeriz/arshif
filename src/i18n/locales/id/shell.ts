@@ -13,11 +13,6 @@ const shell = {
       subLimited: 'Kuota scan bulan ini habis',
       reason: 'Kuota scan struk Free ({free}/bulan) sudah habis. Reset tanggal 1, atau upgrade untuk {premium} scan/bulan.',
     },
-    docscan: {
-      title: 'Scan Dokumen',
-      short: 'Dokumen',
-      sub: 'Tepi struk terdeteksi dan dipotong otomatis',
-    },
     voice: {
       title: 'Voice Log',
       short: 'Voice Log',

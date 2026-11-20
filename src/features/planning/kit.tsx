@@ -3,6 +3,7 @@ import { useState, type ReactNode } from 'react';
 import { ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
 import { useReducedMotion } from 'react-native-reanimated';
 
+import { HeaderButton } from '@/components/shell/HeaderActions';
 import { usePaywall } from '@/components/shell/Paywall';
 import { Screen } from '@/components/shell/Screen';
 import { ScreenHeader } from '@/components/shell/ScreenHeader';
@@ -41,13 +42,13 @@ export function PlanScreen({ title, right, children, tabs }: { title: string; ri
   );
 }
 
-/** Tombol tambah. Batas paket tercapai: badge PRO dan ketukan membuka paywall, bukan form. */
+/** Tombol tambah: ikon + bulat di kanan atas. Batas paket tercapai: badge PRO dan ketukan membuka paywall, bukan form. */
 export function AddButton({ label, limited, reason, onPress }: { label: string; limited: boolean; reason: string; onPress: () => void }) {
   const paywall = usePaywall();
   return (
     <View style={styles.addRow}>
       {limited && <ProBadge size="sm" />}
-      <Button label={label} icon={Plus} size="sm" variant="secondary" onPress={() => (limited ? paywall(reason) : onPress())} />
+      <HeaderButton label={label} icon={Plus} onPress={() => (limited ? paywall(reason) : onPress())} />
     </View>
   );
 }

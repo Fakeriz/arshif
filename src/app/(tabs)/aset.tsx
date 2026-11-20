@@ -60,17 +60,20 @@ export default function AsetScreen() {
         title={t('shell.assets.title')}
         subtitle={t('shell.assets.subtitle')}
         right={
-          // Pengaturan tampilan aset: di menu titik tiga, bukan kartu di tengah layar.
-          <HeaderMenu>
-            {() => (
-              <ListItem
-                title={t('settings.includeAssets')}
-                subtitle={t('settings.includeAssetsSub')}
-                subtitleLines={2}
-                trailing={<Toggle value={state.includeAssets} onChange={(value) => dispatch({ type: 'prefs/includeAssets', value })} accessibilityLabel={t('settings.includeAssets')} />}
-              />
-            )}
-          </HeaderMenu>
+          // Tambah aset + pengaturan tampilan aset (menu titik tiga), bukan di tengah layar.
+          <>
+            {status === 'ready' && <AddButton label={t('assets.add')} limited={limits.assets} reason={t('assets.limitReason')} onPress={() => setForm(true)} />}
+            <HeaderMenu>
+              {() => (
+                <ListItem
+                  title={t('settings.includeAssets')}
+                  subtitle={t('settings.includeAssetsSub')}
+                  subtitleLines={2}
+                  trailing={<Toggle value={state.includeAssets} onChange={(value) => dispatch({ type: 'prefs/includeAssets', value })} accessibilityLabel={t('settings.includeAssets')} />}
+                />
+              )}
+            </HeaderMenu>
+          </>
         }
       />
       {status === 'error' ? (
@@ -145,7 +148,6 @@ export default function AsetScreen() {
 
           <Group
             label={t('assets.sectionAssets')}
-            right={<AddButton label={t('assets.add')} limited={limits.assets} reason={t('assets.limitReason')} onPress={() => setForm(true)} />}
           >
             <ListCard>
               <ListItem

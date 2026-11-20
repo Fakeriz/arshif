@@ -292,7 +292,9 @@ describe('perbaikan uji HP', () => {
       wrap(<MoreSheet />);
     });
     for (const title of ['Catat', 'Bisnis & alat']) expect(screen.getByText(title)).toBeTruthy();
-    for (const item of ['Scan Dokumen', 'Import Rekening Koran', 'Catat Manual', 'Invoice & Penawaran', 'Alat']) expect(screen.getByText(item)).toBeTruthy();
+    for (const item of ['Import Rekening Koran', 'Catat Manual', 'Invoice & Penawaran', 'Alat']) expect(screen.getByText(item)).toBeTruthy();
+    // Scan Dokumen dihapus: sama dengan Scan struk > Ambil foto.
+    expect(screen.queryByText('Scan Dokumen')).toBeNull();
   });
 
   it('daftar transaksi dirender bertahap (60 baris dulu)', async () => {
@@ -321,7 +323,7 @@ function MoreSheet() {
       visible
       onClose={jest.fn()}
       sections={[
-        { key: 'log', title: t('home.more.sectionLog'), keys: ['docscan', 'pdf', 'manual'] },
+        { key: 'log', title: t('home.more.sectionLog'), keys: ['pdf', 'manual'] },
         { key: 'business', title: t('home.more.sectionBusiness'), extras: items },
       ]}
     />

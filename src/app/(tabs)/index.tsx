@@ -92,7 +92,7 @@ export default function HomeScreen() {
         title={t('home.more.title')}
         subtitle={t('home.more.subtitle')}
         sections={[
-          { key: 'log', title: t('home.more.sectionLog'), keys: ['docscan', 'pdf', 'manual'] },
+          { key: 'log', title: t('home.more.sectionLog'), keys: ['pdf', 'manual'] },
           { key: 'business', title: t('home.more.sectionBusiness'), extras: moreItems },
         ]}
       />

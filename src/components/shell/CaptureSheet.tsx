@@ -3,7 +3,6 @@ import { StyleSheet, View } from 'react-native';
 
 import { useT } from '@/i18n';
 import { AppText, BottomSheet, Icon, ListItem, ProBadge } from '@/components/ui';
-import { startScanFromSheet } from '@/features/capture/scanLaunch';
 import { useLimits } from '@/state/limits';
 import { useTheme } from '@/theme/ThemeProvider';
 import { radius, space } from '@/theme/tokens';
@@ -65,7 +64,6 @@ export function CaptureSheet({ visible, onClose, title, subtitle, sections }: Ca
                 onClose();
                 if (o.limited) paywall(o.reason);
                 else if (o.key === 'scan') scanSource();
-                else if (o.key === 'docscan') startScanFromSheet('camera', (h) => router.push(h));
                 else router.push(o.href);
               }}
             />
