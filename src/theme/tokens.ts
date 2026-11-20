@@ -1,6 +1,6 @@
 /**
- * Arshif design tokens: "Monokrom" (docs/design.md, revisi dari "Kaca & Aksen").
- * Kartu solid di atas kanvas netral, primary terbalik (terang di gelap, gelap di terang),
+ * Arshif design tokens: "Monokrom", palet stone/paper (docs/design.md, revisi 2026-11-20).
+ * Kartu kertas di atas kanvas batu, primary terbalik (terang di gelap, gelap di terang),
  * kontrol berbentuk pill. Warna hanya untuk makna (naik/turun/peringatan) dan kategori.
  * Kunci token "glass*" dipertahankan demi kompatibilitas komponen; nilainya kini solid.
  * Semua pasangan teks/latar diverifikasi WCAG AA di __tests__/contrast.test.ts.
@@ -58,66 +58,112 @@ export type Palette = BasePalette & AccentTokens;
 
 export const palettes: Record<ColorScheme, BasePalette> = {
   dark: {
-    bg: '#09090B',
-    surface: '#121214',
-    surfaceRaised: '#1F1F1F',
-    surfaceSunken: '#262626',
-    border: 'rgba(255, 255, 255, 0.06)',
-    borderStrong: 'rgba(255, 255, 255, 0.12)',
-    text: '#FAFAFA',
-    textSecondary: '#ABABAB',
-    textMuted: '#8F8F8F',
-    positive: '#5BD69A',
-    positiveSoft: 'rgba(91, 214, 154, 0.12)',
-    negative: '#F87171',
-    negativeSoft: 'rgba(248, 113, 113, 0.12)',
-    warning: '#E5B54A',
-    warningSoft: 'rgba(229, 181, 74, 0.12)',
-    info: '#8AB4F8',
-    infoSoft: 'rgba(138, 180, 248, 0.12)',
+    bg: '#0D0D0D',
+    surface: '#161616',
+    surfaceRaised: '#262626',
+    surfaceSunken: '#2B2B2B',
+    border: 'rgba(255, 255, 255, 0.08)',
+    borderStrong: 'rgba(255, 255, 255, 0.15)',
+    text: '#E0E0E0',
+    textSecondary: '#C9C9C9',
+    textMuted: '#A4A4A4',
+    positive: '#7FC79B',
+    positiveSoft: 'rgba(127, 199, 155, 0.13)',
+    negative: '#F08A80',
+    negativeSoft: 'rgba(240, 138, 128, 0.13)',
+    warning: '#E0B05C',
+    warningSoft: 'rgba(224, 176, 92, 0.13)',
+    info: '#9DB8DE',
+    infoSoft: 'rgba(157, 184, 222, 0.13)',
     track: 'rgba(255, 255, 255, 0.10)',
     skeleton: 'rgba(255, 255, 255, 0.06)',
-    overlay: 'rgba(0, 0, 0, 0.64)',
-    glass: '#121214',
-    glassStrong: '#1F1F1F',
-    glassBorder: 'rgba(255, 255, 255, 0.06)',
-    glassFallback: '#121214',
-    glassStrongFallback: '#1F1F1F',
+    overlay: 'rgba(0, 0, 0, 0.6)',
+    glass: '#161616',
+    glassStrong: '#262626',
+    glassBorder: 'rgba(255, 255, 255, 0.08)',
+    glassFallback: '#161616',
+    glassStrongFallback: '#262626',
   },
   light: {
-    bg: '#F3F3F3',
-    surface: '#FFFFFF',
-    surfaceRaised: '#FFFFFF',
-    surfaceSunken: '#F4F4F4',
-    border: 'rgba(0, 0, 0, 0.06)',
-    borderStrong: 'rgba(0, 0, 0, 0.12)',
+    bg: '#E5E5E2',
+    surface: '#F2F2F2',
+    surfaceRaised: '#FAFAFA',
+    surfaceSunken: '#D8D6D4',
+    border: 'rgba(8, 8, 8, 0.075)',
+    borderStrong: 'rgba(8, 8, 8, 0.15)',
     text: '#0A0A0A',
-    textSecondary: '#525252',
-    textMuted: '#636363',
-    positive: '#15803D',
-    positiveSoft: 'rgba(21, 128, 61, 0.08)',
-    negative: '#B91C1C',
-    negativeSoft: 'rgba(185, 28, 28, 0.08)',
+    textSecondary: '#575655',
+    textMuted: '#575655',
+    positive: '#2E6B46',
+    positiveSoft: 'rgba(46, 107, 70, 0.12)',
+    negative: '#A8322B',
+    negativeSoft: 'rgba(168, 50, 43, 0.10)',
     warning: '#8A5A00',
-    warningSoft: 'rgba(138, 90, 0, 0.08)',
-    info: '#1D4ED8',
-    infoSoft: 'rgba(29, 78, 216, 0.08)',
-    track: 'rgba(0, 0, 0, 0.08)',
-    skeleton: 'rgba(0, 0, 0, 0.06)',
+    warningSoft: 'rgba(176, 120, 20, 0.14)',
+    info: '#3D5A80',
+    infoSoft: 'rgba(61, 90, 128, 0.11)',
+    track: 'rgba(8, 8, 8, 0.10)',
+    skeleton: 'rgba(8, 8, 8, 0.06)',
     overlay: 'rgba(0, 0, 0, 0.32)',
-    glass: '#FFFFFF',
-    glassStrong: '#FFFFFF',
-    glassBorder: 'rgba(0, 0, 0, 0.06)',
-    glassFallback: '#FFFFFF',
-    glassStrongFallback: '#FFFFFF',
+    glass: '#F2F2F2',
+    glassStrong: '#FAFAFA',
+    glassBorder: 'rgba(8, 8, 8, 0.075)',
+    glassFallback: '#F2F2F2',
+    glassStrongFallback: '#FAFAFA',
   },
 };
+
+/**
+ * Kartu tinta: satu per layar, memegang angka terpenting (titik fokus).
+ * Gelap di tema terang; di tema gelap TERBALIK (terang) agar tetap titik paling kontras.
+ * `brass` = satu-satunya aksen, khusus tag mata uang (IDR/MYR/TRY/USD).
+ */
+export type InkCardTokens = {
+  bg: string;
+  text: string;
+  textMuted: string;
+  brass: string;
+  positive: string;
+  positiveSoft: string;
+  negative: string;
+  negativeSoft: string;
+  track: string;
+};
+
+export const inkCard: Record<ColorScheme, InkCardTokens> = {
+  light: {
+    bg: '#0A0A0A',
+    text: '#E0E0E0',
+    textMuted: '#A4A4A4',
+    brass: '#D9B26A',
+    positive: '#7FC79B',
+    positiveSoft: 'rgba(127, 199, 155, 0.16)',
+    negative: '#F08A80',
+    negativeSoft: 'rgba(240, 138, 128, 0.16)',
+    track: 'rgba(255, 255, 255, 0.12)',
+  },
+  dark: {
+    bg: '#E0E0E0',
+    text: '#0A0A0A',
+    textMuted: '#575655',
+    brass: '#735214',
+    // Lebih gelap dari palet terang: badge tren di atas tinta soft pada #E0E0E0 butuh 4.5:1.
+    positive: '#22573A',
+    positiveSoft: 'rgba(46, 107, 70, 0.12)',
+    negative: '#8C2621',
+    negativeSoft: 'rgba(168, 50, 43, 0.10)',
+    track: 'rgba(8, 8, 8, 0.10)',
+  },
+};
+
+/** Tag mata uang di atas latar/kartu biasa (bukan kartu tinta). */
+export const brass: Record<ColorScheme, string> = { light: '#735214', dark: '#D9B26A' };
 
 /** Aksen pilihan pengguna (FR-SET-4). Netral = default (primary terbalik, tanpa glow). */
 export const accents: Record<AccentKey, Record<ColorScheme, AccentTokens>> = {
   netral: {
-    dark: { accent: '#EDEDED', onAccent: '#0A0A0A', accentText: '#FAFAFA', accentSoft: 'rgba(255, 255, 255, 0.08)', accentGlow: 'rgba(0, 0, 0, 0)', focus: '#D4D4D4' },
-    light: { accent: '#0A0A0A', onAccent: '#FFFFFF', accentText: '#0A0A0A', accentSoft: 'rgba(0, 0, 0, 0.05)', accentGlow: 'rgba(0, 0, 0, 0)', focus: '#525252' },
+    dark: { accent: '#E0E0E0', onAccent: '#0A0A0A', accentText: '#E0E0E0', accentSoft: 'rgba(255, 255, 255, 0.08)', accentGlow: 'rgba(0, 0, 0, 0)', focus: '#C9C9C9' },
+    light: { accent: '#0A0A0A', onAccent: '#F4F4F4', accentText: '#0A0A0A', accentSoft: 'rgba(8, 8, 8, 0.06)', accentGlow: 'rgba(0, 0, 0, 0)', focus: '#575655' },
   },
   merah: {
     dark: { accent: '#D42A45', onAccent: '#FFFFFF', accentText: '#FF8595', accentSoft: 'rgba(212, 42, 69, 0.14)', accentGlow: 'rgba(212, 42, 69, 0.30)', focus: '#FF8595' },
@@ -216,8 +262,12 @@ export const radius = {
   card: 20,
   /** Panel di dalam kartu (ringkasan, baris daftar berlatar, textarea). */
   inset: 14,
-  /** Tombol, input satu baris, select, chip, badge, toggle. */
+  /** Tombol, chip, toggle (pill). */
   control: 999,
+  /** Input satu baris dan select: kotak lembut, beda dari tombol agar terbaca sebagai isian. */
+  field: 14,
+  /** Badge status dan delta. */
+  badge: 8,
   /** Batang grafik. */
   bar: 6,
   /** Bottom sheet & dialog. */
@@ -310,7 +360,7 @@ export const chartArea: Record<ColorScheme, { fill: string; line: string }> = {
 
 /**
  * Elevasi. Gelap: tanpa bayangan, kedalaman dari selisih nada permukaan.
- * Terang: bayangan sangat tipis agar kartu putih terangkat dari kanvas #F3F3F3.
+ * Terang: bayangan tipis agar kartu kertas #F2F2F2 terangkat dari kanvas batu #E5E5E2.
  */
 export const elevation = {
   dark: {
@@ -318,7 +368,7 @@ export const elevation = {
     floating: { shadowColor: '#000000', shadowOpacity: 0.5, shadowRadius: 24, shadowOffset: { width: 0, height: 8 }, elevation: 8 },
   },
   light: {
-    card: { shadowColor: '#000000', shadowOpacity: 0.04, shadowRadius: 12, shadowOffset: { width: 0, height: 2 }, elevation: 1 },
+    card: { shadowColor: '#080808', shadowOpacity: 0.12, shadowRadius: 20, shadowOffset: { width: 0, height: 12 }, elevation: 1 },
     floating: { shadowColor: '#000000', shadowOpacity: 0.12, shadowRadius: 24, shadowOffset: { width: 0, height: 8 }, elevation: 8 },
   },
 } as const;

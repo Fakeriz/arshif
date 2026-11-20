@@ -178,7 +178,7 @@ describe('AccentPicker', () => {
         <CurrentAccent />
       </>,
     );
-    expect(screen.getByTestId('accent').props.children).toBe('netral:#EDEDED');
+    expect(screen.getByTestId('accent').props.children).toBe('netral:#E0E0E0');
     await fireEvent.press(screen.getByLabelText('Biru'));
     expect(screen.getByTestId('accent').props.children).toBe('biru:#2F6FE0');
     expect(screen.getByLabelText('Biru').props.accessibilityState.checked).toBe(true);
@@ -216,7 +216,7 @@ describe('Monokrom: tanpa glow, kartu solid', () => {
     return out;
   };
 
-  it.each(ACCENT_OPTIONS.map((a) => a.key))('aksen %s: tidak ada glow, kartu gelap #121214', async (accent) => {
+  it.each(ACCENT_OPTIONS.map((a) => a.key))('aksen %s: tidak ada glow, kartu gelap #161616', async (accent) => {
     await render(
       <SafeAreaProvider initialMetrics={metrics}>
         <ThemeProvider initialMode="dark" initialAccent={accent}>
@@ -230,6 +230,6 @@ describe('Monokrom: tanpa glow, kartu solid', () => {
       </SafeAreaProvider>,
     );
     expect(hostTypes(screen.toJSON()).has('RNSVGRadialGradient')).toBe(false);
-    expect(StyleSheet.flatten(screen.getByLabelText('kartu').props.style).backgroundColor).toBe('#121214');
+    expect(StyleSheet.flatten(screen.getByLabelText('kartu').props.style).backgroundColor).toBe('#161616');
   });
 });

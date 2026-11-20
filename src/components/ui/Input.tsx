@@ -121,7 +121,7 @@ const styles = StyleSheet.create({
   disabled: { opacity: 0.5 },
   field: {
     minHeight: layout.inputHeight,
-    borderRadius: radius.md,
+    borderRadius: radius.field,
     borderWidth: layout.hairline,
     paddingHorizontal: space.lg,
     flexDirection: 'row',

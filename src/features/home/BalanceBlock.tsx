@@ -8,21 +8,32 @@ import { pctChange } from '@/lib/chart';
 import { shortDate, todayYmd } from '@/lib/dates';
 import { useAssets } from '@/state/assets';
 import { useStore } from '@/state/AppStore';
-import { useTheme } from '@/theme/ThemeProvider';
+import { InkCard, useTheme } from '@/theme/ThemeProvider';
 import { layout, radius, space } from '@/theme/tokens';
 
-export function BalanceBlock({
-  amount,
-  currency,
-  accountCount,
-  complete = true,
-}: {
+type BalanceProps = {
   amount: number;
   currency: string;
   accountCount: number;
   /** Utang dan aset sudah dimuat; sebelum itu delta tidak ditampilkan agar tidak berkedip salah. */
   complete?: boolean;
-}) {
+};
+
+/** Kekayaan bersih di kartu tinta: titik fokus Beranda. */
+export function BalanceBlock(props: BalanceProps) {
+  return (
+    <InkCard style={styles.card}>
+      <BalanceContent {...props} />
+    </InkCard>
+  );
+}
+
+function BalanceContent({
+  amount,
+  currency,
+  accountCount,
+  complete = true,
+}: BalanceProps) {
   const { colors } = useTheme();
   const { state, dispatch } = useStore();
   const hidden = state.hideBalance;
@@ -61,6 +72,7 @@ export function BalanceBlock({
 }
 
 const styles = StyleSheet.create({
+  card: { borderRadius: radius.card, padding: layout.cardPadding },
   wrap: { alignItems: 'center', gap: space.xs + 2, paddingVertical: space.sm },
   label: { flexDirection: 'row', alignItems: 'center', gap: space.xs },
   eye: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center', marginVertical: -space.md },
