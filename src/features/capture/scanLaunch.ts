@@ -2,6 +2,10 @@ import * as DocumentPicker from 'expo-document-picker';
 import * as ImagePicker from 'expo-image-picker';
 import { Platform } from 'react-native';
 
+import { motion } from '@/theme/tokens';
+
+import { DocScannerNative } from '../../../modules/doc-scanner';
+
 /** Cara memasukkan struk, dipilih di sheet Scan struk. */
 export type ScanSource = 'camera' | 'gallery' | 'multi' | 'pdf';
 export const SCAN_SOURCES: readonly ScanSource[] = ['camera', 'gallery', 'multi', 'pdf'];
@@ -10,7 +14,23 @@ export const MAX_MULTI = 3;
 /** Struk terpilih: foto (dikompres sebelum unggah) atau PDF (diunggah apa adanya). */
 export type PickedReceipt = { uri: string; width?: number; pdf?: boolean };
 
-/** Buka kamera/galeri/pemilih PDF. Hasil: berkas terpilih (maks `limit` untuk multi), kosong bila dibatalkan. */
+/** Izin kamera ditolak: layar Scan menawarkan galeri. */
+export class CameraPermissionError extends Error {}
+
+/**
+ * Pemindai dokumen (FR-OCR-6), deteksi tepi + potong otomatis lewat modul native `doc-scanner`:
+ * ML Kit di Android (butuh Google Play services), VisionKit di iOS. Tidak ada (web, Expo Go, build lama): kamera bawaan.
+ */
+function scannerReady(): boolean {
+  if (Platform.OS === 'web' || !DocScannerNative) return false;
+  try {
+    return DocScannerNative.isAvailable();
+  } catch {
+    return false;
+  }
+}
+
+/** Buka galeri/pemilih PDF/kamera bawaan. Hasil: berkas terpilih (maks `limit` untuk multi), kosong bila dibatalkan. */
 export function pickReceipts(source: ScanSource, limit = MAX_MULTI): Promise<PickedReceipt[]> {
   if (source === 'pdf') {
     return DocumentPicker.getDocumentAsync({ type: 'application/pdf', copyToCacheDirectory: true }).then((r) =>
@@ -25,28 +45,65 @@ export function pickReceipts(source: ScanSource, limit = MAX_MULTI): Promise<Pic
   return launch.then((r) => (r.canceled ? [] : r.assets.slice(0, max).map((a) => ({ uri: a.uri, width: a.width }))));
 }
 
-let pending: Promise<PickedReceipt[]> | null = null;
+/**
+ * Ambil struk dari `source`. Kamera di Android/iOS: pemindai dokumen; tanpa pemindai atau bila gagal dibuka, kamera bawaan.
+ * Web: pemilih dibuka sinkron (tanpa await sebelumnya) supaya klik input berkas masih dihitung sebagai ketukan pengguna.
+ */
+export async function acquireReceipts(source: ScanSource, limit = MAX_MULTI): Promise<PickedReceipt[]> {
+  if (source === 'camera' && Platform.OS !== 'web') {
+    if (scannerReady()) {
+      try {
+        const uri = await DocScannerNative!.scan(true);
+        return uri ? [{ uri }] : [];
+      } catch {
+        // Pemindai gagal dibuka: kamera bawaan.
+      }
+    }
+    const perm = await ImagePicker.requestCameraPermissionsAsync();
+    if (!perm.granted) throw new CameraPermissionError();
+  }
+  return pickReceipts(source, limit);
+}
+
+let pending: { source: ScanSource; files: Promise<PickedReceipt[]> } | null = null;
 
 /**
- * Buka layar Scan untuk `source` lewat `go`. Di web pemilih dibuka DI SINI, di dalam ketukan pengguna: browser menolak
- * membuka kamera/berkas di luar ketukan, jadi layar Scan tidak bisa membukanya sendiri. Layar Scan lalu memproses
- * hasilnya dari takePendingPick(). Android/iOS: layar Scan membuka pemindai/pemilih sendiri saat dibuka.
+ * Ambil struk DULU, baru buka layar Scan (hanya progres membaca) lewat `go`. Batal = tetap di layar asal.
+ * Gagal (mis. izin kamera) tetap membuka layar Scan supaya pesannya tampil.
  */
-export function openScan(source: ScanSource, go: (href: `/scan?src=${ScanSource}`) => void, limit = MAX_MULTI): void {
-  // Dipanggil sinkron (tanpa await sebelumnya) supaya klik input berkas masih dihitung sebagai ketukan pengguna.
-  if (Platform.OS === 'web') pending = pickReceipts(source, limit);
-  go(`/scan?src=${source}`);
+export function startScan(source: ScanSource, go: (href: '/scan') => void, limit = MAX_MULTI): void {
+  const files = acquireReceipts(source, limit);
+  files.then(
+    (f) => {
+      if (!f.length) return;
+      pending = { source, files };
+      go('/scan');
+    },
+    () => {
+      pending = { source, files };
+      go('/scan');
+    },
+  );
 }
 
-/** Buka layar lewat `go`; layar Scan dibuka langsung dengan kamera (Foto ulang). */
-export function openCapture<H>(href: H, go: (href: H) => void): void {
-  if (Platform.OS === 'web' && typeof href === 'string' && href.startsWith('/scan')) pending = pickReceipts('camera');
-  go(href);
+/**
+ * startScan dari tombol di dalam sheet yang baru ditutup. Web: langsung (pemilih harus di dalam ketukan).
+ * Native: tunggu sheet (Modal) selesai menutup, iOS menolak membuka kamera/galeri di atas Modal yang sedang menutup.
+ */
+export function startScanFromSheet(source: ScanSource, go: (href: '/scan') => void, limit = MAX_MULTI): void {
+  if (Platform.OS === 'web') startScan(source, go, limit);
+  else setTimeout(() => startScan(source, go, limit), motion.base + 50);
 }
 
-/** Struk yang sedang dipilih dari ketukan terakhir (web), sekali pakai. */
-export function takePendingPick(): Promise<PickedReceipt[]> | null {
-  const p = pending;
+/**
+ * Struk yang sudah diambil untuk layar Scan. null = layar dibuka langsung (mis. muat ulang halaman). Tidak dikosongkan saat
+ * dibaca: StrictMode memanggil inisialisasi state dua kali; tiap startScan menggantinya.
+ */
+export function pendingPick(): typeof pending {
+  return pending;
+}
+
+/** Dipanggil layar Scan setelah berkasnya diproses, supaya tidak diproses ulang. */
+export function clearPendingPick(): void {
   pending = null;
-  return p;
 }

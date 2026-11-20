@@ -1,10 +1,11 @@
-import { act, fireEvent, render, screen } from '@testing-library/react-native';
+import { act, render, screen } from '@testing-library/react-native';
 import type { ReactNode } from 'react';
 import { Platform } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import ScanScreen from '@/app/scan';
 import { PaywallProvider } from '@/components/shell/Paywall';
+import { acquireReceipts, startScan } from '@/features/capture/scanLaunch';
 import { ToastProvider } from '@/components/ui';
 import { sampleState } from '@/data/sample-state';
 import { I18nProvider } from '@/i18n';
@@ -18,8 +19,9 @@ jest.mock('expo-router', () => ({
   useLocalSearchParams: () => ({}),
 }));
 const mockLaunchCamera = jest.fn();
+const mockPermission = jest.fn();
 jest.mock('expo-image-picker', () => ({
-  requestCameraPermissionsAsync: () => Promise.resolve({ granted: true }),
+  requestCameraPermissionsAsync: () => mockPermission(),
   launchCameraAsync: (...a: unknown[]) => mockLaunchCamera(...a),
   launchImageLibraryAsync: () => Promise.resolve({ canceled: true, assets: null }),
 }));
@@ -56,58 +58,62 @@ beforeEach(() => {
   mockScanner = null;
   mockBack.mockReset();
   mockLaunchCamera.mockReset().mockResolvedValue({ canceled: true, assets: null });
+  mockPermission.mockReset().mockResolvedValue({ granted: true });
 });
 
-describe('Receipt OCR: kamera langsung, tanpa layar kamera perantara', () => {
-  it('tanpa pemindai: kamera bawaan langsung terbuka; batal = pilihan ambil foto / galeri (kamera bawaan tanpa galeri)', async () => {
-    await act(async () => {
-      wrap(<ScanScreen />);
-    });
+describe('Ambil struk (acquireReceipts): pemindai dulu, kamera bawaan sebagai cadangan', () => {
+  it('tanpa pemindai: kamera bawaan; batal = kosong (tetap di layar asal)', async () => {
+    expect(await acquireReceipts('camera')).toEqual([]);
     expect(mockLaunchCamera).toHaveBeenCalledTimes(1);
-    expect(mockBack).not.toHaveBeenCalled();
-    expect(screen.getByText('Pilih dari galeri')).toBeTruthy();
-    // Ketuk "Ambil foto struk" membuka kamera lagi.
-    await act(async () => fireEvent.press(screen.getByText('Ambil foto struk')));
-    expect(mockLaunchCamera).toHaveBeenCalledTimes(2);
   });
 
-  it('iOS dengan VisionKit: pemindai Apple yang dibuka; batal = pilihan galeri (VisionKit tanpa galeri)', async () => {
-    mockScanner = { isAvailable: () => true, scan: jest.fn().mockResolvedValue(null) };
-    await act(async () => {
-      wrap(<ScanScreen />);
-    });
-    expect(mockScanner.scan).toHaveBeenCalledTimes(1);
-    expect(mockLaunchCamera).not.toHaveBeenCalled();
-    expect(mockBack).not.toHaveBeenCalled();
-    expect(screen.getByText('Pilih dari galeri')).toBeTruthy();
-  });
-
-  it('Android dengan ML Kit: pemindai ML Kit yang dibuka; batal = kembali (galeri sudah ada di dalam ML Kit)', async () => {
+  it('Android dengan ML Kit: pemindai ML Kit (dengan galeri) yang dibuka, bukan kamera bawaan', async () => {
     asAndroid();
-    mockScanner = { isAvailable: () => true, scan: jest.fn().mockResolvedValue(null) };
-    await act(async () => {
-      wrap(<ScanScreen />);
-    });
+    mockScanner = { isAvailable: () => true, scan: jest.fn().mockResolvedValue('file://scan.jpg') };
+    expect(await acquireReceipts('camera')).toEqual([{ uri: 'file://scan.jpg' }]);
     expect(mockScanner.scan).toHaveBeenCalledWith(true);
     expect(mockLaunchCamera).not.toHaveBeenCalled();
-    expect(mockBack).toHaveBeenCalledTimes(1);
   });
 
-  it('ML Kit gagal dibuka: jatuh ke kamera bawaan, bukan layar error', async () => {
+  it('ML Kit gagal dibuka: jatuh ke kamera bawaan, bukan error', async () => {
     asAndroid();
     mockScanner = { isAvailable: () => true, scan: jest.fn().mockRejectedValue(new Error('ERR_UNAVAILABLE')) };
-    await act(async () => {
-      wrap(<ScanScreen />);
-    });
+    await acquireReceipts('camera');
     expect(mockScanner.scan).toHaveBeenCalledTimes(1);
     expect(mockLaunchCamera).toHaveBeenCalledTimes(1);
   });
+});
 
-  it('kuota scan habis: kamera tidak dibuka, ajakan Premium tampil', async () => {
+describe('Layar Scan: hanya progres dan error, tanpa tombol pilihan', () => {
+  it('dibuka tanpa struk (muat ulang/tautan langsung): kembali, tidak membuka kamera, tanpa tombol pilihan', async () => {
+    await act(async () => {
+      wrap(<ScanScreen />);
+    });
+    expect(mockBack).toHaveBeenCalledTimes(1);
+    expect(mockLaunchCamera).not.toHaveBeenCalled();
+    expect(screen.queryByText('Pilih dari galeri')).toBeNull();
+    expect(screen.queryByText('Ambil foto struk')).toBeNull();
+  });
+
+  it('izin kamera ditolak: layar error menawarkan galeri', async () => {
+    asAndroid();
+    mockPermission.mockResolvedValueOnce({ granted: false });
+    const go = jest.fn();
+    await act(async () => {
+      startScan('camera', go);
+    });
+    expect(go).toHaveBeenCalledWith('/scan');
+    await act(async () => {
+      wrap(<ScanScreen />);
+    });
+    expect(mockBack).not.toHaveBeenCalled();
+    expect(screen.getByText('Pilih dari galeri')).toBeTruthy();
+  });
+
+  it('kuota scan habis: ajakan Premium tampil', async () => {
     await act(async () => {
       wrap(<ScanScreen />, { plan: 'free', usage: { ...base.usage, scan: 20 } });
     });
-    expect(mockLaunchCamera).not.toHaveBeenCalled();
     expect(screen.getByText('Kuota scan bulan ini habis')).toBeTruthy();
   });
 });

@@ -4,7 +4,7 @@ import { createContext, useCallback, useContext, useState, type ReactNode } from
 import { StyleSheet, View } from 'react-native';
 
 import { BottomSheet, Icon, ListItem } from '@/components/ui';
-import { MAX_MULTI, openScan, SCAN_SOURCES, type ScanSource } from '@/features/capture/scanLaunch';
+import { MAX_MULTI, SCAN_SOURCES, startScanFromSheet, type ScanSource } from '@/features/capture/scanLaunch';
 import { useT } from '@/i18n';
 import { useLimits } from '@/state/limits';
 import { useTheme } from '@/theme/ThemeProvider';
@@ -50,7 +50,7 @@ export function ScanSourceProvider({ children }: { children: ReactNode }) {
             divider={i < SCAN_SOURCES.length - 1}
             onPress={() => {
               setVisible(false);
-              openScan(s, (h) => router.push(h), limit);
+              startScanFromSheet(s, (h) => router.push(h), limit);
             }}
           />
         ))}

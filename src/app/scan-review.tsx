@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Screen } from '@/components/shell/Screen';
 import { ScreenHeader } from '@/components/shell/ScreenHeader';
 import { EmptyState, useToast } from '@/components/ui';
-import { openCapture } from '@/features/capture/scanLaunch';
+import { startScan } from '@/features/capture/scanLaunch';
 import { discardPrivate } from '@/data/remote/upload';
 import { clearHandoff, peekHandoff, putHandoff } from '@/features/capture/handoff';
 import { ScanReview } from '@/features/capture/ScanReview';
@@ -51,10 +51,16 @@ export default function ScanReviewScreen() {
           accounts={accounts}
           existing={existing}
           onRetake={() => {
-            clearHandoff('scan');
-            retaking.current = true;
-            if (existing) goBack(router);
-            else openCapture('/scan' as const, (h) => router.replace(h));
+            if (existing) {
+              clearHandoff('scan');
+              return goBack(router);
+            }
+            // Kamera dibuka di sini; layar Scan baru menggantikan review setelah foto diambil. Batal = tetap di review.
+            startScan('camera', (h) => {
+              clearHandoff('scan');
+              retaking.current = true;
+              router.replace(h);
+            });
           }}
           onSave={(tx) => {
             // Ketukan ganda sebelum navigasi selesai: tiap ketukan membuat id baru, jadi yang kedua diabaikan.
@@ -85,7 +91,7 @@ export default function ScanReviewScreen() {
           }}
         />
       ) : (
-        <EmptyState title={t('capture.scanReview.missingTitle')} message={t('capture.scanReview.missingMessage')} actionLabel={t('capture.scan.title')} onAction={() => openCapture('/scan' as const, (h) => router.replace(h))} />
+        <EmptyState title={t('capture.scanReview.missingTitle')} message={t('capture.scanReview.missingMessage')} actionLabel={t('capture.scan.title')} onAction={() => startScan('camera', (h) => router.replace(h))} />
       )}
     </Screen>
   );
