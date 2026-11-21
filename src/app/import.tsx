@@ -20,6 +20,7 @@ import { useLedger } from '@/state/derived';
 import { useLimits } from '@/state/limits';
 import { useTheme } from '@/theme/ThemeProvider';
 import { radius, space } from '@/theme/tokens';
+import { aiCategories } from '@/constants/categories';
 
 import { FUNCTIONS, ImportResult } from '../../supabase/functions/_shared/contracts';
 
@@ -33,7 +34,7 @@ export default function ImportScreen() {
   const router = useRouter();
   const { colors } = useTheme();
   const { t, lang } = useI18n();
-  const { userId, refreshUsage } = useStore();
+  const { state, userId, refreshUsage } = useStore();
   const limits = useLimits();
   const paywall = usePaywall();
   const { accounts } = useLedger();
@@ -66,7 +67,7 @@ export default function ImportScreen() {
       setPhase({ kind: 'uploading' });
       const path = await uploadPrivate({ bucket: 'statements', userId, uri: file.uri, ext: 'pdf', contentType: 'application/pdf', maxBytes: MAX_BYTES });
       setPhase({ kind: 'processing' });
-      const result = await invokeFn(FUNCTIONS.import, { path, accountId, lang }, ImportResult);
+      const result = await invokeFn(FUNCTIONS.import, { path, accountId, lang, categories: aiCategories(state.categories) }, ImportResult);
       refreshUsage();
       putHandoff('import', { result, accountId });
       router.replace('/import-review');

@@ -5,6 +5,7 @@ const common: Messages['common'] = {
   close: 'Tutup',
   back: 'Kembali',
   moreActions: 'Lagi tindakan',
+  page: 'Halaman {n} daripada {total}',
   save: 'Simpan',
   retry: 'Cuba lagi',
   loading: 'Memuatkan',

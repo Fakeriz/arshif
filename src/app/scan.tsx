@@ -21,6 +21,7 @@ import { haptic } from '@/theme/motion';
 import { useTheme } from '@/theme/ThemeProvider';
 import { radius, space } from '@/theme/tokens';
 import { goBack } from '@/components/shell/goBack';
+import { aiCategories } from '@/constants/categories';
 
 import { FUNCTIONS, ScanResult } from '../../supabase/functions/_shared/contracts';
 
@@ -44,7 +45,7 @@ function ScanInner() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { colors } = useTheme();
-  const { userId, refreshUsage } = useStore();
+  const { state, userId, refreshUsage } = useStore();
   const limits = useLimits();
   const paywall = usePaywall();
   const { show } = useToast();
@@ -60,7 +61,7 @@ function ScanInner() {
       const [ext, contentType] = file.pdf ? ['pdf', 'application/pdf'] : ['jpg', 'image/jpeg'];
       receiptPath = await uploadPrivate({ bucket: 'receipts', userId: userId!, uri, ext, contentType, maxBytes: MAX_RECEIPT_BYTES });
       setPhase({ kind: 'processing', n, total });
-      const result = await invokeFn(FUNCTIONS.scan, { path: receiptPath, lang }, ScanResult);
+      const result = await invokeFn(FUNCTIONS.scan, { path: receiptPath, lang, categories: aiCategories(state.categories) }, ScanResult);
       return { result, receiptPath };
     } catch (e) {
       if (receiptPath) void discardPrivate('receipts', receiptPath);

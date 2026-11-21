@@ -19,8 +19,9 @@ const hhmm = (v: unknown): string | null => {
   if (!m || Number(m[1]) > 23 || Number(m[2]) > 59) return null;
   return `${m[1]!.padStart(2, '0')}:${m[2]}`;
 };
-const category = (v: unknown, fallback = 'other'): (typeof CATEGORY_KEYS)[number] =>
-  (CATEGORY_KEYS as readonly string[]).includes(str(v)) ? (str(v) as (typeof CATEGORY_KEYS)[number]) : (fallback as 'other');
+/** Kunci bawaan, atau kunci kategori pengguna yang dikirim di request; selain itu "other". */
+const category = (v: unknown, custom: readonly string[] = []): string =>
+  (CATEGORY_KEYS as readonly string[]).includes(str(v)) || custom.includes(str(v)) ? str(v) : 'other';
 const arr = (v: unknown): Raw[] => (Array.isArray(v) ? (v.filter((x) => x && typeof x === 'object') as Raw[]) : []);
 
 const rate = (v: unknown): number | null => {
@@ -32,7 +33,7 @@ const textOrNull = (v: unknown, max: number): string | null => cleanText(str(v))
 const nameKey = (s: string): string => s.normalize('NFD').replace(/\p{M}/gu, '').toUpperCase().replace(/[^\p{L}\p{N}]+/gu, ' ').trim();
 
 /** null = struk tidak terbaca (total kosong/<= 0): pemanggil mengembalikan kuota + 422. */
-export function normalizeScan(raw: unknown, fallbackCurrency = 'IDR'): ScanResult | null {
+export function normalizeScan(raw: unknown, fallbackCurrency = 'IDR', custom: readonly string[] = []): ScanResult | null {
   const r = (raw ?? {}) as Raw;
   const currency = normalizeCurrency(str(r.currency), fallbackCurrency);
   const total = positiveMinor(str(r.total), currency);
@@ -102,14 +103,14 @@ export function normalizeScan(raw: unknown, fallbackCurrency = 'IDR'): ScanResul
     storeTaxId: textOrNull(r.storeTaxId, 80),
     receiptNo: textOrNull(r.receiptNo, 60),
     paymentMethod: textOrNull(r.paymentMethod, 60),
-    categoryKey: category(r.categoryKey),
+    categoryKey: category(r.categoryKey, custom),
     confidence: { merchant: num01(conf.merchant), date: num01(conf.date), total: num01(conf.total), items: num01(conf.items) },
   });
   return parsed.success ? parsed.data : null;
 }
 
 /** Akun hanya boleh dari daftar milik pengguna yang dikirim klien; selain itu null + petunjuk. */
-export function normalizeVoice(raw: unknown, ctx: { accountIds: string[]; defaultCurrency: string; today: string }): VoiceResult {
+export function normalizeVoice(raw: unknown, ctx: { accountIds: string[]; defaultCurrency: string; today: string; categories?: readonly string[] }): VoiceResult {
   const r = (raw ?? {}) as Raw;
   const items = arr(r.items)
     .map((it) => {
@@ -125,7 +126,7 @@ export function normalizeVoice(raw: unknown, ctx: { accountIds: string[]; defaul
         currency,
         accountId,
         accountHint: accountId ? null : hint || null,
-        categoryKey: category(it.categoryKey),
+        categoryKey: category(it.categoryKey, ctx.categories),
         date: ymd(it.date) ?? ctx.today,
         note: cleanText(str(it.note)).slice(0, 200) || null,
         placeHint: cleanText(str(it.placeHint)).slice(0, 120) || null,
@@ -137,7 +138,7 @@ export function normalizeVoice(raw: unknown, ctx: { accountIds: string[]; defaul
   return VoiceResult.parse({ transcript: cleanText(str(r.transcript)).slice(0, 2000), items });
 }
 
-export function normalizeStatement(raw: unknown, fallbackCurrency: string): ImportResult {
+export function normalizeStatement(raw: unknown, fallbackCurrency: string, custom: readonly string[] = []): ImportResult {
   const r = (raw ?? {}) as Raw;
   // Mata uang dokumen dulu; akun tujuan hanya cadangan terakhir (PDF bank Indonesia ke akun RM tetap IDR).
   const statementCurrency = normalizeCurrency(str(r.currency), fallbackCurrency);
@@ -154,7 +155,7 @@ export function normalizeStatement(raw: unknown, fallbackCurrency: string): Impo
         type: str(row.type) === 'income' ? ('income' as const) : ('expense' as const),
         amount,
         currency,
-        categoryKey: category(row.categoryKey),
+        categoryKey: category(row.categoryKey, custom),
         time: hhmm(row.time),
       };
     })

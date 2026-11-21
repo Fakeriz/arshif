@@ -75,7 +75,7 @@ export function VoiceReview({ result, accounts, onSave }: { result: VoiceResult;
           <View style={styles.fields}>
             <Input label={t('capture.voiceReview.description')} value={d.merchant} onChangeText={(merchant) => patch(d.key, { merchant })} error={tried && !d.merchant.trim() ? t('capture.voiceReview.descriptionError') : undefined} />
             <AmountField label={t('common.amount')} value={d.amountEdit} currency={d.currency} onChange={(amountEdit) => patch(d.key, { amountEdit })} error={tried && !d.amountEdit ? t('capture.voiceReview.amountError') : undefined} />
-            <CategoryPicker type={d.type} scroll value={d.categoryKey} onChange={(categoryKey) => patch(d.key, { categoryKey: categoryKey as Draft['categoryKey'] })} />
+            <CategoryPicker type={d.type} value={d.categoryKey} onChange={(categoryKey) => patch(d.key, { categoryKey: categoryKey as Draft['categoryKey'] })} />
             <AccountPicker label={t('capture.voiceReview.account')} accounts={accounts} value={d.accountPick} onChange={(accountPick) => patch(d.key, { accountPick, hint: null })} />
             {d.hint && (
               <AppText variant="caption" tone="warning">

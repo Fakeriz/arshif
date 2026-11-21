@@ -16,7 +16,7 @@ serve(async (req) => {
   const user = await requireUser(req);
   const input = ScanRequest.safeParse(await readJson(req));
   if (!input.success) throw new HttpError('bad_request', 400);
-  const { path } = input.data;
+  const { path, categories } = input.data;
   assertOwnPath(path, user.id);
 
   const db = adminClient();
@@ -29,8 +29,8 @@ serve(async (req) => {
     if (file.size > MAX_BYTES) throw new HttpError('too_large', 413);
     const ext = path.split('.').pop()?.toLowerCase() ?? 'jpg';
     const bytes = new Uint8Array(await file.arrayBuffer());
-    const raw = await generateJson(scanPrompt(), SCAN_SCHEMA, { mimeType: MIME[ext] ?? 'image/jpeg', base64: toBase64(bytes) });
-    const scan = normalizeScan(raw, profile?.main_currency ?? 'IDR');
+    const raw = await generateJson(scanPrompt(categories), SCAN_SCHEMA, { mimeType: MIME[ext] ?? 'image/jpeg', base64: toBase64(bytes) });
+    const scan = normalizeScan(raw, profile?.main_currency ?? 'IDR', categories.filter((c) => c.type === 'expense').map((c) => c.key));
     // Total kosong / gambar tak terbaca = gagal; runAiJob mengembalikan kuota (FR-OCR-3).
     if (!scan) throw new HttpError('unreadable', 422);
     return scan;

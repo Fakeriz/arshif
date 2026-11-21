@@ -16,6 +16,12 @@ export const CATEGORY_KEYS = [
   'shopping', 'entertainment', 'travel', 'gift', 'bills', 'savings', 'debt', 'salary', 'investment_income', 'bank', 'other',
 ] as const;
 export const CategoryKey = z.enum(CATEGORY_KEYS);
+/** Kunci kategori di hasil AI: bawaan atau kategori buatan pengguna (aturan sama dengan kolom category_key). */
+export const CategoryRef = z.string().regex(/^[a-z_]{1,32}$/);
+/** Kategori buatan pengguna yang boleh dipilih AI. Kunci "u_" + huruf; nama pendek (masuk ke prompt). */
+export const CustomCategoryInput = z.object({ key: z.string().regex(/^u_[a-z]{4,30}$/), name: z.string().trim().min(1).max(24), type: z.enum(['expense', 'income']) });
+export type CustomCategoryInput = z.infer<typeof CustomCategoryInput>;
+const CustomCategories = z.array(CustomCategoryInput).max(40).default([]);
 
 const Currency = z.string().regex(/^[A-Z]{3}$/);
 const Ymd = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
@@ -33,7 +39,7 @@ export type ErrorCode = z.infer<typeof ErrorCode>;
 export const ErrorBody = z.object({ error: ErrorCode, quotaKey: z.string().optional(), message: z.string().optional() });
 
 // ------------------------------------------------------------------ scan-receipt (FR-OCR-2/3)
-export const ScanRequest = z.object({ path: StoragePath, lang: Lang });
+export const ScanRequest = z.object({ path: StoragePath, lang: Lang, categories: CustomCategories });
 /** total = harga sebelum diskon; discount = jumlah diskon promosi yang menempel ke item ini. */
 export const ScanItem = z.object({
   name: z.string().min(1).max(120),
@@ -72,7 +78,7 @@ export const ScanResult = z.object({
   storeTaxId: z.string().max(80).nullable().default(null),
   receiptNo: z.string().max(60).nullable().default(null),
   paymentMethod: z.string().max(60).nullable().default(null),
-  categoryKey: CategoryKey,
+  categoryKey: CategoryRef,
   /** Keyakinan 0–1 per field; < 0,7 ditandai kuning di layar review. */
   confidence: z.object({ merchant: z.number().min(0).max(1), date: z.number().min(0).max(1), total: z.number().min(0).max(1), items: z.number().min(0).max(1) }),
 });
@@ -88,6 +94,7 @@ export const VoiceRequest = z.object({
   timezone: z.string().max(64),
   defaultCurrency: Currency,
   accounts: z.array(VoiceAccount).max(50),
+  categories: CustomCategories,
 });
 export const VoiceItem = z.object({
   type: z.enum(['income', 'expense']),
@@ -96,7 +103,7 @@ export const VoiceItem = z.object({
   currency: Currency,
   accountId: Uuid.nullable(),
   accountHint: z.string().max(60).nullable(),
-  categoryKey: CategoryKey,
+  categoryKey: CategoryRef,
   date: Ymd,
   note: z.string().max(200).nullable(),
   /** Nama tempat yang diucapkan ("di Indomaret Kemang"), dicocokkan ke Google Places di layar tinjau. */
@@ -130,14 +137,14 @@ export const PlacesResult = z.object({ places: z.array(Place).max(8) });
 export const PlaceMapResult = z.object({ image: z.string().startsWith('data:image/png;base64,').max(400_000) });
 
 // ------------------------------------------------------------------ import-statement (FR-PDF-1..4)
-export const ImportRequest = z.object({ path: StoragePath, accountId: Uuid, lang: Lang });
+export const ImportRequest = z.object({ path: StoragePath, accountId: Uuid, lang: Lang, categories: CustomCategories });
 export const StatementRow = z.object({
   date: Ymd,
   description: z.string().min(1).max(200),
   type: z.enum(['income', 'expense']),
   amount: Minor.positive(),
   currency: Currency,
-  categoryKey: CategoryKey,
+  categoryKey: CategoryRef,
   /** Jam transaksi bila dicetak di rekening koran; null = tidak ada. Default untuk server lama. */
   time: z.string().regex(/^\d{2}:\d{2}$/).nullable().default(null),
 });

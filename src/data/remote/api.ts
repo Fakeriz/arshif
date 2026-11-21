@@ -2,6 +2,7 @@ import type { Account, AppNotification, BudgetRecord, LimitGroup, Plan, Transact
 import type { RateRow, UserRate } from '@/lib/fx';
 import type { Lang } from '@/i18n/types';
 import type { Split } from '@/lib/budget';
+import { parseCategorySettings, type CategorySettings } from '@/constants/categories';
 import { EMPTY_USAGE, isQuotaKey, type QuotaKey, type Usage } from '@/lib/quota';
 import { supabase } from '@/lib/supabase';
 import type { ThemeMode } from '@/theme/ThemeProvider';
@@ -59,6 +60,7 @@ export type Profile = {
   premiumSource: 'store' | 'web' | 'manual' | null;
   onboarded: boolean;
   suspended: boolean;
+  categories: CategorySettings;
 };
 
 type ProfileRow = {
@@ -66,6 +68,7 @@ type ProfileRow = {
   payday: number; monthly_income: number; split_needs: number; split_wants: number; split_savings: number;
   notif_prefs: Profile['notifPrefs']; active_account_id: string | null; plan: Plan; onboarded_at: string | null;
   premium_until: string | null; premium_source: 'store' | 'web' | 'manual' | null; suspended_at: string | null;
+  categories?: unknown;
 };
 
 export async function loadProfile(userId: string, email: string): Promise<Profile> {
@@ -89,6 +92,8 @@ export async function loadProfile(userId: string, email: string): Promise<Profil
     premiumSource: r.premium_source,
     onboarded: r.onboarded_at !== null,
     suspended: !!r.suspended_at,
+    // Kolom belum ada (migrasi 25 belum jalan) atau isinya rusak = tanpa kategori buatan.
+    categories: parseCategorySettings(r.categories),
   };
 }
 
@@ -102,7 +107,7 @@ export async function loadPlan(userId: string): Promise<{ plan: Plan; premiumUnt
 export type ProfilePatch = Partial<{
   display_name: string; main_currency: string; lang: Lang; theme_mode: ThemeMode; hide_balance: boolean; include_assets: boolean;
   payday: number; monthly_income: number; split_needs: number; split_wants: number; split_savings: number;
-  notif_prefs: Profile['notifPrefs']; active_account_id: string | null; onboarded_at: string;
+  notif_prefs: Profile['notifPrefs']; active_account_id: string | null; onboarded_at: string; categories: CategorySettings;
 }>;
 
 export async function updateProfile(userId: string, patch: ProfilePatch): Promise<void> {

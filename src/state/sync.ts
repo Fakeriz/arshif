@@ -66,6 +66,9 @@ export async function syncAction(action: Action, state: AppState, userId: string
     case 'prefs/includeAssets':
       await api.updateProfile(userId, { include_assets: action.value });
       return [];
+    case 'prefs/categories':
+      await api.updateProfile(userId, { categories: action.value });
+      return [];
     case 'prefs/mainCurrency':
       await api.updateProfile(userId, { main_currency: action.code, monthly_income: action.income });
       await Promise.all(action.budgets.map((b) => api.saveBudget(b)));

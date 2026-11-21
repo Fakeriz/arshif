@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import { AmountField, AppText, Button, Card, CategoryIcon, Stepper, useToast } from '@/components/ui';
-import { CATEGORIES } from '@/constants/categories';
+import { categoriesFor } from '@/constants/categories';
 import type { BudgetRecord } from '@/data/types';
 import { FormSheet } from '@/features/planning/kit';
 import { categoryLabel, useI18n } from '@/i18n';
@@ -15,7 +15,6 @@ import { useBudget } from '@/state/derived';
 import { space } from '@/theme/tokens';
 
 /** Kategori yang bisa diberi batas: semua kategori pengeluaran yang masuk bucket. */
-const LIMITABLE = CATEGORIES.filter((c) => c.bucket !== null);
 
 /**
  * Anggaran periode berjalan (FR-BDG-5). Tanpa anggaran tersimpan: memakai penghasilan bulanan, dengan pilihan
@@ -123,7 +122,7 @@ function BudgetSheet({ visible, onClose, currency, initial, suggested, suggestio
       <AppText variant="caption" tone="muted">
         {t('budget.plan.categoriesHint')}
       </AppText>
-      {LIMITABLE.map((c) => (
+      {categoriesFor('expense').filter((c) => c.bucket !== null).map((c) => (
         <View key={c.key} style={styles.catRow}>
           <CategoryIcon category={c.key} size={32} />
           <AppText variant="bodyStrong" numberOfLines={1} style={styles.flex}>

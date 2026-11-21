@@ -23,6 +23,7 @@ export { Icon } from './Icon';
 export { GoalRing } from './GoalRing';
 export { Group, IconTile, ListCard, MenuGroup, type MenuEntry } from './Group';
 export { Input } from './Input';
+export { IconGrid, type IconGridItem } from './IconGrid';
 export { ListItem, ListItemSkeleton } from './ListItem';
 export { PressableScale } from './PressableScale';
 export { ProgressBar } from './ProgressBar';

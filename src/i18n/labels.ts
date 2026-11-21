@@ -6,7 +6,8 @@ import type { MsgKey, TFunction } from './translate';
 
 /** Label domain yang kuncinya datang dari data (string bebas), dibungkus agar cast hanya di satu tempat. */
 export function categoryLabel(t: TFunction, key: string): string {
-  return t(`domain.category.${getCategory(key).key}` as MsgKey);
+  const c = getCategory(key);
+  return c.name ?? t(`domain.category.${c.key}` as MsgKey);
 }
 
 export function currencyName(t: TFunction, code: string): string {

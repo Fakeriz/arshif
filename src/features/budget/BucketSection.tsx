@@ -1,7 +1,7 @@
 import { StyleSheet, View } from 'react-native';
 
 import { AppText, Badge, Card, CategoryIcon, CurrencyText, GoalRing, ProgressBar } from '@/components/ui';
-import { CATEGORIES, type Bucket } from '@/constants/categories';
+import { allCategories, type Bucket } from '@/constants/categories';
 import { categoryLabel, useT } from '@/i18n';
 import type { Pace } from '@/lib/budget';
 import { formatCompact } from '@/lib/money';
@@ -24,7 +24,8 @@ export type BucketSectionProps = {
 
 export function BucketSection({ bucket, label, percent, color, spent, limit, pace, currency, categoryLimits, categorySpent }: BucketSectionProps) {
   const t = useT();
-  const rows = CATEGORIES.filter((c) => c.bucket === bucket && (categoryLimits[c.key] !== undefined || categorySpent(c.key) > 0)).sort((a, b) => categorySpent(b.key) - categorySpent(a.key));
+  // Termasuk kategori buatan (juga yang dihapus) supaya baris cocok dengan total bucket.
+  const rows = allCategories().filter((c) => c.bucket === bucket && (categoryLimits[c.key] !== undefined || categorySpent(c.key) > 0)).sort((a, b) => categorySpent(b.key) - categorySpent(a.key));
   const saving = bucket === 'savings';
   const over = !saving && spent > limit;
   return (

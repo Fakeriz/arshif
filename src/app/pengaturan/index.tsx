@@ -1,5 +1,5 @@
 import { useRouter } from 'expo-router';
-import { Bell, BellRing, CreditCard, Crown, Database, LogOut, Palette, ShieldCheck, Wallet } from 'lucide-react-native';
+import { Bell, BellRing, CreditCard, Crown, Database, LogOut, Palette, Shapes, ShieldCheck, Wallet } from 'lucide-react-native';
 import { useEffect, useState } from 'react';
 import { Platform, StyleSheet, View } from 'react-native';
 
@@ -50,6 +50,10 @@ export default function PengaturanScreen() {
   ];
   const prefs: MenuEntry[] = [
     { key: 'finance', icon: Wallet, title: t('settings.menu.finance'), subtitle: `${state.mainCurrency} · ${t('settings.payday.value', { day: state.payday })}`, onPress: () => router.push('/pengaturan/keuangan') },
+    {
+      key: 'categories', icon: Shapes, title: t('settings.categories.title'), onPress: () => router.push('/pengaturan/kategori'),
+      subtitle: t('settings.categories.menuSub', { count: state.categories.custom.filter((c) => !c.deleted).length, hidden: state.categories.hidden.length }),
+    },
     { key: 'appearance', icon: Palette, title: t('settings.appearance'), subtitle: `${t(`settings.themeMode.${mode}`)} · ${LANGS.find((l) => l.key === lang)?.nativeName ?? lang}`, onPress: () => router.push('/pengaturan/tampilan') },
     { key: 'notif', icon: Bell, title: t('settings.notifications'), subtitle: t('settings.menu.notifCount', { on: notifOn, total: NOTIF_COUNT }), onPress: () => router.push('/pengaturan/notifikasi') },
   ];

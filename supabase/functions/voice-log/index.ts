@@ -22,11 +22,11 @@ serve(async (req) => {
   const result = await runAiJob(db, user.id, 'voice', 'automation', async () => {
     const mimeType = body.mimeType === 'audio/m4a' ? 'audio/mp4' : body.mimeType;
     const raw = await generateJson(
-      voicePrompt({ today: body.today, timezone: body.timezone, defaultCurrency: body.defaultCurrency, accounts }),
+      voicePrompt({ today: body.today, timezone: body.timezone, defaultCurrency: body.defaultCurrency, accounts, categories: body.categories }),
       VOICE_SCHEMA,
       { mimeType, base64: body.audio },
     );
-    const voice = normalizeVoice(raw, { accountIds: accounts.map((a) => a.id), defaultCurrency: body.defaultCurrency, today: body.today });
+    const voice = normalizeVoice(raw, { accountIds: accounts.map((a) => a.id), defaultCurrency: body.defaultCurrency, today: body.today, categories: body.categories.map((c) => c.key) });
     // Tidak ada transaksi terbaca (hening/tak jelas) = gagal; runAiJob mengembalikan kuota, sama seperti scan dan import.
     if (voice.items.length === 0) throw new HttpError('unreadable', 422);
     return voice;

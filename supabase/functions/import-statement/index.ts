@@ -24,7 +24,7 @@ serve(async (req) => {
   const user = await requireUser(req);
   const input = ImportRequest.safeParse(await readJson(req));
   if (!input.success) throw new HttpError('bad_request', 400);
-  const { path, accountId } = input.data;
+  const { path, accountId, categories } = input.data;
   assertOwnPath(path, user.id);
   const db = adminClient();
 
@@ -38,8 +38,8 @@ serve(async (req) => {
       if (file.size > MAX_BYTES) throw new HttpError('too_large', 413);
       const bytes = new Uint8Array(await file.arrayBuffer());
       if (isEncrypted(bytes)) throw new HttpError('encrypted_pdf', 422);
-      const raw = await generateJson(statementPrompt(account.currency), STATEMENT_SCHEMA, { mimeType: 'application/pdf', base64: toBase64(bytes) });
-      const parsed = normalizeStatement(raw, account.currency);
+      const raw = await generateJson(statementPrompt(account.currency, categories), STATEMENT_SCHEMA, { mimeType: 'application/pdf', base64: toBase64(bytes) });
+      const parsed = normalizeStatement(raw, account.currency, categories.map((c) => c.key));
       if (parsed.rows.length === 0) throw new HttpError('unreadable', 422);
       return parsed;
     });

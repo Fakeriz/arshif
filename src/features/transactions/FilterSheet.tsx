@@ -2,7 +2,7 @@ import { StyleSheet, View } from 'react-native';
 
 import { categoryLabel, useT } from '@/i18n';
 import { AppText, BottomSheet, Button, Chip } from '@/components/ui';
-import { CATEGORIES } from '@/constants/categories';
+import { categoriesFor } from '@/constants/categories';
 import type { TxFilter } from '@/lib/transactions';
 import type { AccountWithBalance } from '@/state/AppStore';
 import { space } from '@/theme/tokens';
@@ -33,7 +33,7 @@ export function FilterSheet({ visible, onClose, filter, onChange, accounts }: Fi
       </AppText>
       <View style={styles.wrap}>
         <Chip label={t('tx.sheet.allCategories')} selected={!filter.categoryKey} onPress={() => onChange({ ...filter, categoryKey: null })} />
-        {CATEGORIES.map((c) => (
+        {[...categoriesFor('expense'), ...categoriesFor('income').filter((c) => c.key !== 'other')].map((c) => (
           <Chip key={c.key} label={categoryLabel(t, c.key)} selected={filter.categoryKey === c.key} onPress={() => onChange({ ...filter, categoryKey: filter.categoryKey === c.key ? null : c.key })} />
         ))}
       </View>

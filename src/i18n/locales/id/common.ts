@@ -4,6 +4,7 @@ const common = {
   close: 'Tutup',
   back: 'Kembali',
   moreActions: 'Aksi lainnya',
+  page: 'Halaman {n} dari {total}',
   save: 'Simpan',
   retry: 'Coba lagi',
   loading: 'Memuat',

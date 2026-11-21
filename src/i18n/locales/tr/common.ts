@@ -5,6 +5,7 @@ const common: Messages['common'] = {
   close: 'Kapat',
   back: 'Geri',
   moreActions: 'Diğer işlemler',
+  page: 'Sayfa {n} / {total}',
   save: 'Kaydet',
   retry: 'Tekrar dene',
   loading: 'Yükleniyor',

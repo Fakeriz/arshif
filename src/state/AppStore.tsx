@@ -11,6 +11,7 @@ import { addRateHistory, historyCodes, setRateHistory, setUsdRates, setUserRates
 import { addDays } from '@/lib/dates';
 import { supabase } from '@/lib/supabase';
 import { useTheme } from '@/theme/ThemeProvider';
+import { setUserCategories } from '@/constants/categories';
 
 import { changedSlices, initialState, keepReimbursement, mergePending, reducer, undoActions, type Action, type AppState } from './reducer';
 import { useSession } from './session';
@@ -43,6 +44,8 @@ const StoreContext = createContext<StoreValue | null>(null);
  */
 export function AppStoreProvider({ children, preset }: { children: ReactNode; preset?: AppState }) {
   const [state, localDispatch] = useReducer(reducer, undefined, () => preset ?? initialState());
+  // Registri getCategory/categoryLabel (dipanggil di banyak tempat tanpa state) diisi saat render, sebelum anak dirender.
+  useMemo(() => setUserCategories(state.categories), [state.categories]);
   const { session } = useSession();
   const userId = preset ? null : (session?.user.id ?? null);
   const email = session?.user.email ?? '';
@@ -128,7 +131,7 @@ export function AppStoreProvider({ children, preset }: { children: ReactNode; pr
           email: profile.email, displayName: profile.displayName, onboarded: profile.onboarded, suspended: profile.suspended, accounts,
           transactions: mergePending(transactions, kept).filter((x) => !removed.has(x.id)),
           notifications,
-          plan: profile.plan, premiumUntil: profile.premiumUntil, premiumSource: profile.premiumSource, usage, hideBalance: profile.hideBalance, includeAssets: profile.includeAssets, mainCurrency: profile.mainCurrency, income: profile.income,
+          plan: profile.plan, premiumUntil: profile.premiumUntil, premiumSource: profile.premiumSource, usage, hideBalance: profile.hideBalance, includeAssets: profile.includeAssets, categories: profile.categories, mainCurrency: profile.mainCurrency, income: profile.income,
           split: profile.split, payday: profile.payday, notifPrefs: profile.notifPrefs, activeAccountId: profile.activeAccountId, ratesDate: rates.date, ratesStale: rates.stale,
           budgets, limitGroups, userRates,
       };

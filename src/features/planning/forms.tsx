@@ -136,7 +136,7 @@ export function BillForm({ visible, onClose, bill }: { visible: boolean; onClose
       <CurrencyField value={currency} onChange={setCurrency} />
       <ChoiceRow label={t('plan.bills.frequency')} value={frequency} onChange={setFrequency} options={FREQS.map((f) => ({ key: f, label: t(`plan.bills.freq.${f}`) }))} />
       <DateField label={t('plan.bills.dueDate')} value={dueDate} onChange={setDueDate} error={tried && !isYmd(dueDate)} />
-      <CategoryPicker type="expense" scroll value={category} onChange={setCategory} />
+      <CategoryPicker type="expense" value={category} onChange={setCategory} />
       {accounts.length > 0 && <AccountPicker label={t('plan.common.accountOptional')} accounts={accounts} value={accountId} onChange={(id) => setAccountId((cur) => (cur === id ? null : id))} />}
     </FormSheet>
   );

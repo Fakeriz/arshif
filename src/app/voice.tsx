@@ -24,6 +24,7 @@ import { radius, space } from '@/theme/tokens';
 
 import { FUNCTIONS, VoiceResult } from '../../supabase/functions/_shared/contracts';
 import { todayYmd } from '@/lib/dates';
+import { aiCategories } from '@/constants/categories';
 
 const MAX_SECONDS = 60;
 const MIN_MILLIS = 1000;
@@ -66,7 +67,7 @@ export default function VoiceScreen() {
       if (!recorder.uri || millis < MIN_MILLIS) return setPhase({ kind: 'failed', failure: 'too_short' });
       const { audio, mimeType } = await readRecording(recorder.uri);
       const accounts = state.accounts.map((a) => ({ id: a.id, name: a.name, bank: a.bank, currency: a.currency }));
-      const result = await invokeFn(FUNCTIONS.voice, { audio, mimeType, lang, today: todayYmd(), timezone: localTimezone(), defaultCurrency: state.mainCurrency, accounts }, VoiceResult);
+      const result = await invokeFn(FUNCTIONS.voice, { audio, mimeType, lang, today: todayYmd(), timezone: localTimezone(), defaultCurrency: state.mainCurrency, accounts, categories: aiCategories(state.categories) }, VoiceResult);
       refreshUsage();
       putHandoff('voice', { result });
       router.replace('/voice-review');

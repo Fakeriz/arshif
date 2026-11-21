@@ -23,6 +23,7 @@ import { useStore } from '@/state/AppStore';
 import { useTheme } from '@/theme/ThemeProvider';
 import { space } from '@/theme/tokens';
 import { goBack } from '@/components/shell/goBack';
+import { aiCategories } from '@/constants/categories';
 
 import { FUNCTIONS, ScanResult } from '../../../supabase/functions/_shared/contracts';
 
@@ -42,7 +43,7 @@ export default function TransactionDetail() {
   const reread = async (path: string, txId: string) => {
     setRereading(true);
     try {
-      const result = await invokeFn(FUNCTIONS.scan, { path, lang }, ScanResult);
+      const result = await invokeFn(FUNCTIONS.scan, { path, lang, categories: aiCategories(state.categories) }, ScanResult);
       putHandoff('scan', { result, receiptPath: path, txId });
       router.push('/scan-review');
     } catch (e) {

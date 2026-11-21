@@ -1,3 +1,4 @@
+import { EMPTY_CATEGORY_SETTINGS, type CategorySettings } from '@/constants/categories';
 import type { Account, AppNotification, BudgetRecord, LimitGroup, NotificationType, Plan, Transaction } from '@/data/types';
 import { DEFAULT_SPLIT, PAYDAY_MAX, PAYDAY_MIN, splitIsValid, type Split } from '@/lib/budget';
 import type { UserRate } from '@/lib/fx';
@@ -28,6 +29,8 @@ export type AppState = {
   hideBalance: boolean;
   /** Aset ikut dijumlahkan ke saldo Beranda (profiles.include_assets). */
   includeAssets: boolean;
+  /** Kategori buatan pengguna + kategori bawaan yang disembunyikan (profiles.categories). */
+  categories: CategorySettings;
   mainCurrency: string;
   income: number;
   split: Split;
@@ -74,6 +77,7 @@ export type Action =
   | { type: 'notif/readAll' }
   | { type: 'prefs/hideBalance'; value: boolean }
   | { type: 'prefs/includeAssets'; value: boolean }
+  | { type: 'prefs/categories'; value: CategorySettings }
   /** income dan budgets sudah dikonversi ke `code` (lib/budget rebaseBudget). */
   | { type: 'prefs/mainCurrency'; code: string; income: number; budgets: BudgetRecord[] }
   | { type: 'prefs/notif'; key: keyof NotifPrefs; value: boolean }
@@ -111,6 +115,7 @@ export function initialState(): AppState {
     usage: EMPTY_USAGE,
     hideBalance: false,
     includeAssets: true,
+    categories: EMPTY_CATEGORY_SETTINGS,
     mainCurrency: 'IDR',
     income: 0,
     split: DEFAULT_SPLIT,
@@ -246,6 +251,8 @@ export function reducer(state: AppState, action: Action): AppState {
       return { ...state, hideBalance: action.value };
     case 'prefs/includeAssets':
       return { ...state, includeAssets: action.value };
+    case 'prefs/categories':
+      return { ...state, categories: action.value };
     case 'prefs/mainCurrency':
       return { ...state, mainCurrency: action.code, income: action.income, budgets: action.budgets };
     case 'prefs/notif':

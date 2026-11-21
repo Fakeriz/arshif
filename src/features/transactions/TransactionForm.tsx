@@ -13,7 +13,9 @@ import { newId } from '@/lib/uuid';
 import { useActiveAccountId, type AccountWithBalance } from '@/state/AppStore';
 import { space } from '@/theme/tokens';
 
-import { AccountPicker, CategoryPicker, categoriesFor } from './pickers';
+import { categoriesFor } from '@/constants/categories';
+
+import { AccountPicker, CategoryPicker } from './pickers';
 
 const TYPES: { key: TxType; label: MsgKey }[] = [
   { key: 'expense', label: 'common.expense' },
@@ -60,7 +62,7 @@ export function TransactionForm({ accounts, initial, onSubmit }: TransactionForm
 
   const changeType = (next: TxType) => {
     setType(next);
-    if (categoryKey && !categoriesFor(next).some((c) => c.key === categoryKey)) setCategoryKey(null);
+    if (categoryKey && (next === 'transfer' || !categoriesFor(next).some((c) => c.key === categoryKey))) setCategoryKey(null);
   };
 
   const submit = () => {
