@@ -27,7 +27,7 @@ export async function deleteAccount(db: SupabaseClient, userId: string): Promise
   if (error) throw new HttpError('server', 500);
   let files = 0;
   try {
-    for (const bucket of ['receipts', 'statements']) files += await removeFolder(db, bucket, userId);
+    for (const bucket of ['receipts', 'statements', 'avatars']) files += await removeFolder(db, bucket, userId);
   } catch (e) {
     // Folder per pengguna (<uid>/...): sisa berkas tetap bisa dibersihkan admin berdasarkan ID ini.
     console.error('delete_account_files_pending', userId, e instanceof Error ? e.message : String(e));

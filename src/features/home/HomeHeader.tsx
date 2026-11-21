@@ -6,6 +6,7 @@ import { StyleSheet, View } from 'react-native';
 import { useT } from '@/i18n';
 import { NotificationsSheet } from '@/components/shell/NotificationsSheet';
 import { AppText, GlassView, Icon, PressableScale } from '@/components/ui';
+import { ProfileAvatar } from '@/features/settings/ProfileAvatar';
 import { useStore } from '@/state/AppStore';
 import { useTheme } from '@/theme/ThemeProvider';
 import { radius, space } from '@/theme/tokens';
@@ -21,9 +22,13 @@ export function HomeHeader() {
   return (
     <View style={styles.row}>
       <PressableScale accessibilityLabel={t('home.profileA11y')} focusRadius={radius.full} onPress={() => router.push('/pengaturan')}>
-        <GlassView radius={radius.full} style={styles.btn}>
-          <Icon icon={User} color={colors.text} />
-        </GlassView>
+        {state.avatarPath ? (
+          <ProfileAvatar size={44} />
+        ) : (
+          <GlassView radius={radius.full} style={styles.btn}>
+            <Icon icon={User} color={colors.text} />
+          </GlassView>
+        )}
       </PressableScale>
       <AppText variant="h3">Arshif</AppText>
       <PressableScale accessibilityLabel={unread ? t('home.notifUnreadA11y', { count: unread }) : t('home.notifA11y')} focusRadius={radius.full} onPress={() => setOpen(true)}>

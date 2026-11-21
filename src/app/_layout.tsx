@@ -145,6 +145,7 @@ function Routes() {
         <Stack.Protected guard={onboarded} redirectTo={signedIn ? '/setup' : '/masuk'}>
           <Stack.Screen name="(tabs)" />
           <Stack.Screen name="pengaturan/index" />
+          <Stack.Screen name="pengaturan/profil" />
           <Stack.Screen name="pengaturan/paket" />
           <Stack.Screen name="pengaturan/akun" />
           <Stack.Screen name="pengaturan/keuangan" />

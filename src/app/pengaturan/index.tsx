@@ -1,19 +1,21 @@
 import { useRouter } from 'expo-router';
-import { Bell, BellRing, CreditCard, Crown, Database, DatabaseBackup, LogOut, Palette, Shapes, ShieldCheck, Wallet } from 'lucide-react-native';
+import { Bell, BellRing, ChevronRight, CreditCard, Crown, Database, DatabaseBackup, LogOut, Palette, Shapes, ShieldCheck, Wallet } from 'lucide-react-native';
 import { useEffect, useState } from 'react';
 import { Platform, StyleSheet, View } from 'react-native';
 
 import { Screen } from '@/components/shell/Screen';
 import { HeaderButton } from '@/components/shell/HeaderActions';
 import { ScreenHeader } from '@/components/shell/ScreenHeader';
-import { AppText, Card, Dialog, MenuGroup, type MenuEntry } from '@/components/ui';
+import { AppText, Card, Dialog, Icon, MenuGroup, type MenuEntry } from '@/components/ui';
 import { isAdmin } from '@/data/remote/api';
 import { LANGS, useI18n } from '@/i18n';
 import { isoDateLabel } from '@/lib/dates';
 import { supabase } from '@/lib/supabase';
 import { useStore } from '@/state/AppStore';
 import { useTheme } from '@/theme/ThemeProvider';
-import { radius, space } from '@/theme/tokens';
+import { space } from '@/theme/tokens';
+import { ProfileAvatar } from '@/features/settings/ProfileAvatar';
+import { profileName } from '@/lib/profile';
 import { backupDue, loadSchedule, type BackupSchedule } from '@/features/backup/service';
 
 const NOTIF_COUNT = 4;
@@ -37,8 +39,7 @@ export default function PengaturanScreen() {
   useEffect(() => {
     if (Platform.OS === 'web') isAdmin().then(setAdmin).catch(() => undefined);
   }, []);
-  const name = state.displayName?.trim() || state.email.split('@')[0];
-  const initials = name.split(/[\s._-]+/).filter(Boolean).map((p) => p[0]!.toUpperCase()).slice(0, 2).join('');
+  const name = profileName(state.displayName, state.email);
   const notifOn = Object.values(state.notifPrefs).filter(Boolean).length;
   const premium = state.plan === 'premium';
 
@@ -72,13 +73,9 @@ export default function PengaturanScreen() {
   return (
     <Screen>
       <ScreenHeader title={t('settings.title')} right={<HeaderButton label={t('settings.signOut')} icon={LogOut} onPress={() => setSigningOut(true)} />} />
-      <Card>
+      <Card onPress={() => router.push('/pengaturan/profil')} accessibilityLabel={t('settings.profile.cardA11y', { name })}>
         <View style={styles.profile}>
-          <View style={[styles.avatar, { backgroundColor: colors.accentSoft }]}>
-            <AppText variant="h2" tone="accent" style={styles.initials}>
-              {initials}
-            </AppText>
-          </View>
+          <ProfileAvatar size={56} />
           <View style={styles.flex}>
             <AppText variant="h3" numberOfLines={1}>
               {name}
@@ -87,6 +84,7 @@ export default function PengaturanScreen() {
               {state.email}
             </AppText>
           </View>
+          <Icon icon={ChevronRight} color={colors.textSecondary} />
         </View>
       </Card>
 
@@ -112,8 +110,5 @@ export default function PengaturanScreen() {
 
 const styles = StyleSheet.create({
   profile: { flexDirection: 'row', alignItems: 'center', gap: space.md },
-  avatar: { width: 56, height: 56, borderRadius: radius.full, alignItems: 'center', justifyContent: 'center' },
   flex: { flex: 1, minWidth: 0 },
-  // Inisial = ±28% container (56 -> 16).
-  initials: { fontSize: 16, lineHeight: 20 },
 });

@@ -12,6 +12,8 @@ export async function readBytes(uri: string): Promise<ArrayBuffer> {
   return new File(uri).arrayBuffer();
 }
 
+type Bucket = 'receipts' | 'statements' | 'avatars';
+
 export class UploadError extends Error {
   constructor(readonly code: 'too_large' | 'network') {
     super(code);
@@ -22,7 +24,7 @@ export class UploadError extends Error {
  * Unggah ke bucket privat di folder milik pengguna: "<user_id>/<uuid>.<ext>" (policy storage menolak folder lain).
  * Mengembalikan path untuk dikirim ke Edge Function.
  */
-export async function uploadPrivate(opts: { bucket: 'receipts' | 'statements'; userId: string; uri: string; ext: string; contentType: string; maxBytes: number }): Promise<string> {
+export async function uploadPrivate(opts: { bucket: Bucket; userId: string; uri: string; ext: string; contentType: string; maxBytes: number }): Promise<string> {
   const bytes = await readBytes(opts.uri);
   if (bytes.byteLength > opts.maxBytes) throw new UploadError('too_large');
   const path = `${opts.userId}/${newId()}.${opts.ext}`;
@@ -32,6 +34,6 @@ export async function uploadPrivate(opts: { bucket: 'receipts' | 'statements'; u
 }
 
 /** Hapus berkas yang sudah diunggah tapi tidak dipakai (scan gagal / review dibatalkan). Gagal = diabaikan. */
-export async function discardPrivate(bucket: 'receipts' | 'statements', path: string): Promise<void> {
+export async function discardPrivate(bucket: Bucket, path: string): Promise<void> {
   await supabase.storage.from(bucket).remove([path]).catch(() => undefined);
 }

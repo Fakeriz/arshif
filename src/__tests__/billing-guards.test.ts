@@ -139,7 +139,7 @@ describe('hapus akun (audit 8)', () => {
   /** auth + storage palsu yang mencatat urutan panggilan. */
   function accountDb(opts: { deleteError?: boolean; listError?: boolean } = {}) {
     const steps: string[] = [];
-    const files: Record<string, string[]> = { receipts: ['a.jpg', 'b.jpg'], statements: ['s.pdf'] };
+    const files: Record<string, string[]> = { receipts: ['a.jpg', 'b.jpg'], statements: ['s.pdf'], avatars: ['p.jpg'] };
     const extra = {
       auth: {
         admin: {
@@ -169,10 +169,11 @@ describe('hapus akun (audit 8)', () => {
 
   it('pengguna dihapus DULU, baru berkas', async () => {
     const { db, steps } = accountDb();
-    await expect(deleteAccount(db, 'u1')).resolves.toEqual({ deleted: true, files: 3 });
+    await expect(deleteAccount(db, 'u1')).resolves.toEqual({ deleted: true, files: 4 });
     expect(steps[0]).toBe('deleteUser:u1');
     expect(steps).toContain('remove:receipts:2');
     expect(steps).toContain('remove:statements:1');
+    expect(steps).toContain('remove:avatars:1');
   });
 
   it('hapus pengguna gagal: error, berkas (foto struk) tidak disentuh', async () => {
