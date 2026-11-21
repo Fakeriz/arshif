@@ -19,7 +19,7 @@ import { useActiveAccountId, useStore } from '@/state/AppStore';
 import { useLedger } from '@/state/derived';
 import { useLimits } from '@/state/limits';
 import { useTheme } from '@/theme/ThemeProvider';
-import { radius, space } from '@/theme/tokens';
+import { iconBox, radius, space } from '@/theme/tokens';
 import { aiCategories } from '@/constants/categories';
 
 import { FUNCTIONS, ImportResult } from '../../supabase/functions/_shared/contracts';
@@ -110,7 +110,7 @@ export default function ImportScreen() {
             <Card>
               <View style={styles.file}>
                 <View style={[styles.fileIcon, { backgroundColor: colors.accentSoft }]}>
-                  <Icon icon={FileText} color={colors.accentText} />
+                  <Icon icon={FileText} color={colors.accentText} size={iconBox[48].icon} />
                 </View>
                 <View style={styles.flex}>
                   <AppText variant="bodyStrong" numberOfLines={1}>
@@ -150,7 +150,7 @@ const styles = StyleSheet.create({
   form: { gap: space.xl },
   notes: { gap: space.xs },
   file: { flexDirection: 'row', alignItems: 'center', gap: space.md },
-  fileIcon: { width: 44, height: 44, borderRadius: radius.md, alignItems: 'center', justifyContent: 'center' },
+  fileIcon: { width: 48, height: 48, borderRadius: iconBox[48].radius, alignItems: 'center', justifyContent: 'center' },
   flex: { flex: 1, minWidth: 0 },
   remove: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
 });

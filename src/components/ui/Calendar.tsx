@@ -6,7 +6,7 @@ import Animated, { useAnimatedStyle, useSharedValue } from 'react-native-reanima
 import { CALENDARS, useI18n } from '@/i18n';
 import { haptic, useEnter, useMotion } from '@/theme/motion';
 import { useTheme } from '@/theme/ThemeProvider';
-import { motion, radius, space } from '@/theme/tokens';
+import { iconBox, motion, radius, space } from '@/theme/tokens';
 
 import { AppText } from './AppText';
 import { Icon } from './Icon';
@@ -78,10 +78,10 @@ export function Calendar({ value, onChange, marked = [], today = new Date(), min
           </AppText>
         </Slide>
         <PressableScale accessibilityLabel={t('common.ui.prevMonth')} onPress={() => go(-1)} focusRadius={radius.full} hitSlop={6} style={[styles.nav, { backgroundColor: colors.track }]}>
-          <Icon icon={ChevronLeft} color={colors.text} size={18} />
+          <Icon icon={ChevronLeft} color={colors.text} size={iconBox[32].icon} />
         </PressableScale>
         <PressableScale accessibilityLabel={t('common.ui.nextMonth')} onPress={() => go(1)} focusRadius={radius.full} hitSlop={6} style={[styles.nav, { backgroundColor: colors.track }]}>
-          <Icon icon={ChevronRight} color={colors.text} size={18} />
+          <Icon icon={ChevronRight} color={colors.text} size={iconBox[32].icon} />
         </PressableScale>
       </View>
 

@@ -61,7 +61,7 @@ export function BucketSection({ bucket, label, percent, color, spent, limit, pac
                 <CurrencyText amount={s} currency={currency} kind={l !== undefined && s > l ? 'over' : 'balance'} variant="caption" />
                 {l !== undefined && <AppText variant="caption" tone="muted">{`/ ${formatCompact(l, currency)}`}</AppText>}
               </View>
-              {l !== undefined && <ProgressBar value={s / l} height={6} accessibilityLabel={t('budget.bucket.categoryPct', { label: categoryLabel(t, c.key), pct: Math.round((s / l) * 100) })} />}
+              {l !== undefined && <ProgressBar value={s / l} accessibilityLabel={t('budget.bucket.categoryPct', { label: categoryLabel(t, c.key), pct: Math.round((s / l) * 100) })} />}
             </View>
           );
         })}

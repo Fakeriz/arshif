@@ -53,7 +53,7 @@ export default function KategoriScreen() {
             {mine.map((c, i) => (
               <ListItem
                 key={c.key}
-                leading={<CategoryIcon category={c.key} size={36} />}
+                leading={<CategoryIcon category={c.key} size={40} />}
                 title={c.name}
                 subtitle={c.bucket ? t(`domain.bucket.${c.bucket}`) : undefined}
                 chevron
@@ -77,7 +77,7 @@ export default function KategoriScreen() {
             return (
               <ListItem
                 key={c.key}
-                leading={<CategoryIcon category={c.key} size={36} />}
+                leading={<CategoryIcon category={c.key} size={40} />}
                 title={name}
                 subtitle={locked ? t('settings.categories.otherLocked') : undefined}
                 divider={i < list.length - 1}

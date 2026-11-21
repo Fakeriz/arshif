@@ -76,7 +76,7 @@ export function ShapeSection() {
   const { colors } = useTheme();
   const radii = Object.entries(radius).flatMap(([k, v]) => (typeof v === 'number' && k !== 'full' ? [[k, v] as const] : []));
   return (
-    <Section index="Bentuk & gerak" title="Satu skala, satu ritme" note={`Kartu 20, tombol 9/11/13, input 11, chip 9, sheet 28. Gerak ${motion.fast}–${motion.slow}ms, hanya transform + opacity, efek tekan ${motion.pressScale}. Instan saat reduced motion aktif.`}>
+    <Section index="Bentuk & gerak" title="Satu skala, satu ritme" note={`Kartu 24, tombol pill, input 14, chip 14, sheet 28. Kotak ikon 32/40/48/56: ikon 45%, radius 30%. Gerak ${motion.fast}–${motion.slow}ms, hanya transform + opacity, efek tekan ${motion.pressScale}. Instan saat reduced motion aktif.`}>
       <View style={styles.radiusRow}>
         {radii.map(([k, v]) => (
           <View key={k} style={styles.radiusItem}>

@@ -4,7 +4,7 @@ import Animated, { useAnimatedStyle, useSharedValue } from 'react-native-reanima
 
 import { useMotion } from '@/theme/motion';
 import { useTheme } from '@/theme/ThemeProvider';
-import { motion, radius } from '@/theme/tokens';
+import { radius } from '@/theme/tokens';
 
 import { Skeleton } from './Skeleton';
 
@@ -42,7 +42,7 @@ export function ProgressBar({
   const progress = useSharedValue(0);
 
   useEffect(() => {
-    progress.value = timing(clamped, motion.slow * 2);
+    progress.value = timing(clamped, 500);
   }, [clamped, progress, timing]);
 
   // scaleX + transformOrigin kiri: mengisi tanpa menganimasikan layout.

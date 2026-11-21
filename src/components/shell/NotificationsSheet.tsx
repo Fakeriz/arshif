@@ -11,7 +11,7 @@ import { toMinor } from '@/lib/assets';
 import { formatMoney } from '@/lib/money';
 import { useStore } from '@/state/AppStore';
 import { useTheme } from '@/theme/ThemeProvider';
-import { radius, space } from '@/theme/tokens';
+import { iconBox, radius, space } from '@/theme/tokens';
 
 const ICONS: Record<NotificationType, LucideIcon> = {
   weekly_recap: Sparkles,
@@ -76,7 +76,7 @@ export function NotificationsSheet({ visible, onClose }: { visible: boolean; onC
                 style={styles.item}
               >
                 <View style={[styles.icon, { backgroundColor: n.read ? colors.track : colors.accentSoft }]}>
-                  <Icon icon={ICONS[n.type]} color={n.read ? colors.textSecondary : colors.accentText} />
+                  <Icon icon={ICONS[n.type]} color={n.read ? colors.textSecondary : colors.accentText} size={iconBox[40].icon} />
                 </View>
                 <View style={styles.text}>
                   <AppText variant="bodyStrong">{title}</AppText>

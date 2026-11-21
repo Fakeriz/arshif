@@ -37,7 +37,7 @@ export default function SubscriptionsScreen() {
     return (
       <ListItem
         key={s.id}
-        leading={<CategoryIcon category={s.categoryKey} size={36} />}
+        leading={<CategoryIcon category={s.categoryKey} size={40} />}
         title={s.name}
         subtitle={s.status === 'active' ? t('plan.subs.renews', { date: shortDate(s.nextRenewal, lang) }) : t(`plan.subs.cycles.${s.cycle}`)}
         trailing={

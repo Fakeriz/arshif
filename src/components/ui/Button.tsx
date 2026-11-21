@@ -49,7 +49,8 @@ export function Button({
   };
   const look = looks[variant];
 
-  const height = layout.buttonHeight[size];
+  // Lebar penuh (Simpan transaksi) = 48; selebar teks = 42.
+  const height = fullWidth ? layout.buttonHeight.lg : layout.buttonHeight[size];
   const iconSize = size === 'sm' ? layout.iconSize.sm : layout.iconSize.md;
 
   return (
@@ -61,14 +62,14 @@ export function Button({
       accessibilityLabel={label}
       accessibilityHint={accessibilityHint}
       aria-disabled={!!(disabled || loading || done)} aria-busy={!!loading}
-      focusRadius={radius.button[size]}
+      focusRadius={radius.button}
       style={[
         styles.base,
         {
           height,
           backgroundColor: look.bg,
           borderColor: look.border,
-          borderRadius: radius.button[size],
+          borderRadius: radius.button,
           paddingHorizontal: size === 'sm' ? space.md : size === 'lg' ? 22 : space.lg,
         },
         variant === 'primary' && elevation[scheme].primary,

@@ -2,7 +2,7 @@ import { ChevronRight, type LucideIcon } from 'lucide-react-native';
 import { StyleSheet, View } from 'react-native';
 
 import { useTheme } from '@/theme/ThemeProvider';
-import { layout, radius, space } from '@/theme/tokens';
+import { iconBox, layout, radius, space } from '@/theme/tokens';
 
 import { AppText } from './AppText';
 import { GlassView } from './GlassView';
@@ -28,7 +28,7 @@ export function PromoCard({ icon, title, message, onPress, accessibilityHint }: 
       <GlassView radius={radius.lg}>
         <View style={styles.row}>
           <View style={[styles.icon, { backgroundColor: colors.accentSoft, borderColor: colors.glassBorder }]}>
-            <Icon icon={icon} color={colors.accentText} size={layout.iconSize.lg} />
+            <Icon icon={icon} color={colors.accentText} size={iconBox[48].icon} />
           </View>
           <View style={styles.text}>
             <AppText variant="bodyStrong">{title}</AppText>
@@ -45,6 +45,6 @@ export function PromoCard({ icon, title, message, onPress, accessibilityHint }: 
 
 const styles = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'center', gap: space.md, padding: space.lg },
-  icon: { width: 48, height: 48, borderRadius: radius.md, borderWidth: layout.hairline, alignItems: 'center', justifyContent: 'center' },
+  icon: { width: 48, height: 48, borderRadius: iconBox[48].radius, borderWidth: layout.hairline, alignItems: 'center', justifyContent: 'center' },
   text: { flex: 1, minWidth: 0, gap: space.xxs },
 });

@@ -9,7 +9,7 @@ import { Row, Section, StateLabel } from './Section';
 
 export function ButtonSection() {
   return (
-    <Section index="Tombol" title="Button" note="Tinggi 52 untuk aksi utama. Satu tombol primary per layar.">
+    <Section index="Tombol" title="Button" note="Pill. Lebar penuh 48, selebar teks 42. Satu tombol primary per layar.">
       <Button label="Simpan transaksi" icon={Plus} fullWidth />
       <Button label="Scan struk" variant="secondary" icon={ScanLine} fullWidth />
       <Row>

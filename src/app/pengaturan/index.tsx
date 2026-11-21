@@ -68,7 +68,7 @@ export default function PengaturanScreen() {
       <Card>
         <View style={styles.profile}>
           <View style={[styles.avatar, { backgroundColor: colors.accentSoft }]}>
-            <AppText variant="h2" tone="accent">
+            <AppText variant="h2" tone="accent" style={styles.initials}>
               {initials}
             </AppText>
           </View>
@@ -105,6 +105,8 @@ export default function PengaturanScreen() {
 
 const styles = StyleSheet.create({
   profile: { flexDirection: 'row', alignItems: 'center', gap: space.md },
-  avatar: { width: 52, height: 52, borderRadius: radius.full, alignItems: 'center', justifyContent: 'center' },
+  avatar: { width: 56, height: 56, borderRadius: radius.full, alignItems: 'center', justifyContent: 'center' },
   flex: { flex: 1, minWidth: 0 },
+  // Inisial = ±28% container (56 -> 16).
+  initials: { fontSize: 16, lineHeight: 20 },
 });

@@ -38,7 +38,7 @@ export function ScoreTab({ score, delta, pillars, narration }: { score: number |
                   <AppText variant="bodyStrong" numeric>{`${p.points}`}</AppText>
                   <AppText variant="caption" tone="muted" numeric>{`/ ${p.max}`}</AppText>
                 </View>
-                <ProgressBar value={p.points / p.max} tone={tone(p.points / p.max)} height={6} accessibilityLabel={t('coach.score.pillarA11y', { label, points: p.points, max: p.max })} />
+                <ProgressBar value={p.points / p.max} tone={tone(p.points / p.max)} accessibilityLabel={t('coach.score.pillarA11y', { label, points: p.points, max: p.max })} />
                 <AppText variant="caption" tone="muted">
                   {t(`domain.pillar.${p.key}.hint`)}
                 </AppText>

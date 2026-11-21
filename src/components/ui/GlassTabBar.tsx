@@ -4,7 +4,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useT } from '@/i18n';
 import { useTheme } from '@/theme/ThemeProvider';
-import { layout, radius, space } from '@/theme/tokens';
+import { iconBox, layout, radius, space } from '@/theme/tokens';
 
 import { AppText } from './AppText';
 import { GlassView } from './GlassView';
@@ -68,7 +68,7 @@ export function GlassTabBar<K extends string>({ items, value, onChange, onPressA
             focusRadius={radius.full}
             style={[styles.add, { backgroundColor: colors.accent }]}
           >
-            <Icon icon={Plus} color={colors.onAccent} size={layout.iconSize.lg} />
+            <Icon icon={Plus} color={colors.onAccent} size={iconBox[56].icon} />
           </PressableScale>
           {items.slice(2).map(renderTab)}
         </View>
@@ -84,5 +84,5 @@ const styles = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'center', gap: space.xs },
   slot: { flex: 1 },
   tab: { minHeight: 52, borderRadius: radius.full, alignItems: 'center', justifyContent: 'center', gap: space.xxs },
-  add: { width: 52, height: 52, borderRadius: radius.full, alignItems: 'center', justifyContent: 'center' },
+  add: { width: 56, height: 56, borderRadius: radius.full, alignItems: 'center', justifyContent: 'center' },
 });

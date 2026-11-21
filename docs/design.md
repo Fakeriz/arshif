@@ -11,7 +11,7 @@ Sumber kebenaran nilai: `src/theme/tokens.ts`. Dokumen ini menjelaskan *kenapa* 
 1. **Angka adalah pahlawan.** Saldo, target, dan nominal tampil besar dan tebal; semua elemen lain mundur ke abu-abu.
 2. **Warna = makna, bukan dekorasi.** Antarmuka hitam-putih-abu. Warna hanya muncul untuk naik/turun, peringatan, status, dan ikon kategori.
 3. **Kedalaman lewat nada, bukan efek.** Tidak ada blur atau glow di panel. Lapisan dibedakan oleh selisih nada: kanvas → kartu → panel inset.
-4. **Persis Talmo.** Ukuran, radius, dan berat huruf mengikuti CSS Talmo Studio: tombol kotak lembut (9/11/13), chip 9, input 11, segmented 10/8, kartu 20, badge & toggle pill. Judul halaman besar rata kiri.
+4. **Token pen.dev (revisi 2026-11-21).** Kartu 24, sheet/dialog 28, input/select/chip 14 (tinggi input 42), tombol pill (selebar teks 42, lebar penuh 48), tombol ikon 44 bulat, badge/toggle/segmented pill. Kotak ikon 32/40/48/56: ikon 45%, radius 30% (lingkaran kategori tetap bulat). Judul halaman besar rata kiri.
 5. **Primary terbalik.** Tombol utama memakai warna teks sebagai latar: terang di tema gelap, hitam di tema terang.
 6. **Aksesibel sejak token.** Setiap pasangan teks/latar ≥ 4.5:1, grafis ≥ 3:1, diuji otomatis di `__tests__/contrast.test.ts`.
 
@@ -116,18 +116,18 @@ Hierarki di dalam kartu selalu: `h3` (text) → `caption` (textSecondary) → ko
 
 | Alias | Nilai | Untuk |
 |---|---|---|
-| `card` | 20 | Kartu utama |
+| `card` / `lg` | 24 | Kartu, skeleton kartu, panel mengambang |
 | `inset` | 14 | Panel di dalam kartu, textarea |
-| `button` | sm 9 / md 11 / lg 13 | Tombol (Talmo `.btn--sm/.btn/.btn--lg`) |
-| `chip` | 9 | Chip filter |
+| `button` | 999 | Semua tombol (pill); tinggi 42 selebar teks, 48 lebar penuh |
+| `chip` | 14 | Chip filter (satu keluarga dengan input) |
 | `seg` / `segItem` | 999 / 999 | Track dan thumb segmented control (pill) |
-| `field` | 11 | Input satu baris, select |
-| `badge` | 999 | Badge hitungan & status (pill 20) |
-| `control` | 999 | Toggle, tombol ikon bulat |
+| `field` | 14 | Input satu baris, select, tanggal (tinggi 42) |
+| `badge` | 999 | Badge hitungan & status |
+| `control` | 999 | Toggle, tombol ikon bulat 44 |
 | `bar` | 6 | Batang grafik |
 | `sheet` | 28 | Bottom sheet, dialog |
 
-Aturan bersarang: radius dalam = radius luar − padding (20 − 16 ≈ 4 → dibulatkan ke 14 untuk panel inset yang tetap terasa lembut).
+Kotak ikon (`iconBox`): tentukan container dulu (32/40/48/56), ikon = 45% dibulatkan genap (14/18/22/24), radius = 30% (10/12/14/16). Lingkaran kategori tetap bulat, ikonnya ikut tabel. Target ketuk minimal 44 lewat `hitSlop` bila visual lebih kecil.
 
 ### Ruang (`space`, `layout`)
 
@@ -155,17 +155,17 @@ Tombol `lg 50 / md 40 / sm 32` (bawaan `md`), input 42, segmented item 40 + padd
 |---|---|
 | **Card** | `surface`, radius `card`, padding 18/20, garis `border`; terang + `elevation.light.card`. Header: judul `h3` + subjudul `caption` redup. |
 | **Panel inset** | `surfaceSunken`, radius `inset`, padding 12. |
-| **Button primary** | Radius `button[size]`, isi `accent`, teks `onAccent`, bayangan primary di tema terang. |
+| **Button primary** | Pill (`radius.button`), tinggi 42 selebar teks / 48 lebar penuh, isi `accent`, teks `onAccent`, bayangan primary di tema terang. |
 | **Button secondary** | Isi kertas (`surface`; gelap `surfaceAlt`) + garis `borderStrong`, teks `text`. |
 | **Button danger** | Seperti secondary, teks `negative`. |
 | **Button ghost** | Teks `accentText` saja. |
 | **Segmented (`Tabs`)** | Gaya Arshif Motion Kit: track pill `surfaceSunken`, padding 4, tanpa garis; item tinggi 40, `bodyStrong` redup; terpilih: thumb pill (`surfaceRaised`, gelap `surface`) dengan bayangan lembut. Varian `tone="ink"`: thumb tinta. Jangan dibungkus `Card` sendiri. |
 | **Tabs underline** | Tinggi 42, `bodyStrong` redup, terpilih `text` + garis bawah tinta 2 px. |
-| **Chip** | Tinggi 36, radius 9, isi kertas + garis `border`, `caption` SemiBold redup. Terpilih: isi tinta, teks `onAccent`, tanpa centang. |
-| **Input / Select** | Radius 11, tinggi 42, isi kertas (gelap `surfaceAlt`) + garis `borderStrong`; fokus garis tinta 1.5 px. |
+| **Chip** | Tinggi 36, radius 14, isi kertas + garis `border`, `caption` SemiBold redup. Terpilih: isi tinta, teks `onAccent`, tanpa centang. |
+| **Input / Select** | Radius 14, tinggi 42, isi kertas (gelap `surfaceAlt`) + garis `borderStrong`; fokus garis tinta 1.5 px. |
 | **Badge** | Pill tinggi 20, isi `fill`, `overline` SemiBold. Status memakai `*Soft` + warna semantik. |
 | **Toggle** | 42×24 pill, kenop putih 18 (gelap+aktif: hitam); mati `fill` + garis, aktif `accent`. |
-| **Progress bar** | Tinggi 6, pill, jalur `track`, isi `text`. |
+| **Progress bar** | Satu komponen `ProgressBar`: tinggi 8, pill (jalur dan isian), jalur `track`, isi menurut status (aman/peringatan/lewat) atau `accent` untuk progres netral; di kartu tinta warna ikut terbalik. Transisi 500 ms. |
 | **Baris daftar (`ListItem`)** | Padding vertikal 14, celah 14, garis pemisah `border`; judul `bodyStrong`, keterangan `caption` redup. |
 | **Grup menu (`MenuGroup`)** | Label grup `caption` SemiBold redup; kartu padding sisi 20; ikon 18 `textMuted` tanpa kotak (Talmo `.menu__item`). |
 | **Header layar (`ScreenHeader`)** | Baris tombol bulat 44 (kembali kiri, aksi kanan), lalu judul `h1` rata kiri + subjudul opsional. |

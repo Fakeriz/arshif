@@ -220,33 +220,44 @@ export const radius = {
   xs: 6,
   sm: 8,
   md: 14,
-  lg: 20,
+  /** Kartu (pen.dev: 24). */
+  lg: 24,
   xl: 28,
   full: 999,
-  /** Kartu utama di kanvas (Talmo .card mobile). */
-  card: 20,
+  /** Kartu utama di kanvas (pen.dev: 24). */
+  card: 24,
   /** Panel di dalam kartu (ringkasan, baris daftar berlatar, textarea). */
   inset: 14,
   /** Chip, toggle bulat (pill). */
   control: 999,
-  /** Tombol per ukuran (Talmo .btn--sm / .btn / .btn--lg). */
-  button: { sm: 9, md: 11, lg: 13 },
-  /** Chip filter (Talmo .chip). */
-  chip: 9,
+  /** Tombol: pill di semua ukuran (pen.dev). */
+  button: 999,
+  /** Chip filter: sama dengan input supaya kontrol isian satu keluarga. */
+  chip: 14,
   /** Segmented control: track dan thumb pill (Arshif Motion Kit .am-seg). */
   seg: 999,
   segItem: 999,
-  /** Input satu baris dan select (Talmo .input). */
-  field: 11,
+  /** Input satu baris dan select (pen.dev: 14, tinggi 42). */
+  field: 14,
   /** Badge hitungan & status (Talmo .badge/.stat: pill). */
   badge: 999,
   /** Batang grafik. */
   bar: 6,
   /** Bottom sheet & dialog. */
   sheet: 28,
-  /** Ikon kosong (Talmo .empty__icon). */
-  emptyIcon: 15,
 } as const;
+
+/**
+ * Kotak ikon (pen.dev): ukuran container kelipatan 8, ikon = 45% dibulatkan genap, radius = ±30%.
+ * Tentukan container-nya, ikon dan radius dibaca dari sini (lingkaran kategori tetap bulat, hanya ikonnya).
+ */
+export const iconBox = {
+  32: { icon: 14, radius: 10 },
+  40: { icon: 18, radius: 12 },
+  48: { icon: 22, radius: 14 },
+  56: { icon: 24, radius: 16 },
+} as const;
+export type IconBoxSize = keyof typeof iconBox;
 
 export const space = {
   xxs: 2,
@@ -305,7 +316,8 @@ export const motion = {
 
 export const layout = {
   hairline: 1,
-  buttonHeight: { lg: 50, md: 40, sm: 32 },
+  /** Tombol selebar teks 42 (sm dan md, target ketuk ≥ 42); tombol lebar penuh 48. */
+  buttonHeight: { lg: 48, md: 42, sm: 42 },
   inputHeight: 42,
   /** Segmented control: tinggi item + padding track (Arshif Motion Kit .am-seg). */
   segItemHeight: 40,

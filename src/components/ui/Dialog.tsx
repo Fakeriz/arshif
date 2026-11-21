@@ -6,7 +6,7 @@ import Animated, { useAnimatedStyle, useSharedValue } from 'react-native-reanima
 import { useI18n } from '@/i18n';
 import { useMotion } from '@/theme/motion';
 import { useTheme } from '@/theme/ThemeProvider';
-import { layout, motion, radius, space } from '@/theme/tokens';
+import { iconBox, layout, motion, radius, space } from '@/theme/tokens';
 
 import { AppText } from './AppText';
 import { Button } from './Button';
@@ -82,7 +82,7 @@ export function Dialog({
           {/* Solid (tanpa blur): latar = bg, tepi borderStrong supaya tetap terlihat di atas overlay gelap. */}
           <View style={[styles.card, { backgroundColor: colors.bg, borderColor: colors.borderStrong }]}>
           <View style={[styles.icon, { backgroundColor: look[tone].bg }]}>
-            <Icon icon={look[tone].icon} color={look[tone].fg} size={22} />
+            <Icon icon={look[tone].icon} color={look[tone].fg} size={iconBox[48].icon} />
           </View>
           <View style={styles.text}>
             <AppText variant="h3">{title}</AppText>
@@ -115,8 +115,8 @@ export function Dialog({
 const styles = StyleSheet.create({
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: space.xxl },
   cardWrap: { width: '100%', maxWidth: 400 },
-  card: { padding: space.xxl, gap: space.lg, borderRadius: radius.lg, borderWidth: layout.hairline, overflow: 'hidden' },
-  icon: { width: 44, height: 44, borderRadius: radius.full, alignItems: 'center', justifyContent: 'center' },
+  card: { padding: space.xxl, gap: space.lg, borderRadius: radius.sheet, borderWidth: layout.hairline, overflow: 'hidden' },
+  icon: { width: 48, height: 48, borderRadius: radius.full, alignItems: 'center', justifyContent: 'center' },
   text: { gap: space.xs + 2 },
   actions: { gap: space.sm },
 });

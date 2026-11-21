@@ -2,7 +2,7 @@ import { CircleAlert, Crown, Inbox, WifiOff, type LucideIcon } from 'lucide-reac
 import { StyleSheet, View } from 'react-native';
 
 import { useTheme } from '@/theme/ThemeProvider';
-import { layout, radius, space } from '@/theme/tokens';
+import { iconBox, layout, radius, space } from '@/theme/tokens';
 
 import { AppText } from './AppText';
 import { Button } from './Button';
@@ -43,7 +43,7 @@ export function EmptyState({
     limit: { icon: Crown, fg: colors.text },
     offline: { icon: WifiOff, fg: colors.warning },
   }[kind];
-  const size = 52;
+  const size = 56;
 
   return (
     <View
@@ -51,7 +51,7 @@ export function EmptyState({
       accessibilityRole={kind === 'error' ? 'alert' : undefined}
     >
       <View style={[styles.halo, { width: size, height: size, backgroundColor: colors.surfaceRaised, borderColor: colors.border }]}>
-        <Icon icon={icon ?? look.icon} color={look.fg} size={layout.iconSize.md + 2} />
+        <Icon icon={icon ?? look.icon} color={look.fg} size={iconBox[56].icon} />
       </View>
       <View style={styles.text}>
         <AppText variant="h3" align="center">

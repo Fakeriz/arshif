@@ -12,7 +12,7 @@ import type { AccountWithBalance } from '@/state/AppStore';
 import { useCreditUtilization } from '@/state/derived';
 import { haptic, useMotion } from '@/theme/motion';
 import { useTheme } from '@/theme/ThemeProvider';
-import { layout, radius, space, stripTint } from '@/theme/tokens';
+import { iconBox, layout, radius, space, stripTint } from '@/theme/tokens';
 
 export type AccountDeckProps = {
   accounts: AccountWithBalance[];
@@ -124,7 +124,7 @@ export function AccountDeck({ accounts, hidden, limitReached, activeId, onActive
           <PressableScale accessibilityLabel={t('home.accountLimitA11y')} focusRadius={radius.lg} onPress={() => paywall(t('home.accountLimitReason'))}>
             <GlassView radius={radius.lg} style={[styles.limit, { width: cardW, height: cardH }]}>
               <View style={[styles.limitIcon, { backgroundColor: colors.accentSoft }]}>
-                <Icon icon={Crown} color={colors.accentText} />
+                <Icon icon={Crown} color={colors.accentText} size={iconBox[48].icon} />
               </View>
               <AppText variant="bodyStrong" align="center">
                 {t('home.accountLimitTitle')}
@@ -241,7 +241,7 @@ const styles = StyleSheet.create({
   shrink: { flexShrink: 1 },
   page: { justifyContent: 'center' },
   limit: { alignItems: 'center', justifyContent: 'center', gap: space.sm, padding: space.lg },
-  limitIcon: { width: 44, height: 44, borderRadius: radius.full, alignItems: 'center', justifyContent: 'center' },
+  limitIcon: { width: 48, height: 48, borderRadius: radius.full, alignItems: 'center', justifyContent: 'center' },
   dots: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: space.xs + 2, marginTop: space.md, height: DOT },
   dot: { width: DOT, height: DOT, borderRadius: DOT / 2 },
   dotActive: { width: DOT * 3 },

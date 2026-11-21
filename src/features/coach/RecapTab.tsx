@@ -14,7 +14,7 @@ import { monthlyRecap, weeklyRecap, type Achievement, type WeeklyRecap } from '@
 import { useStore } from '@/state/AppStore';
 import { useAssets } from '@/state/assets';
 import { useTheme } from '@/theme/ThemeProvider';
-import { radius, space } from '@/theme/tokens';
+import { iconBox, radius, space } from '@/theme/tokens';
 
 const ACHIEVEMENT_ICON: Record<Achievement, LucideIcon> = {
   noSpend: CalendarCheck,
@@ -176,7 +176,7 @@ function Replay({ recap, currency }: { recap: WeeklyRecap; currency: string }) {
             {recap.achievements.map((a) => (
               <View key={a} style={styles.achievement}>
                 <View style={[styles.badge, { backgroundColor: colors.accentSoft }]}>
-                  <Icon icon={ACHIEVEMENT_ICON[a]} color={colors.accentText} size={20} />
+                  <Icon icon={ACHIEVEMENT_ICON[a]} color={colors.accentText} size={iconBox[40].icon} />
                 </View>
                 <AppText variant="body" style={styles.flex}>
                   {achievementText(a, recap, currency, t)}
@@ -208,7 +208,7 @@ function Replay({ recap, currency }: { recap: WeeklyRecap; currency: string }) {
           </AppText>
           {recap.biggestSaving ? (
             <>
-              <CategoryIcon category={recap.biggestSaving.categoryKey} size={36} />
+              <CategoryIcon category={recap.biggestSaving.categoryKey} size={40} />
               <AppText variant="h3" numberOfLines={2}>
                 {categoryLabel(t, recap.biggestSaving.categoryKey)}
               </AppText>
@@ -294,7 +294,7 @@ const styles = StyleSheet.create({
   titleRow: { flexDirection: 'row', alignItems: 'center', gap: space.sm },
   list: { gap: space.md, marginTop: space.md },
   achievement: { flexDirection: 'row', alignItems: 'center', gap: space.md },
-  badge: { width: 40, height: 40, borderRadius: radius.md, alignItems: 'center', justifyContent: 'center' },
+  badge: { width: 40, height: 40, borderRadius: iconBox[40].radius, alignItems: 'center', justifyContent: 'center' },
   pair: { flexDirection: 'row', gap: space.md },
   portfolio: { gap: space.xs, alignItems: 'flex-start' },
   half: { flex: 1, gap: space.xs },

@@ -3,13 +3,14 @@ import { View } from 'react-native';
 import { categoryLabel, useT } from '@/i18n';
 import { getCategory } from '@/constants/categories';
 import { useTheme } from '@/theme/ThemeProvider';
-import { radius } from '@/theme/tokens';
+import { type IconBoxSize, iconBox, radius } from '@/theme/tokens';
 
 import { Icon } from './Icon';
 
 export type CategoryIconProps = {
   category: string;
-  size?: number;
+  /** Skala container (kelipatan 8); lingkaran tetap bulat, ikon 45% dari iconBox. */
+  size?: IconBoxSize;
 };
 
 /** Ikon kategori dalam lingkaran: warna kategori penuh di ikon, 15% di latar. */
@@ -31,7 +32,7 @@ export function CategoryIcon({ category, size = 40 }: CategoryIconProps) {
         backgroundColor: hexWithAlpha(color, 0.15),
       }}
     >
-      <Icon icon={def.icon} color={color} size={Math.round(size * 0.5)} />
+      <Icon icon={def.icon} color={color} size={iconBox[size].icon} />
     </View>
   );
 }

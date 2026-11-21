@@ -147,6 +147,7 @@ function Routes() {
           <Stack.Screen name="pengaturan/tampilan" />
           <Stack.Screen name="pengaturan/notifikasi" />
           <Stack.Screen name="pengaturan/data" />
+          <Stack.Screen name="pengaturan/kategori" />
           <Stack.Screen name="coach" />
           <Stack.Screen name="tambah" />
           <Stack.Screen name="trx/[id]" />

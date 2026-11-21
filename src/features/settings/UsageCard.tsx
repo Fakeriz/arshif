@@ -63,7 +63,7 @@ export function UsageCard({ plan, usage, accountCount }: { plan: Plan; usage: Us
                   {limit === null ? t('settings.usage.unlimited', { used }) : `${used} / ${limit}`}
                 </AppText>
               </View>
-              {limit !== null && <ProgressBar value={used / limit} accessibilityLabel={t('settings.usage.a11y', { label, used, limit })} height={6} />}
+              {limit !== null && <ProgressBar value={used / limit} accessibilityLabel={t('settings.usage.a11y', { label, used, limit })} />}
             </View>
           );
         })}

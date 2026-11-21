@@ -13,7 +13,7 @@ import { QUOTAS } from '@/lib/quota';
 import { useStore } from '@/state/AppStore';
 import { useSmartLog } from '@/state/smartlog';
 import { useTheme } from '@/theme/ThemeProvider';
-import { radius, space } from '@/theme/tokens';
+import { iconBox, radius, space } from '@/theme/tokens';
 
 /** Layar Automation (FR-SLOG-1): saklar Smart Log, izin Android, dan tautan aplikasi bank ke kartu. */
 export default function AutomationScreen() {
@@ -71,7 +71,7 @@ export default function AutomationScreen() {
           <Card>
             <View style={styles.headRow}>
               <View style={[styles.badgeIcon, { backgroundColor: running ? colors.accentSoft : colors.track }]}>
-                <Icon icon={BellRing} color={running ? colors.accentText : colors.textSecondary} />
+                <Icon icon={BellRing} color={running ? colors.accentText : colors.textSecondary} size={iconBox[48].icon} />
               </View>
               <View style={styles.flex}>
                 <AppText variant="h3">{t('slog.automation.smartLog')}</AppText>
@@ -217,7 +217,7 @@ const styles = StyleSheet.create({
   gap: { gap: space.md },
   gapSm: { gap: space.xxs, paddingHorizontal: space.xs },
   headRow: { flexDirection: 'row', alignItems: 'center', gap: space.md },
-  badgeIcon: { width: 44, height: 44, borderRadius: radius.full, alignItems: 'center', justifyContent: 'center' },
+  badgeIcon: { width: 48, height: 48, borderRadius: radius.full, alignItems: 'center', justifyContent: 'center' },
   flex: { flex: 1 },
   block: { marginTop: space.lg },
   blockSm: { marginTop: space.sm },

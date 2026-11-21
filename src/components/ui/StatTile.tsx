@@ -3,7 +3,7 @@ import { StyleSheet, View } from 'react-native';
 
 import { formatMoney } from '@/lib/money';
 import { useTheme } from '@/theme/ThemeProvider';
-import { radius, space } from '@/theme/tokens';
+import { iconBox, radius, space } from '@/theme/tokens';
 
 import { AppText } from './AppText';
 import { Card } from './Card';
@@ -72,7 +72,7 @@ export function StatTile({
         <View style={styles.head}>
           {icon && (
             <View style={[styles.iconWrap, { backgroundColor: colors.track }]}>
-              <Icon icon={icon} color={colors.textSecondary} size={16} />
+              <Icon icon={icon} color={colors.textSecondary} size={iconBox[32].icon} />
             </View>
           )}
           <AppText variant="caption" tone="secondary" numberOfLines={1} style={styles.flex}>
@@ -108,7 +108,7 @@ const styles = StyleSheet.create({
   /** Dua tile berdampingan di baris flexWrap: berbagi lebar, turun baris bila terlalu sempit. */
   compact: { flexGrow: 1, flexBasis: 0, minWidth: 148 },
   head: { flexDirection: 'row', alignItems: 'center', gap: space.sm },
-  iconWrap: { width: 28, height: 28, borderRadius: radius.full, alignItems: 'center', justifyContent: 'center' },
+  iconWrap: { width: 32, height: 32, borderRadius: radius.full, alignItems: 'center', justifyContent: 'center' },
   flex: { flex: 1 },
   foot: { gap: space.md },
   footWide: { flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between' },

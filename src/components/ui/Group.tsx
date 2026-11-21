@@ -3,7 +3,7 @@ import type { ReactNode } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import { useTheme } from '@/theme/ThemeProvider';
-import { fonts, layout, radius, space } from '@/theme/tokens';
+import { fonts, iconBox, layout, space } from '@/theme/tokens';
 
 import { AppText } from './AppText';
 import { Card } from './Card';
@@ -44,7 +44,7 @@ export function IconTile({ icon, muted }: { icon: LucideIcon; muted?: boolean })
   const { colors } = useTheme();
   return (
     <View style={[styles.tile, { backgroundColor: muted ? colors.track : colors.accentSoft }]}>
-      <Icon icon={icon} color={muted ? colors.textSecondary : colors.accentText} />
+      <Icon icon={icon} color={muted ? colors.textSecondary : colors.accentText} size={iconBox[40].icon} />
     </View>
   );
 }
@@ -108,5 +108,5 @@ const styles = StyleSheet.create({
   head: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: space.sm, minHeight: 20 },
   label: { paddingHorizontal: space.xs, fontFamily: fonts.semibold },
   rows: { paddingHorizontal: space.xl },
-  tile: { width: 40, height: 40, borderRadius: radius.md, alignItems: 'center', justifyContent: 'center' },
+  tile: { width: 40, height: 40, borderRadius: iconBox[40].radius, alignItems: 'center', justifyContent: 'center' },
 });

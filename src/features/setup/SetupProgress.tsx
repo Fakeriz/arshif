@@ -12,7 +12,7 @@ export function SetupProgress({ step, total }: { step: number; total: number }) 
       <AppText variant="caption" tone="secondary">
         {label}
       </AppText>
-      <ProgressBar value={(step + 1) / total} tone="accent" height={6} accessibilityLabel={label} />
+      <ProgressBar value={(step + 1) / total} tone="accent" accessibilityLabel={label} />
     </View>
   );
 }

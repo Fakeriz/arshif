@@ -3,7 +3,7 @@ import { StyleSheet, TextInput, View } from 'react-native';
 
 import { useT } from '@/i18n';
 import { useTheme } from '@/theme/ThemeProvider';
-import { layout, radius, space, type as typeScale } from '@/theme/tokens';
+import { iconBox, layout, radius, space, type as typeScale } from '@/theme/tokens';
 
 import { Icon } from './Icon';
 import { PopIn } from './PopIn';
@@ -36,8 +36,8 @@ export function Composer({ value, onChangeText, onSend, placeholder, disabled, m
         style={[styles.input, typeScale.input, { color: colors.text }]}
       />
       <PopIn visible={ready} from={0.3}>
-        <PressableScale accessibilityLabel={sendLabel ?? t('common.ui.send')} onPress={send} hapticOnPress focusRadius={radius.full} style={[styles.send, { backgroundColor: colors.accent }]}>
-          <Icon icon={ArrowUp} color={colors.onAccent} size={18} />
+        <PressableScale accessibilityLabel={sendLabel ?? t('common.ui.send')} onPress={send} hapticOnPress focusRadius={radius.full} hitSlop={2} style={[styles.send, { backgroundColor: colors.accent }]}>
+          <Icon icon={ArrowUp} color={colors.onAccent} size={iconBox[40].icon} />
         </PressableScale>
       </PopIn>
     </View>
@@ -48,5 +48,5 @@ const styles = StyleSheet.create({
   field: { flexDirection: 'row', alignItems: 'center', gap: space.sm, minHeight: 48, paddingLeft: space.lg, paddingRight: space.xs + 2, borderRadius: radius.control, borderWidth: layout.hairline },
   off: { opacity: 0.5 },
   input: { flex: 1, paddingVertical: space.md, outlineStyle: 'none' } as object,
-  send: { width: 36, height: 36, borderRadius: radius.full, alignItems: 'center', justifyContent: 'center' },
+  send: { width: 40, height: 40, borderRadius: radius.full, alignItems: 'center', justifyContent: 'center' },
 });

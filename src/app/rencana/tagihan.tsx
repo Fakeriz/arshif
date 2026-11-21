@@ -77,7 +77,7 @@ export default function BillsScreen() {
                     return (
                       <ListItem
                         key={b.id}
-                        leading={<CategoryIcon category={b.categoryKey} size={36} />}
+                        leading={<CategoryIcon category={b.categoryKey} size={40} />}
                         title={b.name}
                         subtitle={
                           g === 'paid'

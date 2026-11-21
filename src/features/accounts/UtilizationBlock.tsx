@@ -24,7 +24,7 @@ export function UtilizationBlock({ u, compact }: { u: Utilization; compact?: boo
           {`${pct}%`}
         </AppText>
       </View>
-      <ProgressBar value={u.ratio} height={compact ? 6 : 8} accessibilityLabel={label} />
+      <ProgressBar value={u.ratio} accessibilityLabel={label} />
       <AppText variant="caption" tone="muted">
         {t('acct.limit.usedOf', { used: formatMoney(u.used, u.currency), limit: formatMoney(u.limit, u.currency) })}
       </AppText>
