@@ -2,6 +2,7 @@ import { createContext, useContext, useState, type ReactNode } from 'react';
 import { RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { useDesktop } from '@/hooks/useDesktop';
 import { useTheme } from '@/theme/ThemeProvider';
 import { layout, space } from '@/theme/tokens';
 
@@ -45,6 +46,9 @@ export function Screen({ children, tabs, onRefresh, refreshing, onEndReached, ma
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
   const { footprint } = useNavFootprint();
+  // Desktop: nav ada di atas, tidak perlu ruang untuk pill bawah.
+  const desktop = useDesktop();
+  const navBottom = tabs && !desktop;
   const tabSpace = Math.max(NAV_SPACE + insets.bottom, footprint + space.xl);
   const scroll = (
     <ScrollView
@@ -62,7 +66,7 @@ export function Screen({ children, tabs, onRefresh, refreshing, onEndReached, ma
         contentContainerStyle={[
           styles.content,
           centered && styles.centered,
-          { paddingTop: insets.top + space.md, paddingBottom: tabs ? tabSpace : space.x4 + insets.bottom },
+          { paddingTop: insets.top + space.md, paddingBottom: navBottom ? tabSpace : space.x4 + insets.bottom },
         ]}
       >
         <View style={[styles.column, centered && styles.columnCentered, maxWidth ? { maxWidth } : null]}>{children}</View>

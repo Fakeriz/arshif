@@ -1,6 +1,7 @@
 import { Activity, LayoutGrid, Sparkles } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
+import type { ViewStyle } from 'react-native';
 
 import { CaptureSheet } from '@/components/shell/CaptureSheet';
 import { captureOptions, moreOptions } from '@/components/shell/captureOptions';
@@ -11,11 +12,13 @@ import { useScanSource } from '@/components/shell/ScanSourceSheet';
 import { AccountDeck } from '@/features/home/AccountDeck';
 import { BalanceBlock } from '@/features/home/BalanceBlock';
 import { MissingRatesBanner } from '@/features/fx/MissingRatesBanner';
+import { GridCell, GridRow, HOME_DESKTOP_WIDTH, HomeDesktopTitle } from '@/features/home/HomeDesktop';
 import { HomeHeader } from '@/features/home/HomeHeader';
 import { HomeSkeleton } from '@/features/home/HomeSkeleton';
 import { PeriodStats } from '@/features/home/PeriodStats';
 import { RecentTransactions } from '@/features/home/RecentTransactions';
 import { useSessionDismiss } from '@/features/home/sessionDismiss';
+import { useDesktop } from '@/hooks/useDesktop';
 import { useT } from '@/i18n';
 import { useStore } from '@/state/AppStore';
 import { useLoadState } from '@/state/loadState';
@@ -44,11 +47,14 @@ export default function HomeScreen() {
   const voice = capture.find((o) => o.key === 'voice')!;
   const scanSource = useScanSource();
   const openCapture = (o: typeof scan) => (o.limited ? paywall(o.reason) : o.key === 'scan' ? scanSource() : router.push(o.href));
+  const desktop = useDesktop();
+  // Desktop: avatar dan lonceng sudah di nav atas, jadi header ponsel diganti judul halaman.
+  const header = desktop ? <HomeDesktopTitle /> : <HomeHeader />;
 
   if (demo === 'error') {
     return (
       <Screen tabs>
-        <HomeHeader />
+        {header}
         <EmptyState kind="error" title={t('home.error.title')} message={t('home.error.message')} actionLabel={t('common.retry')} onAction={retry} />
       </Screen>
     );
@@ -57,51 +63,97 @@ export default function HomeScreen() {
   if (demo === 'loading') {
     return (
       <Screen tabs>
-        <HomeHeader />
+        {header}
         <HomeSkeleton />
+      </Screen>
+    );
+  }
+
+  const balance = (style?: ViewStyle) => (
+    <BalanceBlock style={style} amount={state.includeAssets ? netWorth.total : netWorth.total - netWorth.assets} currency={netWorth.currency} accountCount={ledger.accounts.length} complete={netWorth.complete} />
+  );
+  const deck = (
+    <AccountDeck
+      accounts={ledger.accounts}
+      hidden={state.hideBalance}
+      limitReached={limits.accounts}
+      activeId={state.activeAccountId}
+      onActiveChange={(id) => dispatch({ type: 'account/setActive', id })}
+    />
+  );
+  const quick = (
+    <QuickActions
+      actions={[
+        { key: 'scan', label: t('home.quick.scan'), icon: scan.icon, primary: true, onPress: () => openCapture(scan) },
+        { key: 'voice', label: voice.short, icon: voice.icon, onPress: () => openCapture(voice) },
+        { key: 'coach', label: t('home.quick.coach'), icon: Activity, onPress: () => router.push('/coach') },
+        { key: 'more', label: t('home.quick.more'), icon: LayoutGrid, onPress: () => setMore(true) },
+      ]}
+    />
+  );
+  const stats = ledger.transactions.length > 0 && (
+    <PeriodStats transactions={ledger.transactions} currency={ledger.mainCurrency} hidden={state.hideBalance} />
+  );
+  const moreSheet = (
+    <CaptureSheet
+      visible={more}
+      onClose={() => setMore(false)}
+      title={t('home.more.title')}
+      subtitle={t('home.more.subtitle')}
+      sections={[
+        { key: 'log', title: t('home.more.sectionLog'), keys: ['pdf', 'manual'] },
+        { key: 'business', title: t('home.more.sectionBusiness'), extras: moreItems },
+      ]}
+    />
+  );
+  const recap = state.notifPrefs.weekly_recap && ledger.transactions.length > 0 && !recapGone && (
+    <SwipeDismiss onDismiss={dismissRecap} actionLabel={t('home.recapDismiss')}>
+      <PromoCard icon={Sparkles} title={t('home.recapTitle')} message={t('home.recapMessage')} onPress={() => router.push('/coach')} />
+    </SwipeDismiss>
+  );
+  const recent = <RecentTransactions transactions={ledger.transactions} accounts={ledger.accounts} mainCurrency={ledger.mainCurrency} />;
+
+  if (desktop) {
+    // Grid 5 + 7 ala Talmo: kartu tinta (titik fokus) kiri atas, angka periode dan aksi di sampingnya,
+    // lalu daftar transaksi lebar dengan kartu akun dan recap di kolom sempit.
+    return (
+      <Screen tabs maxWidth={HOME_DESKTOP_WIDTH} onRefresh={retry} refreshing={refreshing}>
+        {header}
+        <GridRow>
+          <GridCell span={5} order={0}>
+            {balance({ flex: 1, justifyContent: 'center' })}
+          </GridCell>
+          <GridCell span={7} order={1}>
+            {quick}
+            {stats}
+          </GridCell>
+        </GridRow>
+        <MissingRatesBanner />
+        <GridRow>
+          <GridCell span={7} order={2}>
+            {recent}
+          </GridCell>
+          <GridCell span={5} order={3}>
+            {deck}
+            {recap}
+          </GridCell>
+        </GridRow>
+        {moreSheet}
       </Screen>
     );
   }
 
   return (
     <Screen tabs onRefresh={retry} refreshing={refreshing}>
-      <HomeHeader />
-      <BalanceBlock amount={state.includeAssets ? netWorth.total : netWorth.total - netWorth.assets} currency={netWorth.currency} accountCount={ledger.accounts.length} complete={netWorth.complete} />
-      <AccountDeck
-        accounts={ledger.accounts}
-        hidden={state.hideBalance}
-        limitReached={limits.accounts}
-        activeId={state.activeAccountId}
-        onActiveChange={(id) => dispatch({ type: 'account/setActive', id })}
-      />
-      <QuickActions
-        actions={[
-          { key: 'scan', label: t('home.quick.scan'), icon: scan.icon, primary: true, onPress: () => openCapture(scan) },
-          { key: 'voice', label: voice.short, icon: voice.icon, onPress: () => openCapture(voice) },
-          { key: 'coach', label: t('home.quick.coach'), icon: Activity, onPress: () => router.push('/coach') },
-          { key: 'more', label: t('home.quick.more'), icon: LayoutGrid, onPress: () => setMore(true) },
-        ]}
-      />
+      {header}
+      {balance()}
+      {deck}
+      {quick}
       <MissingRatesBanner />
-      {ledger.transactions.length > 0 && (
-        <PeriodStats transactions={ledger.transactions} currency={ledger.mainCurrency} hidden={state.hideBalance} />
-      )}
-      <CaptureSheet
-        visible={more}
-        onClose={() => setMore(false)}
-        title={t('home.more.title')}
-        subtitle={t('home.more.subtitle')}
-        sections={[
-          { key: 'log', title: t('home.more.sectionLog'), keys: ['pdf', 'manual'] },
-          { key: 'business', title: t('home.more.sectionBusiness'), extras: moreItems },
-        ]}
-      />
-      {state.notifPrefs.weekly_recap && ledger.transactions.length > 0 && !recapGone && (
-        <SwipeDismiss onDismiss={dismissRecap} actionLabel={t('home.recapDismiss')}>
-          <PromoCard icon={Sparkles} title={t('home.recapTitle')} message={t('home.recapMessage')} onPress={() => router.push('/coach')} />
-        </SwipeDismiss>
-      )}
-      <RecentTransactions transactions={ledger.transactions} accounts={ledger.accounts} mainCurrency={ledger.mainCurrency} />
+      {stats}
+      {moreSheet}
+      {recap}
+      {recent}
     </Screen>
   );
 }

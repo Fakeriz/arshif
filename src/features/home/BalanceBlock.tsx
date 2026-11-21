@@ -1,5 +1,5 @@
 import { Eye, EyeOff } from 'lucide-react-native';
-import { StyleSheet, View } from 'react-native';
+import { StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 
 import { useI18n } from '@/i18n';
 import { AppText, BalanceText, Icon, PressableScale, TrendBadge } from '@/components/ui';
@@ -20,9 +20,9 @@ type BalanceProps = {
 };
 
 /** Kekayaan bersih di kartu tinta: titik fokus Beranda. */
-export function BalanceBlock(props: BalanceProps) {
+export function BalanceBlock({ style, ...props }: BalanceProps & { style?: StyleProp<ViewStyle> }) {
   return (
-    <InkCard style={styles.card}>
+    <InkCard style={[styles.card, style]}>
       <BalanceContent {...props} />
     </InkCard>
   );
