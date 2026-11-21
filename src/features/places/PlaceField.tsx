@@ -2,7 +2,7 @@ import { LocateFixed, MapPin, Search, X } from 'lucide-react-native';
 import { useEffect, useRef, useState } from 'react';
 import { Image, StyleSheet, View } from 'react-native';
 
-import { AppText, BottomSheet, Button, Card, EmptyState, Icon, Input, ListCard, ListItem, ListItemSkeleton, PressableScale, Skeleton } from '@/components/ui';
+import { AppText, BottomSheet, Button, Card, EmptyState, Icon, IconTile, Input, ListCard, ListItem, ListItemSkeleton, PressableScale, Skeleton } from '@/components/ui';
 import type { TxPlace } from '@/data/types';
 import { useI18n, type MsgKey } from '@/i18n';
 import { useTheme } from '@/theme/ThemeProvider';
@@ -136,7 +136,6 @@ type Lookup = { (): Promise<TxPlace[]> };
 /** Sheet cari lokasi: ketik nama tempat, atau pakai posisi sekarang (izin diminta di sini). */
 function PlaceSheet({ visible, onClose, onPick }: { visible: boolean; onClose: () => void; onPick: (p: TxPlace) => void }) {
   const { t, lang } = useI18n();
-  const { colors } = useTheme();
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<TxPlace[] | null>(null);
   const [loading, setLoading] = useState(false);
@@ -176,7 +175,7 @@ function PlaceSheet({ visible, onClose, onPick }: { visible: boolean; onClose: (
         <Input label={t('tx.place.searchLabel')} icon={Search} placeholder={t('tx.place.searchPlaceholder')} value={query} onChangeText={setQuery} autoCorrect={false} returnKeyType="search" />
         <ListCard>
           <ListItem
-            leading={<Icon icon={LocateFixed} color={colors.textMuted} size={layout.iconSize.md - 2} />}
+            leading={<IconTile icon={LocateFixed} tone="neutral" />}
             title={t('tx.place.useMine')}
             subtitle={t('tx.place.useMineSub')}
             onPress={useMine}
@@ -199,7 +198,7 @@ function PlaceSheet({ visible, onClose, onPick }: { visible: boolean; onClose: (
             {results.map((p, i) => (
               <ListItem
                 key={p.placeId ?? `${p.lat},${p.lng},${i}`}
-                leading={<Icon icon={MapPin} color={colors.textMuted} size={layout.iconSize.md - 2} />}
+                leading={<IconTile icon={MapPin} tone="neutral" />}
                 title={p.name}
                 subtitle={p.address}
                 subtitleLines={2}

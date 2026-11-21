@@ -6,7 +6,7 @@ import { StyleSheet, View } from 'react-native';
 import { Screen } from '@/components/shell/Screen';
 import { HeaderMenu } from '@/components/shell/HeaderActions';
 import { TabHeader } from '@/components/shell/TabHeader';
-import { AppText, BalanceText, Card, CurrencyText, EmptyState, Group, Icon, ListCard, ListItem, Skeleton, StatTile, Toggle, TrendBadge } from '@/components/ui';
+import { AppText, BalanceText, Card, CurrencyText, EmptyState, Group, Icon, IconTile, ListCard, ListItem, Skeleton, StatTile, Toggle, TrendBadge } from '@/components/ui';
 import { AssetForm } from '@/features/assets/AssetForm';
 import { NetWorthChart } from '@/features/assets/NetWorthChart';
 import { priceLabel, quantityLabel } from '@/features/assets/view';
@@ -153,7 +153,7 @@ export default function AsetScreen() {
               <ListItem
                 title={t('assets.cash')}
                 subtitle={t('assets.cashMeta', { count: cashCount })}
-                leading={<Icon icon={Wallet} color={colors.textMuted} size={layout.iconSize.md - 2} />}
+                leading={<IconTile icon={Wallet} tone="neutral" />}
                 trailing={<CurrencyText amount={nw.cash} currency={currency} kind="balance" hidden={state.hideBalance} />}
                 divider={assets.length > 0 || nw.receivables > 0}
               />

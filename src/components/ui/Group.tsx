@@ -3,7 +3,7 @@ import type { ReactNode } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import { useTheme } from '@/theme/ThemeProvider';
-import { fonts, iconBox, layout, space } from '@/theme/tokens';
+import { fonts, iconBox, space } from '@/theme/tokens';
 
 import { AppText } from './AppText';
 import { Card } from './Card';
@@ -14,10 +14,10 @@ import { ListItem, ListItemSkeleton } from './ListItem';
  * Satu aturan grup untuk semua layar (pola Pengaturan): label kecil di luar kartu, aksi kanan opsional,
  * lalu isi grup 8px di bawahnya. Antar grup berjarak gap kolom Screen.
  *
- * Tiga varian baris di dalam ListCard, dipilih menurut isinya (bukan selera):
+ * Dua varian baris di dalam ListCard, dipilih menurut isinya (bukan selera):
  * - tanpa ikon: pengaturan/properti objek yang sedang dibuka (Money, Notifikasi, detail akun); ikon hanya mengulang judul.
- * - ikon polos (MenuGroup): menu navigasi ke layar/aksi lain (Pengaturan, Alat, Data).
- * - ikon dalam kotak (IconTile): memilih cara/sumber input (+ Catat, Scan struk) atau entitas beridentitas (kategori).
+ * - ikon dalam lingkaran 40 (IconTile; kategori: CategoryIcon): menu navigasi, pilihan cara input, entitas.
+ *   Nada: neutral untuk menu, accent untuk pilihan cara input, negative untuk aksi berbahaya.
  */
 export function Group({ label, labelA11y, right, children }: { label?: string; labelA11y?: string; right?: ReactNode; children: ReactNode }) {
   return (
@@ -39,12 +39,15 @@ export function Group({ label, labelA11y, right, children }: { label?: string; l
   );
 }
 
-/** Ikon dalam kotak 40 px untuk pilihan cara/sumber input. muted = terkunci (kuota habis). */
-export function IconTile({ icon, muted }: { icon: LucideIcon; muted?: boolean }) {
+/** Ikon dalam lingkaran 40 (ikon 18) untuk semua baris daftar berikon. muted = terkunci (kuota habis). */
+export function IconTile({ icon, tone = 'accent', muted }: { icon: LucideIcon; tone?: 'accent' | 'neutral' | 'negative'; muted?: boolean }) {
   const { colors } = useTheme();
+  const look = muted
+    ? { bg: colors.track, fg: colors.textSecondary }
+    : { accent: { bg: colors.accentSoft, fg: colors.accentText }, neutral: { bg: colors.fill, fg: colors.textSecondary }, negative: { bg: colors.negativeSoft, fg: colors.negative } }[tone];
   return (
-    <View style={[styles.tile, { backgroundColor: muted ? colors.track : colors.accentSoft }]}>
-      <Icon icon={icon} color={muted ? colors.textSecondary : colors.accentText} size={iconBox[40].icon} />
+    <View style={[styles.tile, { backgroundColor: look.bg }]}>
+      <Icon icon={icon} color={look.fg} size={iconBox[40].icon} />
     </View>
   );
 }
@@ -74,9 +77,8 @@ export type MenuEntry = {
   onPress: () => void;
 };
 
-/** Grup menu: label + kartu daftar berisi baris seragam (ikon polos, judul, keadaan, chevron). */
+/** Grup menu: label + kartu daftar berisi baris seragam (ikon dalam lingkaran, judul, keadaan, chevron). */
 export function MenuGroup({ label, right, entries, loading }: { label?: string; right?: ReactNode; entries: MenuEntry[]; loading?: boolean }) {
-  const { colors } = useTheme();
   return (
     <Group label={label} right={right}>
       <ListCard>
@@ -86,7 +88,7 @@ export function MenuGroup({ label, right, entries, loading }: { label?: string; 
           ) : (
             <ListItem
               key={e.key}
-              leading={<Icon icon={e.icon} color={e.tone === 'negative' ? colors.negative : colors.textMuted} size={layout.iconSize.md - 2} />}
+              leading={<IconTile icon={e.icon} tone={e.tone === 'negative' ? 'negative' : 'neutral'} />}
               title={e.title}
               subtitle={e.subtitle}
               subtitleLines={2}
@@ -109,5 +111,5 @@ const styles = StyleSheet.create({
   label: { paddingHorizontal: space.xs, fontFamily: fonts.semibold },
   // Sama dengan padding atas-bawah baris ListItem (14): jarak isi ke tepi kartu rata di keempat sisi.
   rows: { paddingHorizontal: 14 },
-  tile: { width: 40, height: 40, borderRadius: iconBox[40].radius, alignItems: 'center', justifyContent: 'center' },
+  tile: { width: 40, height: 40, borderRadius: 999, alignItems: 'center', justifyContent: 'center' },
 });
