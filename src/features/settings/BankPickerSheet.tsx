@@ -28,7 +28,7 @@ export function BankPickerSheet({ account, balance, onSelect, onClose }: Props) 
       {account && (
         <>
           <View style={styles.preview}>
-            <BankCard bank={account.bank} accountType={t(`domain.accountType.${account.type}`)} last4={account.last4} balance={balance} currency={account.currency} />
+            <BankCard bank={account.bank} accountType={t(`domain.accountType.${account.type}`)} type={account.type} last4={account.last4} holder={account.holder} expiry={account.expiry} cardStyle={account.cardStyle} balance={balance} currency={account.currency} />
           </View>
           <ScrollView style={{ maxHeight: height * 0.4 }} contentContainerStyle={styles.groups}>
             {BANK_COUNTRIES.map((country) => (

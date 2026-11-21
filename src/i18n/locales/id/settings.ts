@@ -146,10 +146,7 @@ const settings = {
     country: { ID: 'Indonesia', MY: 'Malaysia', TR: 'Turki', ANY: 'Lainnya' },
   },
   wallet: {
-    summary: '{count} akun · {currencies}',
-    summary_one: '{count} akun · {currencies}',
-    allCards: 'Semua kartu',
-    position: '{index} dari {count}',
+    closeHint: 'Ketuk untuk kembali ke semua kartu',
     pick: 'Pilih kartu',
     hint: 'Ketuk kartu untuk melihat transaksi',
     recent: 'Transaksi terakhir',

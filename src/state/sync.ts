@@ -85,6 +85,9 @@ export async function syncAction(action: Action, state: AppState, userId: string
     case 'account/setCardStyle':
       await api.updateAccountCardStyle(action.id, action.cardStyle);
       return [];
+    case 'account/setCardDetails':
+      await api.updateAccountCardDetails(action.id, action.patch);
+      return [];
     case 'account/setActive':
       await api.updateProfile(userId, { active_account_id: action.id });
       return [];

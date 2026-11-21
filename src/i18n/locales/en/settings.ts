@@ -148,10 +148,7 @@ const settings: Messages['settings'] = {
     country: { ID: 'Indonesia', MY: 'Malaysia', TR: 'Türkiye', ANY: 'Other' },
   },
   wallet: {
-    summary: '{count} accounts · {currencies}',
-    summary_one: '{count} account · {currencies}',
-    allCards: 'All cards',
-    position: '{index} of {count}',
+    closeHint: 'Tap to go back to all cards',
     pick: 'Choose card',
     hint: 'Tap a card to see its transactions',
     recent: 'Recent transactions',

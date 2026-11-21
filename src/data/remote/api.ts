@@ -287,7 +287,17 @@ export async function updateAccountBank(id: string, bank: string): Promise<void>
   check(await supabase.from('accounts').update({ bank }).eq('id', id));
 }
 
-/** Tampilan kartu akun (migrasi 25). null = kembali ke desain bawaan bank. */
+export type CardDetails = { last4: string | null; holder: string | null; expiry: string | null };
+/** Detail opsional di wajah kartu (migrasi 29). null = tidak ditampilkan. */
+export async function updateAccountCardDetails(id: string, d: Partial<CardDetails>): Promise<void> {
+  const row: Record<string, string | null> = {};
+  if ('last4' in d) row.last4 = d.last4 ?? null;
+  if ('holder' in d) row.card_holder = d.holder ?? null;
+  if ('expiry' in d) row.card_expiry = d.expiry ?? null;
+  check(await supabase.from('accounts').update(row).eq('id', id));
+}
+
+/** Motif kartu akun. null = kembali ke motif bawaan jenis akun. */
 export async function updateAccountCardStyle(id: string, cardStyle: string | null): Promise<void> {
   check(await supabase.from('accounts').update({ card_style: cardStyle }).eq('id', id));
 }

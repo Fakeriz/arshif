@@ -3,9 +3,8 @@ import { ScrollView, StyleSheet, useWindowDimensions } from 'react-native';
 
 import { usePaywall } from '@/components/shell/Paywall';
 import { BottomSheet, Button, ListCard, ListItem, useToast } from '@/components/ui';
-import { productLabel } from '@/components/ui/ProductArt';
-import { CardStyleModal } from '@/features/accounts/CardStylePicker';
-import { cardProduct } from '@/lib/cardCatalog';
+import { PatternSheet } from '@/features/accounts/CardFaceSettings';
+import { patternFor } from '@/lib/cardFace';
 import { insertAccount, RemoteError } from '@/data/remote/api';
 import { StepAccount } from '@/features/setup/StepAccount';
 import { accountFromDraft, type SetupDraft } from '@/features/setup/draft';
@@ -28,7 +27,6 @@ export function AddAccountSheet({ visible, onClose }: { visible: boolean; onClos
   const [saving, setSaving] = useState(false);
   const [picking, setPicking] = useState(false);
   const nameOk = draft.name.trim().length > 0;
-  const style = cardProduct(draft.cardStyle);
 
   const save = async () => {
     setTried(true);
@@ -58,15 +56,18 @@ export function AddAccountSheet({ visible, onClose }: { visible: boolean; onClos
       <ScrollView style={{ maxHeight: height * 0.62 }} contentContainerStyle={styles.body} keyboardShouldPersistTaps="handled">
         <StepAccount value={draft} mainCurrency={state.mainCurrency} nameError={tried && !nameOk} onChange={setDraft} />
         <ListCard>
-          <ListItem title={t('acct.cardStyle.row')} subtitle={style ? productLabel(style, t) : t('acct.cardStyle.defaultArt')} chevron onPress={() => setPicking(true)} />
+          <ListItem title={t('acct.pattern.row')} subtitle={t(`acct.pattern.${patternFor(draft.type, draft.cardStyle)}`)} chevron onPress={() => setPicking(true)} />
         </ListCard>
       </ScrollView>
-      <CardStyleModal
+      <PatternSheet
         visible={picking}
         bank={draft.bank}
-        currentId={style?.id ?? null}
+        type={draft.type}
+        currency={draft.currency}
+        balance={draft.opening ?? 0}
+        current={draft.cardStyle}
         onClose={() => setPicking(false)}
-        onApply={(cardStyle) => {
+        onSelect={(cardStyle) => {
           setDraft((d) => ({ ...d, cardStyle }));
           setPicking(false);
         }}

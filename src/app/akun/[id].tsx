@@ -1,13 +1,12 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { StyleSheet, useWindowDimensions, View } from 'react-native';
 
 import { Screen } from '@/components/shell/Screen';
 import { ScreenHeader } from '@/components/shell/ScreenHeader';
 import { AppText, Badge, BankCard, Button, Card, EmptyState, ListCard, ListItem, ProgressBar, Skeleton, useToast } from '@/components/ui';
-import { productLabel } from '@/components/ui/ProductArt';
-import { cardProduct } from '@/lib/cardCatalog';
-import { CardStyleModal } from '@/features/accounts/CardStylePicker';
+import { CardDetailsCard, PatternSheet } from '@/features/accounts/CardFaceSettings';
+import { patternFor } from '@/lib/cardFace';
 import { AnnualFeeSheet, CreditLimitSheet } from '@/features/accounts/sheets';
 import { UtilizationBlock } from '@/features/accounts/UtilizationBlock';
 import { BankPickerSheet } from '@/features/settings/BankPickerSheet';
@@ -21,7 +20,7 @@ import { useStore } from '@/state/AppStore';
 import { useCreditUtilization, useLedger } from '@/state/derived';
 import { useLoadState } from '@/state/loadState';
 import { useRetry } from '@/state/useRetry';
-import { radius, space } from '@/theme/tokens';
+import { layout, radius, space } from '@/theme/tokens';
 
 type Sheet = 'bank' | 'limit' | 'fee' | 'style' | null;
 
@@ -37,6 +36,7 @@ export default function AccountDetail() {
   const utilization = useCreditUtilization();
   const [sheet, setSheet] = useState<Sheet>(null);
   const { show } = useToast();
+  const { width: windowW } = useWindowDimensions();
   const account = accounts.find((a) => a.id === id);
 
   if (load !== 'ready') {
@@ -64,8 +64,6 @@ export default function AccountDetail() {
   }
 
   const credit = isCreditType(account.type);
-  // Id yang tidak dikenal katalog (mis. katalog berubah) diperlakukan seperti belum memilih.
-  const style = cardProduct(account.cardStyle);
   const u = utilization(account.id);
   const group = state.limitGroups.find((g) => g.id === account.limitGroupId);
   const patch = (p: Partial<Pick<Account, 'creditLimit' | 'limitGroupId' | 'annualFee'>>) =>
@@ -78,11 +76,15 @@ export default function AccountDetail() {
         <BankCard
           bank={account.bank}
           accountType={t(`domain.accountType.${account.type}`)}
+          type={account.type}
           last4={account.last4}
+          holder={account.holder}
+          expiry={account.expiry}
           balance={account.balance}
           currency={account.currency}
           hidden={state.hideBalance}
           cardStyle={account.cardStyle}
+          width={Math.min(windowW, layout.maxContentWidth) - space.lg * 2}
         />
       </View>
       {/* Tanpa ikon: properti akun ini. */}
@@ -90,23 +92,9 @@ export default function AccountDetail() {
         <ListItem title={t('acct.detail.type')} trailing={t(`domain.accountType.${account.type}`)} divider />
         <ListItem title={t('acct.detail.currency')} trailing={account.currency} divider />
         <ListItem title={t('acct.detail.design')} subtitle={bankName(t, account.bank)} chevron divider onPress={() => setSheet('bank')} />
-        <ListItem
-          title={t('acct.cardStyle.row')}
-          subtitle={style ? productLabel(style, t) : t('acct.cardStyle.defaultArt')}
-          chevron
-          divider={!!style}
-          onPress={() => setSheet('style')}
-        />
-        {style && (
-          <ListItem
-            title={t('acct.cardStyle.reset')}
-            onPress={() => {
-              dispatch({ type: 'account/setCardStyle', id: account.id, cardStyle: null });
-              show({ tone: 'success', title: t('acct.cardStyle.resetDone') });
-            }}
-          />
-        )}
+        <ListItem title={t('acct.pattern.row')} subtitle={t(`acct.pattern.${patternFor(account.type, account.cardStyle)}`)} chevron onPress={() => setSheet('style')} />
       </ListCard>
+      <CardDetailsCard account={account} onChange={(patch) => dispatch({ type: 'account/setCardDetails', id: account.id, patch })} />
 
       {credit && (
         <Card>
@@ -150,15 +138,18 @@ export default function AccountDetail() {
         />
       )}
 
-      <CardStyleModal
+      <PatternSheet
         visible={sheet === 'style'}
         bank={account.bank}
-        currentId={style?.id ?? null}
+        type={account.type}
+        currency={account.currency}
+        balance={account.balance}
+        current={account.cardStyle}
         onClose={() => setSheet(null)}
-        onApply={(cardStyle) => {
+        onSelect={(cardStyle) => {
           dispatch({ type: 'account/setCardStyle', id: account.id, cardStyle });
           setSheet(null);
-          show({ tone: 'success', title: t('acct.cardStyle.saved') });
+          show({ tone: 'success', title: t('acct.pattern.saved') });
         }}
       />
       <BankPickerSheet

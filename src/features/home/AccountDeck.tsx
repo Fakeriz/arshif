@@ -111,7 +111,10 @@ export function AccountDeck({ accounts, hidden, limitReached, activeId, onActive
           <BankCard
             bank={item.account.bank}
             accountType={t(`domain.accountType.${item.account.type}`)}
+            type={item.account.type}
             last4={item.account.last4}
+            holder={item.account.holder}
+            expiry={item.account.expiry}
             balance={item.account.balance}
             currency={item.account.currency}
             hidden={hidden}

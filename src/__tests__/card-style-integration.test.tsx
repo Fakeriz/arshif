@@ -6,14 +6,12 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import AccountDetail from '@/app/akun/[id]';
 import { PaywallProvider } from '@/components/shell/Paywall';
 import { BankCard, ToastProvider } from '@/components/ui';
-import { CARD_PRODUCTS } from '@/data/cardProducts';
 import { toAccount } from '@/data/remote/mappers';
 import { sampleState } from '@/data/sample-state';
 import type { Account } from '@/data/types';
 import { AccountDeck } from '@/features/home/AccountDeck';
 import { AddAccountSheet } from '@/features/settings/AddAccountSheet';
 import { I18nProvider } from '@/i18n';
-import { formatMoney } from '@/lib/money';
 import { AppStoreProvider, useStore } from '@/state/AppStore';
 import { AssetsProvider } from '@/state/assets';
 import { PlanningProvider } from '@/state/planning';
@@ -33,13 +31,12 @@ jest.mock('expo-router', () => ({
 }));
 
 const base = sampleState();
-const batman = CARD_PRODUCTS.find((p) => p.id === 'bca-credit-visa-batman')!;
 const acc: Account = { id: 'acc-1', bank: 'bca', name: 'BCA Utama', type: 'tabungan', currency: 'IDR', openingBalance: 1_250_000, last4: '1234' };
 
 /** Menampilkan cardStyle akun dari store, untuk memastikan pilihan benar-benar masuk state aplikasi. */
 function StyleProbe({ id }: { id: string }) {
   const { state } = useStore();
-  return <Text>{`style:${state.accounts.find((a) => a.id === id)?.cardStyle ?? 'none'}`}</Text>;
+  return <Text>{`style:${state.accounts.find((a) => a.id === id)?.cardStyle ?? 'none'} holder:${state.accounts.find((a) => a.id === id)?.holder ?? 'none'} last4:${state.accounts.find((a) => a.id === id)?.last4 ?? 'none'}`}</Text>;
 }
 
 async function wrap(ui: ReactNode, state: Partial<AppState> = {}) {
@@ -70,50 +67,50 @@ const press = async (label: string) => {
 };
 const layoutGrid = async () => {
   await act(async () => {
-    fireEvent(screen.getByTestId('card-grid'), 'layout', { nativeEvent: { layout: { width: 358, height: 100, x: 0, y: 0 } } });
+    fireEvent(screen.getByTestId('pattern-grid'), 'layout', { nativeEvent: { layout: { width: 350, height: 100, x: 0, y: 0 } } });
   });
 };
 
-describe('penyimpanan tampilan kartu', () => {
-  it('kolom card_style dibaca ke akun; kosong = desain bawaan', () => {
+describe('penyimpanan wajah kartu', () => {
+  it('kolom card_style, card_holder, card_expiry dibaca ke akun; kosong = tidak ditampilkan', () => {
     const row = { id: 'a', bank: 'bca', name: 'BCA', type: 'tabungan' as const, currency: 'IDR', opening_balance: 0, balance: 0, last4: null };
-    expect(toAccount({ ...row, card_style: 'bca-credit-visa-batman' }).cardStyle).toBe('bca-credit-visa-batman');
-    expect(toAccount(row).cardStyle).toBeUndefined();
+    expect(toAccount({ ...row, card_style: 'waves', card_holder: 'MAYA', card_expiry: '09/29' })).toMatchObject({ cardStyle: 'waves', holder: 'MAYA', expiry: '09/29' });
+    expect(toAccount(row)).toMatchObject({ cardStyle: undefined, holder: undefined, expiry: undefined, last4: undefined });
   });
-  it('reducer menyimpan dan menghapus pilihan per akun tanpa menyentuh bank/nama/saldo', () => {
-    const s0 = { ...base, accounts: [acc] };
-    const s1 = reducer(s0, { type: 'account/setCardStyle', id: 'acc-1', cardStyle: batman.id });
-    expect(s1.accounts[0]).toEqual({ ...acc, cardStyle: batman.id });
-    expect(reducer(s1, { type: 'account/setCardStyle', id: 'acc-1', cardStyle: null }).accounts[0].cardStyle).toBeUndefined();
+  it('reducer: sakelar detail kartu menyimpan/menghapus hanya kunci yang dikirim', () => {
+    const s0 = { ...base, accounts: [{ ...acc, holder: 'MAYA' }] };
+    const s1 = reducer(s0, { type: 'account/setCardDetails', id: 'acc-1', patch: { expiry: '09/29' } });
+    expect(s1.accounts[0]).toMatchObject({ holder: 'MAYA', expiry: '09/29', last4: '1234', name: 'BCA Utama' });
+    const s2 = reducer(s1, { type: 'account/setCardDetails', id: 'acc-1', patch: { holder: null, last4: null } });
+    expect(s2.accounts[0]!.holder).toBeUndefined();
+    expect(s2.accounts[0]!.last4).toBeUndefined();
+    expect(s2.accounts[0]!.expiry).toBe('09/29');
   });
 });
 
-describe('artwork di kartu akun', () => {
-  it('tampilan dipilih: artwork + isi kartu tetap (jenis, 4 digit, saldo)', async () => {
-    await wrap(<BankCard bank="bca" accountType="Tabungan" last4="1234" balance={1_250_000} currency="IDR" cardStyle={batman.id} />);
-    expect(screen.getByText('Visa Batman')).toBeTruthy();
-    expect(screen.getByText('Tabungan · •••• 1234')).toBeTruthy();
-    expect(screen.getByText(formatMoney(1_250_000, 'IDR'))).toBeTruthy();
+describe('wajah kartu gaya dompet', () => {
+  it('kartu bank: nama bank, jenis · mata uang, saldo, nomor tersamar; nama & masa berlaku hanya bila diisi', async () => {
+    await wrap(<BankCard bank="bca" accountType="Tabungan" type="tabungan" last4="4821" balance={1_250_000} currency="IDR" />);
+    expect(screen.getByText('Tabungan · IDR')).toBeTruthy();
+    expect(screen.getByText('•••• •••• •••• 4821')).toBeTruthy();
+    expect(screen.queryByText('09/29')).toBeNull();
   });
-  it('belum memilih atau id tidak dikenal: desain bawaan bank seperti sebelumnya (tidak kosong, tidak error)', async () => {
-    await wrap(<BankCard bank="bca" accountType="Tabungan" balance={1000} currency="IDR" cardStyle="produk-sudah-dihapus" />);
-    expect(screen.getByText('BCA')).toBeTruthy();
-    expect(screen.queryByText('Visa Batman')).toBeNull();
-  });
-  it('deck Beranda memakai artwork pilihan tiap akun; akun tanpa pilihan tetap desain bawaan', async () => {
-    const other: Account = { ...acc, id: 'acc-2', bank: 'mandiri', name: 'Mandiri', last4: '9999' };
-    await wrap(<AccountDeck accounts={[{ ...acc, cardStyle: batman.id, balance: 1_250_000 }, { ...other, balance: 500 }]} hidden={false} limitReached={false} activeId="acc-1" onActiveChange={jest.fn()} />);
-    // Deck tertutup secara default (strip); buka seperti pengguna, lalu kartu terlihat.
-    await act(async () => {
-      fireEvent.press(screen.getByRole('button', { expanded: false }));
-    });
-    expect(screen.getAllByText('Visa Batman').length).toBeGreaterThan(0);
-    expect(screen.getAllByText('Mandiri').length).toBeGreaterThan(0);
+  it('detail lengkap tampil; tunai menulis "Uang di dompet" tanpa nomor', async () => {
+    await wrap(
+      <>
+        <BankCard bank="bca" accountType="Kartu Kredit" type="kartu_kredit" last4="0937" holder="MAYA LESTARI" expiry="08/28" balance={-50_000} currency="IDR" />
+        <BankCard bank="cash" accountType="Tunai" type="cash" last4="1111" balance={50_000} currency="IDR" />
+      </>,
+    );
+    expect(screen.getByText('MAYA LESTARI')).toBeTruthy();
+    expect(screen.getByText('08/28')).toBeTruthy();
+    expect(screen.getByText('Uang di dompet')).toBeTruthy();
+    expect(screen.queryByText(/1111/)).toBeNull();
   });
 });
 
 describe('jalan masuk dari dalam aplikasi', () => {
-  it('detail akun: baris Tampilan kartu membuka picker, centang menyimpan ke akun; bisa kembali ke desain bawaan', async () => {
+  it('detail akun: pilih motif kartu tersimpan ke akun', async () => {
     mockParams = { id: 'acc-1' };
     await wrap(
       <>
@@ -122,18 +119,15 @@ describe('jalan masuk dari dalam aplikasi', () => {
       </>,
       { accounts: [acc] },
     );
-    expect(screen.getByText('Desain bawaan bank')).toBeTruthy();
-    await press('Tampilan kartu');
+    // Belum memilih: motif bawaan tabungan = Lingkar.
+    expect(screen.getByText('Lingkar')).toBeTruthy();
+    await press('Motif kartu');
     await layoutGrid();
-    await press('Visa Batman, BCA');
-    await press('Terapkan tampilan kartu');
-    expect(screen.getByText(`style:${batman.id}`)).toBeTruthy();
-    expect(screen.getAllByText('Visa Batman').length).toBeGreaterThan(0);
-    await press('Pakai desain bawaan bank');
-    expect(screen.getByText('style:none')).toBeTruthy();
+    await press('Gelombang');
+    expect(screen.getByText(/style:waves/)).toBeTruthy();
   });
 
-  it('detail akun: X di picker menutup tanpa perubahan', async () => {
+  it('detail akun: sakelar nama pemegang -> isi -> tampil; matikan sakelar nomor -> nomor hilang', async () => {
     mockParams = { id: 'acc-1' };
     await wrap(
       <>
@@ -142,25 +136,27 @@ describe('jalan masuk dari dalam aplikasi', () => {
       </>,
       { accounts: [acc] },
     );
-    await press('Tampilan kartu');
-    await layoutGrid();
-    await press('Visa Batman, BCA');
-    await press('Tutup tanpa mengubah');
-    expect(screen.getByText('style:none')).toBeTruthy();
+    await act(async () => fireEvent(screen.getByLabelText('Tampilkan Nama pemegang di kartu'), 'press'));
+    const input = screen.getByLabelText('Nama seperti di kartu');
+    await act(async () => fireEvent.press(screen.getByText('Simpan')));
+    expect(screen.getByText('Isi nama, maksimal 40 karakter')).toBeTruthy();
+    await act(async () => fireEvent.changeText(input, ' maya  lestari '));
+    await act(async () => fireEvent.press(screen.getByText('Simpan')));
+    expect(screen.getByText(/holder:MAYA LESTARI/)).toBeTruthy();
+    await act(async () => fireEvent(screen.getByLabelText('Tampilkan Nomor kartu di kartu'), 'press'));
+    expect(screen.getByText(/last4:none/)).toBeTruthy();
   });
 
-  it('tambah akun: tampilan kartu dipilih di form ikut tersimpan saat akun dibuat', async () => {
+  it('tambah akun: motif dipilih di form ikut tersimpan saat akun dibuat', async () => {
     mockInsertAccount.mockImplementation(async (a: Omit<Account, 'id'>) => ({ ...a, id: 'new-1' }));
     await wrap(<AddAccountSheet visible onClose={jest.fn()} />);
     await act(async () => {
-      fireEvent.changeText(screen.getByLabelText('Nama akun'), 'Kartu Batman');
+      fireEvent.changeText(screen.getByLabelText('Nama akun'), 'Kartu Harian');
     });
-    await press('Tampilan kartu');
+    await press('Motif kartu');
     await layoutGrid();
-    await press('Visa Batman, BCA');
-    await press('Terapkan tampilan kartu');
-    expect(screen.getByText('Visa Batman')).toBeTruthy();
+    await press('Titik');
     await press('Tambah akun');
-    expect(mockInsertAccount).toHaveBeenCalledWith(expect.objectContaining({ name: 'Kartu Batman', cardStyle: batman.id }));
+    expect(mockInsertAccount).toHaveBeenCalledWith(expect.objectContaining({ name: 'Kartu Harian', cardStyle: 'grid' }));
   });
 });

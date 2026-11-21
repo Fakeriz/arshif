@@ -23,7 +23,7 @@ export function StepAccount({ value, mainCurrency, nameError, onChange }: Props)
   return (
     <>
       <View style={styles.preview}>
-        <BankCard bank={value.bank} accountType={t(`domain.accountType.${value.type}`)} balance={credit ? -(value.opening ?? 0) : (value.opening ?? 0)} currency={value.currency} />
+        <BankCard bank={value.bank} accountType={t(`domain.accountType.${value.type}`)} type={value.type} cardStyle={value.cardStyle} balance={credit ? -(value.opening ?? 0) : (value.opening ?? 0)} currency={value.currency} />
       </View>
       <Card>
         <View style={styles.block}>

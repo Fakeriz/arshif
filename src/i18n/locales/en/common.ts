@@ -35,6 +35,8 @@ const common: Messages['common'] = {
   noDataThisMonth: 'No data this month yet',
   cashflowEmptyTitle: 'No cash flow yet',
   cashflowEmptyMessage: 'Log your first transaction to see the monthly trend.',
+  balance: 'Balance',
+  cashInWallet: 'Cash in wallet',
   bankCardA11y: '{bank} {type}, balance {amount}',
   bankCardA11yLast4: '{bank} {type}, ending {last4}, balance {amount}',
   ui: {

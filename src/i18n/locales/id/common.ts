@@ -34,6 +34,8 @@ const common = {
   noDataThisMonth: 'Belum ada data bulan ini',
   cashflowEmptyTitle: 'Belum ada arus kas',
   cashflowEmptyMessage: 'Catat transaksi pertamamu untuk melihat tren bulanan.',
+  balance: 'Saldo',
+  cashInWallet: 'Uang di dompet',
   bankCardA11y: '{bank} {type}, saldo {amount}',
   bankCardA11yLast4: '{bank} {type}, akhiran {last4}, saldo {amount}',
   ui: {

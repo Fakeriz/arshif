@@ -186,26 +186,6 @@ export function AccountsCard() {
 
   return (
     <View onLayout={(e) => setWidth(e.nativeEvent.layout.width)}>
-      <View style={styles.head}>
-        {mode === 'stack' ? (
-          <Animated.View key="h-stack" entering={fade(220)} exiting={fadeOut(120)}>
-            <AppText variant="caption" tone="secondary">
-              {t('settings.wallet.summary', { count: n, currencies: currencies.join(', ') })}
-            </AppText>
-          </Animated.View>
-        ) : (
-          <Animated.View key="h-open" style={styles.headRow} entering={fade(220)} exiting={fadeOut(120)}>
-            <PressableScale accessibilityRole="button" accessibilityLabel={t('settings.wallet.allCards')} onPress={() => close()} focusRadius={radius.full} style={styles.back}>
-              <Icon icon={ChevronLeft} color={colors.text} />
-              <AppText variant="bodyStrong">{t('settings.wallet.allCards')}</AppText>
-            </PressableScale>
-            <AppText variant="caption" tone="muted" numeric aria-live="polite">
-              {t('settings.wallet.position', { index: active + 1, count: n })}
-            </AppText>
-          </Animated.View>
-        )}
-      </View>
-
       {W > 0 && n > 0 ? (
         <View ref={stageRef} style={[styles.stage, { height: stageH }]} {...pan.panHandlers}>
           {accounts.map((a, j) => (
@@ -213,14 +193,19 @@ export function AccountsCard() {
               <BankCard
                 bank={a.bank}
                 accountType={t(`domain.accountType.${a.type}`)}
+                type={a.type}
                 last4={a.last4}
+                holder={a.holder}
+                expiry={a.expiry}
                 balance={a.balance}
                 currency={a.currency}
                 hidden={state.hideBalance}
                 cardStyle={a.cardStyle}
                 footnote={footnote(a)}
                 width={W}
-                onPress={mode === 'stack' ? () => open(j) : j !== active ? () => goTo(j) : undefined}
+                // Terbuka: kartu depan diketuk = kembali ke tumpukan; kartu yang mengintip = maju ke depan.
+                onPress={mode === 'stack' ? () => open(j) : j !== active ? () => goTo(j) : () => close()}
+                accessibilityHint={mode === 'open' && j === active ? t('settings.wallet.closeHint') : undefined}
               />
             </StackCard>
           ))}
@@ -410,9 +395,6 @@ function RecentList({ account, transactions, mainCurrency, lang, pos, active, co
 }
 
 const styles = StyleSheet.create({
-  head: { minHeight: 44, justifyContent: 'center', paddingHorizontal: space.xs, marginBottom: space.sm },
-  headRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: space.md },
-  back: { flexDirection: 'row', alignItems: 'center', gap: space.xs, minHeight: 44, paddingRight: space.md, marginLeft: -space.xs },
   // Web: geser dengan mouse tidak memblok teks kartu (sama dengan prototipe).
   stage: { userSelect: 'none' },
   card: { position: 'absolute', top: 0, left: 0 },

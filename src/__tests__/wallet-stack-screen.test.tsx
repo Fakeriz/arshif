@@ -27,22 +27,24 @@ const wrap = (ui: ReactNode) =>
 
 // Panggung kartu baru dirender setelah lebar diketahui (onLayout).
 const layout = async () => {
-  const root = screen.getByText(/akun · IDR/).parent?.parent?.parent;
+  // Naik dari teks petunjuk sampai pembungkus yang mengukur lebar (onLayout).
+  let root = screen.getByText('Ketuk kartu untuk melihat transaksi').parent;
+  while (root && !root.props.onLayout) root = root.parent;
   await act(async () => fireEvent(root!, 'layout', { nativeEvent: { layout: { width: 358, height: 600, x: 0, y: 0 } } }));
 };
 
 beforeEach(() => mockPush.mockClear());
 
 describe('Akun & kartu: dompet bertumpuk', () => {
-  it('tumpukan: ringkasan akun & mata uang, petunjuk ketuk; buka kartu -> transaksi + detail; kembali', async () => {
+  it('tumpukan tanpa header; ketuk kartu -> transaksi + detail; titik ganti kartu; ketuk kartu depan = kembali', async () => {
     await wrap(<AccountsCard />);
-    expect(screen.getByText(/^\d+ akun · IDR, MYR/)).toBeTruthy();
+    // Header ringkasan/"Semua kartu" dihapus.
+    expect(screen.queryByText(/akun · IDR/)).toBeNull();
     expect(screen.getByText('Ketuk kartu untuk melihat transaksi')).toBeTruthy();
     await layout();
     const cards = screen.getAllByLabelText(/BCA Tabungan|BCA .*akhiran 2153/);
     await act(async () => fireEvent.press(cards[0]!));
-    expect(screen.getByText('Semua kartu')).toBeTruthy();
-    expect(screen.getByText(/^1 dari \d+$/)).toBeTruthy();
+    expect(screen.queryByText('Semua kartu')).toBeNull();
     expect(screen.getByText('Transaksi terakhir')).toBeTruthy();
     expect(screen.queryByText('Ketuk kartu untuk melihat transaksi')).toBeNull();
 
@@ -52,9 +54,11 @@ describe('Akun & kartu: dompet bertumpuk', () => {
     // Titik halaman: pilih kartu ke-2.
     const tabs = screen.getAllByRole('tab');
     await act(async () => fireEvent.press(tabs[1]!));
-    expect(screen.getByText(/^2 dari \d+$/)).toBeTruthy();
+    expect(screen.getAllByRole('tab')[1]!.props.accessibilityState).toEqual(expect.objectContaining({ selected: true }));
 
-    await act(async () => fireEvent.press(screen.getByLabelText('Semua kartu')));
+    // Kartu depan (Jago) diketuk = kembali ke tumpukan.
+    const front = screen.getAllByLabelText(/Jago/).find((n) => n.props.accessibilityHint === 'Ketuk untuk kembali ke semua kartu');
+    await act(async () => fireEvent.press(front!));
     expect(screen.getByText('Ketuk kartu untuk melihat transaksi')).toBeTruthy();
   });
 });

@@ -19,8 +19,12 @@ export type Account = {
   limitGroupId?: string;
   /** Iuran tahunan kartu kredit (FR-ACC-7). */
   annualFee?: AnnualFee;
-  /** Tampilan kartu pilihan pengguna: id produk di src/data/cardProducts.ts. Kosong = desain bawaan bank. */
+  /** Motif wajah kartu (lib/cardFace PATTERNS). Kosong/tidak dikenal (mis. id katalog lama) = motif bawaan jenis akun. */
   cardStyle?: string;
+  /** Nama pemegang di wajah kartu (opsional, sakelar). */
+  holder?: string;
+  /** Masa berlaku "MM/YY" di wajah kartu (opsional, sakelar). */
+  expiry?: string;
 };
 
 export type AnnualFee = {

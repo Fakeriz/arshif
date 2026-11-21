@@ -86,8 +86,7 @@ describe('tidak ada teks UI yang ditulis langsung', () => {
     }
   };
   ['app', 'components', 'features'].forEach((d) => walk(join(root, d)));
-  // design-kartu.tsx = pratinjau dev "Pilih Tampilan Kartu" (disembunyikan di rilis seperti design.tsx).
-  const scanned = files.filter((f) => !f.includes('design-sheet') && !f.endsWith('design.tsx') && !f.endsWith('design-kartu.tsx'));
+  const scanned = files.filter((f) => !f.includes('design-sheet') && !f.endsWith('design.tsx'));
   const ALLOWED = new Set(['Arshif', 'PRO']);
 
   it.each(scanned.map((f) => [f.slice(root.length + 1), f]))('%s', (_, file) => {

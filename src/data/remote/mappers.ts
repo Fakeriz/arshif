@@ -8,7 +8,7 @@ export type AccountRow = {
   opening_balance: number; balance: number; last4: string | null;
   credit_limit?: number | null; limit_group_id?: string | null; annual_fee?: number | null; annual_fee_month?: number | null;
   annual_fee_day?: number | null; fee_waiver_threshold?: number | null; annual_fee_paid?: string[] | null;
-  card_style?: string | null;
+  card_style?: string | null; card_holder?: string | null; card_expiry?: string | null;
 };
 
 export type LimitGroupRow = { id: string; name: string; currency: string; shared_limit: number | string };
@@ -92,6 +92,8 @@ export const toAccount = (r: AccountRow): Account => ({
   creditLimit: r.credit_limit == null ? undefined : Number(r.credit_limit),
   limitGroupId: r.limit_group_id ?? undefined,
   cardStyle: r.card_style ?? undefined,
+  holder: r.card_holder ?? undefined,
+  expiry: r.card_expiry ?? undefined,
   annualFee:
     r.annual_fee != null && r.annual_fee_month != null && r.annual_fee_day != null
       ? {

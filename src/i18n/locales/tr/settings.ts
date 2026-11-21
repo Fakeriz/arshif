@@ -148,10 +148,7 @@ const settings: Messages['settings'] = {
     country: { ID: 'Endonezya', MY: 'Malezya', TR: 'Türkiye', ANY: 'Diğer' },
   },
   wallet: {
-    summary: '{count} hesap · {currencies}',
-    summary_one: '{count} hesap · {currencies}',
-    allCards: 'Tüm kartlar',
-    position: '{index} / {count}',
+    closeHint: 'Tüm kartlara dönmek için dokun',
     pick: 'Kart seç',
     hint: 'İşlemlerini görmek için bir karta dokun',
     recent: 'Son işlemler',

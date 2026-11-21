@@ -88,6 +88,8 @@ export type Action =
   | { type: 'budget/split'; split: Split }
   | { type: 'account/setBank'; id: string; bank: string }
   | { type: 'account/setCardStyle'; id: string; cardStyle: string | null }
+  /** Detail opsional wajah kartu; null = sakelar mati. Hanya kunci yang ada yang diubah. */
+  | { type: 'account/setCardDetails'; id: string; patch: Partial<Record<'last4' | 'holder' | 'expiry', string | null>> }
   | { type: 'account/setActive'; id: string }
   | { type: 'account/credit'; id: string; patch: Pick<Account, 'creditLimit' | 'limitGroupId' | 'annualFee'> }
   | { type: 'prefs/payday'; payday: number }
@@ -267,6 +269,16 @@ export function reducer(state: AppState, action: Action): AppState {
       return { ...state, accounts: state.accounts.map((a) => (a.id === action.id ? { ...a, bank: action.bank } : a)) };
     case 'account/setCardStyle':
       return { ...state, accounts: state.accounts.map((a) => (a.id === action.id ? { ...a, cardStyle: action.cardStyle ?? undefined } : a)) };
+    case 'account/setCardDetails':
+      return {
+        ...state,
+        accounts: state.accounts.map((a) => {
+          if (a.id !== action.id) return a;
+          const next = { ...a };
+          for (const [k, v] of Object.entries(action.patch) as ['last4' | 'holder' | 'expiry', string | null][]) next[k] = v ?? undefined;
+          return next;
+        }),
+      };
     case 'account/setActive':
       return state.accounts.some((a) => a.id === action.id) ? { ...state, activeAccountId: action.id } : state;
     case 'budget/split':
