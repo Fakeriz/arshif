@@ -1,5 +1,5 @@
 import { useRouter } from 'expo-router';
-import { Bell, BellRing, CreditCard, Crown, Database, LogOut, Palette, Shapes, ShieldCheck, Wallet } from 'lucide-react-native';
+import { Bell, BellRing, CreditCard, Crown, Database, DatabaseBackup, LogOut, Palette, Shapes, ShieldCheck, Wallet } from 'lucide-react-native';
 import { useEffect, useState } from 'react';
 import { Platform, StyleSheet, View } from 'react-native';
 
@@ -14,6 +14,7 @@ import { supabase } from '@/lib/supabase';
 import { useStore } from '@/state/AppStore';
 import { useTheme } from '@/theme/ThemeProvider';
 import { radius, space } from '@/theme/tokens';
+import { backupDue, loadSchedule, type BackupSchedule } from '@/features/backup/service';
 
 const NOTIF_COUNT = 4;
 
@@ -28,6 +29,10 @@ export default function PengaturanScreen() {
   const router = useRouter();
   const [admin, setAdmin] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
+  const [backup, setBackup] = useState<BackupSchedule | null>(null);
+  useEffect(() => {
+    void loadSchedule().then(setBackup);
+  }, []);
   // Panel admin hanya web; barisnya hanya muncul untuk akun admin (server tetap memeriksa ulang).
   useEffect(() => {
     if (Platform.OS === 'web') isAdmin().then(setAdmin).catch(() => undefined);
@@ -57,7 +62,9 @@ export default function PengaturanScreen() {
     { key: 'appearance', icon: Palette, title: t('settings.appearance'), subtitle: `${t(`settings.themeMode.${mode}`)} · ${LANGS.find((l) => l.key === lang)?.nativeName ?? lang}`, onPress: () => router.push('/pengaturan/tampilan') },
     { key: 'notif', icon: Bell, title: t('settings.notifications'), subtitle: t('settings.menu.notifCount', { on: notifOn, total: NOTIF_COUNT }), onPress: () => router.push('/pengaturan/notifikasi') },
   ];
+  const backupSub = backup && backupDue(backup) ? t('settings.backup.menuDue') : backup?.lastAt ? isoDateLabel(backup.lastAt, lang) : t('settings.backup.menuNever');
   const data: MenuEntry[] = [
+    { key: 'backup', icon: DatabaseBackup, title: t('settings.backup.title'), subtitle: backupSub, onPress: () => router.push('/pengaturan/cadangan') },
     { key: 'data', icon: Database, title: t('settings.menu.data'), subtitle: t('settings.menu.dataSub'), onPress: () => router.push('/pengaturan/data') },
     ...(admin ? [{ key: 'admin', icon: ShieldCheck, title: t('billing.admin.title'), subtitle: t('settings.menu.adminSub'), onPress: () => router.push('/admin') }] : []),
   ];

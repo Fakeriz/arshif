@@ -67,7 +67,8 @@
       ],
       "expo-audio",
       "expo-sharing",
-      "./plugins/withNoDataExtraction"
+      "./plugins/withNoDataExtraction",
+      "expo-secure-store"
     ],
     "experiments": {
       "typedRoutes": true,

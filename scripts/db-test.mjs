@@ -991,6 +991,48 @@ await test('hapus pengguna: semua data ikut terhapus (cascade)', async () => {
   }
 });
 
+// ---------------------------------------------------------------- cadangan: restore_rows (security invoker)
+const RC = '00000000-0000-4000-8000-0000000000c1';
+const RD = '00000000-0000-4000-8000-0000000000d1';
+await sys(`insert into auth.users (id, email) values ('${RC}', 'rc@example.com'), ('${RD}', 'rd@example.com')`);
+const accC = '11111111-1111-4111-8111-111111111111';
+const txC = '22222222-2222-4222-8222-222222222222';
+const restore = (user, table, rows) => as(user, 'select public.restore_rows($1, $2::jsonb) as r', [table, JSON.stringify(rows)]).then((x) => ({ restored: x[0].r.restored, skipped: x[0].r.skipped }));
+
+await test('restore: akun + transaksi dipulihkan; saldo dihitung trigger, saldo di file diabaikan', async () => {
+  eq(await restore(RC, 'accounts', [{ id: accC, bank: 'bca', name: 'BCA', type: 'tabungan', currency: 'IDR', opening_balance: 500000, balance: 999999999 }]), { restored: 1, skipped: 0 });
+  eq(await restore(RC, 'transactions', [{ id: txC, type: 'expense', merchant: 'Kopi', category_key: 'hangout', account_id: accC, date: '2026-11-05', amount: 28000, currency: 'IDR' }]), { restored: 1, skipped: 0 });
+  eq(await balance(accC), 472000);
+  eq((await sys('select user_id from public.accounts where id = $1', [accC]))[0].user_id, RC);
+});
+
+await test('restore diulang: tidak ada data ganda, saldo tetap', async () => {
+  eq(await restore(RC, 'transactions', [{ id: txC, type: 'expense', merchant: 'Kopi', category_key: 'hangout', account_id: accC, date: '2026-11-05', amount: 28000, currency: 'IDR' }]), { restored: 1, skipped: 0 });
+  eq((await sys('select count(*)::int as n from public.transactions where user_id = $1', [RC]))[0].n, 1);
+  eq(await balance(accC), 472000);
+});
+
+await test('restore tidak bisa menimpa data pengguna lain walau id sama', async () => {
+  const r = await restore(RD, 'transactions', [{ id: txC, type: 'expense', merchant: 'DIBAJAK', category_key: 'other', account_id: accC, date: '2026-11-05', amount: 1, currency: 'IDR' }]);
+  eq(r, { restored: 0, skipped: 1 });
+  eq((await sys('select merchant, user_id from public.transactions where id = $1', [txC]))[0], { merchant: 'Kopi', user_id: RC });
+  // Lewat akun D sendiri yang sah: id transaksi C tetap tidak bisa diambil alih.
+  const accD = '44444444-4444-4444-8444-444444444444';
+  eq(await restore(RD, 'accounts', [{ id: accD, bank: 'bca', name: 'D', type: 'tabungan', currency: 'IDR' }]), { restored: 1, skipped: 0 });
+  eq(await restore(RD, 'transactions', [{ id: txC, type: 'expense', merchant: 'DIBAJAK', category_key: 'other', account_id: accD, date: '2026-11-05', amount: 1, currency: 'IDR' }]), { restored: 0, skipped: 1 });
+  eq((await sys('select merchant, user_id from public.transactions where id = $1', [txC]))[0], { merchant: 'Kopi', user_id: RC });
+});
+
+await test('restore hanya untuk tabel data pengguna (paket, kuota, profil ditolak)', async () => {
+  for (const t of ['profiles', 'usage_counters', 'orders', 'plan_limits']) await rejects(restore(RC, t, []), /restore_table_not_allowed/);
+});
+
+await test('restore tetap tunduk pada kuota paket Free (akun ke-5 dilewati)', async () => {
+  const rows = Array.from({ length: 4 }, (_, i) => ({ id: `33333333-3333-4333-8333-33333333333${i}`, bank: 'bca', name: `Akun ${i}`, type: 'tabungan', currency: 'IDR' }));
+  const r = await restore(RC, 'accounts', rows);
+  eq(r, { restored: 3, skipped: 1 });
+});
+
 console.log(results.join('\n'));
 console.log(`\n${results.length - failed}/${results.length} lolos`);
 process.exit(failed ? 1 : 0);
