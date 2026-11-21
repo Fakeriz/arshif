@@ -36,7 +36,12 @@ export function IconGrid({ items, value, onChange, accessibilityLabel }: { items
     setPage(p);
     scroller.current?.scrollTo({ x: p * width, animated });
   };
-  const onScrollEnd = (e: NativeSyntheticEvent<NativeScrollEvent>) => width && setPage(Math.round(e.nativeEvent.contentOffset.x / width));
+  // onScroll, bukan onScrollEnd: akhir geser dilaporkan sebelum halaman terkunci, dan onMomentumScrollEnd tidak ada di web.
+  const onScroll = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
+    if (!width) return;
+    const p = Math.round(e.nativeEvent.contentOffset.x / width);
+    if (p !== page) setPage(p);
+  };
 
   return (
     <View
@@ -54,12 +59,13 @@ export function IconGrid({ items, value, onChange, accessibilityLabel }: { items
       }}
     >
       {width > 0 && (
-        <ScrollView ref={scroller} horizontal pagingEnabled showsHorizontalScrollIndicator={false} onMomentumScrollEnd={onScrollEnd} onScrollEndDrag={onScrollEnd} scrollEventThrottle={16}>
+        <ScrollView testID="icon-grid-pages" ref={scroller} horizontal pagingEnabled showsHorizontalScrollIndicator={false} onScroll={onScroll} scrollEventThrottle={16}>
           {pages.map((list, p) => (
             <View key={p} style={[styles.page, { width }]}>
               {list.map((it) => {
                 const selected = it.key === value;
-                const tint = it.tint ?? colors.text;
+                // Terpilih: lingkaran aksen terisi + ikon onAccent (hitam/putih Arshif, terbalik di mode gelap).
+                const tint = selected ? colors.onAccent : (it.tint ?? colors.text);
                 return (
                   <View key={it.key} style={[styles.cell, { width: cell }]}>
                     <PressableScale
@@ -70,7 +76,7 @@ export function IconGrid({ items, value, onChange, accessibilityLabel }: { items
                       onPress={() => onChange(it.key)}
                       style={[
                         styles.circle,
-                        { backgroundColor: it.tint ? hexWithAlpha(it.tint, selected ? 0.28 : 0.13) : selected ? colors.accentSoft : colors.surfaceAlt, borderColor: selected ? colors.text : 'transparent' },
+                        { backgroundColor: selected ? colors.accent : it.tint ? hexWithAlpha(it.tint, 0.13) : colors.surfaceAlt },
                       ]}
                     >
                       <Icon icon={it.icon} color={tint} size={22} />
@@ -85,7 +91,7 @@ export function IconGrid({ items, value, onChange, accessibilityLabel }: { items
       {pages.length > 1 && (
         <View style={styles.dots}>
           {pages.map((_, p) => (
-            <PressableScale key={p} accessibilityRole="button" accessibilityLabel={t('common.page', { n: p + 1, total: pages.length })} accessibilityState={{ selected: p === page }} focusRadius={radius.full} onPress={() => goTo(p)} style={styles.dotHit}>
+            <PressableScale key={p} accessibilityRole="button" accessibilityLabel={t('common.page', { n: p + 1, total: pages.length })} accessibilityState={{ selected: p === page }} focusRadius={radius.full} onPress={() => goTo(p)} hitSlop={{ top: 10, bottom: 10, left: 3, right: 3 }} style={styles.dotHit}>
               <View style={[styles.dot, { backgroundColor: p === page ? colors.text : colors.borderStrong, width: p === page ? 16 : 6 }]} />
             </PressableScale>
           ))}
@@ -98,8 +104,9 @@ export function IconGrid({ items, value, onChange, accessibilityLabel }: { items
 const styles = StyleSheet.create({
   page: { flexDirection: 'row', flexWrap: 'wrap', alignContent: 'flex-start' },
   cell: { alignItems: 'center', paddingVertical: space.xs },
-  circle: { width: 48, height: 48, borderRadius: radius.full, borderWidth: 2, alignItems: 'center', justifyContent: 'center' },
-  dots: { flexDirection: 'row', justifyContent: 'center', marginTop: space.xxs },
-  dotHit: { height: DOT_HIT, minWidth: DOT_HIT, alignItems: 'center', justifyContent: 'center' },
+  circle: { width: 48, height: 48, borderRadius: radius.full, alignItems: 'center', justifyContent: 'center' },
+  dots: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 6, marginTop: space.xs },
+  // Titik rapat; area ketuk diperbesar lewat hitSlop, bukan lebar elemen.
+  dotHit: { height: DOT_HIT, alignItems: 'center', justifyContent: 'center' },
   dot: { height: 6, borderRadius: radius.full },
 });

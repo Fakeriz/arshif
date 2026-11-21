@@ -1,3 +1,4 @@
+import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
@@ -12,7 +13,6 @@ import { validateTx } from '@/lib/validate';
 import { newId } from '@/lib/uuid';
 import { useActiveAccountId, type AccountWithBalance } from '@/state/AppStore';
 import { space } from '@/theme/tokens';
-
 import { categoriesFor } from '@/constants/categories';
 
 import { AccountPicker, CategoryPicker } from './pickers';
@@ -32,6 +32,7 @@ export type TransactionFormProps = {
 /** Form catat manual (FR-TRX-1): pengeluaran, pemasukan, dan transfer antar-akun. */
 export function TransactionForm({ accounts, initial, onSubmit }: TransactionFormProps) {
   const t = useT();
+  const router = useRouter();
   const activeId = useActiveAccountId();
   const first = accounts.find((a) => a.id === activeId) ?? accounts[0];
   const [type, setType] = useState<TxType>(initial?.type ?? 'expense');
@@ -110,7 +111,7 @@ export function TransactionForm({ accounts, initial, onSubmit }: TransactionForm
             onChangeText={setMerchant}
             error={errors.merchant}
           />
-          <CategoryPicker type={type} value={categoryKey} onChange={setCategoryKey} error={errors.categoryKey} />
+          <CategoryPicker type={type} value={categoryKey} onChange={setCategoryKey} error={errors.categoryKey} onManage={() => router.push('/pengaturan/kategori')} />
           <PlaceField value={place} onChange={setPlace} />
         </>
       )}

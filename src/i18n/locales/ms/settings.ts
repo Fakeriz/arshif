@@ -39,6 +39,7 @@ const settings: Messages['settings'] = {
   signOutTitle: 'Log keluar dari Arshif?',
   signOutMessage: 'Data kekal dalam akaun anda. Log masuk semula bila-bila masa dengan kod daripada e-mel.',
   categories: {
+    manage: 'Urus kategori',
     title: 'Kategori',
     menuSub: '{count} buatan sendiri · {hidden} disembunyikan',
     mine: 'Kategori anda',

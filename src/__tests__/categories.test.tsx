@@ -4,6 +4,8 @@ import { Text } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import KategoriScreen from '@/app/pengaturan/kategori';
+import { IconGrid } from '@/components/ui';
+import { Ellipsis } from 'lucide-react-native';
 import { ToastProvider } from '@/components/ui';
 import { categoriesFor, categoryIcon, getCategory, parseCategorySettings, setUserCategories, EMPTY_CATEGORY_SETTINGS } from '@/constants/categories';
 import { sampleState } from '@/data/sample-state';
@@ -92,5 +94,18 @@ describe('menu Kategori', () => {
 
     await fireEvent.press(screen.getByLabelText('Tampilkan Makan & Minum di pilihan'));
     expect(saved().hidden).toEqual(['food']);
+  });
+});
+
+describe('IconGrid', () => {
+  it('titik halaman mengikuti geser; terpilih = lingkaran aksen terisi', async () => {
+    const items = Array.from({ length: 20 }, (_, i) => ({ key: `k${i}`, icon: Ellipsis, label: `Ikon ${i}` }));
+    await wrap(<IconGrid items={items} value="k0" onChange={jest.fn()} accessibilityLabel="Ikon" />);
+    // 360 px = 6 kolom x 2 baris = 12 per halaman -> 2 halaman.
+    await fireEvent(screen.getByLabelText('Ikon'), 'layout', { nativeEvent: { layout: { width: 360, height: 200 } } });
+    expect(screen.getByLabelText('Halaman 1 dari 2').props.accessibilityState.selected).toBe(true);
+    await fireEvent.scroll(screen.getByTestId('icon-grid-pages'), { nativeEvent: { contentOffset: { x: 360, y: 0 } } });
+    expect(screen.getByLabelText('Halaman 2 dari 2').props.accessibilityState.selected).toBe(true);
+    expect(screen.getByLabelText('Ikon 0').props.accessibilityState.selected).toBe(true);
   });
 });

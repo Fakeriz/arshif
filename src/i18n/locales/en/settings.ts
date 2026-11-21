@@ -39,6 +39,7 @@ const settings: Messages['settings'] = {
   signOutTitle: 'Sign out of Arshif?',
   signOutMessage: 'Your data stays in your account. Sign in again anytime with a code from your email.',
   categories: {
+    manage: 'Manage categories',
     title: 'Categories',
     menuSub: '{count} custom · {hidden} hidden',
     mine: 'Your categories',

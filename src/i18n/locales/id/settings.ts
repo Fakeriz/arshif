@@ -37,6 +37,7 @@ const settings = {
   signOutTitle: 'Keluar dari Arshif?',
   signOutMessage: 'Data tetap tersimpan di akunmu. Masuk lagi kapan saja dengan kode dari email.',
   categories: {
+    manage: 'Kelola kategori',
     title: 'Kategori',
     menuSub: '{count} buatan sendiri · {hidden} disembunyikan',
     mine: 'Kategori kamu',

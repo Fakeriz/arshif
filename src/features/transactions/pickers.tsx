@@ -1,12 +1,13 @@
+import { Pencil } from 'lucide-react-native';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { categoryLabel, useT } from '@/i18n';
-import { AppText, Chip, IconGrid } from '@/components/ui';
+import { AppText, Chip, Icon, IconGrid, PressableScale } from '@/components/ui';
 import { categoriesFor } from '@/constants/categories';
 import type { TxType } from '@/data/types';
 import type { AccountWithBalance } from '@/state/AppStore';
 import { useTheme } from '@/theme/ThemeProvider';
-import { space } from '@/theme/tokens';
+import { radius, space } from '@/theme/tokens';
 
 type PickerShell = { label: string; error?: string; warning?: string; scroll?: boolean; children: React.ReactNode };
 
@@ -48,9 +49,10 @@ export function AccountPicker({ label, accounts, value, onChange, error }: { lab
 }
 
 /** Kategori sebagai grid ikon berwarna yang digeser per halaman; nama yang terpilih tampil di samping label. */
-export function CategoryPicker({ type, value, onChange, error, warning }: { type: TxType; value: string | null; onChange: (key: string) => void; error?: string; warning?: string }) {
+/** onManage = pensil di samping label untuk membuka menu Kategori (hanya di layar penuh, bukan di dalam sheet). */
+export function CategoryPicker({ type, value, onChange, error, warning, onManage }: { type: TxType; value: string | null; onChange: (key: string) => void; error?: string; warning?: string; onManage?: () => void }) {
   const t = useT();
-  const { hues } = useTheme();
+  const { hues, colors } = useTheme();
   const label = t('tx.form.category');
   const items = categoriesFor(type === 'income' ? 'income' : 'expense', value).map((c) => ({ key: c.key, icon: c.icon, label: categoryLabel(t, c.key), tint: hues[c.hue] }));
   return (
@@ -59,6 +61,11 @@ export function CategoryPicker({ type, value, onChange, error, warning }: { type
         <AppText variant="caption" tone="secondary">
           {label}
         </AppText>
+        {onManage && (
+          <PressableScale accessibilityRole="button" accessibilityLabel={t('settings.categories.manage')} onPress={onManage} hitSlop={12} focusRadius={radius.full} style={styles.manage}>
+            <Icon icon={Pencil} color={colors.textSecondary} size={16} />
+          </PressableScale>
+        )}
         {value ? (
           <AppText variant="caption" numberOfLines={1} style={styles.flex}>
             {categoryLabel(t, value)}
@@ -85,5 +92,6 @@ const styles = StyleSheet.create({
   wrap: { flexDirection: 'row', flexWrap: 'wrap', gap: space.sm },
   row: { flexDirection: 'row', gap: space.sm },
   head: { flexDirection: 'row', alignItems: 'center', gap: space.sm },
+  manage: { width: 24, height: 24, alignItems: 'center', justifyContent: 'center' },
   flex: { flex: 1, textAlign: 'right' },
 });

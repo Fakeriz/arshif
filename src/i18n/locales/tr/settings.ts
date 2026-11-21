@@ -39,6 +39,7 @@ const settings: Messages['settings'] = {
   signOutTitle: 'Arshif\'ten çıkış yapılsın mı?',
   signOutMessage: 'Verilerin hesabında kalır. E-postana gelen kodla istediğin zaman tekrar giriş yap.',
   categories: {
+    manage: 'Kategorileri yönet',
     title: 'Kategoriler',
     menuSub: '{count} özel · {hidden} gizli',
     mine: 'Senin kategorilerin',
