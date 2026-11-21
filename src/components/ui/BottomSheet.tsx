@@ -3,6 +3,7 @@ import { Modal, PanResponder, Pressable, ScrollView, StyleSheet, View } from 're
 import Animated, { useAnimatedStyle, useSharedValue } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { useDesktop } from '@/hooks/useDesktop';
 import { useI18n } from '@/i18n';
 import { useMotion } from '@/theme/motion';
 import { useTheme } from '@/theme/ThemeProvider';
@@ -25,15 +26,19 @@ export type BottomSheetProps = {
 };
 
 const DISMISS_DISTANCE = 96;
+/** Desktop: lembar jadi dialog di tengah yang masuk dari 24px di bawah posisinya sambil membesar dari 0.96. */
+const DIALOG_OFFSET = 24;
 
 export function BottomSheet({ visible, onClose, title, subtitle, children, scrollable }: BottomSheetProps) {
   const { colors } = useTheme();
   const { t: tr } = useI18n();
   const { timing, spring } = useMotion();
   const insets = useSafeAreaInsets();
+  const desktop = useDesktop();
   const [mounted, setMounted] = useState(visible);
   const sheetHeight = useRef(720);
-  const y = useSharedValue(sheetHeight.current);
+  const hiddenY = () => (desktop ? DIALOG_OFFSET : sheetHeight.current);
+  const y = useSharedValue(hiddenY());
   const fade = useSharedValue(0);
 
   useEffect(() => {
@@ -42,12 +47,14 @@ export function BottomSheet({ visible, onClose, title, subtitle, children, scrol
       return;
     }
     fade.value = timing(0, motion.fast);
-    y.value = timing(sheetHeight.current, motion.base);
+    y.value = timing(hiddenY(), desktop ? motion.fast : motion.base);
     const t = setTimeout(() => setMounted(false), motion.base);
     return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [visible, fade, y, timing]);
 
   const onShow = () => {
+    y.value = hiddenY();
     fade.value = timing(1, motion.base);
     y.value = spring(0);
   };
@@ -70,7 +77,11 @@ export function BottomSheet({ visible, onClose, title, subtitle, children, scrol
     }),
   ).current;
   const backdrop = useAnimatedStyle(() => ({ opacity: fade.value }));
-  const sheet = useAnimatedStyle(() => ({ transform: [{ translateY: y.value }] }));
+  const sheet = useAnimatedStyle(() =>
+    desktop
+      ? { opacity: fade.value, transform: [{ translateY: y.value }, { scale: 1 - (y.value / DIALOG_OFFSET) * 0.04 }] }
+      : { transform: [{ translateY: y.value }] },
+  );
 
   return (
     <Modal transparent visible={mounted} onShow={onShow} onRequestClose={onClose} animationType="none" statusBarTranslucent>
@@ -78,19 +89,31 @@ export function BottomSheet({ visible, onClose, title, subtitle, children, scrol
       <Animated.View style={[StyleSheet.absoluteFill, { backgroundColor: colors.overlay }, backdrop]}>
         <Pressable style={StyleSheet.absoluteFill} onPress={onClose} accessibilityRole="button" accessibilityLabel={tr('common.close')} />
       </Animated.View>
-      <View style={styles.anchor} pointerEvents="box-none">
+      <View style={[styles.anchor, desktop && styles.anchorCenter]} pointerEvents="box-none">
         <Animated.View
           aria-modal
           onLayout={(e) => {
             sheetHeight.current = e.nativeEvent.layout.height;
           }}
-          style={[styles.sheetWrap, scrollable && styles.sheetWrapScroll, sheet]}
+          style={[styles.sheetWrap, desktop && styles.dialogWrap, scrollable && styles.sheetWrapScroll, sheet]}
         >
           {/* Solid (tanpa blur): latar = bg, tepi borderStrong memisahkan lembar dari overlay. Kartu di dalamnya tetap surface. */}
-          <View style={[styles.sheet, scrollable && styles.sheetScroll, { backgroundColor: colors.bg, borderColor: colors.borderStrong, paddingBottom: insets.bottom + space.xl }]}>
-            <View {...pan.panHandlers} style={styles.handleArea}>
-              <View style={[styles.handle, { backgroundColor: colors.borderStrong }]} />
-            </View>
+          <View
+            style={[
+              styles.sheet,
+              desktop && styles.dialog,
+              scrollable && styles.sheetScroll,
+              { backgroundColor: colors.bg, borderColor: colors.borderStrong, paddingBottom: desktop ? space.xl : insets.bottom + space.xl },
+            ]}
+          >
+            {/* Desktop: tutup lewat Escape atau klik di luar; pegangan seret hanya untuk sentuh. */}
+            {desktop ? (
+              <View style={styles.dialogTop} />
+            ) : (
+              <View {...pan.panHandlers} style={styles.handleArea}>
+                <View style={[styles.handle, { backgroundColor: colors.borderStrong }]} />
+              </View>
+            )}
             {title && (
               <View style={styles.header}>
                 <AppText variant="h3" accessibilityRole="header">
@@ -120,6 +143,10 @@ export function BottomSheet({ visible, onClose, title, subtitle, children, scrol
 
 const styles = StyleSheet.create({
   anchor: { flex: 1, justifyContent: 'flex-end', alignItems: 'center' },
+  anchorCenter: { justifyContent: 'center', padding: space.xl },
+  dialogWrap: { maxWidth: layout.maxContentWidth, maxHeight: '85%' },
+  dialog: { borderRadius: radius.xl, borderWidth: layout.hairline },
+  dialogTop: { height: space.xl },
   sheetWrap: { width: '100%', maxWidth: layout.maxContentWidth + 80, maxHeight: '90%' },
   sheet: {
     borderTopLeftRadius: radius.xl,
