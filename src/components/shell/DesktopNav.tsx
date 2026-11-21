@@ -5,7 +5,6 @@ import { StyleSheet, View } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue } from 'react-native-reanimated';
 
 import { AppText, Button, GlassView, Icon, PressableScale } from '@/components/ui';
-import { HOME_DESKTOP_WIDTH } from '@/features/home/HomeDesktop';
 import { ProfileAvatar } from '@/features/settings/ProfileAvatar';
 import { useT } from '@/i18n';
 import { useStore } from '@/state/AppStore';
@@ -14,6 +13,7 @@ import { useTheme } from '@/theme/ThemeProvider';
 import { motion, radius, space } from '@/theme/tokens';
 
 import { CaptureSheet } from './CaptureSheet';
+import { DESKTOP_WIDE } from './DesktopGrid';
 import { NotificationsSheet } from './NotificationsSheet';
 
 const TABS = [
@@ -142,7 +142,7 @@ export function DesktopNav() {
 
 const styles = StyleSheet.create({
   // Sejajar dengan kolom Beranda (lebar dan gutter sama dengan Screen), jadi nama produk segaris dengan judul.
-  bar: { flexDirection: 'row', alignItems: 'center', gap: space.lg, width: '100%', maxWidth: HOME_DESKTOP_WIDTH + space.lg * 2, alignSelf: 'center', paddingHorizontal: space.lg, paddingTop: space.lg, paddingBottom: space.sm },
+  bar: { flexDirection: 'row', alignItems: 'center', gap: space.lg, width: '100%', maxWidth: DESKTOP_WIDE + space.lg * 2, alignSelf: 'center', paddingHorizontal: space.lg, paddingTop: space.lg, paddingBottom: space.sm },
   brand: { flex: 1 },
   pill: { padding: space.xs + 2 },
   tabs: { flexDirection: 'row', alignItems: 'center', gap: space.xs },

@@ -11,7 +11,20 @@ import { space } from '@/theme/tokens';
 
 import { TransactionRow } from './TransactionRow';
 
-export function TransactionList({ transactions, accounts, mainCurrency }: { transactions: Transaction[]; accounts: AccountWithBalance[]; mainCurrency: string }) {
+/** `onSelect` (desktop): baris membuka detail di panel samping, bukan pindah layar. */
+export function TransactionList({
+  transactions,
+  accounts,
+  mainCurrency,
+  selectedId,
+  onSelect,
+}: {
+  transactions: Transaction[];
+  accounts: AccountWithBalance[];
+  mainCurrency: string;
+  selectedId?: string | null;
+  onSelect?: (id: string) => void;
+}) {
   const router = useRouter();
   const { t, lang } = useI18n();
   return (
@@ -26,7 +39,8 @@ export function TransactionList({ transactions, accounts, mainCurrency }: { tran
                 accountName={accounts.find((a) => a.id === tx.accountId)?.name ?? t('tx.accountFallback')}
                 mainCurrency={mainCurrency}
                 divider={i < g.items.length - 1}
-                onPress={() => router.push({ pathname: '/trx/[id]', params: { id: tx.id } })}
+                selected={onSelect ? tx.id === selectedId : undefined}
+                onPress={() => (onSelect ? onSelect(tx.id) : router.push({ pathname: '/trx/[id]', params: { id: tx.id } }))}
               />
             ))}
           </ListCard>

@@ -2,6 +2,7 @@ import { SlidersHorizontal } from 'lucide-react-native';
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
+import { DESKTOP_WIDE, GridCell, GridRow } from '@/components/shell/DesktopGrid';
 import { Screen } from '@/components/shell/Screen';
 import { HeaderButton } from '@/components/shell/HeaderActions';
 import { TabHeader } from '@/components/shell/TabHeader';
@@ -16,6 +17,7 @@ import { BUCKETS } from '@/lib/budget';
 import { shortDate } from '@/lib/dates';
 import { formatMoney } from '@/lib/money';
 import { useStore } from '@/state/AppStore';
+import { useDesktop } from '@/hooks/useDesktop';
 import { useLoadState } from '@/state/loadState';
 import { useBudget, useLedger } from '@/state/derived';
 import { useRetry } from '@/state/useRetry';
@@ -32,6 +34,7 @@ export default function AnggaranScreen() {
   const { mainCurrency, transactions } = useLedger();
   const b = useBudget();
   const [sheet, setSheet] = useState(false);
+  const desktop = useDesktop();
   const colors = { needs: hues.sky, wants: hues.saffron, savings: hues.jade };
   const subtitle = t('budget.period', { start: shortDate(b.period.start, lang), end: shortDate(b.period.end, lang), days: b.period.daysLeft });
 
@@ -57,72 +60,113 @@ export default function AnggaranScreen() {
   }
 
   const total = b.spent.needs + b.spent.wants + b.spent.savings;
+  const safe = (
+    <Card>
+      <View style={styles.safeHead}>
+        <AppText variant="caption" tone="secondary">
+          {t('budget.safeToSpend')}
+        </AppText>
+        <Badge label={t(`domain.pace.${b.flexPace}`)} tone={b.flexPace === 'sesuai' ? 'positive' : b.flexPace === 'agak_cepat' ? 'warning' : 'negative'} />
+      </View>
+      <View style={styles.safeRow}>
+        <CurrencyText amount={b.safePerDay} currency={mainCurrency} variant="amountHero" />
+        <AppText variant="caption" tone="muted">
+          {t('budget.perDay')}
+        </AppText>
+      </View>
+      <AppText variant="caption" tone="secondary">
+        {transactions.length === 0
+          ? t('budget.untouched')
+          : t('budget.remaining', { amount: formatMoney(Math.max(0, b.flexLimit - b.flexSpent), mainCurrency), days: b.period.daysLeft })}
+      </AppText>
+      {b.flexLimit > 0 && (
+        <AppText variant="caption" tone="muted" style={styles.paceNote}>
+          {t('budget.paceExplain', {
+            used: Math.round((b.flexSpent / b.flexLimit) * 100),
+            elapsed: Math.round((b.period.elapsedDays / b.period.totalDays) * 100),
+          })}
+        </AppText>
+      )}
+    </Card>
+  );
+  const donut = (
+    <Card padding="xl" style={desktop ? styles.fill : undefined}>
+      <DonutChart
+        currency={mainCurrency}
+        centerLabel={t('budget.donutCenter')}
+        emptyLabel={t('budget.donutEmpty')}
+        segments={BUCKETS.map((x) => ({ key: x.key, label: t(`domain.bucket.${x.key}`), value: b.spent[x.key], color: colors[x.key], caption: t('budget.donutCaption', { amount: formatMoney(b.limits[x.key], mainCurrency), pct: state.split[x.key] }) }))}
+      />
+      {total === 0 && (
+        <AppText variant="caption" tone="muted" align="center" style={styles.note}>
+          {t('budget.chartHint')}
+        </AppText>
+      )}
+    </Card>
+  );
+  const buckets = BUCKETS.map((x) => (
+    <BucketSection
+      key={x.key}
+      bucket={x.key}
+      label={t(`domain.bucket.${x.key}`)}
+      percent={state.split[x.key]}
+      color={colors[x.key]}
+      spent={b.spent[x.key]}
+      limit={b.limits[x.key]}
+      pace={b.bucketPace(x.key)}
+      currency={mainCurrency}
+      categoryLimits={b.categoryLimits}
+      categorySpent={b.categorySpent}
+    />
+  ));
+  const header = (
+    <TabHeader
+      title={t('budget.title')}
+      subtitle={subtitle}
+      right={<HeaderButton label={t('budget.adjust')} icon={SlidersHorizontal} onPress={() => setSheet(true)} />}
+    />
+  );
+  const splitSheet = <SplitSheet visible={sheet} onClose={() => setSheet(false)} split={state.split} onSave={(split) => dispatch({ type: 'budget/split', split })} />;
+
+  if (desktop) {
+    // Desktop: ringkasan (aman dibelanjakan + rencana) di samping donut, tiga pos anggaran berdampingan,
+    // lalu tagihan dan rencana selebar halaman.
+    return (
+      <Screen tabs maxWidth={DESKTOP_WIDE} onRefresh={retry} refreshing={refreshing}>
+        {header}
+        <MissingRatesBanner />
+        <GridRow>
+          <GridCell span={5} order={0}>
+            {safe}
+            <BudgetPlanCard />
+          </GridCell>
+          <GridCell span={7} order={1}>
+            {donut}
+          </GridCell>
+        </GridRow>
+        <GridRow style={styles.top}>
+          {buckets.map((bucket, i) => (
+            <GridCell key={bucket.key} span={4} order={2 + i}>
+              {bucket}
+            </GridCell>
+          ))}
+        </GridRow>
+        <PlanningEntries />
+        {splitSheet}
+      </Screen>
+    );
+  }
+
   return (
     <Screen tabs onRefresh={retry} refreshing={refreshing}>
-      <TabHeader
-        title={t('budget.title')}
-        subtitle={subtitle}
-        right={<HeaderButton label={t('budget.adjust')} icon={SlidersHorizontal} onPress={() => setSheet(true)} />}
-      />
-      <Card>
-        <View style={styles.safeHead}>
-          <AppText variant="caption" tone="secondary">
-            {t('budget.safeToSpend')}
-          </AppText>
-          <Badge label={t(`domain.pace.${b.flexPace}`)} tone={b.flexPace === 'sesuai' ? 'positive' : b.flexPace === 'agak_cepat' ? 'warning' : 'negative'} />
-        </View>
-        <View style={styles.safeRow}>
-          <CurrencyText amount={b.safePerDay} currency={mainCurrency} variant="amountHero" />
-          <AppText variant="caption" tone="muted">
-            {t('budget.perDay')}
-          </AppText>
-        </View>
-        <AppText variant="caption" tone="secondary">
-          {transactions.length === 0
-            ? t('budget.untouched')
-            : t('budget.remaining', { amount: formatMoney(Math.max(0, b.flexLimit - b.flexSpent), mainCurrency), days: b.period.daysLeft })}
-        </AppText>
-        {b.flexLimit > 0 && (
-          <AppText variant="caption" tone="muted" style={styles.paceNote}>
-            {t('budget.paceExplain', {
-              used: Math.round((b.flexSpent / b.flexLimit) * 100),
-              elapsed: Math.round((b.period.elapsedDays / b.period.totalDays) * 100),
-            })}
-          </AppText>
-        )}
-      </Card>
+      {header}
+      {safe}
       <MissingRatesBanner />
       <BudgetPlanCard />
-      <Card padding="xl">
-        <DonutChart
-          currency={mainCurrency}
-          centerLabel={t('budget.donutCenter')}
-          emptyLabel={t('budget.donutEmpty')}
-          segments={BUCKETS.map((x) => ({ key: x.key, label: t(`domain.bucket.${x.key}`), value: b.spent[x.key], color: colors[x.key], caption: t('budget.donutCaption', { amount: formatMoney(b.limits[x.key], mainCurrency), pct: state.split[x.key] }) }))}
-        />
-        {total === 0 && (
-          <AppText variant="caption" tone="muted" align="center" style={styles.note}>
-            {t('budget.chartHint')}
-          </AppText>
-        )}
-      </Card>
-      {BUCKETS.map((x) => (
-        <BucketSection
-          key={x.key}
-          bucket={x.key}
-          label={t(`domain.bucket.${x.key}`)}
-          percent={state.split[x.key]}
-          color={colors[x.key]}
-          spent={b.spent[x.key]}
-          limit={b.limits[x.key]}
-          pace={b.bucketPace(x.key)}
-          currency={mainCurrency}
-          categoryLimits={b.categoryLimits}
-          categorySpent={b.categorySpent}
-        />
-      ))}
+      {donut}
+      {buckets}
       <PlanningEntries />
-      <SplitSheet visible={sheet} onClose={() => setSheet(false)} split={state.split} onSave={(split) => dispatch({ type: 'budget/split', split })} />
+      {splitSheet}
     </Screen>
   );
 }
@@ -133,4 +177,7 @@ const styles = StyleSheet.create({
   safeRow: { flexDirection: 'row', alignItems: 'baseline', gap: space.sm, marginVertical: space.sm },
   note: { marginTop: space.md },
   paceNote: { marginTop: space.xs },
+  fill: { flex: 1, justifyContent: 'center' },
+  // Pos anggaran punya tinggi berbeda (jumlah kategori); rata atas, tidak direntangkan.
+  top: { alignItems: 'flex-start' },
 });

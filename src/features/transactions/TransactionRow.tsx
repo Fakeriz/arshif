@@ -18,11 +18,12 @@ export type TransactionRowProps = {
   accountName: string;
   mainCurrency: string;
   divider?: boolean;
+  selected?: boolean;
   onPress?: () => void;
 };
 
 /** Satu baris transaksi. Mata uang asing diberi perkiraan nilai di mata uang utama. */
-export function TransactionRow({ tx, accountName, mainCurrency, divider, onPress }: TransactionRowProps) {
+export function TransactionRow({ tx, accountName, mainCurrency, divider, selected, onPress }: TransactionRowProps) {
   const t = useT();
   const sourceKey = SOURCE_LABEL[tx.source];
   const source = sourceKey ? t(sourceKey) : '';
@@ -53,6 +54,7 @@ export function TransactionRow({ tx, accountName, mainCurrency, divider, onPress
               : undefined
       }
       divider={divider}
+      selected={selected}
       onPress={onPress}
       accessibilityLabel={`${tx.merchant}, ${formatMoney(tx.amount, tx.currency)}, ${accountName}`}
     />

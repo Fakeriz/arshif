@@ -22,6 +22,8 @@ export type ListItemProps = {
   onPress?: () => void;
   chevron?: boolean;
   divider?: boolean;
+  /** Baris yang sedang dibuka di panel samping (desktop). */
+  selected?: boolean;
   accessibilityLabel?: string;
 };
 
@@ -35,11 +37,12 @@ export function ListItem({
   onPress,
   chevron,
   divider,
+  selected,
   accessibilityLabel,
 }: ListItemProps) {
   const { colors } = useTheme();
   const content = (
-    <View style={[styles.row, divider && { borderBottomWidth: layout.hairline, borderBottomColor: colors.border }]}>
+    <View style={[styles.row, divider && { borderBottomWidth: layout.hairline, borderBottomColor: colors.border }, selected && [styles.selected, { backgroundColor: colors.accentSoft }]]}>
       {leading}
       <View style={styles.body}>
         <AppText variant="bodyStrong" numberOfLines={1}>
@@ -73,7 +76,7 @@ export function ListItem({
 
   if (!onPress) return <View accessibilityLabel={accessibilityLabel}>{content}</View>;
   return (
-    <PressableScale onPress={onPress} accessibilityLabel={accessibilityLabel ?? title} focusRadius={radius.md} scaleTo={0.985}>
+    <PressableScale onPress={onPress} accessibilityLabel={accessibilityLabel ?? title} aria-selected={selected} focusRadius={radius.md} scaleTo={0.985}>
       {content}
     </PressableScale>
   );
@@ -95,6 +98,8 @@ export function ListItemSkeleton({ divider }: { divider?: boolean }) {
 }
 
 const styles = StyleSheet.create({
+  // Sorotan sedikit melebar ke kiri-kanan tanpa menggeser isi baris.
+  selected: { marginHorizontal: -space.sm, paddingHorizontal: space.sm, borderRadius: radius.md },
   row: { flexDirection: 'row', alignItems: 'center', gap: 14, paddingVertical: 14, minHeight: 56 },
   body: { flex: 1, minWidth: 0, gap: space.xxs },
   trailing: { alignItems: 'flex-end', maxWidth: '45%', gap: space.xxs },

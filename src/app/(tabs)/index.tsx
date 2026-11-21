@@ -12,7 +12,8 @@ import { useScanSource } from '@/components/shell/ScanSourceSheet';
 import { AccountDeck } from '@/features/home/AccountDeck';
 import { BalanceBlock } from '@/features/home/BalanceBlock';
 import { MissingRatesBanner } from '@/features/fx/MissingRatesBanner';
-import { GridCell, GridRow, HOME_DESKTOP_WIDTH, HomeDesktopTitle } from '@/features/home/HomeDesktop';
+import { DESKTOP_WIDE, GridCell, GridRow } from '@/components/shell/DesktopGrid';
+import { HomeDesktopTitle } from '@/features/home/HomeDesktop';
 import { HomeHeader } from '@/features/home/HomeHeader';
 import { HomeSkeleton } from '@/features/home/HomeSkeleton';
 import { PeriodStats } from '@/features/home/PeriodStats';
@@ -117,7 +118,7 @@ export default function HomeScreen() {
     // Grid 5 + 7 ala Talmo: kartu tinta (titik fokus) kiri atas, angka periode dan aksi di sampingnya,
     // lalu daftar transaksi lebar dengan kartu akun dan recap di kolom sempit.
     return (
-      <Screen tabs maxWidth={HOME_DESKTOP_WIDTH} onRefresh={retry} refreshing={refreshing}>
+      <Screen tabs maxWidth={DESKTOP_WIDE} onRefresh={retry} refreshing={refreshing}>
         {header}
         <GridRow>
           <GridCell span={5} order={0}>
