@@ -46,6 +46,8 @@ export type Profile = {
   displayName: string | null;
   /** Path foto profil di bucket avatars (null = inisial). */
   avatarPath: string | null;
+  /** Sampul profil: null = bawaan, "preset:<kunci>", atau path foto di bucket avatars. */
+  coverPath: string | null;
   mainCurrency: string;
   lang: Lang;
   themeMode: ThemeMode;
@@ -66,7 +68,7 @@ export type Profile = {
 };
 
 type ProfileRow = {
-  display_name: string | null; avatar_path?: string | null; main_currency: string; lang: Lang; theme_mode: ThemeMode; hide_balance: boolean; include_assets?: boolean;
+  display_name: string | null; avatar_path?: string | null; cover_path?: string | null; main_currency: string; lang: Lang; theme_mode: ThemeMode; hide_balance: boolean; include_assets?: boolean;
   payday: number; monthly_income: number; split_needs: number; split_wants: number; split_savings: number;
   notif_prefs: Profile['notifPrefs']; active_account_id: string | null; plan: Plan; onboarded_at: string | null;
   premium_until: string | null; premium_source: 'store' | 'web' | 'manual' | null; suspended_at: string | null;
@@ -80,6 +82,7 @@ export async function loadProfile(userId: string, email: string): Promise<Profil
     displayName: r.display_name,
     // Kolom belum ada (migrasi 27 belum jalan) = tanpa foto.
     avatarPath: r.avatar_path ?? null,
+    coverPath: r.cover_path ?? null,
     mainCurrency: r.main_currency,
     lang: r.lang,
     themeMode: r.theme_mode,
@@ -109,7 +112,7 @@ export async function loadPlan(userId: string): Promise<{ plan: Plan; premiumUnt
 }
 
 export type ProfilePatch = Partial<{
-  display_name: string | null; avatar_path: string | null; main_currency: string; lang: Lang; theme_mode: ThemeMode; hide_balance: boolean; include_assets: boolean;
+  display_name: string | null; avatar_path: string | null; cover_path: string | null; main_currency: string; lang: Lang; theme_mode: ThemeMode; hide_balance: boolean; include_assets: boolean;
   payday: number; monthly_income: number; split_needs: number; split_wants: number; split_savings: number;
   notif_prefs: Profile['notifPrefs']; active_account_id: string | null; onboarded_at: string; categories: CategorySettings;
 }>;
@@ -335,7 +338,7 @@ export async function markNotificationsRead(ids: string[]): Promise<void> {
   check(await supabase.from('notifications').update({ read_at: new Date().toISOString() }).in('id', ids));
 }
 
-/** Signed URL 1 jam untuk foto profil (bucket privat). */
+/** Signed URL 1 jam untuk foto profil dan sampul (bucket privat avatars). */
 export async function avatarUrl(path: string): Promise<string> {
   const data = must(await supabase.storage.from('avatars').createSignedUrl(path, 3600));
   return data.signedUrl;

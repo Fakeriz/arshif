@@ -128,7 +128,7 @@ export function AppStoreProvider({ children, preset }: { children: ReactNode; pr
       const removed = new Set([...deleting.current, ...deletedDuringReload.current]);
       const kept = [...pending.current.values(), ...settledDuringReload.current.values()];
       const loaded = {
-          email: profile.email, displayName: profile.displayName, avatarPath: profile.avatarPath, onboarded: profile.onboarded, suspended: profile.suspended, accounts,
+          email: profile.email, displayName: profile.displayName, avatarPath: profile.avatarPath, coverPath: profile.coverPath, onboarded: profile.onboarded, suspended: profile.suspended, accounts,
           transactions: mergePending(transactions, kept).filter((x) => !removed.has(x.id)),
           notifications,
           plan: profile.plan, premiumUntil: profile.premiumUntil, premiumSource: profile.premiumSource, usage, hideBalance: profile.hideBalance, includeAssets: profile.includeAssets, categories: profile.categories, mainCurrency: profile.mainCurrency, income: profile.income,

@@ -16,6 +16,8 @@ export type AppState = {
   displayName: string | null;
   /** Path foto profil di bucket avatars (null = inisial). */
   avatarPath: string | null;
+  /** Sampul profil (lihat lib/cover). */
+  coverPath: string | null;
   onboarded: boolean;
   /** Akun ditangguhkan admin (FR-ADM-2): aplikasi hanya menampilkan layar penjelasan. */
   suspended: boolean;
@@ -66,7 +68,7 @@ export type Action =
   | { type: 'reset' }
   | { type: 'usage/set'; usage: Usage }
   | { type: 'plan/set'; plan: Plan; premiumUntil: string | null; premiumSource?: AppState['premiumSource'] }
-  | { type: 'profile/set'; patch: Partial<Pick<AppState, 'displayName' | 'avatarPath' | 'onboarded' | 'income' | 'payday' | 'mainCurrency'>> }
+  | { type: 'profile/set'; patch: Partial<Pick<AppState, 'displayName' | 'avatarPath' | 'coverPath' | 'onboarded' | 'income' | 'payday' | 'mainCurrency'>> }
   | { type: 'account/add'; account: Account }
   | { type: 'notif/add'; notification: AppNotification }
   | { type: 'tx/add'; tx: Transaction; consumes?: QuotaKey }
@@ -107,6 +109,7 @@ export function initialState(): AppState {
     email: '',
     displayName: null,
     avatarPath: null,
+    coverPath: null,
     onboarded: false,
     suspended: false,
     accounts: [],

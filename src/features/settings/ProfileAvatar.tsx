@@ -18,8 +18,8 @@ function cachedUrl(path: string): string | null {
   return hit && hit.until > Date.now() ? hit.url : null;
 }
 
-/** Signed URL foto profil; null selama memuat, saat gagal, atau tanpa foto (tampil inisial). */
-export function useAvatarUrl(path: string | null): string | null {
+/** Signed URL berkas di bucket avatars (foto profil/sampul); null selama memuat, saat gagal, atau tanpa berkas. */
+export function useSignedUrl(path: string | null): string | null {
   // Hasil ambil disimpan bersama path-nya: path berganti = hasil lama otomatis tidak dipakai.
   const [fetched, setFetched] = useState<{ path: string; url: string } | null>(null);
   const hit = path ? cachedUrl(path) : null;
@@ -43,7 +43,7 @@ export function useAvatarUrl(path: string | null): string | null {
 export function ProfileAvatar({ size, uri }: { size: number; uri?: string | null }) {
   const { colors } = useTheme();
   const { state } = useStore();
-  const remote = useAvatarUrl(state.avatarPath);
+  const remote = useSignedUrl(state.avatarPath);
   const [failed, setFailed] = useState<string | null>(null);
   const src = uri ?? remote;
   const box = { width: size, height: size, borderRadius: radius.full, backgroundColor: colors.accentSoft };
