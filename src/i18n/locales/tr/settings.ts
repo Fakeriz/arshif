@@ -139,7 +139,6 @@ const settings: Messages['settings'] = {
   },
   accounts: {
     title: 'Hesaplar & kartlar',
-    hint: 'Banka kartı tasarımını seçmek için bir hesaba dokun.',
     addTitle: 'Hesap ekle',
     adding: 'Kaydediliyor…',
     added: '{name} eklendi',
@@ -147,6 +146,19 @@ const settings: Messages['settings'] = {
     pickTitle: 'Kart tasarımı',
     pickSub: 'Banka rengi ve adı, resmi logo olmadan',
     country: { ID: 'Endonezya', MY: 'Malezya', TR: 'Türkiye', ANY: 'Diğer' },
+  },
+  wallet: {
+    summary: '{count} hesap · {currencies}',
+    summary_one: '{count} hesap · {currencies}',
+    allCards: 'Tüm kartlar',
+    position: '{index} / {count}',
+    pick: 'Kart seç',
+    hint: 'İşlemlerini görmek için bir karta dokun',
+    recent: 'Son işlemler',
+    recentA11y: '{name} son işlemleri',
+    detail: 'Hesap ayrıntıları',
+    empty: 'Bu hesapta henüz işlem yok.',
+    all: 'Tümünü gör ({count})',
   },
   usage: {
     title: 'Bu ayki kullanım',

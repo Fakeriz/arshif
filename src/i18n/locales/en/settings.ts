@@ -139,7 +139,6 @@ const settings: Messages['settings'] = {
   },
   accounts: {
     title: 'Accounts & cards',
-    hint: 'Tap an account to choose its bank card design.',
     addTitle: 'Add account',
     adding: 'Saving…',
     added: '{name} added',
@@ -147,6 +146,19 @@ const settings: Messages['settings'] = {
     pickTitle: 'Card design',
     pickSub: 'Bank colour and name, no official logos',
     country: { ID: 'Indonesia', MY: 'Malaysia', TR: 'Türkiye', ANY: 'Other' },
+  },
+  wallet: {
+    summary: '{count} accounts · {currencies}',
+    summary_one: '{count} account · {currencies}',
+    allCards: 'All cards',
+    position: '{index} of {count}',
+    pick: 'Choose card',
+    hint: 'Tap a card to see its transactions',
+    recent: 'Recent transactions',
+    recentA11y: 'Recent transactions for {name}',
+    detail: 'Account details',
+    empty: 'No transactions in this account yet.',
+    all: 'See all ({count})',
   },
   usage: {
     title: 'Usage this month',

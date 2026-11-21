@@ -137,7 +137,6 @@ const settings = {
   },
   accounts: {
     title: 'Akun & kartu',
-    hint: 'Ketuk akun untuk memilih desain kartu bank.',
     addTitle: 'Tambah akun',
     adding: 'Menyimpan…',
     added: '{name} ditambahkan',
@@ -145,6 +144,19 @@ const settings = {
     pickTitle: 'Desain kartu',
     pickSub: 'Warna khas dan nama bank, tanpa logo resmi',
     country: { ID: 'Indonesia', MY: 'Malaysia', TR: 'Turki', ANY: 'Lainnya' },
+  },
+  wallet: {
+    summary: '{count} akun · {currencies}',
+    summary_one: '{count} akun · {currencies}',
+    allCards: 'Semua kartu',
+    position: '{index} dari {count}',
+    pick: 'Pilih kartu',
+    hint: 'Ketuk kartu untuk melihat transaksi',
+    recent: 'Transaksi terakhir',
+    recentA11y: 'Transaksi terakhir {name}',
+    detail: 'Detail akun',
+    empty: 'Belum ada transaksi di akun ini.',
+    all: 'Lihat semua ({count})',
   },
   usage: {
     title: 'Pemakaian bulan ini',

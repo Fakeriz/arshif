@@ -10,6 +10,7 @@ jest.mock('react-native-reanimated', () => {
   const identity = (to: unknown) => to;
   const Easing = { bezier: () => (t: number) => t, linear: (t: number) => t };
   const Animated = { View, createAnimatedComponent: <T,>(c: T) => c };
+  const layoutAnim = (): unknown => new Proxy({}, { get: (_t, key) => (key === 'then' ? undefined : () => layoutAnim()) });
   return {
     __esModule: true,
     default: Animated,
@@ -18,6 +19,7 @@ jest.mock('react-native-reanimated', () => {
     useSharedValue: (init: unknown) => ({ value: init }),
     useAnimatedStyle: (fn: () => object) => fn(),
     useAnimatedProps: (fn: () => object) => fn(),
+    useDerivedValue: (fn: () => unknown) => ({ value: fn() }),
     useReducedMotion: () => false,
     withTiming: identity,
     withSpring: identity,
@@ -25,6 +27,10 @@ jest.mock('react-native-reanimated', () => {
     withDelay: (_ms: number, anim: unknown) => anim,
     withSequence: (...anims: unknown[]) => anims[anims.length - 1],
     cancelAnimation: () => undefined,
+    // Animasi masuk/keluar (dompet Akun & kartu): builder berantai yang tidak melakukan apa-apa.
+    FadeIn: layoutAnim(),
+    FadeOut: layoutAnim(),
+    FadeInDown: layoutAnim(),
     // Deck akun Beranda: interpolasi linier (+ clamp) cukup untuk render deterministik.
     Extrapolation: { CLAMP: 'clamp', EXTEND: 'extend', IDENTITY: 'identity' },
     interpolate: (v: number, input: number[], output: number[], extrapolate?: string) => {

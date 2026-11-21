@@ -139,7 +139,6 @@ const settings: Messages['settings'] = {
   },
   accounts: {
     title: 'Akaun & kad',
-    hint: 'Ketik akaun untuk memilih reka bentuk kad bank.',
     addTitle: 'Tambah akaun',
     adding: 'Menyimpan…',
     added: '{name} ditambah',
@@ -147,6 +146,19 @@ const settings: Messages['settings'] = {
     pickTitle: 'Reka bentuk kad',
     pickSub: 'Warna dan nama bank, tanpa logo rasmi',
     country: { ID: 'Indonesia', MY: 'Malaysia', TR: 'Turkiye', ANY: 'Lain-lain' },
+  },
+  wallet: {
+    summary: '{count} akaun · {currencies}',
+    summary_one: '{count} akaun · {currencies}',
+    allCards: 'Semua kad',
+    position: '{index} daripada {count}',
+    pick: 'Pilih kad',
+    hint: 'Ketik kad untuk melihat transaksi',
+    recent: 'Transaksi terkini',
+    recentA11y: 'Transaksi terkini {name}',
+    detail: 'Butiran akaun',
+    empty: 'Belum ada transaksi dalam akaun ini.',
+    all: 'Lihat semua ({count})',
   },
   usage: {
     title: 'Penggunaan bulan ini',
