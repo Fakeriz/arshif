@@ -6,6 +6,7 @@ import { Platform, StyleSheet, View } from 'react-native';
 import { AppText, BottomSheet, Button, Card, Dialog, Icon, IconTile, Input, ListCard, ListItem, PressableScale, useToast } from '@/components/ui';
 import { updateProfile } from '@/data/remote/api';
 import { CameraDeniedError, cropImage, pickImage, removeAvatar, saveImage, setCoverPreset, type ImageKind } from '@/features/settings/avatar';
+import { afterSheetClose, HeaderMenu, MenuRow, type HeaderAction } from '@/components/shell/HeaderActions';
 import { CropModal } from '@/features/settings/CropModal';
 import { SettingsScreen } from '@/features/settings/kit';
 import { ProfileAvatar } from '@/features/settings/ProfileAvatar';
@@ -25,7 +26,7 @@ import { radius, space } from '@/theme/tokens';
 const AVATAR = 84;
 const RING = 3;
 const DOT = 26;
-const COVER_BTN = 30;
+const EDIT_BTN = 30;
 
 /**
  * Profil: sampul penuh kartu 2:1 (preset monokrom atau foto), foto profil (kamera/galeri, crop lingkaran), ikon Pro di lingkaran foto,
@@ -39,7 +40,6 @@ export default function ProfilScreen() {
   const { state, userId, applyLocal } = useStore();
   const { session } = useSession();
   const { show } = useToast();
-  const [sheet, setSheet] = useState<ImageKind | null>(null);
   const [confirmRemove, setConfirmRemove] = useState(false);
   const [busy, setBusy] = useState<ImageKind | 'remove' | null>(null);
   const [preview, setPreview] = useState<{ kind: ImageKind; uri: string } | null>(null);
@@ -62,10 +62,8 @@ export default function ProfilScreen() {
       : t('settings.usage.planPremium')
     : t('settings.profile.planFree');
   const failed = () => show({ tone: 'error', title: t('settings.profile.photoFailed'), message: t('settings.profile.tryAgain') });
-  const photoLabel = state.avatarPath ? t('settings.profile.photoChange') : t('settings.profile.photoAdd');
 
   const choose = async (kind: ImageKind, source: 'camera' | 'library') => {
-    setSheet(null);
     if (!userId) return;
     try {
       const picked = await pickImage(source);
@@ -108,7 +106,6 @@ export default function ProfilScreen() {
   };
 
   const pickPreset = async (key: CoverPreset) => {
-    setSheet(null);
     if (!userId || (cover.kind === 'preset' && cover.key === key)) return;
     setBusy('cover');
     try {
@@ -160,37 +157,90 @@ export default function ProfilScreen() {
         <View style={[StyleSheet.absoluteFill, busy === 'cover' && styles.busy]}>
           <ProfileCover value={state.coverPath} uri={preview?.kind === 'cover' ? preview.uri : null} scrim />
         </View>
-        {/* 30 + hitSlop 7 = target sentuh 44. */}
-        <PressableScale
-          accessibilityRole="button"
-          accessibilityLabel={t('settings.profile.coverChange')}
-          focusRadius={radius.full}
-          hitSlop={7}
-          disabled={busy !== null}
-          onPress={() => setSheet('cover')}
-          containerStyle={styles.coverBtnWrap}
-          // Kaca transparan: warna teks sampul 20% + garis 35%, jadi terbaca di sampul gelap, terang, maupun foto.
-          style={[styles.coverBtn, { backgroundColor: `${ink.text}33`, borderColor: `${ink.text}59` }]}
-        >
-          <Icon icon={ImagePlus} color={ink.text} size={14} />
-        </PressableScale>
+        {/* Satu pintu ubah foto profil + sampul: pensil kaca di pojok sampul membuka menu aksi melayang (pola menu titik tiga). */}
+        <View style={styles.editWrap}>
+          <HeaderMenu
+            trigger={(show, open) => (
+              // 30 + hitSlop 7 = target sentuh 44. Kaca transparan: warna teks sampul 20% + garis 35%, terbaca di sampul apa pun.
+              <PressableScale
+                accessibilityRole="button"
+                accessibilityLabel={t('settings.profile.editA11y')}
+                accessibilityState={{ expanded: open, busy: busy !== null }}
+                focusRadius={radius.full}
+                hitSlop={7}
+                disabled={busy !== null}
+                onPress={show}
+                style={[styles.editBtn, { backgroundColor: `${ink.text}${open ? '4D' : '33'}`, borderColor: `${ink.text}59` }]}
+              >
+                <Icon icon={Pencil} color={ink.text} size={14} />
+              </PressableScale>
+            )}
+          >
+            {(close) => {
+              const run = (fn: () => void) => () => {
+                close();
+                afterSheetClose(fn);
+              };
+              const rows: HeaderAction[] = [
+                { key: 'lib', label: t('settings.profile.avatarLibrary'), icon: ImageUp, onPress: () => void choose('avatar', 'library') },
+                // Kamera di web membuka pemilih berkas yang sama dengan galeri: cukup satu baris.
+                ...(Platform.OS !== 'web' ? [{ key: 'cam', label: t('settings.profile.avatarCamera'), icon: Camera, onPress: () => void choose('avatar', 'camera') }] : []),
+                ...(state.avatarPath ? [{ key: 'del', label: t('settings.profile.remove'), icon: Trash2, danger: true, onPress: () => setConfirmRemove(true) }] : []),
+              ];
+              return (
+                <>
+                  {rows.map((a, i) => (
+                    <MenuRow key={a.key} action={a} divider={i < rows.length - 1} onPress={run(a.onPress)} />
+                  ))}
+                  <View style={[styles.menuSection, { borderTopColor: colors.border }]}>
+                    <AppText variant="caption" tone="secondary">
+                      {t('settings.profile.coverSection')}
+                    </AppText>
+                    <View style={styles.presets} accessibilityRole="radiogroup">
+                      {COVER_PRESETS.map((key) => {
+                        const selected = cover.kind === 'preset' && cover.key === key;
+                        const label = t(`settings.profile.preset.${key}`);
+                        return (
+                          <PressableScale
+                            key={key}
+                            accessibilityRole="radio"
+                            accessibilityState={{ checked: selected }}
+                            accessibilityLabel={label}
+                            focusRadius={radius.sm}
+                            onPress={run(() => void pickPreset(key))}
+                            containerStyle={styles.presetCell}
+                          >
+                            <View style={[styles.presetThumb, { borderColor: selected ? colors.text : colors.border }]}>
+                              <ProfileCover preset={key} />
+                              {selected ? (
+                                <View style={[styles.presetCheck, { backgroundColor: colors.surface }]}>
+                                  <Icon icon={Check} color={colors.text} size={10} />
+                                </View>
+                              ) : null}
+                            </View>
+                          </PressableScale>
+                        );
+                      })}
+                    </View>
+                  </View>
+                  <MenuRow action={{ key: 'cover', label: t('settings.profile.coverUpload'), icon: ImagePlus, onPress: () => void choose('cover', 'library') }} divider={false} onPress={run(() => void choose('cover', 'library'))} />
+                </>
+              );
+            }}
+          </HeaderMenu>
+        </View>
 
         <View style={styles.hero}>
           <View style={styles.avatarWrap}>
-            <PressableScale accessibilityRole="button" accessibilityLabel={photoLabel} focusRadius={radius.full} disabled={busy !== null} onPress={() => setSheet('avatar')}>
-              <View style={[styles.ring, { backgroundColor: colors.surface }, busy === 'avatar' && styles.busy]}>
-                <ProfileAvatar size={AVATAR} uri={preview?.kind === 'avatar' ? preview.uri : null} />
-              </View>
-            </PressableScale>
-            {/* Pro = ikon mahkota saja di kanan atas lingkaran; pensil (ganti foto) di kanan bawah. Cincin kertas memisahkan dari foto. */}
+            <View style={[styles.ring, { backgroundColor: colors.surface }, busy === 'avatar' && styles.busy]}>
+              <ProfileAvatar size={AVATAR} uri={preview?.kind === 'avatar' ? preview.uri : null} />
+            </View>
+            {/* Pro = ikon mahkota saja di kanan atas lingkaran; cincin kertas memisahkan dari foto. */}
             {premium ? (
               <View style={[styles.dot, styles.pro, { backgroundColor: colors.accent, borderColor: colors.surface }]} accessible accessibilityLabel={t('settings.profile.proA11y')}>
                 <Icon icon={Crown} color={colors.onAccent} size={12} />
               </View>
             ) : null}
-            <View pointerEvents="none" style={[styles.dot, styles.pencil, { backgroundColor: colors.accent, borderColor: colors.surface }]} accessible={false}>
-              <Icon icon={Pencil} color={colors.onAccent} size={12} />
-            </View>
           </View>
           <View style={styles.names}>
             <AppText variant="h2" numberOfLines={2} style={[styles.center, { color: ink.text }]}>
@@ -222,64 +272,6 @@ export default function ProfilScreen() {
       <AppText variant="caption" tone="secondary" style={styles.note}>
         {t('settings.profile.privacy')}
       </AppText>
-
-      <BottomSheet visible={sheet === 'avatar'} onClose={() => setSheet(null)} title={t('settings.profile.photoSheet')} subtitle={t('settings.profile.privacy')}>
-        <ListCard>
-          {/* Ikon aksen = pilihan cara input, merah = aksi berbahaya (aturan IconTile). Kamera di web membuka pemilih berkas yang sama dengan galeri: cukup satu baris. */}
-          {Platform.OS !== 'web' && <ListItem title={t('settings.profile.camera')} leading={<IconTile icon={Camera} />} divider onPress={() => void choose('avatar', 'camera')} />}
-          <ListItem title={t('settings.profile.library')} leading={<IconTile icon={ImageUp} />} divider={!!state.avatarPath} onPress={() => void choose('avatar', 'library')} />
-          {state.avatarPath ? (
-            <ListItem
-              title={t('settings.profile.remove')}
-              leading={<IconTile icon={Trash2} tone="negative" />}
-              onPress={() => {
-                setSheet(null);
-                setConfirmRemove(true);
-              }}
-            />
-          ) : null}
-        </ListCard>
-      </BottomSheet>
-
-      <BottomSheet visible={sheet === 'cover'} onClose={() => setSheet(null)} title={t('settings.profile.coverSheet')} subtitle={t('settings.profile.privacy')}>
-        <View style={styles.presets} accessibilityRole="radiogroup">
-          {COVER_PRESETS.map((key) => {
-            const selected = cover.kind === 'preset' && cover.key === key;
-            const label = t(`settings.profile.preset.${key}`);
-            return (
-              <PressableScale
-                key={key}
-                accessibilityRole="radio"
-                accessibilityState={{ checked: selected }}
-                accessibilityLabel={label}
-                focusRadius={radius.md}
-                onPress={() => void pickPreset(key)}
-                containerStyle={styles.presetCell}
-              >
-                <View style={[styles.presetThumb, { borderColor: selected ? colors.text : colors.border }]}>
-                  <ProfileCover preset={key} />
-                  {selected ? (
-                    <View style={[styles.presetCheck, { backgroundColor: colors.surface }]}>
-                      <Icon icon={Check} color={colors.text} size={12} />
-                    </View>
-                  ) : null}
-                </View>
-                <AppText variant="caption" tone={selected ? 'primary' : 'secondary'} style={styles.center}>
-                  {label}
-                </AppText>
-              </PressableScale>
-            );
-          })}
-        </View>
-        <ListCard>
-          <ListItem
-            title={t('settings.profile.coverUpload')}
-            subtitle={cover.kind === 'photo' ? t('settings.profile.coverPhotoActive') : undefined}
-            leading={<IconTile icon={ImageUp} />}
-            onPress={() => void choose('cover', 'library')}
-          />
-        </ListCard>
-      </BottomSheet>
 
       <BottomSheet visible={nameOpen} onClose={() => setNameOpen(false)} title={t('settings.profile.name')}>
         <View style={styles.form}>
@@ -325,22 +317,23 @@ export default function ProfilScreen() {
 
 const styles = StyleSheet.create({
   heroCard: { overflow: 'hidden', justifyContent: 'center' },
-  coverBtnWrap: { position: 'absolute', top: space.md, right: space.md, zIndex: 1 },
-  coverBtn: { width: COVER_BTN, height: COVER_BTN, borderRadius: radius.full, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
+  editWrap: { position: 'absolute', top: space.md, right: space.md, zIndex: 1 },
+  editBtn: { width: EDIT_BTN, height: EDIT_BTN, borderRadius: radius.full, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
   hero: { alignItems: 'center', gap: space.sm, paddingHorizontal: space.xl, paddingVertical: space.lg },
   avatarWrap: { position: 'relative' },
   ring: { padding: RING, borderRadius: radius.full },
   // PRO menempel di garis lingkaran kanan atas, pensil di kanan bawah (cincin kertas memisahkan dari foto).
   dot: { position: 'absolute', width: DOT, height: DOT, borderRadius: radius.full, borderWidth: 2, alignItems: 'center', justifyContent: 'center' },
   pro: { right: 2, top: 2 },
-  pencil: { right: 2, bottom: 2 },
   names: { alignItems: 'center', gap: space.xxs, maxWidth: '100%' },
   center: { textAlign: 'center' },
   busy: { opacity: 0.5 },
   form: { gap: space.lg, paddingBottom: space.lg },
   note: { paddingHorizontal: space.xs },
-  presets: { flexDirection: 'row', gap: space.sm, marginBottom: space.lg },
+  menuSection: { borderTopWidth: StyleSheet.hairlineWidth, paddingTop: space.sm, gap: space.sm },
+  presets: { flexDirection: 'row', gap: space.sm },
   presetCell: { flex: 1 },
-  presetThumb: { aspectRatio: 3 / 2, borderRadius: radius.md, borderWidth: 2, overflow: 'hidden', marginBottom: space.xs },
-  presetCheck: { position: 'absolute', top: 4, right: 4, width: 20, height: 20, borderRadius: radius.full, alignItems: 'center', justifyContent: 'center' },
+  // Thumbnail 2:1 = rasio sampul sebenarnya.
+  presetThumb: { aspectRatio: 2, borderRadius: radius.sm, borderWidth: 2, overflow: 'hidden' },
+  presetCheck: { position: 'absolute', top: 2, right: 2, width: 16, height: 16, borderRadius: radius.full, alignItems: 'center', justifyContent: 'center' },
 });

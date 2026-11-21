@@ -45,6 +45,15 @@ const wrap = (ui: ReactNode, preset = sampleState(), mode: 'light' | 'dark' = 'l
     </SafeAreaProvider>,
   );
 
+const EDIT = 'Ubah foto profil dan sampul';
+// Baris menu aksi dijalankan setelah menu menutup (afterSheetClose, native): tunggu sebentar.
+const tapMenu = async (label: string) =>
+  act(async () => {
+    fireEvent.press(screen.getByLabelText(label));
+    await new Promise((res) => setTimeout(res, 400));
+  });
+const openMenu = async () => fireEvent.press(screen.getByLabelText(EDIT));
+
 beforeEach(() => [mockUpdate, mockPick, mockCrop, mockSave, mockRemove, mockPreset].forEach((m) => m.mockClear()));
 
 describe('Pengaturan > Profil', () => {
@@ -58,8 +67,13 @@ describe('Pengaturan > Profil', () => {
     expect(screen.getByText('Free')).toBeTruthy();
     expect(screen.queryByLabelText('Paket Pro aktif')).toBeNull();
     expect(screen.getByText('Bergabung sejak')).toBeTruthy();
-    expect(screen.getByLabelText('Tambah foto')).toBeTruthy();
-    expect(screen.getByLabelText('Ubah sampul')).toBeTruthy();
+    // Satu tombol (pensil di sampul) untuk foto profil + sampul.
+    expect(screen.getByLabelText(EDIT)).toBeTruthy();
+    await openMenu();
+    expect(screen.getByLabelText('Foto profil dari galeri')).toBeTruthy();
+    expect(screen.getByLabelText('Unggah foto sampul')).toBeTruthy();
+    // Belum ada foto: tidak ada baris hapus.
+    expect(screen.queryByLabelText('Hapus foto profil')).toBeNull();
   });
 
   it('Pro: ikon mahkota di lingkaran foto, baris Paket menulis tanggal akhir', async () => {
@@ -94,8 +108,8 @@ describe('Pengaturan > Profil', () => {
 
   it('foto: pilih dari galeri -> crop lingkaran -> unggah; lalu hapus dengan konfirmasi', async () => {
     await wrap(<ProfilScreen />);
-    await fireEvent.press(screen.getByLabelText('Tambah foto'));
-    await act(async () => fireEvent.press(screen.getByText('Pilih dari galeri')));
+    await openMenu();
+    await tapMenu('Foto profil dari galeri');
     expect(mockPick).toHaveBeenCalledWith('library');
     // Crop terbuka; belum ada unggahan sebelum "Gunakan".
     expect(screen.getByText('Atur foto profil')).toBeTruthy();
@@ -106,18 +120,18 @@ describe('Pengaturan > Profil', () => {
     expect(mockSave).toHaveBeenCalledWith('u1', 'avatar', 'file:///tmp/cropped.jpg', null);
     expect(screen.getByText('Foto profil diperbarui')).toBeTruthy();
 
-    await fireEvent.press(screen.getByLabelText('Ganti foto'));
-    await fireEvent.press(screen.getByText('Hapus foto'));
+    await openMenu();
+    await tapMenu('Hapus foto profil');
     expect(screen.getByText('Hapus foto profil?')).toBeTruthy();
-    await act(async () => fireEvent.press(screen.getAllByText('Hapus foto').at(-1)!));
+    await act(async () => fireEvent.press(screen.getAllByText('Hapus foto profil').at(-1)!));
     expect(mockRemove).toHaveBeenCalledWith('u1', 'u1/new.jpg');
     expect(screen.getByText('Foto profil dihapus')).toBeTruthy();
   });
 
   it('batal di layar crop: tidak ada unggahan', async () => {
     await wrap(<ProfilScreen />);
-    await fireEvent.press(screen.getByLabelText('Tambah foto'));
-    await act(async () => fireEvent.press(screen.getByText('Pilih dari galeri')));
+    await openMenu();
+    await tapMenu('Foto profil dari galeri');
     await fireEvent.press(screen.getByText('Batal'));
     expect(screen.queryByText('Atur foto profil')).toBeNull();
     expect(mockCrop).not.toHaveBeenCalled();
@@ -126,18 +140,18 @@ describe('Pengaturan > Profil', () => {
 
   it('sampul: pilih preset, lalu unggah foto sampul sendiri dengan crop 2:1', async () => {
     await wrap(<ProfilScreen />);
-    await fireEvent.press(screen.getByLabelText('Ubah sampul'));
+    await openMenu();
     // Bawaan (null) = Tinta terpilih: mengetuknya lagi tidak menyimpan apa-apa.
     expect(screen.getByLabelText('Tinta').props.accessibilityState).toEqual(expect.objectContaining({ checked: true }));
-    await act(async () => fireEvent.press(screen.getByLabelText('Tinta')));
+    await tapMenu('Tinta');
     expect(mockPreset).not.toHaveBeenCalled();
-    await fireEvent.press(screen.getByLabelText('Ubah sampul'));
-    await act(async () => fireEvent.press(screen.getByLabelText('Garis')));
+    await openMenu();
+    await tapMenu('Garis');
     expect(mockPreset).toHaveBeenCalledWith('u1', 'garis', null);
     expect(screen.getByText('Sampul diperbarui')).toBeTruthy();
 
-    await fireEvent.press(screen.getByLabelText('Ubah sampul'));
-    await act(async () => fireEvent.press(screen.getByText('Unggah foto sampul')));
+    await openMenu();
+    await tapMenu('Unggah foto sampul');
     expect(screen.getByText('Atur sampul')).toBeTruthy();
     await act(async () => fireEvent.press(screen.getByText('Gunakan')));
     expect(mockCrop).toHaveBeenCalledWith(PICKED.uri, { originX: 0, originY: 500, width: 4000, height: 2000 }, 'cover');

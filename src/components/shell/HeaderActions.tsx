@@ -58,9 +58,9 @@ const MENU_WIDTH = 260;
 
 /**
  * Tombol titik tiga yang membuka menu melayang tepat di bawahnya, rata kanan (gaya menu iOS), bukan sheet bawah.
- * Ketuk di luar menu = tutup. `children` = baris menu atau pengaturan.
+ * Ketuk di luar menu = tutup. `children` = baris menu atau pengaturan. `trigger` = tombol pemicu lain (mis. pensil di sampul).
  */
-export function HeaderMenu({ children }: { children: (close: () => void) => ReactNode }) {
+export function HeaderMenu({ children, trigger }: { children: (close: () => void) => ReactNode; trigger?: (show: () => void, open: boolean) => ReactNode }) {
   const t = useT();
   const { colors, scheme } = useTheme();
   const { spring, timing } = useMotion();
@@ -103,7 +103,7 @@ export function HeaderMenu({ children }: { children: (close: () => void) => Reac
   return (
     <>
       <View ref={anchor} collapsable={false} onLayout={() => measure()}>
-        <HeaderButton label={t('common.moreActions')} icon={EllipsisVertical} onPress={show} selected={open} />
+        {trigger ? trigger(show, open) : <HeaderButton label={t('common.moreActions')} icon={EllipsisVertical} onPress={show} selected={open} />}
       </View>
       <Modal transparent visible={mounted} onRequestClose={close} animationType="none" statusBarTranslucent>
         <Pressable style={StyleSheet.absoluteFill} onPress={close} accessibilityRole="button" accessibilityLabel={t('common.close')} />
@@ -124,7 +124,7 @@ export function HeaderMenu({ children }: { children: (close: () => void) => Reac
 }
 
 /** Satu baris menu: label + ikon di kanan (gaya iOS); aksi berbahaya (hapus) berwarna merah. */
-function MenuRow({ action, divider, onPress }: { action: HeaderAction; divider: boolean; onPress: () => void }) {
+export function MenuRow({ action, divider, onPress }: { action: HeaderAction; divider: boolean; onPress: () => void }) {
   const { colors } = useTheme();
   return (
     <PressableScale accessibilityLabel={action.label} accessibilityState={{ disabled: !!action.disabled }} disabled={action.disabled} onPress={onPress} focusRadius={radius.sm} scaleTo={0.985}>
