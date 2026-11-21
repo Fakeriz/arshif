@@ -28,6 +28,7 @@ const auth: Messages['auth'] = {
     errorWeak: 'Şifre çok zayıf. Harf ve rakam içeren en az 8 karakter kullan.',
     errorPasswordRule: 'Şifre en az 8 karakter olmalı, harf ve rakam karışık.',
     errorGoogle: 'Google ile giriş yapılamadı. Tekrar dene veya e-posta kullan.',
+    forgot: 'Şifreni mi unuttun?',
   },
   verify: {
     title: 'Kodu gir',
@@ -44,6 +45,12 @@ const auth: Messages['auth'] = {
     errorNetwork: 'Bağlanılamıyor. İnternet bağlantını kontrol edip tekrar dene.',
     errorGeneric: 'Giriş yapılamadı. Biraz sonra tekrar dene.',
     missingEmail: 'E-posta girilmedi. Kod istemek için giriş sayfasına dön.',
+    resetTitle: 'Yeni şifre belirle',
+    resetLead: '{email} adresine gönderilen 6 haneli kodu gir, ardından yeni bir şifre oluştur. Spam klasörünü de kontrol et.',
+    newPassword: 'Yeni şifre',
+    resetSubmit: 'Kaydet ve giriş yap',
+    resetDone: 'Yeni şifre kaydedildi',
+    resetFailed: 'Şifre kaydedilmedi. Şifremi unuttum ile tekrar sıfırla.',
   },
   welcome: {
     tagline: 'Paranı düzene sokan finans asistanı',

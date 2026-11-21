@@ -26,6 +26,7 @@ const auth = {
     errorWeak: 'Kata sandi terlalu lemah. Pakai minimal 8 karakter dengan huruf dan angka.',
     errorPasswordRule: 'Kata sandi minimal 8 karakter, campuran huruf dan angka.',
     errorGoogle: 'Belum bisa masuk dengan Google. Coba lagi atau pakai email.',
+    forgot: 'Lupa kata sandi?',
   },
   verify: {
     title: 'Masukkan kode',
@@ -42,6 +43,12 @@ const auth = {
     errorNetwork: 'Tidak bisa terhubung. Periksa koneksi internetmu lalu coba lagi.',
     errorGeneric: 'Belum bisa masuk. Coba lagi sebentar lagi.',
     missingEmail: 'Email belum diisi. Kembali ke halaman masuk untuk meminta kode.',
+    resetTitle: 'Atur kata sandi baru',
+    resetLead: 'Masukkan kode 6 digit yang dikirim ke {email}, lalu buat kata sandi baru. Cek juga folder spam.',
+    newPassword: 'Kata sandi baru',
+    resetSubmit: 'Simpan dan masuk',
+    resetDone: 'Kata sandi baru tersimpan',
+    resetFailed: 'Kata sandi belum tersimpan. Atur ulang dari Lupa kata sandi.',
   },
   welcome: {
     tagline: 'Asisten keuangan yang bikin uangmu tertata',

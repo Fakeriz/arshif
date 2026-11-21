@@ -28,6 +28,7 @@ const auth: Messages['auth'] = {
     errorWeak: 'Password is too weak. Use at least 8 characters with letters and numbers.',
     errorPasswordRule: 'Password needs at least 8 characters, mixing letters and numbers.',
     errorGoogle: 'Could not sign in with Google. Try again or use email.',
+    forgot: 'Forgot password?',
   },
   verify: {
     title: 'Enter the code',
@@ -44,6 +45,12 @@ const auth: Messages['auth'] = {
     errorNetwork: 'Cannot connect. Check your internet connection and try again.',
     errorGeneric: 'Could not sign in. Try again in a moment.',
     missingEmail: 'No email yet. Go back to sign in to request a code.',
+    resetTitle: 'Set a new password',
+    resetLead: 'Enter the 6-digit code sent to {email}, then create a new password. Check your spam folder too.',
+    newPassword: 'New password',
+    resetSubmit: 'Save and sign in',
+    resetDone: 'New password saved',
+    resetFailed: 'Password was not saved. Reset it again from Forgot password.',
   },
   welcome: {
     tagline: 'The money assistant that keeps your finances in order',

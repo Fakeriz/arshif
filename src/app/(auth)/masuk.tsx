@@ -10,6 +10,7 @@ import { Screen } from '@/components/shell/Screen';
 import { AppText, Button, Card, Icon, Input, Tabs } from '@/components/ui';
 import { authErrorKey } from '@/features/auth/errors';
 import { signInWithGoogle } from '@/features/auth/google';
+import { NewPassword } from '@/features/auth/password';
 import { useT, type MsgKey } from '@/i18n';
 import { supabase } from '@/lib/supabase';
 import { easeOut, useEnter } from '@/theme/motion';
@@ -17,8 +18,6 @@ import { useTheme } from '@/theme/ThemeProvider';
 import { motion, radius, space } from '@/theme/tokens';
 
 const Email = z.string().trim().toLowerCase().email().max(254);
-/** PRD FR-AUTH-1: minimal 8 karakter, huruf + angka. Hanya diperiksa saat daftar; saat masuk server yang menilai. */
-const NewPassword = z.string().min(8).max(72).regex(/[A-Za-z]/).regex(/\d/);
 
 /** Tiga cara mencatat yang disebut di tagline: struk, suara, rekening koran PDF. */
 const METHODS: LucideIcon[] = [Receipt, Mic, FileText];
@@ -116,6 +115,19 @@ export default function MasukScreen() {
     await (mode === 'code' ? sendCode(parsed.data) : withPassword(parsed.data));
   };
 
+  // Lupa kata sandi: kode 6 digit ke email, lalu kata sandi baru diatur di layar verifikasi.
+  // Server menjawab sukses juga untuk email yang tidak terdaftar, jadi tidak membocorkan siapa yang punya akun.
+  const forgot = async () => {
+    const parsed = Email.safeParse(email);
+    if (!parsed.success) return setError('auth.signIn.errorInvalid');
+    setSending(true);
+    setError(null);
+    const { error: err } = await supabase.auth.resetPasswordForEmail(parsed.data);
+    setSending(false);
+    if (err) return setError(authErrorKey(err, 'signIn'));
+    router.push({ pathname: '/verifikasi', params: { email: parsed.data, type: 'recovery' } });
+  };
+
   const switchMode = (m: Mode) => {
     setMode(m);
     setError(null);
@@ -207,6 +219,11 @@ export default function MasukScreen() {
                   hint={signUp && !error ? t('auth.signIn.passwordHint') : undefined}
                   disabled={busy}
                 />
+                {!signUp && (
+                  <View style={styles.forgot}>
+                    <Button label={t('auth.signIn.forgot')} variant="ghost" size="sm" onPress={forgot} disabled={busy} />
+                  </View>
+                )}
               </Animated.View>
             )}
             <Animated.View layout={reflow} style={styles.actions}>
@@ -244,4 +261,5 @@ const styles = StyleSheet.create({
   or: { flexDirection: 'row', alignItems: 'center', gap: space.md },
   rule: { flex: 1, height: StyleSheet.hairlineWidth },
   actions: { gap: space.xs },
+  forgot: { alignItems: 'flex-end', marginTop: space.xs },
 });

@@ -28,6 +28,7 @@ const auth: Messages['auth'] = {
     errorWeak: 'Kata laluan terlalu lemah. Guna sekurang-kurangnya 8 aksara dengan huruf dan nombor.',
     errorPasswordRule: 'Kata laluan sekurang-kurangnya 8 aksara, campuran huruf dan nombor.',
     errorGoogle: 'Belum dapat log masuk dengan Google. Cuba lagi atau guna e-mel.',
+    forgot: 'Lupa kata laluan?',
   },
   verify: {
     title: 'Masukkan kod',
@@ -44,6 +45,12 @@ const auth: Messages['auth'] = {
     errorNetwork: 'Tidak dapat bersambung. Semak sambungan internet anda dan cuba lagi.',
     errorGeneric: 'Belum dapat log masuk. Cuba lagi sebentar nanti.',
     missingEmail: 'E-mel belum diisi. Kembali ke halaman log masuk untuk meminta kod.',
+    resetTitle: 'Tetapkan kata laluan baharu',
+    resetLead: 'Masukkan kod 6 digit yang dihantar ke {email}, kemudian cipta kata laluan baharu. Semak juga folder spam.',
+    newPassword: 'Kata laluan baharu',
+    resetSubmit: 'Simpan dan log masuk',
+    resetDone: 'Kata laluan baharu disimpan',
+    resetFailed: 'Kata laluan belum disimpan. Tetapkan semula dari Lupa kata laluan.',
   },
   welcome: {
     tagline: 'Pembantu kewangan yang menyusun duitmu dengan kemas',
