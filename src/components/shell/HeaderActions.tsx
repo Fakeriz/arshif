@@ -66,10 +66,11 @@ export function HeaderMenu({ children }: { children: (close: () => void) => Reac
   const { spring, timing } = useMotion();
   const { width: screenW } = useWindowDimensions();
   const anchor = useRef<ComponentRef<typeof View>>(null);
-  const [pos, setPos] = useState<{ top: number; right: number } | null>(null);
+  // Posisi disimpan terpisah dari open: saat menutup, menu memudar di tempatnya (bukan melompat ke pojok atas).
+  const [pos, setPos] = useState<{ top: number; right: number }>({ top: 96, right: space.lg });
+  const [open, setOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
   const p = useSharedValue(0);
-  const open = pos !== null;
 
   useEffect(() => {
     if (open) {
@@ -90,10 +91,11 @@ export function HeaderMenu({ children }: { children: (close: () => void) => Reac
     });
   // Buka langsung di posisi terakhir yang diukur (saat tombol tampil), lalu ukur ulang bila layar sudah digulir.
   const show = () => {
-    setPos(measured.current ?? { top: 96, right: space.lg });
-    measure((p) => setPos((cur) => (cur ? p : cur)));
+    if (measured.current) setPos(measured.current);
+    setOpen(true);
+    measure(setPos);
   };
-  const close = () => setPos(null);
+  const close = () => setOpen(false);
 
   // Tumbuh dari pojok kanan atas, dekat tombol pemicunya.
   const pop = useAnimatedStyle(() => ({ opacity: Math.max(0, Math.min(1, p.value)), transform: [{ scale: 0.85 + p.value * 0.15 }] }));
@@ -109,7 +111,7 @@ export function HeaderMenu({ children }: { children: (close: () => void) => Reac
           accessibilityViewIsModal
           style={[
             styles.menu,
-            { top: pos?.top ?? 0, right: pos?.right ?? space.lg, width: Math.min(MENU_WIDTH, screenW - space.lg * 2), backgroundColor: colors.surfaceRaised, borderColor: colors.border },
+            { top: pos.top, right: pos.right, width: Math.min(MENU_WIDTH, screenW - space.lg * 2), backgroundColor: colors.surfaceRaised, borderColor: colors.border },
             elevation[scheme].floating,
             pop,
           ]}
