@@ -34,7 +34,6 @@
     "expo-system-ui": "~58.0.7",
     "expo-updates": "~58.0.21",
     "expo-web-browser": "~58.0.7",
-    "idn-finlogos": "2.5.0",
     "lucide-react-native": "^1.69.0",
     "react": "19.3.0",
     "react-dom": "19.3.0",
