@@ -30,6 +30,10 @@ import { SessionProvider, useSession } from '@/state/session';
 import { loadHapticLevel } from '@/theme/motion';
 import { motion } from '@/theme/tokens';
 import { ThemeProvider, useTheme } from '@/theme/ThemeProvider';
+import { captureDriveRedirect } from '@/features/backup/driveToken';
+
+// Web: tangkap token Google Drive dari URL sebelum router berpindah (login Drive kembali ke halaman ini).
+captureDriveRedirect();
 
 SplashScreen.preventAutoHideAsync().catch(() => undefined);
 void loadHapticLevel();

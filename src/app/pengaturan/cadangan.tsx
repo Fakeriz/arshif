@@ -1,11 +1,12 @@
 import * as DocumentPicker from 'expo-document-picker';
-import { CloudUpload, FileUp, HardDriveDownload, KeyRound, Share2 } from 'lucide-react-native';
+import { Cloud, CloudUpload, FileUp, KeyRound, Share2 } from 'lucide-react-native';
 import { useEffect, useState } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { Platform, StyleSheet, View } from 'react-native';
 
-import { AppText, BottomSheet, Button, Card, Dialog, EmptyState, Group, ListCard, ListItem, MenuGroup, ProgressBar, Tabs, Toggle, useToast } from '@/components/ui';
+import { AppText, BottomSheet, Button, Card, Dialog, Group, IconTile, ListCard, ListItem, MenuGroup, ProgressBar, Tabs, Toggle, useToast } from '@/components/ui';
 import { readBytes } from '@/data/remote/upload';
 import { DriveError, DriveGate, useDrive, type DriveFile } from '@/features/backup/drive';
+import { BACKUP_MIME } from '@/features/backup/service';
 import { KeySheet } from '@/features/backup/KeySheet';
 import {
   backupDue,
@@ -79,7 +80,6 @@ function Cadangan() {
   const [askKey, setAskKey] = useState(false);
   const [restoring, setRestoring] = useState<Progress>(null);
   const [report, setReport] = useState<RestoreReport | null>(null);
-  const [driveFiles, setDriveFiles] = useState<DriveFile[] | null>(null);
   // "Sekarang" diambil sekali saat layar dibuka: render tetap murni (tanpa Date.now() di badan render).
   const [now] = useState(Date.now);
 
@@ -109,7 +109,7 @@ function Cadangan() {
   const startCreate = () => (key ? void create(key) : setKeySheet('setup'));
 
   const uploadToDrive = async () => {
-    if (!created || !drive) return;
+    if (!created || !drive?.connected) return;
     try {
       await drive.upload(backupFileName(), created);
       show({ tone: 'success', title: t('settings.backup.uploaded') });
@@ -142,15 +142,17 @@ function Cadangan() {
   };
 
   const pickFile = async () => {
-    const r = await DocumentPicker.getDocumentAsync({ copyToCacheDirectory: true, multiple: false });
+    // Hanya berkas (bukan galeri/kamera): web memakai ekstensi .arshif, Android/iOS memakai tipe biner cadangan.
+    const r = await DocumentPicker.getDocumentAsync({ type: Platform.OS === 'web' ? '.arshif' : BACKUP_MIME, copyToCacheDirectory: true, multiple: false });
     if (r.canceled || !r.assets[0]) return;
     loadFile(new Uint8Array(await readBytes(r.assets[0].uri)));
   };
 
-  const openDrive = async () => {
+  const restoreFromDrive = async (f: DriveFile) => {
     if (!drive) return;
+    if (!drive.connected) return drive.connect();
     try {
-      setDriveFiles(await drive.list());
+      loadFile(await drive.download(f.id));
     } catch (e) {
       show({ tone: 'error', title: backupErrorText(t, e) });
     }
@@ -262,17 +264,47 @@ function Cadangan() {
           label={t('settings.backup.restoreGroup')}
           entries={[
             { key: 'file', icon: FileUp, title: t('settings.backup.fromFile'), subtitle: t('settings.backup.fromFileSub'), onPress: () => void pickFile() },
-            {
-              key: 'drive',
-              icon: HardDriveDownload,
-              title: t('settings.backup.fromDrive'),
-              subtitle: drive ? t('settings.backup.fromDriveSub') : t('settings.backup.driveUnavailable'),
-              disabled: !drive,
-              onPress: () => void openDrive(),
-            },
           ]}
         />
       )}
+
+      {/* Google Drive: status koneksi + riwayat cadangan yang diunggah (ketuk = pulihkan), tanpa mencari di Drive. */}
+      <Group label={t('settings.backup.driveSection')}>
+        <ListCard>
+          <ListItem
+            leading={<IconTile icon={Cloud} tone={drive?.connected ? 'accent' : 'neutral'} />}
+            title={!drive ? t('settings.backup.driveSection') : drive.connected ? t('settings.backup.driveConnected') : t('settings.backup.driveNotConnectedTitle')}
+            subtitle={!drive ? t('settings.backup.driveUnavailable') : drive.connected ? (drive.account ?? '') : t('settings.backup.driveNotConnected')}
+            subtitleLines={2}
+            trailing={drive?.connected ? <Button label={t('settings.backup.driveDisconnect')} variant="ghost" size="sm" onPress={drive.disconnect} /> : undefined}
+          />
+        </ListCard>
+        {drive && !drive.connected && <Button label={t('settings.backup.driveConnect')} icon={Cloud} variant="secondary" fullWidth onPress={drive.connect} />}
+        {drive && drive.history.length > 0 && (
+          <>
+            <AppText variant="caption" tone="muted" style={styles.note}>
+              {drive.connected ? t('settings.backup.driveHistory') : t('settings.backup.driveHistoryOffline')}
+            </AppText>
+            <ListCard>
+              {drive.history.slice(0, 10).map((f, i, list) => (
+                <ListItem
+                  key={f.id}
+                  title={date(f.createdTime)}
+                  subtitle={`${mb(f.size)} · ${t('settings.backup.driveRestoreHint')}`}
+                  chevron
+                  divider={i < list.length - 1}
+                  onPress={() => void restoreFromDrive(f)}
+                />
+              ))}
+            </ListCard>
+          </>
+        )}
+        {drive?.connected && drive.history.length === 0 && (
+          <AppText variant="caption" tone="muted" style={styles.note}>
+            {t('settings.backup.driveEmpty')}
+          </AppText>
+        )}
+      </Group>
 
       {/* Cadangan pertama: kunci dibuat dan dibuktikan tersimpan dulu. */}
       {keySheet === 'setup' && (
@@ -293,39 +325,13 @@ function Cadangan() {
       <BottomSheet visible={!!created} onClose={() => setCreated(null)} title={t('settings.backup.readyTitle')} subtitle={created ? t('settings.backup.readySub', { size: mb(created.length) }) : undefined}>
         <View style={styles.sheet}>
           <Button label={t('settings.backup.save')} icon={Share2} fullWidth onPress={() => created && void saveBackupFile(created)} />
-          <Button label={t('settings.backup.drive')} icon={CloudUpload} variant="secondary" fullWidth loading={drive?.busy} disabled={!drive || drive.busy} onPress={() => void uploadToDrive()} />
-          {!drive && (
+          <Button label={t('settings.backup.drive')} icon={CloudUpload} variant="secondary" fullWidth loading={drive?.busy} disabled={!drive?.connected || drive.busy} onPress={() => void uploadToDrive()} />
+          {!drive?.connected && (
             <AppText variant="caption" tone="muted" align="center">
-              {t('settings.backup.driveUnavailable')}
+              {drive ? t('settings.backup.driveConnectFirst') : t('settings.backup.driveUnavailable')}
             </AppText>
           )}
         </View>
-      </BottomSheet>
-
-      <BottomSheet scrollable visible={driveFiles !== null} onClose={() => setDriveFiles(null)} title={t('settings.backup.driveListTitle')}>
-        {driveFiles?.length === 0 ? (
-          <EmptyState compact title={t('settings.backup.driveEmpty')} />
-        ) : (
-          <ListCard>
-            {(driveFiles ?? []).map((f, i, list) => (
-              <ListItem
-                key={f.id}
-                title={date(f.createdTime)}
-                subtitle={`${f.name} · ${mb(f.size)}`}
-                chevron
-                divider={i < list.length - 1}
-                onPress={async () => {
-                  setDriveFiles(null);
-                  try {
-                    if (drive) loadFile(await drive.download(f.id));
-                  } catch (e) {
-                    show({ tone: 'error', title: backupErrorText(t, e) });
-                  }
-                }}
-              />
-            ))}
-          </ListCard>
-        )}
       </BottomSheet>
 
       {pending && askKey && (

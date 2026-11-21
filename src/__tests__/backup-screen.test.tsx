@@ -48,8 +48,8 @@ describe('Pengaturan > Cadangan', () => {
     await wrap(<CadanganScreen />);
     expect(mockAuth).not.toHaveBeenCalled();
     expect(screen.getByText('Dari file')).toBeTruthy();
-    expect(screen.getByText('Dari Google Drive')).toBeTruthy();
-    expect(screen.getByText('Belum tersedia: Google Drive belum diatur di aplikasi ini.')).toBeTruthy();
+    expect(screen.getAllByText('Belum tersedia: Google Drive belum diatur di aplikasi ini.').length).toBeGreaterThan(0);
+    expect(screen.queryByText('Hubungkan Google Drive')).toBeNull();
     // Tanpa kunci: baris Lihat kunci tidak tampil (bukan kontrol mati).
     expect(screen.queryByText('Lihat kunci pemulihan')).toBeNull();
     expect(screen.getByText('Belum pernah')).toBeTruthy();
@@ -59,7 +59,8 @@ describe('Pengaturan > Cadangan', () => {
     ENV.forEach((k) => (process.env[k] = '123456789-abcdefgh.apps.googleusercontent.com'));
     await wrap(<CadanganScreen />);
     expect(mockAuth).toHaveBeenCalledWith(expect.objectContaining({ scopes: ['https://www.googleapis.com/auth/drive.file'] }));
-    expect(screen.getByText('Cadangan yang diunggah dari Arshif')).toBeTruthy();
+    expect(screen.getByText('Belum terhubung')).toBeTruthy();
+    expect(screen.getByText('Hubungkan Google Drive')).toBeTruthy();
     expect(screen.queryByText('Belum tersedia: Google Drive belum diatur di aplikasi ini.')).toBeNull();
   });
 
@@ -70,5 +71,39 @@ describe('Pengaturan > Cadangan', () => {
     await fireEvent.changeText(screen.getByLabelText('Ketik 4 huruf terakhir kunci'), 'XXXX');
     await fireEvent.press(screen.getByText('Saya sudah menyimpannya'));
     expect(screen.getByText('Tidak cocok. Periksa 4 huruf terakhir.')).toBeTruthy();
+  });
+});
+
+describe('login Google Drive di web (tanpa popup)', () => {
+  const { Platform } = require('react-native');
+  const { captureDriveRedirect, loadWebToken } = require('@/features/backup/driveToken');
+  const store = new Map<string, string>();
+  beforeEach(() => {
+    store.clear();
+    jest.replaceProperty(Platform, 'OS', 'web');
+    Object.assign(globalThis, {
+      sessionStorage: { getItem: (k: string) => store.get(k) ?? null, setItem: (k: string, v: string) => store.set(k, v), removeItem: (k: string) => store.delete(k) },
+    });
+  });
+  const withUrl = (hash: string) => {
+    const replaceState = jest.fn();
+    Object.assign(globalThis, { window: { location: { hash, pathname: '/pengaturan/cadangan', search: '' }, history: { replaceState } } });
+    return replaceState;
+  };
+
+  it('token dari URL disimpan hanya bila state cocok, lalu dihapus dari URL', () => {
+    store.set('arshif.drive.state', 'abc');
+    const replaceState = withUrl('#access_token=TOKEN123&expires_in=3599&state=abc');
+    captureDriveRedirect();
+    expect(loadWebToken()?.token).toBe('TOKEN123');
+    expect(replaceState).toHaveBeenCalledWith(null, '', '/pengaturan/cadangan');
+  });
+
+  it('state asing (bukan dari Hubungkan di perangkat ini) ditolak', () => {
+    store.set('arshif.drive.state', 'abc');
+    const replaceState = withUrl('#access_token=EVIL&expires_in=3599&state=lain');
+    captureDriveRedirect();
+    expect(loadWebToken()).toBeNull();
+    expect(replaceState).toHaveBeenCalled();
   });
 });

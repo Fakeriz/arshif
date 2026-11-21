@@ -1,12 +1,10 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Google from 'expo-auth-session/providers/google';
-import * as WebBrowser from 'expo-web-browser';
-import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
+import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react';
 import { Platform } from 'react-native';
 
 import { BACKUP_MIME } from './service';
-
-// Web: tutup jendela login Google setelah kembali ke Arshif.
-WebBrowser.maybeCompleteAuthSession();
+import { DRIVE_REDIRECT_PATH, DRIVE_STATE_KEY, loadWebToken, saveWebToken, type DriveToken } from './driveToken';
 
 /**
  * Client ID OAuth dari Google Cloud Console (env saat build). Tanpa client ID untuk platform ini, fitur Drive disembunyikan.
@@ -50,7 +48,7 @@ async function call(url: string, token: string, init: RequestInit = {}): Promise
 }
 
 /** Unggah resumable (multipart dibatasi 5 MB, cadangan dengan struk bisa jauh lebih besar). */
-async function upload(token: string, name: string, bytes: Uint8Array): Promise<void> {
+async function upload(token: string, name: string, bytes: Uint8Array): Promise<DriveFile> {
   const start = await call(`${UPLOAD}?uploadType=resumable`, token, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json; charset=UTF-8', 'X-Upload-Content-Type': BACKUP_MIME },
@@ -58,7 +56,9 @@ async function upload(token: string, name: string, bytes: Uint8Array): Promise<v
   });
   const session = start.headers.get('Location');
   if (!session) throw new DriveError('network');
-  await call(session, token, { method: 'PUT', headers: { 'Content-Type': BACKUP_MIME }, body: bytes as unknown as BodyInit });
+  const done = await call(session, token, { method: 'PUT', headers: { 'Content-Type': BACKUP_MIME }, body: bytes as unknown as BodyInit });
+  const f = (await done.json().catch(() => ({}))) as { id?: string };
+  return { id: f.id ?? '', name, createdTime: new Date().toISOString(), size: bytes.length };
 }
 
 async function list(token: string): Promise<DriveFile[]> {
@@ -66,6 +66,12 @@ async function list(token: string): Promise<DriveFile[]> {
   const res = await call(`${API}?q=${q}&orderBy=createdTime desc&pageSize=50&fields=files(id,name,createdTime,size)`, token);
   const data = (await res.json()) as { files?: { id: string; name: string; createdTime: string; size?: string }[] };
   return (data.files ?? []).map((f) => ({ id: f.id, name: f.name, createdTime: f.createdTime, size: Number(f.size ?? 0) }));
+}
+
+/** Akun Google yang terhubung (endpoint about Drive bisa dibaca dengan scope drive.file). */
+async function about(token: string): Promise<string | null> {
+  const res = await call(`https://www.googleapis.com/drive/v3/about?fields=user(emailAddress)`, token);
+  return ((await res.json()) as { user?: { emailAddress?: string } }).user?.emailAddress ?? null;
 }
 
 async function download(token: string, id: string): Promise<Uint8Array> {
@@ -76,77 +82,132 @@ async function download(token: string, id: string): Promise<Uint8Array> {
 /** Satu aksi Drive yang butuh token akses. */
 type DriveJob<T> = { (token: string): Promise<T> };
 
-/**
- * Login Google (sekali per sesi aplikasi; token tidak disimpan) lalu unggah/daftar/unduh cadangan.
- * Tiap aksi meminta login bila belum ada token.
- */
-function useGoogleDrive() {
-  const [request, response, promptAsync] = Google.useAuthRequest({ ...clientIds(), scopes: [SCOPE] });
-  const token = useRef<string | null>(null);
-  const waiting = useRef<{ resolve: (t: string) => void; reject: (e: Error) => void } | null>(null);
+const HISTORY_KEY = 'arshif.drive.history';
+
+/** Status + aksi Drive yang dipakai layar Cadangan (sama untuk web dan native). */
+export type DriveApi = {
+  connected: boolean;
+  /** Email akun Google yang terhubung (null bila belum terbaca). */
+  account: string | null;
+  busy: boolean;
+  /** Riwayat cadangan di Drive: dari Drive saat terhubung, dari simpanan perangkat bila belum. */
+  history: DriveFile[];
+  connect(): void;
+  disconnect(): void;
+  upload(name: string, bytes: Uint8Array): Promise<void>;
+  download(id: string): Promise<Uint8Array>;
+};
+
+const DriveContext = createContext<DriveApi | null>(null);
+
+/** Inti bersama: token -> akun, riwayat, unggah, unduh. Token kedaluwarsa (401) = putus, pengguna menghubungkan ulang. */
+function useDriveCore(live: string | null, clear: () => void, connect: () => void): DriveApi {
+  // Email disimpan bersama token pemiliknya: token berganti/putus = email lama otomatis tidak dipakai.
+  const [acc, setAcc] = useState<{ token: string; email: string | null } | null>(null);
+  const account = acc && acc.token === live ? acc.email : null;
+  const [history, setHistory] = useState<DriveFile[]>([]);
   const [busy, setBusy] = useState(false);
 
-  useEffect(() => {
-    if (!response || !waiting.current) return;
-    const w = waiting.current;
-    waiting.current = null;
-    if (response.type === 'success' && response.authentication?.accessToken) {
-      token.current = response.authentication.accessToken;
-      w.resolve(token.current);
-    } else w.reject(new DriveError(response.type === 'cancel' || response.type === 'dismiss' ? 'cancelled' : 'auth'));
-  }, [response]);
+  const saveHistory = useCallback((files: DriveFile[]) => {
+    setHistory(files);
+    void AsyncStorage.setItem(HISTORY_KEY, JSON.stringify(files.slice(0, 50))).catch(() => undefined);
+  }, []);
 
-  const getToken = useCallback(async (): Promise<string> => {
-    if (token.current) return token.current;
-    if (!request) throw new DriveError('auth');
-    const p = new Promise<string>((resolve, reject) => (waiting.current = { resolve, reject }));
-    // Dipanggil langsung dari ketukan (web: popup harus di dalam ketukan pengguna).
-    void promptAsync();
-    return p;
-  }, [request, promptAsync]);
-
-  /** Token kedaluwarsa (1 jam): login ulang sekali lalu ulangi aksinya. */
-  const withToken = useCallback(
-    async <T,>(fn: DriveJob<T>): Promise<T> => {
+  const run = useCallback(
+    async <T,>(job: DriveJob<T>): Promise<T> => {
+      if (!live) throw new DriveError('auth');
       setBusy(true);
       try {
-        try {
-          return await fn(await getToken());
-        } catch (e) {
-          if (!(e instanceof DriveError) || e.code !== 'auth' || !token.current) throw e;
-          token.current = null;
-          return await fn(await getToken());
-        }
+        return await job(live);
+      } catch (e) {
+        // Token kedaluwarsa/dicabut: putus, pengguna menghubungkan ulang.
+        if (e instanceof DriveError && e.code === 'auth') clear();
+        throw e;
       } finally {
         setBusy(false);
       }
     },
-    [getToken],
+    [live, clear],
   );
 
+  useEffect(() => {
+    void AsyncStorage.getItem(HISTORY_KEY)
+      .then((v) => (v ? setHistory(JSON.parse(v) as DriveFile[]) : undefined))
+      .catch(() => undefined);
+  }, []);
+
+  useEffect(() => {
+    if (!live) return;
+    // Sekali tiap token baru: akun + riwayat, tanpa indikator sibuk (bukan aksi pengguna). 401 = putus.
+    const onError = (e: unknown) => (e instanceof DriveError && e.code === 'auth' ? clear() : undefined);
+    about(live).then((email) => setAcc({ token: live, email }), onError);
+    list(live).then(saveHistory, onError);
+  }, [live, clear, saveHistory]);
+
   return {
-    ready: !!request,
+    connected: !!live,
+    account,
     busy,
-    upload: (name: string, bytes: Uint8Array) => withToken((t) => upload(t, name, bytes)),
-    list: () => withToken(list),
-    download: (id: string) => withToken((t) => download(t, id)),
+    history,
+    connect,
+    disconnect: clear,
+    upload: async (name, bytes) => {
+      const f = await run((t) => upload(t, name, bytes));
+      saveHistory([f, ...history.filter((h) => h.id !== f.id)]);
+    },
+    download: (id) => run((t) => download(t, id)),
   };
 }
 
-export type DriveApi = ReturnType<typeof useGoogleDrive>;
-const DriveContext = createContext<DriveApi | null>(null);
+/**
+ * Web: login dengan pindah halaman (bukan popup). Popup di browser HP/PWA terbuka sebagai tab baru dan Google kembali ke
+ * Arshif di tab itu, sehingga aplikasi tampak dibuka ulang dan hasil login tidak pernah sampai. Token ditangkap saat
+ * aplikasi dimuat (driveToken.captureDriveRedirect) dan disimpan di sessionStorage sampai kedaluwarsa.
+ */
+function DriveWeb({ clientId, children }: { clientId: string; children: ReactNode }) {
+  // Token kedaluwarsa sudah disaring loadWebToken; kedaluwarsa di tengah jalan ditangani 401 -> clear.
+  const [token, setToken] = useState<DriveToken | null>(loadWebToken);
+  const clear = useCallback(() => {
+    saveWebToken(null);
+    setToken(null);
+  }, []);
+  const connect = useCallback(() => {
+    const state = Math.random().toString(36).slice(2) + Date.now().toString(36);
+    sessionStorage.setItem(DRIVE_STATE_KEY, state);
+    const params = new URLSearchParams({
+      client_id: clientId,
+      redirect_uri: `${window.location.origin}${DRIVE_REDIRECT_PATH}`,
+      response_type: 'token',
+      scope: SCOPE,
+      include_granted_scopes: 'true',
+      prompt: 'select_account',
+      state,
+    });
+    window.location.assign(`https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`);
+  }, [clientId]);
+  return <DriveContext.Provider value={useDriveCore(token?.token ?? null, clear, connect)}>{children}</DriveContext.Provider>;
+}
 
-/** Satu-satunya tempat useAuthRequest dipanggil; hanya dirender oleh DriveGate bila client ID platform ini ada. */
-function DriveConnected({ children }: { children: ReactNode }) {
-  return <DriveContext.Provider value={useGoogleDrive()}>{children}</DriveContext.Provider>;
+/** Android/iOS: login lewat expo-auth-session (kembali ke aplikasi lewat skema URL). Token di memori selama aplikasi terbuka. */
+function DriveNative({ children }: { children: ReactNode }) {
+  const [request, response, promptAsync] = Google.useAuthRequest({ ...clientIds(), scopes: [SCOPE] });
+  // Token diturunkan dari hasil login terakhir; Putuskan hanya menandai token itu sebagai sudah diputus.
+  const [cleared, setCleared] = useState<string | null>(null);
+  const fresh = response?.type === 'success' ? (response.authentication?.accessToken ?? null) : null;
+  const token = fresh && fresh !== cleared ? fresh : null;
+  const clear = useCallback(() => setCleared(fresh), [fresh]);
+  const connect = useCallback(() => (request ? void promptAsync() : undefined), [request, promptAsync]);
+  return <DriveContext.Provider value={useDriveCore(token, clear, connect)}>{children}</DriveContext.Provider>;
 }
 
 /**
- * Gerbang konfigurasi: expo-auth-session melempar error bila client ID platform aktif kosong, jadi hook-nya hanya dipanggil
- * di dalam DriveConnected yang dirender bila dikonfigurasi (hook tidak pernah dipanggil kondisional).
+ * Gerbang konfigurasi: tanpa client ID platform aktif, tidak ada komponen Drive yang dirender (expo-auth-session melempar
+ * error bila client ID kosong) dan tombol Drive tampil nonaktif. Hook tidak pernah dipanggil kondisional.
  */
 export function DriveGate({ children }: { children: ReactNode }) {
-  return activeClientId() ? <DriveConnected>{children}</DriveConnected> : <>{children}</>;
+  const id = activeClientId();
+  if (!id) return <>{children}</>;
+  return Platform.OS === 'web' ? <DriveWeb clientId={id}>{children}</DriveWeb> : <DriveNative>{children}</DriveNative>;
 }
 
 /** null = Google Drive belum dikonfigurasi untuk platform ini (tampilkan tombol nonaktif). */

@@ -41,12 +41,16 @@ menampilkan "Waktunya cadangan".
 ## Google Drive
 
 Scope `https://www.googleapis.com/auth/drive.file`: Arshif hanya bisa melihat dan membuat berkas yang dibuatnya sendiri.
-Unggah resumable (tanpa batas 5 MB multipart). Token tidak disimpan; login ulang tiap sesi aplikasi.
+Unggah resumable (tanpa batas 5 MB multipart). Layar Cadangan menampilkan status (terhubung sebagai email, atau belum)
+dan riwayat cadangan di Drive (disimpan juga di perangkat); ketuk satu untuk memulihkan.
+Web: login dengan pindah halaman, BUKAN popup (popup di browser HP/PWA terbuka sebagai tab baru sehingga aplikasi tampak
+dibuka ulang). Google kembali ke `/pengaturan/cadangan#access_token=...`; token ditangkap di `_layout` (cek `state`),
+dihapus dari URL, disimpan di sessionStorage sampai kedaluwarsa (1 jam). Android/iOS: expo-auth-session, token di memori.
 Tanpa client ID untuk platform yang berjalan, semua tombol Drive disembunyikan.
 
 | Variabel (EAS env / `.env`) | Isi |
 |---|---|
-| `EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID` | OAuth client tipe "Web application". Authorized JavaScript origins: `https://arshif.biz.id` (+ origin dev). Redirect URI: `https://arshif.biz.id` |
+| `EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID` | OAuth client tipe "Web application". Authorized JavaScript origins: `https://arshif.biz.id`. Authorized redirect URIs: `https://arshif.biz.id/pengaturan/cadangan` (persis, tanpa garis miring di akhir) |
 | `EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID` | OAuth client tipe "Android": package `app.arshif` + SHA-1 sertifikat (EAS: `eas credentials`, ambil SHA-1 keystore produksi dan upload Play) |
 | `EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID` | OAuth client tipe "iOS": bundle ID `app.arshif` |
 
