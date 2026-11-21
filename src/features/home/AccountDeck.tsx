@@ -21,6 +21,8 @@ export type AccountDeckProps = {
   /** Kartu aktif = akun default untuk pencatatan. */
   activeId: string | null;
   onActiveChange: (id: string) => void;
+  /** Desktop: deck sudah terbuka (kartu terlihat) saat Beranda dibuka; ketuk kartu tetap menutupnya. */
+  defaultOpen?: boolean;
 };
 
 type Item = { kind: 'account'; account: AccountWithBalance } | { kind: 'limit' };
@@ -38,7 +40,7 @@ const VIEWABILITY = { itemVisiblePercentThreshold: 50 };
  * geser digerakkan native scroll (tanpa gesture custom), halaman yang terlihat jadi akun aktif.
  * Ketuk kartu untuk menutup kembali.
  */
-export function AccountDeck({ accounts, hidden, limitReached, activeId, onActiveChange }: AccountDeckProps) {
+export function AccountDeck({ accounts, hidden, limitReached, activeId, onActiveChange, defaultOpen = false }: AccountDeckProps) {
 
   const { colors, scheme } = useTheme();
   const t = useT();
@@ -65,9 +67,9 @@ export function AccountDeck({ accounts, hidden, limitReached, activeId, onActive
   const startIndex = Math.max(0, accounts.findIndex((a) => a.id === activeId));
   const [index, setIndex] = useState(startIndex);
   const current = Math.min(index, Math.max(0, items.length - 1));
-  const [expanded, setExpanded] = useState(false);
+  const [expanded, setExpanded] = useState(defaultOpen);
 
-  const open = useSharedValue(0);
+  const open = useSharedValue(defaultOpen ? 1 : 0);
   const deckHeight = useSharedValue(deckH);
   useEffect(() => {
     deckHeight.value = deckH;

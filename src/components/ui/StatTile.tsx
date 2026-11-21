@@ -56,7 +56,7 @@ export function StatTile({
   if (loading) {
     return (
       <View style={!wide && styles.compact}>
-        <Card style={styles.card}>
+        <Card style={[styles.card, !wide && styles.fill]}>
           <Skeleton width="50%" height={12} />
           <Skeleton width="80%" height={24} radius={radius.xs} />
           <Skeleton width={64} height={18} radius={radius.full} />
@@ -68,7 +68,7 @@ export function StatTile({
   return (
     // Pembungkus luar yang menerima ukuran flex: Card dengan onPress membungkus dirinya di Pressable.
     <View style={!wide && styles.compact}>
-      <Card style={styles.card} onPress={onPress} accessibilityLabel={onPress ? label : undefined}>
+      <Card style={[styles.card, !wide && styles.fill]} onPress={onPress} accessibilityLabel={onPress ? label : undefined}>
         <View style={styles.head}>
           {icon && (
             <View style={[styles.iconWrap, { backgroundColor: colors.track }]}>
@@ -107,6 +107,8 @@ const styles = StyleSheet.create({
   card: { gap: space.md },
   /** Dua tile berdampingan di baris flexWrap: berbagi lebar, turun baris bila terlalu sempit. */
   compact: { flexGrow: 1, flexBasis: 0, minWidth: 148 },
+  // Tile berdampingan sama tinggi walau hanya satu yang punya badge tren.
+  fill: { flex: 1 },
   head: { flexDirection: 'row', alignItems: 'center', gap: space.sm },
   iconWrap: { width: 32, height: 32, borderRadius: radius.full, alignItems: 'center', justifyContent: 'center' },
   flex: { flex: 1 },

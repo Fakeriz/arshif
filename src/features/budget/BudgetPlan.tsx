@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 
 import { AmountField, AppText, Button, Card, CategoryIcon, Stepper, useToast } from '@/components/ui';
 import { categoriesFor } from '@/constants/categories';
@@ -20,7 +20,7 @@ import { space } from '@/theme/tokens';
  * Anggaran periode berjalan (FR-BDG-5). Tanpa anggaran tersimpan: memakai penghasilan bulanan, dengan pilihan
  * "Salin periode lalu" (total + per kategori) atau buat baru dengan saran rata-rata 3 periode.
  */
-export function BudgetPlanCard() {
+export function BudgetPlanCard({ style }: { style?: StyleProp<ViewStyle> } = {}) {
   const { t, lang } = useI18n();
   const { show } = useToast();
   const { state, dispatch } = useStore();
@@ -36,7 +36,7 @@ export function BudgetPlanCard() {
   };
 
   return (
-    <Card>
+    <Card style={style}>
       <View style={styles.head}>
         <View style={styles.flex}>
           <AppText variant="h3">{t('budget.plan.title')}</AppText>

@@ -117,6 +117,7 @@ export default function AnggaranScreen() {
       currency={mainCurrency}
       categoryLimits={b.categoryLimits}
       categorySpent={b.categorySpent}
+      style={desktop ? styles.grow : undefined}
     />
   ));
   const header = (
@@ -138,13 +139,13 @@ export default function AnggaranScreen() {
         <GridRow>
           <GridCell span={5} order={0}>
             {safe}
-            <BudgetPlanCard />
+            <BudgetPlanCard style={styles.grow} />
           </GridCell>
           <GridCell span={7} order={1}>
             {donut}
           </GridCell>
         </GridRow>
-        <GridRow style={styles.top}>
+        <GridRow>
           {buckets.map((bucket, i) => (
             <GridCell key={bucket.key} span={4} order={2 + i}>
               {bucket}
@@ -178,6 +179,6 @@ const styles = StyleSheet.create({
   note: { marginTop: space.md },
   paceNote: { marginTop: space.xs },
   fill: { flex: 1, justifyContent: 'center' },
-  // Pos anggaran punya tinggi berbeda (jumlah kategori); rata atas, tidak direntangkan.
-  top: { alignItems: 'flex-start' },
+  // Desktop: kartu terakhir di kolom mengisi sisa tinggi baris, jadi bawah kartu sejajar.
+  grow: { flex: 1 },
 });

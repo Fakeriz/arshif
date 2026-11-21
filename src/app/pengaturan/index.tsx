@@ -89,17 +89,20 @@ export default function PengaturanScreen() {
     <Screen wide={desktop}>
       <ScreenHeader title={t('settings.title')} right={<HeaderButton label={t('settings.signOut')} icon={LogOut} onPress={() => setSigningOut(true)} />} />
       {desktop ? (
-        // Desktop: profil + akun di kiri, preferensi + data di kanan.
-        <GridRow style={styles.top}>
-          <GridCell span={6}>
-            {profileCard}
-            {accountGroup}
-          </GridCell>
-          <GridCell span={6} order={1}>
-            {prefsGroup}
-            {dataGroup}
-          </GridCell>
-        </GridRow>
+        // Desktop: profil selebar halaman, lalu dua kolom yang sama-sama diawali label grup (sejajar),
+        // Akun + Data di kiri dan Preferensi di kanan agar tingginya hampir sama.
+        <>
+          {profileCard}
+          <GridRow style={styles.top}>
+            <GridCell span={6}>
+              {accountGroup}
+              {dataGroup}
+            </GridCell>
+            <GridCell span={6} order={1}>
+              {prefsGroup}
+            </GridCell>
+          </GridRow>
+        </>
       ) : (
         <>
           {profileCard}

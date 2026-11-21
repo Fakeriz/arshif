@@ -7,7 +7,7 @@ import { CaptureSheet } from '@/components/shell/CaptureSheet';
 import { captureOptions, moreOptions } from '@/components/shell/captureOptions';
 import { usePaywall } from '@/components/shell/Paywall';
 import { Screen } from '@/components/shell/Screen';
-import { EmptyState, PromoCard, QuickActions, SwipeDismiss } from '@/components/ui';
+import { EmptyState, Group, PromoCard, QuickActions, SwipeDismiss } from '@/components/ui';
 import { useScanSource } from '@/components/shell/ScanSourceSheet';
 import { AccountDeck } from '@/features/home/AccountDeck';
 import { BalanceBlock } from '@/features/home/BalanceBlock';
@@ -80,6 +80,7 @@ export default function HomeScreen() {
       limitReached={limits.accounts}
       activeId={state.activeAccountId}
       onActiveChange={(id) => dispatch({ type: 'account/setActive', id })}
+      defaultOpen={desktop}
     />
   );
   const quick = (
@@ -135,7 +136,8 @@ export default function HomeScreen() {
             {recent}
           </GridCell>
           <GridCell span={5} order={3}>
-            {deck}
+            {/* Berlabel seperti "Transaksi terakhir" agar kedua kolom mulai sejajar. */}
+            <Group label={t('settings.accounts.title')}>{deck}</Group>
             {recap}
           </GridCell>
         </GridRow>

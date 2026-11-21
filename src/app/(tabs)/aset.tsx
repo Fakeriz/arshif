@@ -7,7 +7,7 @@ import { DESKTOP_WIDE, GridCell, GridRow } from '@/components/shell/DesktopGrid'
 import { Screen } from '@/components/shell/Screen';
 import { HeaderMenu } from '@/components/shell/HeaderActions';
 import { TabHeader } from '@/components/shell/TabHeader';
-import { AppText, BalanceText, Card, CurrencyText, EmptyState, Group, Icon, IconTile, ListCard, ListItem, Skeleton, StatTile, Toggle, TrendBadge } from '@/components/ui';
+import { AppText, BalanceText, Card, CurrencyText, EmptyState, Group, Icon, ListCard, ListItem, Skeleton, StatTile, Toggle, TrendBadge } from '@/components/ui';
 import { AssetForm } from '@/features/assets/AssetForm';
 import { NetWorthChart } from '@/features/assets/NetWorthChart';
 import { priceLabel, quantityLabel } from '@/features/assets/view';
@@ -100,9 +100,9 @@ export default function AsetScreen() {
   );
   const chart = (
     <Card style={desktop ? styles.fill : undefined}>
-      <View style={styles.cardBody}>
+      <View style={[styles.cardBody, desktop && styles.fill]}>
         <AppText variant="h3">{t('assets.chartTitle')}</AppText>
-        <NetWorthChart snapshots={snapshots} currency={currency} />
+        <NetWorthChart snapshots={snapshots} currency={currency} fill={desktop} />
       </View>
     </Card>
   );
@@ -132,7 +132,6 @@ export default function AsetScreen() {
         <ListItem
           title={t('assets.cash')}
           subtitle={t('assets.cashMeta', { count: cashCount })}
-          leading={<IconTile icon={Wallet} tone="neutral" />}
           trailing={<CurrencyText amount={nw.cash} currency={currency} kind="balance" hidden={state.hideBalance} />}
           divider={assets.length > 0 || nw.receivables > 0}
         />

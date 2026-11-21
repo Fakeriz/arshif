@@ -1,4 +1,4 @@
-import { StyleSheet, View } from 'react-native';
+import { StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 
 import { AppText, Badge, Card, CategoryIcon, CurrencyText, GoalRing, ProgressBar } from '@/components/ui';
 import { allCategories, type Bucket } from '@/constants/categories';
@@ -11,6 +11,7 @@ const PACE_TONE: Record<Pace, 'positive' | 'warning' | 'negative'> = { sesuai: '
 
 export type BucketSectionProps = {
   bucket: Bucket;
+  style?: StyleProp<ViewStyle>;
   label: string;
   percent: number;
   color: string;
@@ -22,14 +23,14 @@ export type BucketSectionProps = {
   categorySpent: (key: string) => number;
 };
 
-export function BucketSection({ bucket, label, percent, color, spent, limit, pace, currency, categoryLimits, categorySpent }: BucketSectionProps) {
+export function BucketSection({ style, bucket, label, percent, color, spent, limit, pace, currency, categoryLimits, categorySpent }: BucketSectionProps) {
   const t = useT();
   // Termasuk kategori buatan (juga yang dihapus) supaya baris cocok dengan total bucket.
   const rows = allCategories().filter((c) => c.bucket === bucket && (categoryLimits[c.key] !== undefined || categorySpent(c.key) > 0)).sort((a, b) => categorySpent(b.key) - categorySpent(a.key));
   const saving = bucket === 'savings';
   const over = !saving && spent > limit;
   return (
-    <Card>
+    <Card style={style}>
       <View style={styles.head}>
         <View style={[styles.dot, { backgroundColor: color }]} />
         <View style={styles.titles}>

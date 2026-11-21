@@ -1,5 +1,6 @@
-import { createContext, useContext, useMemo, useState, type ReactNode } from 'react';
-import { useColorScheme, View, type StyleProp, type ViewStyle } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { createContext, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { Platform, useColorScheme, View, type StyleProp, type ViewStyle } from 'react-native';
 
 import {
   buildPalette,
@@ -22,6 +23,24 @@ type ThemeValue = {
 
 const ThemeContext = createContext<ThemeValue | null>(null);
 
+/**
+ * Tema terakhir disimpan di perangkat: layar muat (sebelum profil dari server tiba) langsung memakai tema
+ * pilihan pengguna, bukan tema sistem (dulu pengguna tema Terang melihat layar muat hitam).
+ */
+const MODE_KEY = 'arshif.themeMode';
+const isMode = (v: unknown): v is ThemeMode => v === 'system' || v === 'dark' || v === 'light';
+
+/** Web: AsyncStorage = localStorage, bisa dibaca sinkron sebelum render pertama (tanpa kedipan). */
+function storedModeSync(): ThemeMode | null {
+  if (Platform.OS !== 'web') return null;
+  try {
+    const v = globalThis.localStorage?.getItem(MODE_KEY);
+    return isMode(v) ? v : null;
+  } catch {
+    return null;
+  }
+}
+
 type ThemeProviderProps = {
   children: ReactNode;
   initialMode?: ThemeMode;
@@ -32,7 +51,27 @@ export function ThemeProvider({
   initialMode = 'system',
 }: ThemeProviderProps) {
   const system = useColorScheme();
-  const [mode, setMode] = useState<ThemeMode>(initialMode);
+  const [mode, setMode] = useState<ThemeMode>(() => storedModeSync() ?? initialMode);
+  const touched = useRef(false);
+
+  // Native: baca tema tersimpan sekali, kecuali tema sudah diubah (profil server menang).
+  useEffect(() => {
+    if (Platform.OS === 'web') return;
+    AsyncStorage.getItem(MODE_KEY)
+      .then((v) => {
+        if (!touched.current && isMode(v)) setMode(v);
+      })
+      .catch(() => undefined);
+  }, []);
+
+  const changeMode = useMemo(
+    () => (next: ThemeMode) => {
+      touched.current = true;
+      setMode(next);
+      AsyncStorage.setItem(MODE_KEY, next).catch(() => undefined);
+    },
+    [],
+  );
   const scheme: ColorScheme = mode === 'system' ? (system === 'light' ? 'light' : 'dark') : mode;
 
   const value = useMemo<ThemeValue>(
@@ -41,9 +80,9 @@ export function ThemeProvider({
       scheme,
       colors: buildPalette(scheme),
       hues: categoryHues[scheme],
-      setMode,
+      setMode: changeMode,
     }),
-    [mode, scheme],
+    [mode, scheme, changeMode],
   );
 
   return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;
