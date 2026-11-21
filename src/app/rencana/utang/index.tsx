@@ -2,6 +2,7 @@ import { useRouter } from 'expo-router';
 import { Calculator } from 'lucide-react-native';
 import { useState } from 'react';
 
+import { CardGrid } from '@/components/shell/DesktopGrid';
 import { Button, EmptyState, Group, Tabs } from '@/components/ui';
 import type { DebtKind } from '@/data/planning';
 import { DebtCard } from '@/features/planning/DebtCard';
@@ -25,6 +26,7 @@ export default function DebtsScreen() {
 
   return (
     <PlanScreen
+      wide
       title={t('plan.debts.title')}
       right={<AddButton label={t('plan.common.add')} limited={limits.billsDebts} reason={t('plan.debts.limitReason')} onPress={() => setForm(true)} />}
     >
@@ -49,14 +51,18 @@ export default function DebtsScreen() {
         />
       ) : (
         <>
-          {active.map((d) => (
-            <DebtCard key={d.id} debt={d} onPress={() => open(d.id)} />
-          ))}
+          <CardGrid>
+            {active.map((d) => (
+              <DebtCard key={d.id} debt={d} onPress={() => open(d.id)} />
+            ))}
+          </CardGrid>
           {paid.length > 0 && (
             <Group label={t('plan.debts.paidOff')}>
-              {paid.map((d) => (
-                <DebtCard key={d.id} debt={d} onPress={() => open(d.id)} />
-              ))}
+              <CardGrid>
+                {paid.map((d) => (
+                  <DebtCard key={d.id} debt={d} onPress={() => open(d.id)} />
+                ))}
+              </CardGrid>
             </Group>
           )}
         </>

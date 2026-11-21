@@ -3,11 +3,13 @@ import { Bell, BellRing, ChevronRight, CreditCard, Database, DatabaseBackup, Log
 import { useEffect, useState } from 'react';
 import { Platform, StyleSheet, View } from 'react-native';
 
+import { GridCell, GridRow } from '@/components/shell/DesktopGrid';
 import { Screen } from '@/components/shell/Screen';
 import { HeaderButton } from '@/components/shell/HeaderActions';
 import { ScreenHeader } from '@/components/shell/ScreenHeader';
 import { AppText, Card, Dialog, Icon, MenuGroup, type MenuEntry } from '@/components/ui';
 import { isAdmin } from '@/data/remote/api';
+import { useDesktop } from '@/hooks/useDesktop';
 import { LANGS, useI18n } from '@/i18n';
 import { isoDateLabel } from '@/lib/dates';
 import { supabase } from '@/lib/supabase';
@@ -28,6 +30,7 @@ export default function PengaturanScreen() {
   const { colors, mode } = useTheme();
   const { state } = useStore();
   const { t, lang } = useI18n();
+  const desktop = useDesktop();
   const router = useRouter();
   const [admin, setAdmin] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
@@ -62,27 +65,50 @@ export default function PengaturanScreen() {
     ...(admin ? [{ key: 'admin', icon: ShieldCheck, title: t('billing.admin.title'), subtitle: t('settings.menu.adminSub'), onPress: () => router.push('/admin') }] : []),
   ];
 
-  return (
-    <Screen>
-      <ScreenHeader title={t('settings.title')} right={<HeaderButton label={t('settings.signOut')} icon={LogOut} onPress={() => setSigningOut(true)} />} />
-      <Card onPress={() => router.push('/pengaturan/profil')} accessibilityLabel={t('settings.profile.cardA11y', { name })}>
-        <View style={styles.profile}>
-          <ProfileAvatar size={56} />
-          <View style={styles.flex}>
-            <AppText variant="h3" numberOfLines={1}>
-              {name}
-            </AppText>
-            <AppText variant="caption" tone="secondary" numberOfLines={1}>
-              {state.email}
-            </AppText>
-          </View>
-          <Icon icon={ChevronRight} color={colors.textSecondary} />
+  const profileCard = (
+    <Card onPress={() => router.push('/pengaturan/profil')} accessibilityLabel={t('settings.profile.cardA11y', { name })}>
+      <View style={styles.profile}>
+        <ProfileAvatar size={56} />
+        <View style={styles.flex}>
+          <AppText variant="h3" numberOfLines={1}>
+            {name}
+          </AppText>
+          <AppText variant="caption" tone="secondary" numberOfLines={1}>
+            {state.email}
+          </AppText>
         </View>
-      </Card>
+        <Icon icon={ChevronRight} color={colors.textSecondary} />
+      </View>
+    </Card>
+  );
+  const accountGroup = <MenuGroup label={t('settings.groups.account')} entries={account} />;
+  const prefsGroup = <MenuGroup label={t('settings.groups.prefs')} entries={prefs} />;
+  const dataGroup = <MenuGroup label={t('settings.groups.data')} entries={data} />;
 
-      <MenuGroup label={t('settings.groups.account')} entries={account} />
-      <MenuGroup label={t('settings.groups.prefs')} entries={prefs} />
-      <MenuGroup label={t('settings.groups.data')} entries={data} />
+  return (
+    <Screen wide={desktop}>
+      <ScreenHeader title={t('settings.title')} right={<HeaderButton label={t('settings.signOut')} icon={LogOut} onPress={() => setSigningOut(true)} />} />
+      {desktop ? (
+        // Desktop: profil + akun di kiri, preferensi + data di kanan.
+        <GridRow style={styles.top}>
+          <GridCell span={6}>
+            {profileCard}
+            {accountGroup}
+          </GridCell>
+          <GridCell span={6} order={1}>
+            {prefsGroup}
+            {dataGroup}
+          </GridCell>
+        </GridRow>
+      ) : (
+        <>
+          {profileCard}
+          {accountGroup}
+          {prefsGroup}
+          {dataGroup}
+        </>
+      )}
+
 
       {/* Keluar (ikon kanan atas) selalu dikonfirmasi dulu. Sesi dihapus dari perangkat, gerbang rute kembali ke layar masuk. */}
       <Dialog
@@ -101,6 +127,7 @@ export default function PengaturanScreen() {
 }
 
 const styles = StyleSheet.create({
+  top: { alignItems: 'flex-start' },
   profile: { flexDirection: 'row', alignItems: 'center', gap: space.md },
   flex: { flex: 1, minWidth: 0 },
 });

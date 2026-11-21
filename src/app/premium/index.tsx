@@ -5,11 +5,13 @@ import { useEffect, useState } from 'react';
 import { Platform, StyleSheet, View } from 'react-native';
 
 import { Screen } from '@/components/shell/Screen';
+import { GridCell, GridRow } from '@/components/shell/DesktopGrid';
 import { ScreenHeader } from '@/components/shell/ScreenHeader';
 import { AppText, Button, Card, Chip, Icon, useToast } from '@/components/ui';
 import { FnError } from '@/data/remote/functions';
 import { PeriodPicker, type PeriodOption } from '@/features/billing/PeriodPicker';
 import { PlanCompare } from '@/features/billing/PlanCompare';
+import { useDesktop } from '@/hooks/useDesktop';
 import { useI18n } from '@/i18n';
 import { webCheckoutAllowed } from '@/lib/checkout';
 import { isoDateLabel } from '@/lib/dates';
@@ -36,6 +38,7 @@ export default function PremiumScreen() {
   const { alasan } = useLocalSearchParams<{ alasan?: string }>();
   const { state } = useStore();
   const { t, lang } = useI18n();
+  const desktop = useDesktop();
   const { show } = useToast();
   const syncPlan = useSyncPlan();
   const { colors } = useTheme();
@@ -131,10 +134,8 @@ export default function PremiumScreen() {
     }
   };
 
-  return (
-    <Screen>
-      <ScreenHeader title={t('billing.premium.title')} subtitle={alasan || t('billing.premium.subtitle')} />
-
+  const purchase = (
+    <>
       {premium && (
         <Card>
           <View style={styles.activeHead}>
@@ -241,13 +242,33 @@ export default function PremiumScreen() {
           </AppText>
         </View>
       )}
+    </>
+  );
 
-      <PlanCompare />
+  return (
+    <Screen wide={desktop}>
+      <ScreenHeader title={t('billing.premium.title')} subtitle={alasan || t('billing.premium.subtitle')} />
+
+      {desktop ? (
+        // Desktop: pilihan paket dan pembayaran di kiri, perbandingan Free vs Pro di kanan.
+        <GridRow style={styles.top}>
+          <GridCell span={5}>{purchase}</GridCell>
+          <GridCell span={7} order={1}>
+            <PlanCompare />
+          </GridCell>
+        </GridRow>
+      ) : (
+        <>
+          {purchase}
+          <PlanCompare />
+        </>
+      )}
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
+  top: { alignItems: 'flex-start' },
   activeHead: { flexDirection: 'row', alignItems: 'center', gap: space.sm, marginBottom: space.xs },
   section: { gap: space.lg },
   block: { gap: space.sm },

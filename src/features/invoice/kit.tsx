@@ -11,11 +11,11 @@ import { useInvoices } from '@/state/invoices';
 import { radius, space } from '@/theme/tokens';
 
 /** Layar invoice: header + status muat (memuat, gagal, siap). */
-export function InvoiceScreen({ title, right, children }: { title: string; right?: ReactNode; children: ReactNode }) {
+export function InvoiceScreen({ title, right, children, wide }: { title: string; right?: ReactNode; children: ReactNode; wide?: boolean }) {
   const t = useT();
   const { status, reload } = useInvoices();
   return (
-    <Screen onRefresh={status === 'ready' ? () => void reload() : undefined}>
+    <Screen wide={wide} onRefresh={status === 'ready' ? () => void reload() : undefined}>
       <ScreenHeader title={title} right={status === 'ready' ? right : undefined} />
       {status === 'error' ? (
         <EmptyState kind="error" title={t('inv.loadErrorTitle')} message={t('inv.loadErrorMessage')} actionLabel={t('common.retry')} onAction={() => void reload()} />

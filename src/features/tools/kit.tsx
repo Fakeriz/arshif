@@ -2,12 +2,14 @@ import { Info, Lock } from 'lucide-react-native';
 import { useCallback, useEffect, useState, type ReactNode } from 'react';
 import { StyleSheet, View } from 'react-native';
 
+import { GridCell, GridRow } from '@/components/shell/DesktopGrid';
 import { usePaywall } from '@/components/shell/Paywall';
 import { Screen } from '@/components/shell/Screen';
 import { ScreenHeader } from '@/components/shell/ScreenHeader';
 import { AppText, Card, EmptyState, Icon, Skeleton, useToast } from '@/components/ui';
 import { featureGate } from '@/data/remote/invoices';
 import { QuotaError } from '@/data/remote/api';
+import { useDesktop } from '@/hooks/useDesktop';
 import { useT } from '@/i18n';
 import { PdfUnavailableError, sharePdf } from '@/lib/pdf/share';
 import { isLimited } from '@/lib/quota';
@@ -50,12 +52,36 @@ export function useFeatureGate(key: GateKey): { state: GateState; retry: () => v
   return { state, retry: useCallback(() => setAttempt((n) => n + 1), []) };
 }
 
-export function ToolScreen({ title, children }: { title: string; children: ReactNode }) {
+export function ToolScreen({ title, children, wide }: { title: string; children: ReactNode; wide?: boolean }) {
   return (
-    <Screen>
+    <Screen wide={wide}>
       <ScreenHeader title={title} />
       {children}
     </Screen>
+  );
+}
+
+/**
+ * Kalkulator: di desktop isian di kiri dan hasil di kanan, jadi hasil terlihat berubah sambil mengetik.
+ * Ponsel: isian lalu hasil, seperti biasa. Pakai bersama `<ToolScreen wide>`.
+ */
+export function FormResult({ form, result }: { form: ReactNode; result: ReactNode }) {
+  const desktop = useDesktop();
+  if (!desktop) {
+    return (
+      <>
+        {form}
+        {result}
+      </>
+    );
+  }
+  return (
+    <GridRow style={styles.top}>
+      <GridCell span={6}>{form}</GridCell>
+      <GridCell span={6} order={1}>
+        {result}
+      </GridCell>
+    </GridRow>
   );
 }
 
@@ -162,6 +188,7 @@ export function ResultRow({ label, value, strong, minus }: { label: string; valu
 
 
 const styles = StyleSheet.create({
+  top: { alignItems: 'flex-start' },
   skeleton: { gap: space.lg },
   row: { flexDirection: 'row', gap: space.sm, alignItems: 'flex-start' },
   flex: { flex: 1, minWidth: 0 },

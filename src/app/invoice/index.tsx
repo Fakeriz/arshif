@@ -3,6 +3,7 @@ import { Plus } from 'lucide-react-native';
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
+import { CardGrid } from '@/components/shell/DesktopGrid';
 import { AppText, Card, EmptyState, ProBadge, Tabs } from '@/components/ui';
 import { InvoiceScreen, StatusBadge } from '@/features/invoice/kit';
 import { HeaderButton } from '@/components/shell/HeaderActions';
@@ -34,7 +35,7 @@ export default function InvoiceList() {
   const addLabel = kind === 'invoice' ? t('inv.newInvoice') : t('inv.newQuote');
 
   return (
-    <InvoiceScreen title={t('inv.title')} right={
+    <InvoiceScreen wide title={t('inv.title')} right={
         <>
           {limited && <ProBadge size="sm" />}
           <HeaderButton label={addLabel} icon={Plus} onPress={() => (limited ? paywall(reason) : create())} />
@@ -54,30 +55,32 @@ export default function InvoiceList() {
           onAction={limited ? undefined : create}
         />
       ) : (
-        list.map((inv) => (
-          <Card
-            key={inv.id}
-            onPress={() => router.push({ pathname: '/invoice/[id]', params: { id: inv.id } })}
-            accessibilityLabel={t('inv.rowA11y', { number: inv.number, client: inv.clientName, amount: formatMoney(inv.total, inv.currency) })}
-          >
-            <View style={styles.row}>
-              <AppText variant="bodyStrong" numberOfLines={1} style={styles.flex}>
-                {inv.clientName}
-              </AppText>
-              <AppText variant="bodyStrong" numeric>
-                {formatMoney(inv.total, inv.currency)}
-              </AppText>
-            </View>
-            <View style={styles.row}>
-              <AppText variant="caption" tone="secondary" numberOfLines={1} style={styles.flex}>
-                {inv.dueDate
-                  ? t(kind === 'invoice' ? 'inv.rowDue' : 'inv.rowValid', { number: inv.number, date: shortDate(inv.dueDate, lang) })
-                  : `${inv.number} · ${shortDate(inv.issueDate, lang)}`}
-              </AppText>
-              <StatusBadge inv={inv} today={today} />
-            </View>
-          </Card>
-        ))
+        <CardGrid>
+          {list.map((inv) => (
+            <Card
+              key={inv.id}
+              onPress={() => router.push({ pathname: '/invoice/[id]', params: { id: inv.id } })}
+              accessibilityLabel={t('inv.rowA11y', { number: inv.number, client: inv.clientName, amount: formatMoney(inv.total, inv.currency) })}
+            >
+              <View style={styles.row}>
+                <AppText variant="bodyStrong" numberOfLines={1} style={styles.flex}>
+                  {inv.clientName}
+                </AppText>
+                <AppText variant="bodyStrong" numeric>
+                  {formatMoney(inv.total, inv.currency)}
+                </AppText>
+              </View>
+              <View style={styles.row}>
+                <AppText variant="caption" tone="secondary" numberOfLines={1} style={styles.flex}>
+                  {inv.dueDate
+                    ? t(kind === 'invoice' ? 'inv.rowDue' : 'inv.rowValid', { number: inv.number, date: shortDate(inv.dueDate, lang) })
+                    : `${inv.number} · ${shortDate(inv.issueDate, lang)}`}
+                </AppText>
+                <StatusBadge inv={inv} today={today} />
+              </View>
+            </Card>
+          ))}
+        </CardGrid>
       )}
     </InvoiceScreen>
   );

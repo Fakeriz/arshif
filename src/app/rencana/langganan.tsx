@@ -2,11 +2,13 @@ import { Pause, Pencil, Play, Trash2 } from 'lucide-react-native';
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
+import { GridCell, GridRow } from '@/components/shell/DesktopGrid';
 import { AppText, BottomSheet, Button, Card, CategoryIcon, Dialog, EmptyState, Group, ListCard, ListItem, useToast } from '@/components/ui';
 import type { Subscription } from '@/data/planning';
 import { SubscriptionForm } from '@/features/planning/forms';
 import { AddButton, PlanScreen, useSaveError } from '@/features/planning/kit';
 import { InfoRow } from '@/features/transactions/InfoRow';
+import { useDesktop } from '@/hooks/useDesktop';
 import { useI18n } from '@/i18n';
 import { shortDate } from '@/lib/dates';
 import { convert, hasRate } from '@/lib/fx';
@@ -31,6 +33,7 @@ export default function SubscriptionsScreen() {
   const stopped = subscriptions.filter((s) => s.status === 'cancelled');
   const totals = subscriptionTotals(subscriptions, main, toMain);
   const open = subscriptions.find((s) => s.id === openId) ?? null;
+  const desktop = useDesktop();
 
   const row = (s: Subscription, i: number, list: Subscription[]) => {
     const converted = s.currency !== main ? toMain(s.amount, s.currency, main) : null;
@@ -58,8 +61,52 @@ export default function SubscriptionsScreen() {
     );
   };
 
+  const totalsCard = (
+    <Card>
+      <View style={styles.totals}>
+        <View style={styles.total}>
+          <AppText variant="caption" tone="secondary">
+            {t('plan.subs.perMonth')}
+          </AppText>
+          <AppText variant="h2" numeric>
+            {formatMoney(totals.monthly, main)}
+          </AppText>
+        </View>
+        <View style={styles.total}>
+          <AppText variant="caption" tone="secondary">
+            {t('plan.subs.perYear')}
+          </AppText>
+          <AppText variant="h2" numeric>
+            {formatMoney(totals.yearly, main)}
+          </AppText>
+        </View>
+      </View>
+      {state.ratesDate && active.some((s) => s.currency !== main) && (
+        <AppText variant="caption" tone="muted" style={styles.note}>
+          {t('plan.subs.totalsNote', { currency: main, date: shortDate(state.ratesDate, lang) })}
+        </AppText>
+      )}
+      {totals.missing.length > 0 && (
+        <AppText variant="caption" tone="warning" style={styles.note}>
+          {t('plan.subs.totalsNoRate', { codes: totals.missing.join(', ') })}
+        </AppText>
+      )}
+    </Card>
+  );
+  const subLists = (
+    <>
+      {active.length > 0 && <ListCard>{active.map(row)}</ListCard>}
+      {stopped.length > 0 && (
+        <Group label={t('plan.subs.stoppedSection')}>
+          <ListCard>{stopped.map(row)}</ListCard>
+        </Group>
+      )}
+    </>
+  );
+
   return (
     <PlanScreen
+      wide={desktop}
       title={t('plan.subs.title')}
       right={subscriptions.length ? <AddButton label={t('plan.common.add')} limited={limits.subscriptions} reason={t('plan.subs.limitReason')} onPress={() => setForm(true)} /> : undefined}
     >
@@ -67,41 +114,19 @@ export default function SubscriptionsScreen() {
         <EmptyState title={t('plan.subs.emptyTitle')} message={t('plan.subs.emptyMessage')} actionLabel={t('plan.subs.create')} onAction={() => setForm(true)} />
       ) : (
         <>
-          <Card>
-            <View style={styles.totals}>
-              <View style={styles.total}>
-                <AppText variant="caption" tone="secondary">
-                  {t('plan.subs.perMonth')}
-                </AppText>
-                <AppText variant="h2" numeric>
-                  {formatMoney(totals.monthly, main)}
-                </AppText>
-              </View>
-              <View style={styles.total}>
-                <AppText variant="caption" tone="secondary">
-                  {t('plan.subs.perYear')}
-                </AppText>
-                <AppText variant="h2" numeric>
-                  {formatMoney(totals.yearly, main)}
-                </AppText>
-              </View>
-            </View>
-            {state.ratesDate && active.some((s) => s.currency !== main) && (
-              <AppText variant="caption" tone="muted" style={styles.note}>
-                {t('plan.subs.totalsNote', { currency: main, date: shortDate(state.ratesDate, lang) })}
-              </AppText>
-            )}
-            {totals.missing.length > 0 && (
-              <AppText variant="caption" tone="warning" style={styles.note}>
-                {t('plan.subs.totalsNoRate', { codes: totals.missing.join(', ') })}
-              </AppText>
-            )}
-          </Card>
-          {active.length > 0 && <ListCard>{active.map(row)}</ListCard>}
-          {stopped.length > 0 && (
-            <Group label={t('plan.subs.stoppedSection')}>
-              <ListCard>{stopped.map(row)}</ListCard>
-            </Group>
+          {desktop ? (
+            // Desktop: total bulanan/tahunan di kiri, daftar langganan di kanan.
+            <GridRow style={styles.top}>
+              <GridCell span={5}>{totalsCard}</GridCell>
+              <GridCell span={7} order={1}>
+                {subLists}
+              </GridCell>
+            </GridRow>
+          ) : (
+            <>
+              {totalsCard}
+              {subLists}
+            </>
           )}
         </>
       )}
@@ -172,6 +197,7 @@ function SubscriptionSheet({ sub, onClose }: { sub: Subscription | null; onClose
 
 const styles = StyleSheet.create({
   totals: { flexDirection: 'row', gap: space.lg },
+  top: { alignItems: 'flex-start' },
   total: { flex: 1, gap: space.xxs },
   note: { marginTop: space.sm },
   trailing: { alignItems: 'flex-end', gap: space.xxs },

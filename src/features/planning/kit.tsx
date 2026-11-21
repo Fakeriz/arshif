@@ -21,11 +21,11 @@ import { isYmd, todayYmd } from '@/lib/dates';
 
 
 /** Layar Planning: header + status muat bersama (memuat, gagal, siap). */
-export function PlanScreen({ title, right, children, tabs }: { title: string; right?: ReactNode; children: ReactNode; tabs?: boolean }) {
+export function PlanScreen({ title, right, children, tabs, wide }: { title: string; right?: ReactNode; children: ReactNode; tabs?: boolean; wide?: boolean }) {
   const t = useT();
   const { status, reload } = usePlanning();
   return (
-    <Screen tabs={tabs} onRefresh={status === 'ready' ? () => void reload() : undefined}>
+    <Screen tabs={tabs} wide={wide} onRefresh={status === 'ready' ? () => void reload() : undefined}>
       <ScreenHeader title={title} right={status === 'ready' ? right : undefined} />
       {status === 'error' ? (
         <EmptyState kind="error" title={t('plan.common.loadErrorTitle')} message={t('plan.common.loadErrorMessage')} actionLabel={t('common.retry')} onAction={() => void reload()} />

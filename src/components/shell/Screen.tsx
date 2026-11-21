@@ -3,6 +3,8 @@ import { RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useDesktop } from '@/hooks/useDesktop';
+
+import { DESKTOP_WIDE } from './DesktopGrid';
 import { useTheme } from '@/theme/ThemeProvider';
 import { layout, space } from '@/theme/tokens';
 
@@ -35,6 +37,8 @@ export type ScreenProps = {
   onEndReached?: () => void;
   /** Lebar kolom maksimum. Bawaan = kolom aplikasi; panel admin web memakai kolom lebih lebar. */
   maxWidth?: number;
+  /** Desktop: kolom selebar nav atas (grid 12 kolom). Ponsel tidak terpengaruh. */
+  wide?: boolean;
   /** Konten pendek (layar masuk): pusatkan vertikal, tetap bisa digulir saat keyboard/teks besar. */
   centered?: boolean;
 };
@@ -45,7 +49,7 @@ export const DESKTOP_COLUMN = 760;
 /** Jarak dari bawah (px) yang memicu onEndReached. */
 const END_THRESHOLD = 600;
 
-export function Screen({ children, tabs, onRefresh, refreshing, onEndReached, maxWidth, centered }: ScreenProps) {
+export function Screen({ children, tabs, onRefresh, refreshing, onEndReached, maxWidth, wide, centered }: ScreenProps) {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
   const { footprint } = useNavFootprint();
@@ -72,7 +76,7 @@ export function Screen({ children, tabs, onRefresh, refreshing, onEndReached, ma
           { paddingTop: insets.top + space.md, paddingBottom: navBottom ? tabSpace : space.x4 + insets.bottom },
         ]}
       >
-        <View style={[styles.column, centered && styles.columnCentered, { maxWidth: maxWidth ?? (desktop ? DESKTOP_COLUMN : layout.maxContentWidth) }]}>{children}</View>
+        <View style={[styles.column, centered && styles.columnCentered, { maxWidth: maxWidth ?? (desktop ? (wide ? DESKTOP_WIDE : DESKTOP_COLUMN) : layout.maxContentWidth) }]}>{children}</View>
     </ScrollView>
   );
   return <View style={[styles.root, { backgroundColor: colors.bg }]}>{scroll}</View>;

@@ -1,7 +1,8 @@
-import type { ReactNode } from 'react';
+import { Children, isValidElement, type ReactNode } from 'react';
 import { StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 import Animated from 'react-native-reanimated';
 
+import { useDesktop } from '@/hooks/useDesktop';
 import { useEnter } from '@/theme/motion';
 import { space } from '@/theme/tokens';
 
@@ -21,7 +22,27 @@ export function GridCell({ span, order = 0, children, style }: { span: number; o
   return <Animated.View style={[styles.cell, { flex: span }, style, enter]}>{children}</Animated.View>;
 }
 
+/**
+ * Daftar kartu sejenis (goals, utang, invoice, split): tiga kolom di desktop, satu kolom seperti biasa di ponsel.
+ * Kartu tetap selebar kolomnya; tinggi baris mengikuti kartu tertinggi.
+ */
+export function CardGrid({ children }: { children: ReactNode }) {
+  const desktop = useDesktop();
+  if (!desktop) return <>{children}</>;
+  return (
+    <View style={styles.cards}>
+      {Children.toArray(children).map((child, i) => (
+        <View key={isValidElement(child) && child.key != null ? child.key : i} style={styles.card}>
+          {child}
+        </View>
+      ))}
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
+  cards: { flexDirection: 'row', flexWrap: 'wrap', marginHorizontal: -space.sm, rowGap: space.lg },
+  card: { width: '33.333%', paddingHorizontal: space.sm },
   row: { flexDirection: 'row', alignItems: 'stretch', gap: space.lg },
   cell: { minWidth: 0, gap: space.lg },
 });

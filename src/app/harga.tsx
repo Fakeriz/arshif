@@ -3,10 +3,12 @@ import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import { Screen } from '@/components/shell/Screen';
+import { GridCell, GridRow } from '@/components/shell/DesktopGrid';
 import { ScreenHeader } from '@/components/shell/ScreenHeader';
 import { Accordion, AppText, Button, Card, Chip } from '@/components/ui';
 import { PeriodPicker } from '@/features/billing/PeriodPicker';
 import { PlanCompare } from '@/features/billing/PlanCompare';
+import { useDesktop } from '@/hooks/useDesktop';
 import { useT } from '@/i18n';
 import { formatMoney } from '@/lib/money';
 import { monthsFree, PRICES, type CheckoutCurrency } from '@/lib/pricing';
@@ -22,13 +24,13 @@ const FAQ = ['receipt', 'statement', 'rates', 'quota'] as const;
 export default function PricingScreen() {
   const router = useRouter();
   const t = useT();
+  const desktop = useDesktop();
   const { session } = useSession();
   const [currency, setCurrency] = useState<CheckoutCurrency>('IDR');
   const [faq, setFaq] = useState<(typeof FAQ)[number] | null>(null);
   const p = PRICES[currency];
-  return (
-    <Screen>
-      <ScreenHeader title={t('billing.pricing.title')} />
+  const purchase = (
+    <>
       <View style={styles.hero}>
         <AppText variant="h1" accessibilityRole="header">
           {t('billing.pricing.heading')}
@@ -59,7 +61,26 @@ export default function PricingScreen() {
         fullWidth
         onPress={() => router.push(session ? '/premium' : '/masuk')}
       />
-      <PlanCompare />
+    </>
+  );
+
+  return (
+    <Screen wide={desktop}>
+      <ScreenHeader title={t('billing.pricing.title')} />
+      {desktop ? (
+        // Desktop: harga dan pilihan periode di kiri, perbandingan Free vs Pro di kanan.
+        <GridRow style={styles.top}>
+          <GridCell span={5}>{purchase}</GridCell>
+          <GridCell span={7} order={1}>
+            <PlanCompare />
+          </GridCell>
+        </GridRow>
+      ) : (
+        <>
+          {purchase}
+          <PlanCompare />
+        </>
+      )}
       <AppText variant="h2" accessibilityRole="header">
         {t('billing.pricing.faqTitle')}
       </AppText>
@@ -81,6 +102,7 @@ export default function PricingScreen() {
 }
 
 const styles = StyleSheet.create({
+  top: { alignItems: 'flex-start' },
   hero: { gap: space.sm, paddingTop: space.md },
   chips: { flexDirection: 'row', gap: space.sm },
 });

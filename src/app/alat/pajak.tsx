@@ -3,7 +3,7 @@ import { StyleSheet, View } from 'react-native';
 
 import { AmountField, AppText, Card, Chip, Tabs, Toggle } from '@/components/ui';
 import { ChoiceRow } from '@/features/planning/kit';
-import { GatedBody, TaxDisclaimer, ToolScreen, useFeatureGate } from '@/features/tools/kit';
+import { FormResult, GatedBody, TaxDisclaimer, ToolScreen, useFeatureGate } from '@/features/tools/kit';
 import { TaxResultCard } from '@/features/tools/TaxResultCard';
 import { useI18n, useT } from '@/i18n';
 import { defaultTaxCountry, estimateId, estimateMy, estimateTr, ptkpCode, type PtkpStatus, type TaxCountry } from '@/lib/tax';
@@ -15,7 +15,7 @@ export default function TaxEstimator() {
   const t = useT();
   const gate = useFeatureGate('taxFull');
   return (
-    <ToolScreen title={t('tools.tax.title')}>
+    <ToolScreen wide title={t('tools.tax.title')}>
       <GatedBody gate={gate} reason={t('tools.tax.reason')} lockedTitle={t('tools.tax.lockedTitle')}>
         <Estimator />
       </GatedBody>
@@ -60,36 +60,42 @@ function IdForm() {
   const [dependents, setDependents] = useState<PtkpStatus['dependents']>(0);
   const status: PtkpStatus = { married, dependents };
   return (
-    <>
-      <Card padding="lg">
-        <View style={styles.form}>
-          <AmountField label={t('tools.tax.id.gross')} value={gross} onChange={setGross} currency="IDR" hint={t('tools.tax.id.grossHint')} />
-          <ChoiceRow label={t('tools.tax.id.marital')} value={married ? 'k' : 'tk'} onChange={(k) => setMarried(k === 'k')} options={[{ key: 'tk', label: t('tools.tax.id.single') }, { key: 'k', label: t('tools.tax.id.married') }]} />
-          <View style={styles.choice}>
-            <AppText variant="caption" tone="secondary">
-              {t('tools.tax.id.dependents')}
-            </AppText>
-            <View style={styles.chips}>
-              {([0, 1, 2, 3] as const).map((n) => (
-                <Chip key={n} label={String(n)} selected={dependents === n} onPress={() => setDependents(n)} />
-              ))}
+    <FormResult
+      form={
+        <Card padding="lg">
+          <View style={styles.form}>
+            <AmountField label={t('tools.tax.id.gross')} value={gross} onChange={setGross} currency="IDR" hint={t('tools.tax.id.grossHint')} />
+            <ChoiceRow label={t('tools.tax.id.marital')} value={married ? 'k' : 'tk'} onChange={(k) => setMarried(k === 'k')} options={[{ key: 'tk', label: t('tools.tax.id.single') }, { key: 'k', label: t('tools.tax.id.married') }]} />
+            <View style={styles.choice}>
+              <AppText variant="caption" tone="secondary">
+                {t('tools.tax.id.dependents')}
+              </AppText>
+              <View style={styles.chips}>
+                {([0, 1, 2, 3] as const).map((n) => (
+                  <Chip key={n} label={String(n)} selected={dependents === n} onPress={() => setDependents(n)} />
+                ))}
+              </View>
+              <AppText variant="caption" tone="muted">
+                {t('tools.tax.id.status', { code: ptkpCode(status) })}
+              </AppText>
             </View>
-            <AppText variant="caption" tone="muted">
-              {t('tools.tax.id.status', { code: ptkpCode(status) })}
-            </AppText>
+            <AmountField label={t('tools.tax.id.pension')} value={pension} onChange={setPension} currency="IDR" hint={t('tools.tax.id.pensionHint')} />
           </View>
-          <AmountField label={t('tools.tax.id.pension')} value={pension} onChange={setPension} currency="IDR" hint={t('tools.tax.id.pensionHint')} />
-        </View>
-      </Card>
-      {gross ? (
+        </Card>
+      }
+      result={
         <>
-          <TaxResultCard result={estimateId({ ...status, monthlyGross: gross, monthlyPension: pension ?? 0 })} />
-          <TaxDisclaimer />
+          {gross ? (
+            <>
+              <TaxResultCard result={estimateId({ ...status, monthlyGross: gross, monthlyPension: pension ?? 0 })} />
+              <TaxDisclaimer />
+            </>
+          ) : (
+            <Prompt />
+          )}
         </>
-      ) : (
-        <Prompt />
-      )}
-    </>
+      }
+    />
   );
 }
 
@@ -100,33 +106,39 @@ function MyForm() {
   const [children, setChildren] = useState(0);
   const [epf, setEpf] = useState(true);
   return (
-    <>
-      <Card padding="lg">
-        <View style={styles.form}>
-          <AmountField label={t('tools.tax.my.gross')} value={gross} onChange={setGross} currency="MYR" />
-          <ToggleRow label={t('tools.tax.my.epf')} hint={t('tools.tax.my.epfHint')} value={epf} onChange={setEpf} />
-          <ToggleRow label={t('tools.tax.my.spouse')} hint={t('tools.tax.my.spouseHint')} value={spouse} onChange={setSpouse} />
-          <View style={styles.choice}>
-            <AppText variant="caption" tone="secondary">
-              {t('tools.tax.my.children')}
-            </AppText>
-            <View style={styles.chips}>
-              {[0, 1, 2, 3, 4, 5].map((n) => (
-                <Chip key={n} label={n === 5 ? '5+' : String(n)} selected={children === n} onPress={() => setChildren(n)} />
-              ))}
+    <FormResult
+      form={
+        <Card padding="lg">
+          <View style={styles.form}>
+            <AmountField label={t('tools.tax.my.gross')} value={gross} onChange={setGross} currency="MYR" />
+            <ToggleRow label={t('tools.tax.my.epf')} hint={t('tools.tax.my.epfHint')} value={epf} onChange={setEpf} />
+            <ToggleRow label={t('tools.tax.my.spouse')} hint={t('tools.tax.my.spouseHint')} value={spouse} onChange={setSpouse} />
+            <View style={styles.choice}>
+              <AppText variant="caption" tone="secondary">
+                {t('tools.tax.my.children')}
+              </AppText>
+              <View style={styles.chips}>
+                {[0, 1, 2, 3, 4, 5].map((n) => (
+                  <Chip key={n} label={n === 5 ? '5+' : String(n)} selected={children === n} onPress={() => setChildren(n)} />
+                ))}
+              </View>
             </View>
           </View>
-        </View>
-      </Card>
-      {gross ? (
+        </Card>
+      }
+      result={
         <>
-          <TaxResultCard result={estimateMy({ monthlyGross: gross, spouseRelief: spouse, children, epf })} />
-          <TaxDisclaimer />
+          {gross ? (
+            <>
+              <TaxResultCard result={estimateMy({ monthlyGross: gross, spouseRelief: spouse, children, epf })} />
+              <TaxDisclaimer />
+            </>
+          ) : (
+            <Prompt />
+          )}
         </>
-      ) : (
-        <Prompt />
-      )}
-    </>
+      }
+    />
   );
 }
 
@@ -134,19 +146,25 @@ function TrForm() {
   const t = useT();
   const [gross, setGross] = useState<number | null>(null);
   return (
-    <>
-      <Card padding="lg">
-        <AmountField label={t('tools.tax.tr.gross')} value={gross} onChange={setGross} currency="TRY" hint={t('tools.tax.tr.grossHint')} />
-      </Card>
-      {gross ? (
+    <FormResult
+      form={
+        <Card padding="lg">
+          <AmountField label={t('tools.tax.tr.gross')} value={gross} onChange={setGross} currency="TRY" hint={t('tools.tax.tr.grossHint')} />
+        </Card>
+      }
+      result={
         <>
-          <TaxResultCard result={estimateTr({ monthlyGross: gross })} />
-          <TaxDisclaimer />
+          {gross ? (
+            <>
+              <TaxResultCard result={estimateTr({ monthlyGross: gross })} />
+              <TaxDisclaimer />
+            </>
+          ) : (
+            <Prompt />
+          )}
         </>
-      ) : (
-        <Prompt />
-      )}
-    </>
+      }
+    />
   );
 }
 

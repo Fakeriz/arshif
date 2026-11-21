@@ -1,6 +1,7 @@
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 
+import { CardGrid } from '@/components/shell/DesktopGrid';
 import { EmptyState, Group } from '@/components/ui';
 import { GoalCard } from '@/features/planning/GoalCard';
 import { GoalForm } from '@/features/planning/forms';
@@ -20,6 +21,7 @@ export default function GoalsScreen() {
 
   return (
     <PlanScreen
+      wide
       title={t('plan.goals.title')}
       right={goals.length ? <AddButton label={t('plan.common.add')} limited={limits.goals} reason={t('plan.goals.limitReason')} onPress={() => setForm(true)} /> : undefined}
     >
@@ -27,14 +29,18 @@ export default function GoalsScreen() {
         <EmptyState title={t('plan.goals.emptyTitle')} message={t('plan.goals.emptyMessage')} actionLabel={t('plan.goals.create')} onAction={() => setForm(true)} />
       ) : (
         <>
-          {active.map((g) => (
-            <GoalCard key={g.id} goal={g} onPress={() => router.push({ pathname: '/rencana/goals/[id]', params: { id: g.id } })} />
-          ))}
+          <CardGrid>
+            {active.map((g) => (
+              <GoalCard key={g.id} goal={g} onPress={() => router.push({ pathname: '/rencana/goals/[id]', params: { id: g.id } })} />
+            ))}
+          </CardGrid>
           {done.length > 0 && (
             <Group label={t('plan.goals.completed')}>
-              {done.map((g) => (
-                <GoalCard key={g.id} goal={g} onPress={() => router.push({ pathname: '/rencana/goals/[id]', params: { id: g.id } })} />
-              ))}
+              <CardGrid>
+                {done.map((g) => (
+                  <GoalCard key={g.id} goal={g} onPress={() => router.push({ pathname: '/rencana/goals/[id]', params: { id: g.id } })} />
+                ))}
+              </CardGrid>
             </Group>
           )}
         </>

@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { StyleSheet, useWindowDimensions, View } from 'react-native';
 
 import { Screen } from '@/components/shell/Screen';
+import { GridCell, GridRow } from '@/components/shell/DesktopGrid';
 import { ScreenHeader } from '@/components/shell/ScreenHeader';
 import { AppText, Badge, BankCard, Button, Card, EmptyState, ListCard, ListItem, ProgressBar, Skeleton, useToast } from '@/components/ui';
 import { CardDetailsCard, PatternSheet } from '@/features/accounts/CardFaceSettings';
@@ -10,6 +11,7 @@ import { patternFor } from '@/lib/cardFace';
 import { AnnualFeeSheet, CreditLimitSheet } from '@/features/accounts/sheets';
 import { UtilizationBlock } from '@/features/accounts/UtilizationBlock';
 import { BankPickerSheet } from '@/features/settings/BankPickerSheet';
+import { useDesktop } from '@/hooks/useDesktop';
 import { bankName, useI18n } from '@/i18n';
 import { CALENDARS } from '@/i18n/calendar';
 import { feeStatus, isCreditType, markFeePaid, unmarkFeePaid } from '@/lib/credit';
@@ -37,6 +39,7 @@ export default function AccountDetail() {
   const [sheet, setSheet] = useState<Sheet>(null);
   const { show } = useToast();
   const { width: windowW } = useWindowDimensions();
+  const desktop = useDesktop();
   const account = accounts.find((a) => a.id === id);
 
   if (load !== 'ready') {
@@ -69,9 +72,8 @@ export default function AccountDetail() {
   const patch = (p: Partial<Pick<Account, 'creditLimit' | 'limitGroupId' | 'annualFee'>>) =>
     dispatch({ type: 'account/credit', id: account.id, patch: { creditLimit: account.creditLimit, limitGroupId: account.limitGroupId, annualFee: account.annualFee, ...p } });
 
-  return (
-    <Screen>
-      <ScreenHeader title={account.name} />
+  const cardSide = (
+    <>
       <View style={styles.preview}>
         <BankCard
           bank={account.bank}
@@ -94,6 +96,10 @@ export default function AccountDetail() {
         <ListItem title={t('acct.detail.design')} subtitle={bankName(t, account.bank)} chevron divider onPress={() => setSheet('bank')} />
         <ListItem title={t('acct.pattern.row')} subtitle={t(`acct.pattern.${patternFor(account.type, account.cardStyle)}`)} chevron onPress={() => setSheet('style')} />
       </ListCard>
+    </>
+  );
+  const detailSide = (
+    <>
       <CardDetailsCard account={account} onChange={(patch) => dispatch({ type: 'account/setCardDetails', id: account.id, patch })} />
 
       {credit && (
@@ -136,6 +142,26 @@ export default function AccountDetail() {
           onEdit={() => setSheet('fee')}
           onChange={(annualFee) => patch({ annualFee })}
         />
+      )}
+    </>
+  );
+
+  return (
+    <Screen wide={desktop}>
+      <ScreenHeader title={account.name} />
+      {desktop ? (
+        // Desktop: kartu dan propertinya di kiri, rincian kartu, limit, dan iuran di kanan.
+        <GridRow style={styles.top}>
+          <GridCell span={6}>{cardSide}</GridCell>
+          <GridCell span={6} order={1}>
+            {detailSide}
+          </GridCell>
+        </GridRow>
+      ) : (
+        <>
+          {cardSide}
+          {detailSide}
+        </>
       )}
 
       <PatternSheet
@@ -262,6 +288,7 @@ function FeeCard({ fee, accountId, currency, transactions, lang, onEdit, onChang
 }
 
 const styles = StyleSheet.create({
+  top: { alignItems: 'flex-start' },
   skeleton: { gap: space.lg },
   preview: { alignItems: 'center' },
   head: { flexDirection: 'row', alignItems: 'center', gap: space.sm, marginBottom: space.sm },

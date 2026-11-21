@@ -2,6 +2,7 @@ import { useRouter } from 'expo-router';
 import { Plus } from 'lucide-react-native';
 import { StyleSheet, View } from 'react-native';
 
+import { CardGrid } from '@/components/shell/DesktopGrid';
 import { AppText, Badge, Card, EmptyState } from '@/components/ui';
 import { HeaderButton } from '@/components/shell/HeaderActions';
 import { PlanScreen } from '@/features/planning/kit';
@@ -18,33 +19,35 @@ export default function SplitList() {
   const create = () => router.push({ pathname: '/rencana/split/[id]', params: { id: 'baru' } });
 
   return (
-    <PlanScreen title={t('plan.split.title')} right={splits.length ? <HeaderButton label={t('plan.split.create')} icon={Plus} onPress={create} /> : undefined}>
+    <PlanScreen wide title={t('plan.split.title')} right={splits.length ? <HeaderButton label={t('plan.split.create')} icon={Plus} onPress={create} /> : undefined}>
       {splits.length === 0 ? (
         <EmptyState title={t('plan.split.emptyTitle')} message={t('plan.split.emptyMessage')} actionLabel={t('plan.split.create')} onAction={create} />
       ) : (
-        splits.map((s) => {
-          const others = s.participants.filter((p) => !p.owner);
-          const paid = others.filter((p) => p.paidAt).length;
-          const done = others.length > 0 && paid === others.length;
-          return (
-            <Card key={s.id} onPress={() => router.push({ pathname: '/rencana/split/[id]', params: { id: s.id } })} accessibilityLabel={`${s.title}, ${formatMoney(s.total, s.currency)}, ${t('plan.split.paidCount', { paid, count: others.length })}`}>
-              <View style={styles.head}>
-                <AppText variant="bodyStrong" numberOfLines={1} style={styles.flex}>
-                  {s.title}
-                </AppText>
-                <AppText variant="bodyStrong" numeric>
-                  {formatMoney(s.total, s.currency)}
-                </AppText>
-              </View>
-              <View style={styles.head}>
-                <AppText variant="caption" tone="secondary" style={styles.flex}>
-                  {`${shortDate(s.date, lang)} · ${t(`plan.split.modes.${s.mode}`)}`}
-                </AppText>
-                <Badge label={t('plan.split.paidCount', { paid, count: others.length })} tone={done ? 'positive' : 'warning'} />
-              </View>
-            </Card>
-          );
-        })
+        <CardGrid>
+          {splits.map((s) => {
+            const others = s.participants.filter((p) => !p.owner);
+            const paid = others.filter((p) => p.paidAt).length;
+            const done = others.length > 0 && paid === others.length;
+            return (
+              <Card key={s.id} onPress={() => router.push({ pathname: '/rencana/split/[id]', params: { id: s.id } })} accessibilityLabel={`${s.title}, ${formatMoney(s.total, s.currency)}, ${t('plan.split.paidCount', { paid, count: others.length })}`}>
+                <View style={styles.head}>
+                  <AppText variant="bodyStrong" numberOfLines={1} style={styles.flex}>
+                    {s.title}
+                  </AppText>
+                  <AppText variant="bodyStrong" numeric>
+                    {formatMoney(s.total, s.currency)}
+                  </AppText>
+                </View>
+                <View style={styles.head}>
+                  <AppText variant="caption" tone="secondary" style={styles.flex}>
+                    {`${shortDate(s.date, lang)} · ${t(`plan.split.modes.${s.mode}`)}`}
+                  </AppText>
+                  <Badge label={t('plan.split.paidCount', { paid, count: others.length })} tone={done ? 'positive' : 'warning'} />
+                </View>
+              </Card>
+            );
+          })}
+        </CardGrid>
       )}
     </PlanScreen>
   );
