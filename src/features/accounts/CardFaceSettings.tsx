@@ -69,7 +69,9 @@ const CLEAN: Record<Field, (v: string) => string | null> = { last4: cleanLast4, 
  */
 export function CardDetailsCard({ account, onChange }: { account: Account; onChange: (patch: Partial<Record<Field, string | null>>) => void }) {
   const t = useT();
-  const [editing, setEditing] = useState<Field | null>(null);
+  // Field terakhir tetap disimpan saat sheet menutup, supaya judul/isian tidak hilang di tengah animasi tutup.
+  const [field, setField] = useState<Field>('last4');
+  const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState('');
   const [tried, setTried] = useState(false);
   if (account.type === 'cash') return null;
@@ -79,14 +81,15 @@ export function CardDetailsCard({ account, onChange }: { account: Account; onCha
   const open = (f: Field) => {
     setDraft(account[f] ?? '');
     setTried(false);
-    setEditing(f);
+    setField(f);
+    setEditing(true);
   };
-  const clean = editing ? CLEAN[editing](draft) : null;
+  const clean = CLEAN[field](draft);
   const save = () => {
     setTried(true);
-    if (!editing || !clean) return;
-    onChange({ [editing]: clean });
-    setEditing(null);
+    if (!clean) return;
+    onChange({ [field]: clean });
+    setEditing(false);
   };
 
   return (
@@ -115,25 +118,23 @@ export function CardDetailsCard({ account, onChange }: { account: Account; onCha
           );
         })}
       </ListCard>
-      <BottomSheet visible={editing !== null} onClose={() => setEditing(null)} title={editing ? t(`acct.cardDetails.${editing}`) : ''}>
-        {editing ? (
-          <View style={styles.form}>
-            <Input
-              label={t(`acct.cardDetails.${editing}Label`)}
-              value={draft}
-              onChangeText={setDraft}
-              autoFocus
-              keyboardType={editing === 'holder' ? 'default' : 'number-pad'}
-              autoCapitalize={editing === 'holder' ? 'characters' : 'none'}
-              maxLength={editing === 'last4' ? 4 : editing === 'expiry' ? 5 : HOLDER_MAX + 10}
-              placeholder={editing === 'expiry' ? 'MM/YY' : undefined}
-              returnKeyType="done"
-              onSubmitEditing={save}
-              error={tried && !clean ? t(`acct.cardDetails.${editing}Invalid`) : undefined}
-            />
-            <Button label={t('common.save')} fullWidth onPress={save} />
-          </View>
-        ) : null}
+      <BottomSheet visible={editing} onClose={() => setEditing(false)} title={t(`acct.cardDetails.${field}`)}>
+        <View style={styles.form}>
+          <Input
+            label={t(`acct.cardDetails.${field}Label`)}
+            value={draft}
+            onChangeText={setDraft}
+            autoFocus
+            keyboardType={field === 'holder' ? 'default' : 'number-pad'}
+            autoCapitalize={field === 'holder' ? 'characters' : 'none'}
+            maxLength={field === 'last4' ? 4 : field === 'expiry' ? 5 : HOLDER_MAX + 10}
+            placeholder={field === 'expiry' ? 'MM/YY' : undefined}
+            returnKeyType="done"
+            onSubmitEditing={save}
+            error={tried && !clean ? t(`acct.cardDetails.${field}Invalid`) : undefined}
+          />
+          <Button label={t('common.save')} fullWidth onPress={save} />
+        </View>
       </BottomSheet>
     </>
   );
