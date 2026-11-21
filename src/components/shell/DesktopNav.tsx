@@ -23,9 +23,16 @@ const TABS = [
   { href: '/aset', label: 'shell.tab.assets', icon: Wallet },
 ] as const;
 
-function activeIndex(path: string) {
-  const i = TABS.findIndex((tab) => tab.href !== '/' && path.startsWith(tab.href));
-  return i < 0 ? 0 : i;
+/** Layar turunan ikut menyorot tab induknya; layar lain (Pengaturan, Alat, dst.) tidak menyorot tab apa pun. */
+const SECTIONS: [prefix: string, index: number][] = [
+  ['/transaksi', 1], ['/trx/', 1],
+  ['/anggaran', 2], ['/rencana', 2],
+  ['/aset', 3], ['/akun', 3],
+];
+
+export function activeIndex(path: string) {
+  if (path === '/') return 0;
+  return SECTIONS.find(([prefix]) => path.startsWith(prefix))?.[1] ?? -1;
 }
 
 /**
@@ -48,13 +55,20 @@ export function DesktopNav() {
   const [measured, setMeasured] = useState(false);
   const x = useSharedValue(0);
   const w = useSharedValue(0);
+  const shown = useSharedValue(active >= 0 ? 1 : 0);
   useEffect(() => {
     const f = frames.current[active];
     if (!f) return;
+    if (!shown.value) {
+      // Dari layar tanpa tab aktif: sorotan muncul langsung di tempatnya, tidak meluncur dari tab lama.
+      x.value = f.x;
+      w.value = f.width;
+    }
     x.value = timing(f.x, motion.slow);
     w.value = timing(f.width, motion.slow);
-  }, [active, measured, timing, x, w]);
-  const highlight = useAnimatedStyle(() => ({ width: w.value, transform: [{ translateX: x.value }] }));
+    shown.value = timing(active >= 0 ? 1 : 0, motion.fast);
+  }, [active, measured, timing, x, w, shown]);
+  const highlight = useAnimatedStyle(() => ({ opacity: shown.value, width: w.value, transform: [{ translateX: x.value }] }));
 
   return (
     <View style={styles.bar}>
@@ -78,7 +92,7 @@ export function DesktopNav() {
                   frames.current[i] = { x: e.nativeEvent.layout.x, width: e.nativeEvent.layout.width };
                   if (frames.current.filter(Boolean).length === TABS.length && !measured) {
                     // Posisi awal tanpa animasi: sorotan sudah di tab aktif saat halaman dibuka.
-                    const f = frames.current[active];
+                    const f = frames.current[Math.max(active, 0)];
                     x.value = f.x;
                     w.value = f.width;
                     setMeasured(true);

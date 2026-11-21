@@ -39,6 +39,9 @@ export type ScreenProps = {
   centered?: boolean;
 };
 
+/** Kolom bawaan di desktop: lebih lega dari kolom ponsel, tetap nyaman dibaca (baris < 80 karakter). */
+export const DESKTOP_COLUMN = 760;
+
 /** Jarak dari bawah (px) yang memicu onEndReached. */
 const END_THRESHOLD = 600;
 
@@ -69,7 +72,7 @@ export function Screen({ children, tabs, onRefresh, refreshing, onEndReached, ma
           { paddingTop: insets.top + space.md, paddingBottom: navBottom ? tabSpace : space.x4 + insets.bottom },
         ]}
       >
-        <View style={[styles.column, centered && styles.columnCentered, maxWidth ? { maxWidth } : null]}>{children}</View>
+        <View style={[styles.column, centered && styles.columnCentered, { maxWidth: maxWidth ?? (desktop ? DESKTOP_COLUMN : layout.maxContentWidth) }]}>{children}</View>
     </ScrollView>
   );
   return <View style={[styles.root, { backgroundColor: colors.bg }]}>{scroll}</View>;

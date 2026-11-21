@@ -1,10 +1,8 @@
 import { TabList, TabSlot, TabTrigger, Tabs } from 'expo-router/ui';
-import { StyleSheet, View } from 'react-native';
+import { StyleSheet } from 'react-native';
 
 import { AppTabBar } from '@/components/shell/AppTabBar';
-import { DesktopNav } from '@/components/shell/DesktopNav';
 import { useDesktop } from '@/hooks/useDesktop';
-import { useTheme } from '@/theme/ThemeProvider';
 import { NavFootprintProvider } from '@/components/shell/Screen';
 import { BlurTarget } from '@/components/ui';
 
@@ -15,16 +13,12 @@ import { BlurTarget } from '@/components/ui';
  */
 export default function TabsLayout() {
   const desktop = useDesktop();
-  const { colors } = useTheme();
   return (
     <NavFootprintProvider>
       <Tabs style={styles.root}>
         {desktop ? (
-          // Web layar lebar: nav pill di atas (ala Talmo), konten tab di bawahnya.
-          <View style={[styles.root, { backgroundColor: colors.bg }]}>
-            <DesktopNav />
-            <TabSlot style={styles.slot} />
-          </View>
+          // Web layar lebar: nav atas dipasang di layout root (berlaku juga untuk layar stack).
+          <TabSlot style={styles.slot} />
         ) : (
           /* Konten tab = sumber blur nav pill di Android (pill berada di luar target). */
           <BlurTarget style={styles.root} floating={<AppTabBar />}>

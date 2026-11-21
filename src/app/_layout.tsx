@@ -14,9 +14,11 @@ import { useEffect, useRef } from 'react';
 import { Platform, StyleSheet } from 'react-native';
 import Animated, { FadeIn } from 'react-native-reanimated';
 
+import { DesktopNav } from '@/components/shell/DesktopNav';
 import { PaywallProvider } from '@/components/shell/Paywall';
 import { ScanSourceProvider } from '@/components/shell/ScanSourceSheet';
 import { BootScreen, SuspendedScreen } from '@/components/shell/BootScreen';
+import { useDesktop } from '@/hooks/useDesktop';
 import { readReturnTo } from '@/lib/returnTo';
 import { BlurTargetArea, BlurTargetScope, ToastProvider } from '@/components/ui';
 import { I18nProvider } from '@/i18n';
@@ -107,6 +109,7 @@ function Routes() {
   const signedIn = !!session;
   const booting = !ready || (signedIn && (state.status === 'idle' || state.status === 'loading'));
   const splashHidden = useRef(false);
+  const desktop = useDesktop();
 
   useEffect(() => {
     if (booting) return;
@@ -125,7 +128,9 @@ function Routes() {
   const afterLogin = onboarded ? (readReturnTo() ?? '/') : '/setup';
   // Pudar masuk dari layar muat/splash ke aplikasi (mis. setelah verifikasi OTP) agar tidak memotong keras.
   return (
-    <Animated.View style={styles.fill} entering={FadeIn.duration(motion.base)}>
+    <Animated.View style={[styles.fill, { backgroundColor: colors.bg }]} entering={FadeIn.duration(motion.base)}>
+      {/* Web layar lebar: satu nav atas untuk semua layar aplikasi (tab dan stack), seperti Talmo. */}
+      {desktop && onboarded && <DesktopNav />}
       <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.bg }, animation: 'slide_from_right' }}>
         {/* Layar auth didaftarkan satu per satu (tanpa layout grup) supaya redirect guard jatuh ke "masuk"
             dan "/" tetap milik (tabs)/index. */}
