@@ -1,5 +1,5 @@
 import { Check, type LucideIcon } from 'lucide-react-native';
-import { useCallback, useState } from 'react';
+import { useCallback, useState, type ReactNode } from 'react';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
 import { useReducedMotion } from 'react-native-reanimated';
 
@@ -20,6 +20,8 @@ export type ButtonProps = {
   variant?: ButtonVariant;
   size?: ButtonSize;
   icon?: LucideIcon;
+  /** Tanda selain Lucide (mis. logo Google berwarna resmi) di posisi ikon. */
+  leading?: ReactNode;
   loading?: boolean;
   /** Aksi berhasil: ikon berganti centang yang meletup. Tombol tidak bisa ditekan selama `done`. */
   done?: boolean;
@@ -34,6 +36,7 @@ export function Button({
   variant = 'primary',
   size = 'md',
   icon,
+  leading,
   loading,
   done,
   disabled,
@@ -84,7 +87,7 @@ export function Button({
         ) : loading ? (
           <ActivityIndicator size="small" color={look.fg} />
         ) : (
-          icon && <Icon icon={icon} color={look.fg} size={iconSize} />
+          (icon && <Icon icon={icon} color={look.fg} size={iconSize} />) ?? leading
         )}
         <AppText
           variant={size === 'sm' ? 'caption' : 'button'}

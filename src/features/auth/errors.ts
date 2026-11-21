@@ -12,6 +12,9 @@ export function authErrorKey(err: AuthLikeError, scope: 'signIn' | 'verify'): Ms
   if (err?.name === 'AuthRetryableFetchError' || status === 0 || /fetch|network/i.test(err?.message ?? '')) return `auth.${scope}.errorNetwork`;
   if (status === 429 || code.includes('rate_limit')) return `auth.${scope}.errorRate`;
   if (scope === 'signIn' && (code === 'email_address_invalid' || code === 'validation_failed')) return 'auth.signIn.errorInvalid';
+  if (scope === 'signIn' && code === 'invalid_credentials') return 'auth.signIn.errorCredentials';
+  if (scope === 'signIn' && (code === 'user_already_exists' || code === 'email_exists')) return 'auth.signIn.errorExists';
+  if (scope === 'signIn' && code === 'weak_password') return 'auth.signIn.errorWeak';
   if (scope === 'verify' && (code === 'otp_expired' || status === 403 || status === 401)) return 'auth.verify.errorCode';
   return `auth.${scope}.errorGeneric`;
 }

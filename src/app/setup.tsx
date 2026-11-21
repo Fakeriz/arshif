@@ -1,5 +1,6 @@
 import { StyleSheet, View } from 'react-native';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
+import Animated, { FadeIn, FadeInLeft, FadeInRight, useReducedMotion } from 'react-native-reanimated';
 
 import { Screen } from '@/components/shell/Screen';
 import { AppText, Button } from '@/components/ui';
@@ -10,7 +11,7 @@ import { StepBudget } from '@/features/setup/StepBudget';
 import { StepCurrency } from '@/features/setup/StepCurrency';
 import { useFinishSetup } from '@/features/setup/useFinishSetup';
 import { useT } from '@/i18n';
-import { space } from '@/theme/tokens';
+import { motion, space } from '@/theme/tokens';
 
 const STEPS = ['currency', 'account', 'budget'] as const;
 
@@ -25,13 +26,23 @@ export default function SetupScreen() {
   const blocked = Object.values(errors).some(Boolean);
   const last = step === STEPS.length - 1;
   const key = STEPS[step];
+  // Arah geser isi langkah: maju masuk dari kanan, mundur dari kiri (hanya transform + opasitas).
+  const reduced = useReducedMotion();
+  const dir = useRef<1 | -1>(1);
+  const go = (to: number) => {
+    dir.current = to > step ? 1 : -1;
+    setStep(to);
+  };
+  const entering = reduced
+    ? FadeIn.duration(0)
+    : (dir.current === 1 ? FadeInRight : FadeInLeft).springify().damping(motion.spring.damping).stiffness(motion.spring.stiffness);
 
   const next = () => {
     setTried(true);
     if (blocked) return;
     setTried(false);
     if (last) void finish(draft);
-    else setStep(step + 1);
+    else go(step + 1);
   };
 
   const patch = (p: Partial<SetupDraft>) => setDraft((d) => ({ ...d, ...p }));
@@ -40,6 +51,7 @@ export default function SetupScreen() {
   return (
     <Screen>
       <SetupProgress step={step} total={STEPS.length} />
+      <Animated.View key={key} entering={entering} style={styles.step}>
       <View style={styles.head}>
         <AppText variant="h2" accessibilityRole="header">
           {t(`auth.setup.${key}.title`)}
@@ -59,6 +71,7 @@ export default function SetupScreen() {
         <StepAccount value={draft.account} mainCurrency={draft.mainCurrency} nameError={!!shown.name} onChange={(account) => patch({ account })} />
       )}
       {key === 'budget' && <StepBudget value={draft} errors={shown} onChange={patch} />}
+      </Animated.View>
 
       {failed && (
         <AppText variant="caption" tone="negative" accessibilityLiveRegion="assertive">
@@ -67,13 +80,14 @@ export default function SetupScreen() {
       )}
       <View style={styles.actions}>
         <Button label={last ? t('auth.setup.finish') : t('auth.setup.next')} onPress={next} loading={saving} disabled={saving} fullWidth accessibilityHint={saving ? t('auth.setup.saving') : undefined} />
-        {step > 0 && <Button label={t('auth.setup.back')} variant="ghost" onPress={() => setStep(step - 1)} disabled={saving} fullWidth />}
+        {step > 0 && <Button label={t('auth.setup.back')} variant="ghost" onPress={() => go(step - 1)} disabled={saving} fullWidth />}
       </View>
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
+  step: { gap: space.lg },
   head: { gap: space.sm },
   actions: { gap: space.sm },
 });

@@ -19,7 +19,9 @@ export default function VerifikasiScreen() {
   const { colors } = useTheme();
   const router = useRouter();
   const { show } = useToast();
-  const { email = '' } = useLocalSearchParams<{ email?: string }>();
+  const { email = '', type } = useLocalSearchParams<{ email?: string; type?: string }>();
+  // Daftar dengan kata sandi saat konfirmasi email aktif: kodenya kode pendaftaran, bukan kode masuk.
+  const signup = type === 'signup';
   const [code, setCode] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<MsgKey | null>(null);
@@ -41,7 +43,7 @@ export default function VerifikasiScreen() {
     submitted.current = token;
     setBusy(true);
     setError(null);
-    const { error: err } = await supabase.auth.verifyOtp({ email, token, type: 'email' });
+    const { error: err } = await supabase.auth.verifyOtp({ email, token, type: signup ? 'signup' : 'email' });
     // Sukses: tombol tetap memuat sampai gerbang rute pindah, supaya tidak sempat aktif lagi.
     if (err) {
       setBusy(false);
@@ -60,7 +62,9 @@ export default function VerifikasiScreen() {
 
   const resend = async () => {
     setBusy(true);
-    const { error: err } = await supabase.auth.signInWithOtp({ email, options: { shouldCreateUser: true } });
+    const { error: err } = signup
+      ? await supabase.auth.resend({ type: 'signup', email })
+      : await supabase.auth.signInWithOtp({ email, options: { shouldCreateUser: true } });
     setBusy(false);
     if (err) {
       setError(authErrorKey(err, 'signIn') === 'auth.signIn.errorRate' ? 'auth.verify.errorRate' : 'auth.verify.errorNetwork');

@@ -33,12 +33,17 @@ import { loadHapticLevel } from '@/theme/motion';
 import { motion } from '@/theme/tokens';
 import { ThemeProvider, useTheme } from '@/theme/ThemeProvider';
 import { captureDriveRedirect } from '@/features/backup/driveToken';
+import { captureAuthRedirect } from '@/features/auth/google';
+import { loadIntroSeen, useIntroSeen } from '@/features/intro/introSeen';
 
 // Web: tangkap token Google Drive dari URL sebelum router berpindah (login Drive kembali ke halaman ini).
+// Web: sesi login Google lebih dulu (keduanya membaca #access_token; sesi Supabase dikenali dari refresh_token).
+captureAuthRedirect();
 captureDriveRedirect();
 
 SplashScreen.preventAutoHideAsync().catch(() => undefined);
 void loadHapticLevel();
+void loadIntroSeen();
 
 export default function RootLayout() {
   const [loaded, error] = useFonts({
@@ -99,15 +104,16 @@ function Shell() {
 }
 
 /**
- * Gerbang rute: belum login → masuk/verifikasi; login tapi belum setup → setup 3 langkah (FR-AUTH-2);
+ * Gerbang rute: belum login → sambut + tur (sekali per perangkat) lalu masuk/verifikasi; login tapi belum setup → setup 3 langkah (FR-AUTH-2);
  * selain itu aplikasi. Splash ditahan sampai sesi dan data pertama siap supaya tidak ada kilasan layar.
  */
 function Routes() {
   const { colors } = useTheme();
   const { session, ready } = useSession();
   const { state, reload } = useStore();
+  const introSeen = useIntroSeen();
   const signedIn = !!session;
-  const booting = !ready || (signedIn && (state.status === 'idle' || state.status === 'loading'));
+  const booting = !ready || (!signedIn && introSeen === null) || (signedIn && (state.status === 'idle' || state.status === 'loading'));
   const splashHidden = useRef(false);
   const desktop = useDesktop();
 
@@ -126,6 +132,8 @@ function Routes() {
   const onboarded = signedIn && state.onboarded;
   // Web: /admin yang dibuka sebelum login kembali ke /admin setelah login (bukan ke Home).
   const afterLogin = onboarded ? (readReturnTo() ?? '/') : '/setup';
+  // Pengguna baru mendarat di Sambut; yang sudah melihat perkenalan langsung ke Masuk.
+  const signedOutHome = introSeen ? '/masuk' : '/sambut';
   // Pudar masuk dari layar muat/splash ke aplikasi (mis. setelah verifikasi OTP) agar tidak memotong keras.
   return (
     <Animated.View style={[styles.fill, { backgroundColor: colors.bg }]} entering={FadeIn.duration(motion.base)}>
@@ -141,13 +149,16 @@ function Routes() {
         {/* redirectTo eksplisit di tiap grup: tanpa itu expo-router jatuh ke rute tak-terkunci pertama menurut
             nama berkas, yaitu "harga", sehingga pengguna baru setelah verifikasi mendarat di Harga, bukan Setup. */}
         <Stack.Protected guard={!signedIn} redirectTo={afterLogin}>
-          <Stack.Screen name="(auth)/masuk" />
+          {/* Sambut memudar masuk; tur naik dari bawah (lanjutan gestur "geser ke atas"). */}
+          <Stack.Screen name="(auth)/sambut" options={{ animation: 'fade' }} />
+          <Stack.Screen name="(auth)/kenali" options={{ animation: 'slide_from_bottom', gestureEnabled: true }} />
+          <Stack.Screen name="(auth)/masuk" options={{ animation: 'fade_from_bottom' }} />
           <Stack.Screen name="(auth)/verifikasi" />
         </Stack.Protected>
-        <Stack.Protected guard={signedIn && !onboarded} redirectTo={signedIn ? '/' : '/masuk'}>
+        <Stack.Protected guard={signedIn && !onboarded} redirectTo={signedIn ? '/' : signedOutHome}>
           <Stack.Screen name="setup" />
         </Stack.Protected>
-        <Stack.Protected guard={onboarded} redirectTo={signedIn ? '/setup' : '/masuk'}>
+        <Stack.Protected guard={onboarded} redirectTo={signedIn ? '/setup' : signedOutHome}>
           <Stack.Screen name="(tabs)" />
           <Stack.Screen name="pengaturan/index" />
           <Stack.Screen name="pengaturan/profil" />
