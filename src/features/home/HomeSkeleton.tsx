@@ -1,7 +1,7 @@
 import { StyleSheet, View } from 'react-native';
 
 import { useT } from '@/i18n';
-import { Card, ListItemSkeleton, Skeleton } from '@/components/ui';
+import { ListCard, ListItemSkeleton, Skeleton } from '@/components/ui';
 import { radius, space } from '@/theme/tokens';
 
 /** Kerangka dengan proporsi sama seperti Home, supaya tidak ada layar kosong saat memuat. */
@@ -17,11 +17,11 @@ export function HomeSkeleton() {
       <Skeleton height={52} radius={radius.lg} />
       <Skeleton height={112} radius={radius.lg} />
       <Skeleton height={168} radius={radius.lg} />
-      <Card padding="md">
+      <ListCard>
         <ListItemSkeleton divider />
         <ListItemSkeleton divider />
         <ListItemSkeleton />
-      </Card>
+      </ListCard>
     </View>
   );
 }

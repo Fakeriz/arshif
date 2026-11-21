@@ -2,7 +2,7 @@ import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
 
-import { AppText, Badge, BottomSheet, Button, Card, CurrencyText, EmptyState, ListItem, Toggle, useToast } from '@/components/ui';
+import { AppText, Badge, BottomSheet, Button, Card, CurrencyText, EmptyState, Group, ListCard, ListItem, Toggle, useToast } from '@/components/ui';
 import type { Transaction } from '@/data/types';
 import { PaySheet } from '@/features/planning/kit';
 import { useI18n } from '@/i18n';
@@ -28,24 +28,24 @@ export function ReimbursementCard({ tx }: { tx: Transaction }) {
     const expenses = state.transactions.filter((e) => e.reimbursedBy === tx.id);
     if (expenses.length === 0) return null;
     return (
-      <Card padding="md">
-        <AppText variant="h3" style={styles.title}>
-          {t('tx.reimb.repaymentTitle')}
-        </AppText>
+      <Group label={t('tx.reimb.repaymentTitle')}>
         <AppText variant="caption" tone="secondary" style={styles.title}>
           {t('tx.reimb.repaymentNote')}
         </AppText>
-        {expenses.map((e) => (
-          <ListItem
-            key={e.id}
-            title={e.merchant}
-            subtitle={shortDate(e.date, lang)}
-            trailing={<CurrencyText amount={e.amount} currency={e.currency} kind="expense" variant="bodyStrong" />}
-            chevron
-            onPress={() => router.push({ pathname: '/trx/[id]', params: { id: e.id } })}
-          />
-        ))}
-      </Card>
+        <ListCard>
+          {expenses.map((e, i) => (
+            <ListItem
+              key={e.id}
+              title={e.merchant}
+              subtitle={shortDate(e.date, lang)}
+              trailing={<CurrencyText amount={e.amount} currency={e.currency} kind="expense" variant="bodyStrong" />}
+              chevron
+              divider={i < expenses.length - 1}
+              onPress={() => router.push({ pathname: '/trx/[id]', params: { id: e.id } })}
+            />
+          ))}
+        </ListCard>
+      </Group>
     );
   }
   if (tx.type !== 'expense') return null;
@@ -165,7 +165,7 @@ function LinkSheet({ visible, expense, onClose, onPick }: { visible: boolean; ex
 }
 
 const styles = StyleSheet.create({
-  title: { paddingHorizontal: space.xs, paddingTop: space.xs },
+  title: { paddingHorizontal: space.xs },
   body: { gap: space.sm, paddingHorizontal: space.xs, paddingBottom: space.xs },
   row: { flexDirection: 'row', alignItems: 'center', gap: space.sm },
   flex: { flex: 1 },

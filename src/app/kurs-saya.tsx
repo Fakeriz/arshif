@@ -3,7 +3,7 @@ import { StyleSheet, View } from 'react-native';
 
 import { Screen } from '@/components/shell/Screen';
 import { ScreenHeader } from '@/components/shell/ScreenHeader';
-import { AppText, Badge, Card, EmptyState, ListItem, Skeleton } from '@/components/ui';
+import { AppText, Badge, EmptyState, Group, ListCard, ListItem, Skeleton } from '@/components/ui';
 import { RateSheet } from '@/features/fx/RateSheet';
 import { currencyName, useT } from '@/i18n';
 import { hasDailyRate, type UserRate } from '@/lib/fx';
@@ -51,54 +51,51 @@ export default function MyRates() {
     body = (
       <View style={styles.list}>
         {missing.length > 0 && (
-          <Card padding="md">
-            <AppText variant="h3" style={styles.title}>
-              {t('acct.rates.needTitle')}
-            </AppText>
-            {missing.map((code, i) => (
-              <ListItem
-                key={code}
-                title={`${code} · ${currencyName(t, code)}`}
-                subtitle={t('acct.rates.needSub')}
-                trailing={<Badge label={t('acct.rates.needBadge')} tone="warning" />}
-                chevron
-                divider={i < missing.length - 1}
-                onPress={() => setEditing(code)}
-              />
-            ))}
-          </Card>
+          <Group label={t('acct.rates.needTitle')}>
+            <ListCard>
+              {missing.map((code, i) => (
+                <ListItem
+                  key={code}
+                  title={`${code} · ${currencyName(t, code)}`}
+                  subtitle={t('acct.rates.needSub')}
+                  trailing={<Badge label={t('acct.rates.needBadge')} tone="warning" />}
+                  chevron
+                  divider={i < missing.length - 1}
+                  onPress={() => setEditing(code)}
+                />
+              ))}
+            </ListCard>
+          </Group>
         )}
-        <Card padding="md">
-          <AppText variant="h3" style={styles.title}>
-            {t('acct.rates.savedTitle')}
-          </AppText>
+        <Group label={t('acct.rates.savedTitle')}>
           {saved.length === 0 ? (
-            <AppText variant="caption" tone="muted" style={styles.title}>
+            <AppText variant="caption" tone="muted" style={styles.empty}>
               {t('acct.rates.savedEmpty')}
             </AppText>
           ) : (
-            saved.map((r: UserRate, i) => (
-              <ListItem
-                key={r.code}
-                title={`${r.code} · ${currencyName(t, r.code)}`}
-                subtitle={hasDailyRate(r.code) ? t('acct.rates.unusedDaily') : t('acct.rates.savedSub', { code: r.code, rate: rateLabel(r.rate), base: r.base })}
-                subtitleLines={2}
-                chevron
-                divider={i < saved.length - 1}
-                onPress={() => setEditing(r.code)}
-              />
-            ))
+            <ListCard>
+              {saved.map((r: UserRate, i) => (
+                <ListItem
+                  key={r.code}
+                  title={`${r.code} · ${currencyName(t, r.code)}`}
+                  subtitle={hasDailyRate(r.code) ? t('acct.rates.unusedDaily') : t('acct.rates.savedSub', { code: r.code, rate: rateLabel(r.rate), base: r.base })}
+                  subtitleLines={2}
+                  chevron
+                  divider={i < saved.length - 1}
+                  onPress={() => setEditing(r.code)}
+                />
+              ))}
+            </ListCard>
           )}
-        </Card>
+        </Group>
         {candidates.length > 0 && (
-          <Card padding="md">
-            <AppText variant="h3" style={styles.title}>
-              {t('acct.rates.addTitle')}
-            </AppText>
-            {candidates.map((code, i) => (
-              <ListItem key={code} title={`${code} · ${currencyName(t, code)}`} subtitle={t('acct.rates.addSub')} chevron divider={i < candidates.length - 1} onPress={() => setEditing(code)} />
-            ))}
-          </Card>
+          <Group label={t('acct.rates.addTitle')}>
+            <ListCard>
+              {candidates.map((code, i) => (
+                <ListItem key={code} title={`${code} · ${currencyName(t, code)}`} subtitle={t('acct.rates.addSub')} chevron divider={i < candidates.length - 1} onPress={() => setEditing(code)} />
+              ))}
+            </ListCard>
+          </Group>
         )}
       </View>
     );
@@ -127,5 +124,5 @@ export default function MyRates() {
 
 const styles = StyleSheet.create({
   list: { gap: space.lg },
-  title: { paddingHorizontal: space.xs, paddingTop: space.xs },
+  empty: { paddingHorizontal: space.xs },
 });

@@ -1,4 +1,4 @@
-import { Card, ListItem, Toggle } from '@/components/ui';
+import { ListCard, ListItem, Toggle } from '@/components/ui';
 import { SettingsScreen } from '@/features/settings/kit';
 import { useT } from '@/i18n';
 import { useStore } from '@/state/AppStore';
@@ -11,7 +11,7 @@ export default function NotifikasiScreen() {
   const { state, dispatch } = useStore();
   return (
     <SettingsScreen title={t('settings.notifications')}>
-      <Card padding="md">
+      <ListCard>
         {NOTIFS.map((key, i) => (
           <ListItem
             key={key}
@@ -22,7 +22,7 @@ export default function NotifikasiScreen() {
             trailing={<Toggle value={state.notifPrefs[key]} onChange={(value) => dispatch({ type: 'prefs/notif', key, value })} accessibilityLabel={t(`settings.notif.${key}.title`)} />}
           />
         ))}
-      </Card>
+      </ListCard>
     </SettingsScreen>
   );
 }

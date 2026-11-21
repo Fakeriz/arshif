@@ -4,7 +4,7 @@ import { StyleSheet, View } from 'react-native';
 
 import { Screen } from '@/components/shell/Screen';
 import { ScreenHeader } from '@/components/shell/ScreenHeader';
-import { AppText, Badge, BankCard, Button, Card, EmptyState, ListItem, ProgressBar, Skeleton, useToast } from '@/components/ui';
+import { AppText, Badge, BankCard, Button, Card, EmptyState, ListCard, ListItem, ProgressBar, Skeleton, useToast } from '@/components/ui';
 import { productLabel } from '@/components/ui/ProductArt';
 import { cardProduct } from '@/lib/cardCatalog';
 import { CardStyleModal } from '@/features/accounts/CardStylePicker';
@@ -85,7 +85,8 @@ export default function AccountDetail() {
           cardStyle={account.cardStyle}
         />
       </View>
-      <Card padding="md">
+      {/* Tanpa ikon: properti akun ini. */}
+      <ListCard>
         <ListItem title={t('acct.detail.type')} trailing={t(`domain.accountType.${account.type}`)} divider />
         <ListItem title={t('acct.detail.currency')} trailing={account.currency} divider />
         <ListItem title={t('acct.detail.design')} subtitle={bankName(t, account.bank)} chevron divider onPress={() => setSheet('bank')} />
@@ -105,7 +106,7 @@ export default function AccountDetail() {
             }}
           />
         )}
-      </Card>
+      </ListCard>
 
       {credit && (
         <Card>

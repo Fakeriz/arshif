@@ -1,7 +1,7 @@
 import { View } from 'react-native';
 
 import { useT } from '@/i18n';
-import { Card, ListItemSkeleton, Skeleton } from '@/components/ui';
+import { ListCard, ListItemSkeleton, Skeleton } from '@/components/ui';
 import { space } from '@/theme/tokens';
 
 export function TransactionListSkeleton() {
@@ -11,11 +11,11 @@ export function TransactionListSkeleton() {
       {[4, 3].map((n, g) => (
         <View key={g} style={{ gap: space.sm }}>
           <Skeleton width={80} height={12} />
-          <Card padding="md">
+          <ListCard>
             {Array.from({ length: n }, (_, i) => (
               <ListItemSkeleton key={i} divider={i < n - 1} />
             ))}
-          </Card>
+          </ListCard>
         </View>
       ))}
     </View>

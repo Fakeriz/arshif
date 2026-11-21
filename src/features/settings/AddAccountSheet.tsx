@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { ScrollView, StyleSheet, useWindowDimensions } from 'react-native';
 
 import { usePaywall } from '@/components/shell/Paywall';
-import { BottomSheet, Button, Card, ListItem, useToast } from '@/components/ui';
+import { BottomSheet, Button, ListCard, ListItem, useToast } from '@/components/ui';
 import { productLabel } from '@/components/ui/ProductArt';
 import { CardStyleModal } from '@/features/accounts/CardStylePicker';
 import { cardProduct } from '@/lib/cardCatalog';
@@ -57,9 +57,9 @@ export function AddAccountSheet({ visible, onClose }: { visible: boolean; onClos
     <BottomSheet visible={visible} onClose={onClose} title={t('settings.accounts.addTitle')}>
       <ScrollView style={{ maxHeight: height * 0.62 }} contentContainerStyle={styles.body} keyboardShouldPersistTaps="handled">
         <StepAccount value={draft} mainCurrency={state.mainCurrency} nameError={tried && !nameOk} onChange={setDraft} />
-        <Card padding="md">
+        <ListCard>
           <ListItem title={t('acct.cardStyle.row')} subtitle={style ? productLabel(style, t) : t('acct.cardStyle.defaultArt')} chevron onPress={() => setPicking(true)} />
-        </Card>
+        </ListCard>
       </ScrollView>
       <CardStyleModal
         visible={picking}

@@ -5,10 +5,10 @@ import { ScreenHeader } from '@/components/shell/ScreenHeader';
 import { Group } from '@/components/ui';
 
 /** Kerangka layar turunan Pengaturan: header kembali + judul, konten dengan jarak yang sama. */
-export function SettingsScreen({ title, children }: { title: string; children: ReactNode }) {
+export function SettingsScreen({ title, right, children }: { title: string; right?: ReactNode; children: ReactNode }) {
   return (
     <Screen>
-      <ScreenHeader title={title} />
+      <ScreenHeader title={title} right={right} />
       {children}
     </Screen>
   );

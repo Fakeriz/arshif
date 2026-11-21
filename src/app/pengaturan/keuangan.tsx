@@ -2,7 +2,7 @@ import { useRouter } from 'expo-router';
 import { useState } from 'react';
 
 import { CurrencySheet } from '@/components/shell/CurrencySheet';
-import { Card, ListItem, Toggle, useToast } from '@/components/ui';
+import { ListCard, ListItem, Toggle, useToast } from '@/components/ui';
 import { SettingsScreen } from '@/features/settings/kit';
 import { PaydaySheet } from '@/features/settings/PaydaySheet';
 import { useT } from '@/i18n';
@@ -19,7 +19,8 @@ export default function KeuanganScreen() {
   const [paydayOpen, setPaydayOpen] = useState(false);
   return (
     <SettingsScreen title={t('settings.menu.finance')}>
-      <Card padding="md">
+      {/* Tanpa ikon: semua baris adalah pengaturan uang di layar ini. Navigasi dan toggle tampilan saldo dipisah. */}
+      <ListCard>
         <ListItem
           title={t('settings.mainCurrency')}
           subtitle={t('settings.mainCurrencySub')}
@@ -44,9 +45,10 @@ export default function KeuanganScreen() {
           subtitleLines={2}
           trailing={state.userRates.length ? String(state.userRates.length) : undefined}
           chevron
-          divider
           onPress={() => router.push('/kurs-saya')}
         />
+      </ListCard>
+      <ListCard>
         <ListItem
           title={t('settings.hideBalance')}
           subtitle={t('settings.hideBalanceSub')}
@@ -60,7 +62,7 @@ export default function KeuanganScreen() {
           subtitleLines={2}
           trailing={<Toggle value={state.includeAssets} onChange={(value) => dispatch({ type: 'prefs/includeAssets', value })} accessibilityLabel={t('settings.includeAssets')} />}
         />
-      </Card>
+      </ListCard>
       <PaydaySheet visible={paydayOpen} value={state.payday} onClose={() => setPaydayOpen(false)} onChange={(payday) => dispatch({ type: 'prefs/payday', payday })} />
       <CurrencySheet visible={currencyOpen} value={state.mainCurrency} onClose={() => setCurrencyOpen(false)} onSelect={(code) => {
           const rebased = rebaseBudget(state.income, state.budgets, state.mainCurrency, code);

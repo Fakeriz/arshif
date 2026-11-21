@@ -2,10 +2,9 @@ import { useRouter } from 'expo-router';
 import { StyleSheet, View } from 'react-native';
 
 import { useT } from '@/i18n';
-import { AppText, BottomSheet, Icon, ListItem, ProBadge } from '@/components/ui';
+import { AppText, BottomSheet, IconTile, ListItem, ProBadge } from '@/components/ui';
 import { useLimits } from '@/state/limits';
-import { useTheme } from '@/theme/ThemeProvider';
-import { radius, space } from '@/theme/tokens';
+import { space } from '@/theme/tokens';
 
 import { captureOptions, type CaptureKey, type MoreOption } from './captureOptions';
 import { usePaywall } from './Paywall';
@@ -29,7 +28,6 @@ export function CaptureSheet({ visible, onClose, title, subtitle, sections }: Ca
   const paywall = usePaywall();
   const scanSource = useScanSource();
   const t = useT();
-  const { colors } = useTheme();
   const all = captureOptions(useLimits(), t);
   const groups = (sections ?? [{ key: 'all' }]).map((s) => ({
     ...s,
@@ -49,11 +47,7 @@ export function CaptureSheet({ visible, onClose, title, subtitle, sections }: Ca
           {g.options.map((o, i) => (
             <ListItem
               key={o.key}
-              leading={
-                <View style={[styles.icon, { backgroundColor: o.limited ? colors.track : colors.accentSoft }]}>
-                  <Icon icon={o.icon} color={o.limited ? colors.textSecondary : colors.accentText} />
-                </View>
-              }
+              leading={<IconTile icon={o.icon} muted={o.limited} />}
               title={o.title}
               subtitle={o.sub}
               subtitleLines={2}
@@ -75,7 +69,6 @@ export function CaptureSheet({ visible, onClose, title, subtitle, sections }: Ca
 }
 
 const styles = StyleSheet.create({
-  icon: { width: 40, height: 40, borderRadius: radius.md, alignItems: 'center', justifyContent: 'center' },
   section: { marginTop: space.lg },
   sectionTitle: { paddingHorizontal: space.xs, marginBottom: space.xxs },
 });

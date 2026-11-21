@@ -1,14 +1,11 @@
 import { useRouter } from 'expo-router';
 import { Camera, FileText, Images, Layers, type LucideIcon } from 'lucide-react-native';
 import { createContext, useCallback, useContext, useState, type ReactNode } from 'react';
-import { StyleSheet, View } from 'react-native';
 
-import { BottomSheet, Icon, ListItem } from '@/components/ui';
+import { BottomSheet, IconTile, ListItem } from '@/components/ui';
 import { MAX_MULTI, SCAN_SOURCES, startScanFromSheet, type ScanSource } from '@/features/capture/scanLaunch';
 import { useT } from '@/i18n';
 import { useLimits } from '@/state/limits';
-import { useTheme } from '@/theme/ThemeProvider';
-import { radius } from '@/theme/tokens';
 
 const ScanSourceContext = createContext<(() => void) | null>(null);
 
@@ -26,7 +23,6 @@ export function ScanSourceProvider({ children }: { children: ReactNode }) {
   const open = useCallback(() => setVisible(true), []);
   const router = useRouter();
   const t = useT();
-  const { colors } = useTheme();
   // Beberapa struk = beberapa kuota: jangan pilih lebih banyak dari sisa kuota.
   const left = useLimits().scanLeft;
   const limit = Math.max(1, Math.min(MAX_MULTI, left ?? MAX_MULTI));
@@ -38,11 +34,7 @@ export function ScanSourceProvider({ children }: { children: ReactNode }) {
         {SCAN_SOURCES.map((s, i) => (
           <ListItem
             key={s}
-            leading={
-              <View style={[styles.icon, { backgroundColor: colors.accentSoft }]}>
-                <Icon icon={ICONS[s]} color={colors.accentText} />
-              </View>
-            }
+            leading={<IconTile icon={ICONS[s]} />}
             title={t(`capture.source.${s}`)}
             subtitle={s === 'multi' ? t('capture.source.multiSub', { count: limit }) : t(`capture.source.${s}Sub`)}
             subtitleLines={2}
@@ -58,7 +50,3 @@ export function ScanSourceProvider({ children }: { children: ReactNode }) {
     </ScanSourceContext.Provider>
   );
 }
-
-const styles = StyleSheet.create({
-  icon: { width: 40, height: 40, borderRadius: radius.md, alignItems: 'center', justifyContent: 'center' },
-});

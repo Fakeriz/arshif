@@ -5,7 +5,7 @@ import { StyleSheet, View } from 'react-native';
 
 import { Screen } from '@/components/shell/Screen';
 import { ScreenHeader } from '@/components/shell/ScreenHeader';
-import { AppText, Button, Card, CurrencyText, EmptyState, Icon, ListItem, Skeleton, useToast } from '@/components/ui';
+import { AppText, Button, Card, CurrencyText, EmptyState, Group, Icon, ListItem, Skeleton, useToast } from '@/components/ui';
 import { getBank } from '@/constants/banks';
 import type { SmartLogItem } from '@/data/remote/smartlog';
 import { useI18n } from '@/i18n';
@@ -142,10 +142,7 @@ function RecentList({ items }: { items: SmartLogItem[] }) {
   const { undo } = useSmartLog();
   const { colors } = useTheme();
   return (
-    <View style={styles.list}>
-      <AppText variant="h3" style={styles.sectionTitle}>
-        {t('slog.review.recentTitle')}
-      </AppText>
+    <Group label={t('slog.review.recentTitle')}>
       <Card padding="md">
         {items.map((item, i) => (
           <View key={item.id} style={styles.recentRow}>
@@ -163,7 +160,7 @@ function RecentList({ items }: { items: SmartLogItem[] }) {
           </View>
         ))}
       </Card>
-    </View>
+    </Group>
   );
 }
 
@@ -176,7 +173,6 @@ const styles = StyleSheet.create({
   reason: { flexDirection: 'row', alignItems: 'center', gap: space.sm },
   excerpt: { marginTop: space.md, padding: space.md, borderRadius: radius.md, borderWidth: StyleSheet.hairlineWidth, gap: space.xxs },
   actions: { flexDirection: 'row', flexWrap: 'wrap', gap: space.sm, marginTop: space.lg, marginBottom: space.xs },
-  sectionTitle: { paddingHorizontal: space.xs, marginTop: space.md },
   recentRow: { gap: space.xs },
   recentActions: { flexDirection: 'row', gap: space.sm, paddingBottom: space.sm },
   divider: { height: StyleSheet.hairlineWidth },

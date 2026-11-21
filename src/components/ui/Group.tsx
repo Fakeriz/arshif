@@ -3,7 +3,7 @@ import type { ReactNode } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import { useTheme } from '@/theme/ThemeProvider';
-import { fonts, layout, space } from '@/theme/tokens';
+import { fonts, layout, radius, space } from '@/theme/tokens';
 
 import { AppText } from './AppText';
 import { Card } from './Card';
@@ -13,6 +13,11 @@ import { ListItem, ListItemSkeleton } from './ListItem';
 /**
  * Satu aturan grup untuk semua layar (pola Pengaturan): label kecil di luar kartu, aksi kanan opsional,
  * lalu isi grup 8px di bawahnya. Antar grup berjarak gap kolom Screen.
+ *
+ * Tiga varian baris di dalam ListCard, dipilih menurut isinya (bukan selera):
+ * - tanpa ikon: pengaturan/properti objek yang sedang dibuka (Money, Notifikasi, detail akun); ikon hanya mengulang judul.
+ * - ikon polos (MenuGroup): menu navigasi ke layar/aksi lain (Pengaturan, Alat, Data).
+ * - ikon dalam kotak (IconTile): memilih cara/sumber input (+ Catat, Scan struk) atau entitas beridentitas (kategori).
  */
 export function Group({ label, labelA11y, right, children }: { label?: string; labelA11y?: string; right?: ReactNode; children: ReactNode }) {
   return (
@@ -30,6 +35,16 @@ export function Group({ label, labelA11y, right, children }: { label?: string; l
         </View>
       ) : null}
       {children}
+    </View>
+  );
+}
+
+/** Ikon dalam kotak 40 px untuk pilihan cara/sumber input. muted = terkunci (kuota habis). */
+export function IconTile({ icon, muted }: { icon: LucideIcon; muted?: boolean }) {
+  const { colors } = useTheme();
+  return (
+    <View style={[styles.tile, { backgroundColor: muted ? colors.track : colors.accentSoft }]}>
+      <Icon icon={icon} color={muted ? colors.textSecondary : colors.accentText} />
     </View>
   );
 }
@@ -93,4 +108,5 @@ const styles = StyleSheet.create({
   head: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: space.sm, minHeight: 20 },
   label: { paddingHorizontal: space.xs, fontFamily: fonts.semibold },
   rows: { paddingHorizontal: space.xl },
+  tile: { width: 40, height: 40, borderRadius: radius.md, alignItems: 'center', justifyContent: 'center' },
 });

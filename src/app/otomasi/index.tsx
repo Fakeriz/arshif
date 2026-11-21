@@ -5,7 +5,7 @@ import { StyleSheet, View } from 'react-native';
 
 import { Screen } from '@/components/shell/Screen';
 import { ScreenHeader } from '@/components/shell/ScreenHeader';
-import { AppText, BottomSheet, Button, Card, Chip, Dialog, EmptyState, Icon, ListItem, Skeleton, Toggle, useToast } from '@/components/ui';
+import { AppText, BottomSheet, Button, Card, Chip, Dialog, EmptyState, Group, Icon, ListCard, ListItem, MenuGroup, Skeleton, Toggle, useToast } from '@/components/ui';
 import { getBank } from '@/constants/banks';
 import { useT } from '@/i18n';
 import { SMARTLOG_APPS, type SmartLogApp } from '@/lib/smartlog/apps';
@@ -125,46 +125,49 @@ export default function AutomationScreen() {
             </Card>
           )}
 
-          <Card padding="md">
-            <ListItem
-              leading={<Icon icon={Inbox} color={slog.review.length ? colors.accentText : colors.textSecondary} />}
-              title={t('slog.automation.reviewEntry')}
-              subtitle={slog.review.length ? t('slog.automation.reviewCount', { count: slog.review.length }) : t('slog.automation.reviewNone')}
-              trailing={slog.review.length ? String(slog.review.length) : undefined}
-              chevron
-              onPress={() => router.push('/otomasi/tinjau')}
-            />
-          </Card>
+          {/* Ikon polos: pintu ke layar Tinjau (menu navigasi). */}
+          <MenuGroup
+            entries={[
+              {
+                key: 'review',
+                icon: Inbox,
+                title: t('slog.automation.reviewEntry'),
+                subtitle: slog.review.length ? t('slog.automation.reviewCount', { count: slog.review.length }) : t('slog.automation.reviewNone'),
+                trailing: slog.review.length ? String(slog.review.length) : undefined,
+                onPress: () => router.push('/otomasi/tinjau'),
+              },
+            ]}
+          />
 
-          <View style={styles.gapSm}>
-            <AppText variant="h3">{t('slog.automation.linksTitle')}</AppText>
-            <AppText variant="caption" tone="secondary">
+          {/* Tanpa ikon: tiap baris = pengaturan tautan satu aplikasi bank. */}
+          <Group label={t('slog.automation.linksTitle')}>
+            <AppText variant="caption" tone="secondary" style={styles.gapSm}>
               {t('slog.automation.linksSub')}
             </AppText>
-          </View>
-          {state.accounts.length === 0 ? (
-            <EmptyState compact title={t('slog.automation.noAccounts')} actionLabel={t('settings.title')} onAction={() => router.push('/pengaturan')} />
-          ) : (
-            <Card padding="md">
-              {SMARTLOG_APPS.map((app, i) => {
-                const linked = slog.links.find((l) => l.pkg === app.pkg);
-                const account = linked ? state.accounts.find((a) => a.id === linked.accountId) : undefined;
-                return (
-                  <ListItem
-                    key={app.pkg}
-                    title={app.app}
-                    subtitle={getBank(app.bank).name !== app.app ? getBank(app.bank).name : undefined}
-                    trailing={account ? account.name : undefined}
-                    trailingCaption={account ? undefined : t('slog.automation.notLinked')}
-                    chevron
-                    divider={i < SMARTLOG_APPS.length - 1}
-                    onPress={() => setLinking(app)}
-                    accessibilityLabel={`${app.app}, ${account ? account.name : t('slog.automation.notLinked')}`}
-                  />
-                );
-              })}
-            </Card>
-          )}
+            {state.accounts.length === 0 ? (
+              <EmptyState compact title={t('slog.automation.noAccounts')} actionLabel={t('settings.title')} onAction={() => router.push('/pengaturan')} />
+            ) : (
+              <ListCard>
+                {SMARTLOG_APPS.map((app, i) => {
+                  const linked = slog.links.find((l) => l.pkg === app.pkg);
+                  const account = linked ? state.accounts.find((a) => a.id === linked.accountId) : undefined;
+                  return (
+                    <ListItem
+                      key={app.pkg}
+                      title={app.app}
+                      subtitle={getBank(app.bank).name !== app.app ? getBank(app.bank).name : undefined}
+                      trailing={account ? account.name : undefined}
+                      trailingCaption={account ? undefined : t('slog.automation.notLinked')}
+                      chevron
+                      divider={i < SMARTLOG_APPS.length - 1}
+                      onPress={() => setLinking(app)}
+                      accessibilityLabel={`${app.app}, ${account ? account.name : t('slog.automation.notLinked')}`}
+                    />
+                  );
+                })}
+              </ListCard>
+            )}
+          </Group>
         </>
       )}
 
