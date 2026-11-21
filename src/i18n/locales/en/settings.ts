@@ -39,6 +39,7 @@ const settings: Messages['settings'] = {
   signOutTitle: 'Sign out of Arshif?',
   signOutMessage: 'Your data stays in your account. Sign in again anytime with a code from your email.',
   backup: {
+    driveUnavailable: 'Not available yet: Google Drive is not set up in this app.',
     title: 'Backup',
     menuNever: 'Never · AES-256 encrypted',
     menuDue: 'Backup due',

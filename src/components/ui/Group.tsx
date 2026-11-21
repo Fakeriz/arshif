@@ -72,6 +72,8 @@ export type MenuEntry = {
   trailing?: ReactNode;
   /** Bawaan true; entri terkunci memakai badge PRO tanpa chevron. */
   chevron?: boolean;
+  /** Tampil redup dan tidak bisa diketuk (mis. fitur belum dikonfigurasi); subtitle menjelaskan alasannya. */
+  disabled?: boolean;
   /** Bawaan "judul, keadaan"; isi bila trailing membawa info (mis. badge terlambat). */
   accessibilityLabel?: string;
   onPress: () => void;
@@ -86,18 +88,19 @@ export function MenuGroup({ label, right, entries, loading }: { label?: string; 
           loading ? (
             <ListItemSkeleton key={e.key} divider={i < entries.length - 1} />
           ) : (
-            <ListItem
-              key={e.key}
-              leading={<IconTile icon={e.icon} tone={e.tone === 'negative' ? 'negative' : 'neutral'} />}
-              title={e.title}
-              subtitle={e.subtitle}
-              subtitleLines={2}
-              trailing={e.trailing}
-              chevron={e.chevron ?? true}
-              divider={i < entries.length - 1}
-              onPress={e.onPress}
-              accessibilityLabel={e.accessibilityLabel ?? `${e.title}, ${e.subtitle}`}
-            />
+            <View key={e.key} style={e.disabled ? styles.disabled : undefined} aria-disabled={!!e.disabled}>
+              <ListItem
+                leading={<IconTile icon={e.icon} tone={e.tone === 'negative' ? 'negative' : 'neutral'} />}
+                title={e.title}
+                subtitle={e.subtitle}
+                subtitleLines={2}
+                trailing={e.trailing}
+                chevron={!e.disabled && (e.chevron ?? true)}
+                divider={i < entries.length - 1}
+                onPress={e.disabled ? undefined : e.onPress}
+                accessibilityLabel={e.accessibilityLabel ?? `${e.title}, ${e.subtitle}`}
+              />
+            </View>
           ),
         )}
       </ListCard>
@@ -110,6 +113,7 @@ const styles = StyleSheet.create({
   head: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: space.sm, minHeight: 20 },
   label: { paddingHorizontal: space.xs, fontFamily: fonts.semibold },
   // Sama dengan padding atas-bawah baris ListItem (14): jarak isi ke tepi kartu rata di keempat sisi.
+  disabled: { opacity: 0.5 },
   rows: { paddingHorizontal: 14 },
   tile: { width: 40, height: 40, borderRadius: 999, alignItems: 'center', justifyContent: 'center' },
 });

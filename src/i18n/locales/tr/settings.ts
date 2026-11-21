@@ -39,6 +39,7 @@ const settings: Messages['settings'] = {
   signOutTitle: 'Arshif\'ten çıkış yapılsın mı?',
   signOutMessage: 'Verilerin hesabında kalır. E-postana gelen kodla istediğin zaman tekrar giriş yap.',
   backup: {
+    driveUnavailable: 'Henüz kullanılamıyor: Google Drive bu uygulamada ayarlanmadı.',
     title: 'Yedek',
     menuNever: 'Hiç alınmadı · AES-256 şifreli',
     menuDue: 'Yedek zamanı',

@@ -14,7 +14,13 @@ import { ThemeProvider } from '@/theme/ThemeProvider';
 
 jest.mock('expo-router', () => ({ useRouter: () => ({ push: jest.fn(), back: jest.fn(), replace: jest.fn(), canGoBack: () => true }) }));
 jest.mock('expo-secure-store', () => ({ getItemAsync: jest.fn(async () => null), setItemAsync: jest.fn(async () => undefined) }));
-jest.mock('expo-auth-session/providers/google', () => ({ useAuthRequest: () => [null, null, jest.fn()] }));
+const mockAuth = jest.fn((..._a: unknown[]) => [{}, null, jest.fn()]);
+jest.mock('expo-auth-session/providers/google', () => ({ useAuthRequest: (...a: unknown[]) => mockAuth(...a) }));
+const ENV = ['EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID', 'EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID', 'EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID'];
+afterEach(() => {
+  ENV.forEach((k) => delete process.env[k]);
+  mockAuth.mockClear();
+});
 jest.mock('expo-web-browser', () => ({ maybeCompleteAuthSession: jest.fn() }));
 
 const wrap = (ui: ReactNode) =>
@@ -37,12 +43,24 @@ const wrap = (ui: ReactNode) =>
   );
 
 describe('Pengaturan > Cadangan', () => {
-  it('tanpa client ID Google: tidak ada tombol Drive; tanpa kunci: tidak ada baris Lihat kunci (bukan kontrol mati)', async () => {
+  it('(b) client ID kosong: halaman tetap tampil, hook login Google TIDAK dipanggil, Drive nonaktif dengan keterangan', async () => {
+    ENV.forEach((k) => (process.env[k] = ''));
     await wrap(<CadanganScreen />);
+    expect(mockAuth).not.toHaveBeenCalled();
     expect(screen.getByText('Dari file')).toBeTruthy();
-    expect(screen.queryByText('Dari Google Drive')).toBeNull();
+    expect(screen.getByText('Dari Google Drive')).toBeTruthy();
+    expect(screen.getByText('Belum tersedia: Google Drive belum diatur di aplikasi ini.')).toBeTruthy();
+    // Tanpa kunci: baris Lihat kunci tidak tampil (bukan kontrol mati).
     expect(screen.queryByText('Lihat kunci pemulihan')).toBeNull();
     expect(screen.getByText('Belum pernah')).toBeTruthy();
+  });
+
+  it('(a) client ID terisi: hook login dipanggil dengan scope drive.file, Drive aktif, tanpa error', async () => {
+    ENV.forEach((k) => (process.env[k] = '123456789-abcdefgh.apps.googleusercontent.com'));
+    await wrap(<CadanganScreen />);
+    expect(mockAuth).toHaveBeenCalledWith(expect.objectContaining({ scopes: ['https://www.googleapis.com/auth/drive.file'] }));
+    expect(screen.getByText('Cadangan yang diunggah dari Arshif')).toBeTruthy();
+    expect(screen.queryByText('Belum tersedia: Google Drive belum diatur di aplikasi ini.')).toBeNull();
   });
 
   it('cadangan pertama: kunci baru ditampilkan dan harus dibuktikan tersimpan (4 karakter terakhir)', async () => {

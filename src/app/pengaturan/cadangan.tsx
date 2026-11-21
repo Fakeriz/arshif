@@ -5,7 +5,7 @@ import { StyleSheet, View } from 'react-native';
 
 import { AppText, BottomSheet, Button, Card, Dialog, EmptyState, Group, ListCard, ListItem, MenuGroup, ProgressBar, Tabs, Toggle, useToast } from '@/components/ui';
 import { readBytes } from '@/data/remote/upload';
-import { DriveError, useGoogleDrive, type DriveFile } from '@/features/backup/drive';
+import { DriveError, DriveGate, useDrive, type DriveFile } from '@/features/backup/drive';
 import { KeySheet } from '@/features/backup/KeySheet';
 import {
   backupDue,
@@ -52,13 +52,22 @@ function backupErrorText(t: TFunction, e: unknown): string {
  * atau unggah ke Google Drive, pengingat terjadwal, dan pemulihan (gabung, tidak menghapus apa pun).
  */
 export default function CadanganScreen() {
+  // Drive lewat gerbang: hook login Google hanya dipanggil bila client ID platform ini ada (tanpa itu expo-auth-session crash).
+  return (
+    <DriveGate>
+      <Cadangan />
+    </DriveGate>
+  );
+}
+
+function Cadangan() {
   const { t, lang } = useI18n();
   const { show } = useToast();
   const { userId, reload } = useStore();
   const planning = usePlanning();
   const invoices = useInvoices();
   const assets = useAssets();
-  const drive = useGoogleDrive();
+  const drive = useDrive();
 
   const [schedule, setSchedule] = useState<BackupSchedule | null>(null);
   const [key, setKey] = useState<Uint8Array | null>(null);
@@ -71,6 +80,8 @@ export default function CadanganScreen() {
   const [restoring, setRestoring] = useState<Progress>(null);
   const [report, setReport] = useState<RestoreReport | null>(null);
   const [driveFiles, setDriveFiles] = useState<DriveFile[] | null>(null);
+  // "Sekarang" diambil sekali saat layar dibuka: render tetap murni (tanpa Date.now() di badan render).
+  const [now] = useState(Date.now);
 
   useEffect(() => {
     void loadSchedule().then(setSchedule);
@@ -98,7 +109,7 @@ export default function CadanganScreen() {
   const startCreate = () => (key ? void create(key) : setKeySheet('setup'));
 
   const uploadToDrive = async () => {
-    if (!created) return;
+    if (!created || !drive) return;
     try {
       await drive.upload(backupFileName(), created);
       show({ tone: 'success', title: t('settings.backup.uploaded') });
@@ -137,6 +148,7 @@ export default function CadanganScreen() {
   };
 
   const openDrive = async () => {
+    if (!drive) return;
     try {
       setDriveFiles(await drive.list());
     } catch (e) {
@@ -161,8 +173,8 @@ export default function CadanganScreen() {
   };
 
   // ------------------------------------------------------------ tampilan
-  const due = schedule ? backupDue(schedule) : false;
-  const days = schedule?.lastAt ? Math.floor((Date.now() - Date.parse(schedule.lastAt)) / 86_400_000) : 0;
+  const due = schedule ? backupDue(schedule, now) : false;
+  const days = schedule?.lastAt ? Math.floor((now - Date.parse(schedule.lastAt)) / 86_400_000) : 0;
   const busy = !!creating || !!restoring;
 
   return (
@@ -250,9 +262,14 @@ export default function CadanganScreen() {
           label={t('settings.backup.restoreGroup')}
           entries={[
             { key: 'file', icon: FileUp, title: t('settings.backup.fromFile'), subtitle: t('settings.backup.fromFileSub'), onPress: () => void pickFile() },
-            ...(drive.configured
-              ? [{ key: 'drive', icon: HardDriveDownload, title: t('settings.backup.fromDrive'), subtitle: t('settings.backup.fromDriveSub'), onPress: () => void openDrive() }]
-              : []),
+            {
+              key: 'drive',
+              icon: HardDriveDownload,
+              title: t('settings.backup.fromDrive'),
+              subtitle: drive ? t('settings.backup.fromDriveSub') : t('settings.backup.driveUnavailable'),
+              disabled: !drive,
+              onPress: () => void openDrive(),
+            },
           ]}
         />
       )}
@@ -276,7 +293,12 @@ export default function CadanganScreen() {
       <BottomSheet visible={!!created} onClose={() => setCreated(null)} title={t('settings.backup.readyTitle')} subtitle={created ? t('settings.backup.readySub', { size: mb(created.length) }) : undefined}>
         <View style={styles.sheet}>
           <Button label={t('settings.backup.save')} icon={Share2} fullWidth onPress={() => created && void saveBackupFile(created)} />
-          {drive.configured && <Button label={t('settings.backup.drive')} icon={CloudUpload} variant="secondary" fullWidth loading={drive.busy} disabled={drive.busy} onPress={() => void uploadToDrive()} />}
+          <Button label={t('settings.backup.drive')} icon={CloudUpload} variant="secondary" fullWidth loading={drive?.busy} disabled={!drive || drive.busy} onPress={() => void uploadToDrive()} />
+          {!drive && (
+            <AppText variant="caption" tone="muted" align="center">
+              {t('settings.backup.driveUnavailable')}
+            </AppText>
+          )}
         </View>
       </BottomSheet>
 
@@ -295,7 +317,7 @@ export default function CadanganScreen() {
                 onPress={async () => {
                   setDriveFiles(null);
                   try {
-                    loadFile(await drive.download(f.id));
+                    if (drive) loadFile(await drive.download(f.id));
                   } catch (e) {
                     show({ tone: 'error', title: backupErrorText(t, e) });
                   }

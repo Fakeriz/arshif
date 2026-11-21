@@ -1,6 +1,6 @@
 import * as Google from 'expo-auth-session/providers/google';
 import * as WebBrowser from 'expo-web-browser';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
 import { Platform } from 'react-native';
 
 import { BACKUP_MIME } from './service';
@@ -12,16 +12,21 @@ WebBrowser.maybeCompleteAuthSession();
  * Client ID OAuth dari Google Cloud Console (env saat build). Tanpa client ID untuk platform ini, fitur Drive disembunyikan.
  * Scope drive.file: Arshif hanya bisa melihat dan membuat berkas yang dibuatnya sendiri, bukan seluruh isi Drive.
  */
-const CLIENT_IDS = {
-  webClientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID,
-  androidClientId: process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID,
-  iosClientId: process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID,
-};
+// Dibaca saat dipakai (bukan saat modul dimuat); Expo tetap menanam nilai EXPO_PUBLIC_* saat build.
+const clientIds = () => ({
+  webClientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID || undefined,
+  androidClientId: process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID || undefined,
+  iosClientId: process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID || undefined,
+});
 const SCOPE = 'https://www.googleapis.com/auth/drive.file';
 const API = 'https://www.googleapis.com/drive/v3/files';
 const UPLOAD = 'https://www.googleapis.com/upload/drive/v3/files';
 
-export const driveConfigured = !!(Platform.OS === 'web' ? CLIENT_IDS.webClientId : Platform.OS === 'ios' ? CLIENT_IDS.iosClientId : CLIENT_IDS.androidClientId);
+/** Client ID untuk platform yang sedang berjalan (web/android/ios). Kosong = Drive nonaktif, hook auth tidak pernah dipanggil. */
+export function activeClientId(): string | undefined {
+  const ids = clientIds();
+  return Platform.OS === 'web' ? ids.webClientId : Platform.OS === 'ios' ? ids.iosClientId : ids.androidClientId;
+}
 
 export type DriveFile = { id: string; name: string; createdTime: string; size: number };
 
@@ -68,12 +73,15 @@ async function download(token: string, id: string): Promise<Uint8Array> {
   return new Uint8Array(await res.arrayBuffer());
 }
 
+/** Satu aksi Drive yang butuh token akses. */
+type DriveJob<T> = { (token: string): Promise<T> };
+
 /**
  * Login Google (sekali per sesi aplikasi; token tidak disimpan) lalu unggah/daftar/unduh cadangan.
  * Tiap aksi meminta login bila belum ada token.
  */
-export function useGoogleDrive() {
-  const [request, response, promptAsync] = Google.useAuthRequest({ ...CLIENT_IDS, scopes: [SCOPE] });
+function useGoogleDrive() {
+  const [request, response, promptAsync] = Google.useAuthRequest({ ...clientIds(), scopes: [SCOPE] });
   const token = useRef<string | null>(null);
   const waiting = useRef<{ resolve: (t: string) => void; reject: (e: Error) => void } | null>(null);
   const [busy, setBusy] = useState(false);
@@ -99,7 +107,7 @@ export function useGoogleDrive() {
 
   /** Token kedaluwarsa (1 jam): login ulang sekali lalu ulangi aksinya. */
   const withToken = useCallback(
-    async <T>(fn: (t: string) => Promise<T>): Promise<T> => {
+    async <T,>(fn: DriveJob<T>): Promise<T> => {
       setBusy(true);
       try {
         try {
@@ -117,11 +125,31 @@ export function useGoogleDrive() {
   );
 
   return {
-    configured: driveConfigured,
     ready: !!request,
     busy,
     upload: (name: string, bytes: Uint8Array) => withToken((t) => upload(t, name, bytes)),
     list: () => withToken(list),
     download: (id: string) => withToken((t) => download(t, id)),
   };
+}
+
+export type DriveApi = ReturnType<typeof useGoogleDrive>;
+const DriveContext = createContext<DriveApi | null>(null);
+
+/** Satu-satunya tempat useAuthRequest dipanggil; hanya dirender oleh DriveGate bila client ID platform ini ada. */
+function DriveConnected({ children }: { children: ReactNode }) {
+  return <DriveContext.Provider value={useGoogleDrive()}>{children}</DriveContext.Provider>;
+}
+
+/**
+ * Gerbang konfigurasi: expo-auth-session melempar error bila client ID platform aktif kosong, jadi hook-nya hanya dipanggil
+ * di dalam DriveConnected yang dirender bila dikonfigurasi (hook tidak pernah dipanggil kondisional).
+ */
+export function DriveGate({ children }: { children: ReactNode }) {
+  return activeClientId() ? <DriveConnected>{children}</DriveConnected> : <>{children}</>;
+}
+
+/** null = Google Drive belum dikonfigurasi untuk platform ini (tampilkan tombol nonaktif). */
+export function useDrive(): DriveApi | null {
+  return useContext(DriveContext);
 }

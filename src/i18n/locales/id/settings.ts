@@ -37,6 +37,7 @@ const settings = {
   signOutTitle: 'Keluar dari Arshif?',
   signOutMessage: 'Data tetap tersimpan di akunmu. Masuk lagi kapan saja dengan kode dari email.',
   backup: {
+    driveUnavailable: 'Belum tersedia: Google Drive belum diatur di aplikasi ini.',
     title: 'Cadangan',
     menuNever: 'Belum pernah · terenkripsi AES-256',
     menuDue: 'Waktunya cadangan',

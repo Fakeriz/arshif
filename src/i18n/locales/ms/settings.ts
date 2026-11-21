@@ -39,6 +39,7 @@ const settings: Messages['settings'] = {
   signOutTitle: 'Log keluar dari Arshif?',
   signOutMessage: 'Data kekal dalam akaun anda. Log masuk semula bila-bila masa dengan kod daripada e-mel.',
   backup: {
+    driveUnavailable: 'Belum tersedia: Google Drive belum ditetapkan dalam aplikasi ini.',
     title: 'Sandaran',
     menuNever: 'Belum pernah · disulitkan AES-256',
     menuDue: 'Masa untuk sandaran',
