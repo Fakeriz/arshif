@@ -49,7 +49,7 @@ export function IconTile({ icon, muted }: { icon: LucideIcon; muted?: boolean })
   );
 }
 
-/** Kartu daftar: tanpa padding atas-bawah (baris ListItem membawa ruangnya sendiri), sisi 20px. */
+/** Kartu daftar: tanpa padding atas-bawah (baris ListItem membawa ruangnya sendiri), sisi 14px. */
 export function ListCard({ children }: { children: ReactNode }) {
   return (
     <Card padding={0}>
@@ -107,6 +107,7 @@ const styles = StyleSheet.create({
   group: { gap: space.sm },
   head: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: space.sm, minHeight: 20 },
   label: { paddingHorizontal: space.xs, fontFamily: fonts.semibold },
-  rows: { paddingHorizontal: space.xl },
+  // Sama dengan padding atas-bawah baris ListItem (14): jarak isi ke tepi kartu rata di keempat sisi.
+  rows: { paddingHorizontal: 14 },
   tile: { width: 40, height: 40, borderRadius: iconBox[40].radius, alignItems: 'center', justifyContent: 'center' },
 });
