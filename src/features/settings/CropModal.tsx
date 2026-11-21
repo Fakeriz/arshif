@@ -21,7 +21,7 @@ function dist(e: GestureResponderEvent): number {
 
 /**
  * Atur potongan foto: geser (jari/mouse), perbesar (cubit atau slider), lalu "Gunakan".
- * Lingkaran untuk foto profil, 3:1 untuk sampul. Area di luar bingkai diredupkan dengan warna latar supaya tetap terlihat
+ * Lingkaran untuk foto profil, 2:1 untuk sampul (sama dengan kartu profil). Area di luar bingkai diredupkan dengan warna latar supaya tetap terlihat
  * apa yang terpotong. PanResponder (bukan gesture-handler) karena berjalan sama di dalam Modal native dan di web.
  */
 export function CropModal({ image, shape, onCancel, onConfirm }: { image: { uri: string } & Size; shape: CropShape; onCancel: () => void; onConfirm: (rect: Rect) => void }) {
@@ -29,8 +29,8 @@ export function CropModal({ image, shape, onCancel, onConfirm }: { image: { uri:
   const { colors } = useTheme();
   const { width: screenW } = useWindowDimensions();
   const areaW = Math.min(screenW, layout.maxContentWidth) - MARGIN;
-  const frame: Size = shape === 'circle' ? { w: Math.min(areaW - 48, 320), h: Math.min(areaW - 48, 320) } : { w: areaW, h: Math.round(areaW / 3) };
-  const areaH = frame.h + (shape === 'circle' ? 48 : 160);
+  const frame: Size = shape === 'circle' ? { w: Math.min(areaW - 48, 320), h: Math.min(areaW - 48, 320) } : { w: areaW, h: Math.round(areaW / 2) };
+  const areaH = frame.h + (shape === 'circle' ? 48 : 120);
   const [view, setView] = useState({ zoom: 1, tx: 0, ty: 0 });
   // Handler gestur membaca keadaan lewat ref (bukan closure render lama); ref hanya ditulis di handler/efek.
   const viewRef = useRef(view);

@@ -124,7 +124,7 @@ describe('Pengaturan > Profil', () => {
     expect(mockSave).not.toHaveBeenCalled();
   });
 
-  it('sampul: pilih preset, lalu unggah foto sampul sendiri dengan crop 3:1', async () => {
+  it('sampul: pilih preset, lalu unggah foto sampul sendiri dengan crop 2:1', async () => {
     await wrap(<ProfilScreen />);
     await fireEvent.press(screen.getByLabelText('Ubah sampul'));
     // Bawaan (null) = Tinta terpilih: mengetuknya lagi tidak menyimpan apa-apa.
@@ -140,7 +140,7 @@ describe('Pengaturan > Profil', () => {
     await act(async () => fireEvent.press(screen.getByText('Unggah foto sampul')));
     expect(screen.getByText('Atur sampul')).toBeTruthy();
     await act(async () => fireEvent.press(screen.getByText('Gunakan')));
-    expect(mockCrop).toHaveBeenCalledWith(PICKED.uri, { originX: 0, originY: 833, width: 4000, height: 1333 }, 'cover');
+    expect(mockCrop).toHaveBeenCalledWith(PICKED.uri, { originX: 0, originY: 500, width: 4000, height: 2000 }, 'cover');
     // Preset sebelumnya tidak punya berkas untuk dibuang.
     expect(mockSave).toHaveBeenCalledWith('u1', 'cover', 'file:///tmp/cropped.jpg', null);
   });

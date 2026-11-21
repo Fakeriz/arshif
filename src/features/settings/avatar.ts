@@ -8,10 +8,10 @@ import type { Rect, Size } from '@/lib/crop';
 
 export type ImageKind = 'avatar' | 'cover';
 
-/** Foto profil persegi 512; sampul 3:1 1200x400 (cukup tajam untuk lebar layar ponsel @3x). */
+/** Foto profil persegi 512; sampul 2:1 1200x600 (= rasio kartu profil, cukup tajam untuk ponsel @3x). */
 const SHAPE: Record<ImageKind, { aspect: [number, number]; width: number; column: 'avatar_path' | 'cover_path' }> = {
   avatar: { aspect: [1, 1], width: 512, column: 'avatar_path' },
-  cover: { aspect: [3, 1], width: 1200, column: 'cover_path' },
+  cover: { aspect: [2, 1], width: 1200, column: 'cover_path' },
 };
 const MAX_BYTES = 2 * 1024 * 1024;
 

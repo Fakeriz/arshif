@@ -9,7 +9,7 @@ import { inkCard, type ColorScheme } from '@/theme/tokens';
 
 import { useSignedUrl } from './ProfileAvatar';
 
-// Pola digambar di kanvas 300x100 (rasio sampul 3:1) lalu di-"slice" ke ukuran sebenarnya.
+// Pola digambar di kanvas 200x100 (rasio sampul 2:1) lalu di-"slice" ke ukuran sebenarnya.
 const PHOTO_FALLBACK = '#262626';
 const LINES = Array.from({ length: 28 }, (_, i) => i * 14);
 const RINGS = Array.from({ length: 12 }, (_, i) => 24 + i * 22);
@@ -41,10 +41,10 @@ export function ProfileCover({ value, uri, preset, scrim }: { value?: string | n
   return (
     <View style={[styles.fill, { backgroundColor: bg }]} accessible={false}>
       {key === 'garis' || key === 'lingkar' ? (
-        <Svg width="100%" height="100%" viewBox="0 0 300 100" preserveAspectRatio="xMidYMid slice">
+        <Svg width="100%" height="100%" viewBox="0 0 200 100" preserveAspectRatio="xMidYMid slice">
           {key === 'garis'
             ? LINES.map((x) => <Line key={x} x1={x} y1={0} x2={x - 100} y2={100} stroke={ink.track} strokeWidth={1} />)
-            : RINGS.map((r) => <Circle key={r} cx={270} cy={100} r={r} stroke={ink.track} strokeWidth={1} fill="none" />)}
+            : RINGS.map((r) => <Circle key={r} cx={180} cy={100} r={r} stroke={ink.track} strokeWidth={1} fill="none" />)}
         </Svg>
       ) : null}
     </View>

@@ -18,14 +18,17 @@ import { useStore } from '@/state/AppStore';
 import { useSession } from '@/state/session';
 import { useTheme } from '@/theme/ThemeProvider';
 import type { Rect, Size } from '@/lib/crop';
-import { layout, radius, space } from '@/theme/tokens';
+import { radius, space } from '@/theme/tokens';
 
-const AVATAR = 96;
-const RING = 4;
-const PENCIL = 32;
+// Kartu identitas 2:1 = rasio file sampul (crop 2:1), jadi yang dipotong pengguna sama dengan yang tampil.
+// Isi (16 + 90 + 8 + 46 + 16 = 176) muat di kartu 2:1 selebar 358 (ponsel 390); layar lebih sempit = kartu memanjang.
+const AVATAR = 84;
+const RING = 3;
+const DOT = 26;
+const COVER_BTN = 30;
 
 /**
- * Profil: sampul (preset monokrom atau foto 3:1), foto profil (kamera/galeri, persegi), badge PRO di lingkaran foto,
+ * Profil: sampul penuh kartu 2:1 (preset monokrom atau foto), foto profil (kamera/galeri, crop lingkaran), ikon Pro di lingkaran foto,
  * nama tampilan (dipakai di invoice, laporan, split bill), dan info akun. Semua tulisan langsung ke server lalu ke
  * store, supaya gagal simpan terlihat di tempat (toast) dan layar tidak menampilkan nilai yang tidak tersimpan.
  */
@@ -43,6 +46,7 @@ export default function ProfilScreen() {
   const [nameOpen, setNameOpen] = useState(false);
   const [draft, setDraft] = useState('');
   const [savingName, setSavingName] = useState(false);
+  const [cardW, setCardW] = useState(0);
   const [cropping, setCropping] = useState<({ kind: ImageKind; uri: string } & Size) | null>(null);
 
   const name = profileName(state.displayName, state.email);
@@ -151,22 +155,24 @@ export default function ProfilScreen() {
   return (
     <SettingsScreen title={t('settings.profile.title')}>
       {/* Sampul memenuhi kartu identitas (kartu tinta layar ini); warna teks mengikuti sampul supaya tetap 4.5:1. */}
-      <Card padding={0} style={styles.heroCard}>
+      <View onLayout={(e) => setCardW(e.nativeEvent.layout.width)}>
+      <Card padding={0} style={[styles.heroCard, cardW ? { minHeight: cardW / 2 } : null]}>
         <View style={[StyleSheet.absoluteFill, busy === 'cover' && styles.busy]}>
           <ProfileCover value={state.coverPath} uri={preview?.kind === 'cover' ? preview.uri : null} scrim />
         </View>
-        {/* Kertas di atas sampul apa pun (tinta, batu, foto) tetap terbaca. 36 + hitSlop 4 = target 44. */}
+        {/* 30 + hitSlop 7 = target sentuh 44. */}
         <PressableScale
           accessibilityRole="button"
           accessibilityLabel={t('settings.profile.coverChange')}
           focusRadius={radius.full}
-          hitSlop={4}
+          hitSlop={7}
           disabled={busy !== null}
           onPress={() => setSheet('cover')}
           containerStyle={styles.coverBtnWrap}
-          style={[styles.coverBtn, { backgroundColor: colors.surface }]}
+          // Kaca transparan: warna teks sampul 20% + garis 35%, jadi terbaca di sampul gelap, terang, maupun foto.
+          style={[styles.coverBtn, { backgroundColor: `${ink.text}33`, borderColor: `${ink.text}59` }]}
         >
-          <Icon icon={ImagePlus} color={colors.text} size={layout.iconSize.sm} />
+          <Icon icon={ImagePlus} color={ink.text} size={14} />
         </PressableScale>
 
         <View style={styles.hero}>
@@ -179,11 +185,11 @@ export default function ProfilScreen() {
             {/* Pro = ikon mahkota saja di kanan atas lingkaran; pensil (ganti foto) di kanan bawah. Cincin kertas memisahkan dari foto. */}
             {premium ? (
               <View style={[styles.dot, styles.pro, { backgroundColor: colors.accent, borderColor: colors.surface }]} accessible accessibilityLabel={t('settings.profile.proA11y')}>
-                <Icon icon={Crown} color={colors.onAccent} size={14} />
+                <Icon icon={Crown} color={colors.onAccent} size={12} />
               </View>
             ) : null}
             <View pointerEvents="none" style={[styles.dot, styles.pencil, { backgroundColor: colors.accent, borderColor: colors.surface }]} accessible={false}>
-              <Icon icon={Pencil} color={colors.onAccent} size={14} />
+              <Icon icon={Pencil} color={colors.onAccent} size={12} />
             </View>
           </View>
           <View style={styles.names}>
@@ -196,6 +202,7 @@ export default function ProfilScreen() {
           </View>
         </View>
       </Card>
+      </View>
 
       <ListCard>
         <ListItem
@@ -317,14 +324,14 @@ export default function ProfilScreen() {
 }
 
 const styles = StyleSheet.create({
-  heroCard: { overflow: 'hidden' },
+  heroCard: { overflow: 'hidden', justifyContent: 'center' },
   coverBtnWrap: { position: 'absolute', top: space.md, right: space.md, zIndex: 1 },
-  coverBtn: { width: 36, height: 36, borderRadius: radius.full, alignItems: 'center', justifyContent: 'center' },
-  hero: { alignItems: 'center', gap: space.md, paddingHorizontal: space.xl, paddingTop: space.xxl, paddingBottom: space.xl },
+  coverBtn: { width: COVER_BTN, height: COVER_BTN, borderRadius: radius.full, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
+  hero: { alignItems: 'center', gap: space.sm, paddingHorizontal: space.xl, paddingVertical: space.lg },
   avatarWrap: { position: 'relative' },
   ring: { padding: RING, borderRadius: radius.full },
   // PRO menempel di garis lingkaran kanan atas, pensil di kanan bawah (cincin kertas memisahkan dari foto).
-  dot: { position: 'absolute', width: PENCIL, height: PENCIL, borderRadius: radius.full, borderWidth: 2, alignItems: 'center', justifyContent: 'center' },
+  dot: { position: 'absolute', width: DOT, height: DOT, borderRadius: radius.full, borderWidth: 2, alignItems: 'center', justifyContent: 'center' },
   pro: { right: 2, top: 2 },
   pencil: { right: 2, bottom: 2 },
   names: { alignItems: 'center', gap: space.xxs, maxWidth: '100%' },
