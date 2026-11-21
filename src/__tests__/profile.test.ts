@@ -1,4 +1,3 @@
-import { centerCrop } from '@/features/settings/avatar';
 import { coverFile, parseCover, presetValue } from '@/lib/cover';
 import { cleanName, initialsOf, profileName } from '@/lib/profile';
 
@@ -35,10 +34,3 @@ describe('sampul profil', () => {
   });
 });
 
-describe('potong tengah', () => {
-  it('lebar -> dipotong sisi, tinggi -> dipotong atas-bawah', () => {
-    expect(centerCrop(4000, 3000, [1, 1])).toEqual({ originX: 500, originY: 0, width: 3000, height: 3000 });
-    expect(centerCrop(3000, 4000, [3, 1])).toEqual({ originX: 0, originY: 1500, width: 3000, height: 1000 });
-    expect(centerCrop(1200, 400, [3, 1])).toEqual({ originX: 0, originY: 0, width: 1200, height: 400 });
-  });
-});

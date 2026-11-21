@@ -10,7 +10,7 @@ const capture: Messages['capture'] = {
     understand: 'Understand what you said',
     review: 'Check the result',
   },
-  seePremium: 'See Premium',
+  seePremium: 'See Pro',
   confidence: 'Confidence {pct}, double-check.',
   error: {
     rateLimitedTitle: 'Too many requests',

@@ -22,7 +22,7 @@ const common: Messages['common'] = {
   suspendedMessage: 'Bu hesap askıya alındı, bu yüzden veriler açılamaz veya değiştirilemez. Bunun bir hata olduğunu düşünüyorsan Arshif destek ekibine yaz.',
   bootErrorTitle: 'Veriler yüklenemedi',
   bootErrorMessage: 'İnternet bağlantını kontrol edip tekrar dene. Verilerin sunucuda güvende.',
-  premiumFeature: 'Premium özellik',
+  premiumFeature: 'Pro özellik',
   balanceHidden: 'Bakiye gizli',
   overLimitPrefix: 'Limit aşıldı, ',
   closeNotification: 'Bildirimi kapat',

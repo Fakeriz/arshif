@@ -79,7 +79,7 @@ const plan: Messages['plan'] = {
     depositDone: '{amount} yatırıldı: {name}',
     reachedTitle: 'Hedefe ulaşıldı',
     reachedMessage: '{name} tamamen biriktirildi.',
-    limitReason: 'Free planda 3 aktif hedef olabilir. Birini tamamla ya da sınırsız kullanım için Premium’a geç.',
+    limitReason: 'Free planda 3 aktif hedef olabilir. Birini tamamla ya da sınırsız kullanım için Pro’a geç.',
     depositNote: 'Yatırılan tutar, seçilen hesaptan Birikim kategorisinde harcama olarak kaydedilir.',
   },
   bills: {
@@ -126,7 +126,7 @@ const plan: Messages['plan'] = {
     legendOverdue: 'Gecikmiş',
     dayLabel: '{date}: {names}',
     paidPeriods: 'Ödenen dönemler',
-    limitReason: 'Free planda toplam 3 fatura ve borç kaydedebilirsin. Sınırsız kullanım için Premium’a geç.',
+    limitReason: 'Free planda toplam 3 fatura ve borç kaydedebilirsin. Sınırsız kullanım için Pro’a geç.',
   },
   debts: {
     title: 'Borçlar ve alacaklar',
@@ -165,7 +165,7 @@ const plan: Messages['plan'] = {
     overpay: 'En fazla {amount} (kalan bakiye).',
     fromSplit: 'Hesap bölüşmeden: {title}',
     simulator: 'Borç kapatma simülatörü',
-    limitReason: 'Free planda toplam 3 fatura ve borç kaydedebilirsin. Sınırsız kullanım için Premium’a geç.',
+    limitReason: 'Free planda toplam 3 fatura ve borç kaydedebilirsin. Sınırsız kullanım için Pro’a geç.',
   },
   sim: {
     title: 'Borç kapatma simülatörü',
@@ -214,7 +214,7 @@ const plan: Messages['plan'] = {
     resume: 'Yeniden etkinleştir',
     stopped: 'Durduruldu',
     stoppedSection: 'Durdurulanlar',
-    limitReason: 'Free planda 5 aktif aboneliği takip edebilirsin. Sınırsız kullanım için Premium’a geç.',
+    limitReason: 'Free planda 5 aktif aboneliği takip edebilirsin. Sınırsız kullanım için Pro’a geç.',
   },
   split: {
     title: 'Hesap bölüşme',

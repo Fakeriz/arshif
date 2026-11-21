@@ -79,7 +79,7 @@ const plan: Messages['plan'] = {
     depositDone: '{amount} disimpan ke {name}',
     reachedTitle: 'Matlamat tercapai',
     reachedMessage: '{name} sudah terkumpul sepenuhnya.',
-    limitReason: 'Pelan Free boleh ada 3 matlamat aktif. Selesaikan salah satu atau buka Premium untuk tanpa had.',
+    limitReason: 'Pelan Free boleh ada 3 matlamat aktif. Selesaikan salah satu atau buka Pro untuk tanpa had.',
     depositNote: 'Simpanan direkod sebagai perbelanjaan kategori Simpanan dari akaun yang dipilih.',
   },
   bills: {
@@ -126,7 +126,7 @@ const plan: Messages['plan'] = {
     legendOverdue: 'Lewat',
     dayLabel: '{date}: {names}',
     paidPeriods: 'Tempoh dibayar',
-    limitReason: 'Pelan Free boleh merekod 3 bil dan hutang (gabungan). Buka Premium untuk tanpa had.',
+    limitReason: 'Pelan Free boleh merekod 3 bil dan hutang (gabungan). Buka Pro untuk tanpa had.',
   },
   debts: {
     title: 'Hutang & piutang',
@@ -165,7 +165,7 @@ const plan: Messages['plan'] = {
     overpay: 'Maksimum {amount} (baki semasa).',
     fromSplit: 'Daripada bahagi bil {title}',
     simulator: 'Simulator pelunasan',
-    limitReason: 'Pelan Free boleh merekod 3 bil dan hutang (gabungan). Buka Premium untuk tanpa had.',
+    limitReason: 'Pelan Free boleh merekod 3 bil dan hutang (gabungan). Buka Pro untuk tanpa had.',
   },
   sim: {
     title: 'Simulator pelunasan',
@@ -214,7 +214,7 @@ const plan: Messages['plan'] = {
     resume: 'Aktifkan semula',
     stopped: 'Dihentikan',
     stoppedSection: 'Dihentikan',
-    limitReason: 'Pelan Free boleh memantau 5 langganan aktif. Buka Premium untuk tanpa had.',
+    limitReason: 'Pelan Free boleh memantau 5 langganan aktif. Buka Pro untuk tanpa had.',
   },
   split: {
     title: 'Bahagi bil',

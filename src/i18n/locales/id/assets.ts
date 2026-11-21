@@ -19,7 +19,7 @@ const assets = {
   totalDebts: 'Total utang',
   noDebts: 'Tidak ada utang yang tercatat.',
   add: 'Tambah aset',
-  limitReason: 'Paket Free mencatat sampai 5 aset. Premium mencatat aset tanpa batas.',
+  limitReason: 'Paket Free mencatat sampai 5 aset. Pro mencatat aset tanpa batas.',
   emptyTitle: 'Belum ada aset yang dilacak',
   emptyMessage: 'Tambahkan saham, kripto, emas, atau properti supaya kekayaan bersihmu lengkap.',
   loadErrorTitle: 'Data aset gagal dimuat',

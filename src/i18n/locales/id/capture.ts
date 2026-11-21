@@ -9,7 +9,7 @@ const capture = {
     understand: 'Memahami ucapan',
     review: 'Cek hasil',
   },
-  seePremium: 'Lihat Premium',
+  seePremium: 'Lihat Pro',
   confidence: 'Keyakinan {pct}, cek ulang.',
   error: {
     rateLimitedTitle: 'Terlalu banyak permintaan',

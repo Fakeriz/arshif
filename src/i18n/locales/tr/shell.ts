@@ -43,14 +43,14 @@ const shell: Messages['shell'] = {
     markAll: 'Tümünü okundu say',
   },
   paywall: {
-    title: 'Premium ile sınırları kaldır',
+    title: 'Pro ile sınırları kaldır',
     benefitScan: 'Ayda {premium} fiş tarama (Free {free})',
     benefitPdf: 'Ayda {premium} PDF hesap özeti aktarımı (Free {free})',
     benefitUnlimited: 'Sınırsız hesap, hedef ve fatura',
     benefitVoice: 'Sınırsız Voice Log ve otomasyon',
     benefitCoach: 'Aylık özet ve günde 20 soru ile Coach’a Sor',
     benefitTax: 'Tam vergi araçları ve PDF dışa aktarma',
-    cta: 'Premium paketleri gör',
+    cta: 'Pro paketleri gör',
     later: 'Şimdi değil',
   },
 };

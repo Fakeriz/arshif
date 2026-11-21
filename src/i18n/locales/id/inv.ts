@@ -13,7 +13,7 @@ const inv = {
   loadErrorTitle: 'Invoice gagal dimuat',
   loadErrorMessage: 'Periksa koneksi lalu coba lagi. Data Anda tetap aman di server.',
   quotaLine: 'Bulan ini: {used} dari {limit} invoice dan penawaran (paket Free)',
-  limitReason: 'Paket Free bisa membuat {free} invoice dan penawaran per bulan. Premium tanpa batas.',
+  limitReason: 'Paket Free bisa membuat {free} invoice dan penawaran per bulan. Pro tanpa batas.',
   emptyInvoiceTitle: 'Belum ada invoice',
   emptyInvoiceMessage: 'Tagih klien dengan nomor otomatis. Saat ditandai Dibayar, pemasukannya langsung tercatat.',
   emptyQuoteTitle: 'Belum ada penawaran',

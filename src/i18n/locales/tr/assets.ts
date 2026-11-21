@@ -20,7 +20,7 @@ const assets: Messages['assets'] = {
   totalDebts: 'Toplam borç',
   noDebts: 'Kayıtlı borç yok.',
   add: 'Varlık ekle',
-  limitReason: 'Free plan en fazla 5 varlık takip eder. Premium sınırsız varlık takip eder.',
+  limitReason: 'Free plan en fazla 5 varlık takip eder. Pro sınırsız varlık takip eder.',
   emptyTitle: 'Henüz takip edilen varlık yok',
   emptyMessage: 'Net varlığını tamamlamak için hisse, kripto, altın veya gayrimenkul ekle.',
   loadErrorTitle: 'Varlıklar yüklenemedi',

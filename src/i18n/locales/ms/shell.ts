@@ -43,14 +43,14 @@ const shell: Messages['shell'] = {
     markAll: 'Tandakan semua dibaca',
   },
   paywall: {
-    title: 'Buka had dengan Premium',
+    title: 'Buka had dengan Pro',
     benefitScan: 'Imbas resit {premium}/bulan (Free {free})',
     benefitPdf: 'Import penyata bank PDF {premium}/bulan (Free {free})',
     benefitUnlimited: 'Akaun, matlamat dan bil tanpa had',
     benefitVoice: 'Voice Log dan automasi tanpa had',
     benefitCoach: 'Rekap bulanan dan Tanya Coach 20 soalan/hari',
     benefitTax: 'Alat cukai lengkap dan eksport PDF',
-    cta: 'Lihat pakej Premium',
+    cta: 'Lihat pakej Pro',
     later: 'Nanti dulu',
   },
 };

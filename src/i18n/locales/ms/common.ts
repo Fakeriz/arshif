@@ -22,7 +22,7 @@ const common: Messages['common'] = {
   suspendedMessage: 'Akaun ini sedang digantung, jadi data tidak boleh dibuka atau diubah. Hubungi sokongan Arshif jika anda rasa ini satu kesilapan.',
   bootErrorTitle: 'Data gagal dimuatkan',
   bootErrorMessage: 'Semak sambungan internet anda dan cuba lagi. Data anda selamat di pelayan.',
-  premiumFeature: 'Ciri Premium',
+  premiumFeature: 'Ciri Pro',
   balanceHidden: 'Baki disembunyikan',
   overLimitPrefix: 'Melebihi had, ',
   closeNotification: 'Tutup pemberitahuan',

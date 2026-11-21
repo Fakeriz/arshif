@@ -21,7 +21,7 @@ const common = {
   suspendedMessage: 'Akun ini sedang ditangguhkan, jadi data tidak bisa dibuka atau diubah. Hubungi dukungan Arshif kalau menurutmu ini keliru.',
   bootErrorTitle: 'Data gagal dimuat',
   bootErrorMessage: 'Periksa koneksi internetmu lalu coba lagi. Datamu aman di server.',
-  premiumFeature: 'Fitur Premium',
+  premiumFeature: 'Fitur Pro',
   balanceHidden: 'Saldo disembunyikan',
   overLimitPrefix: 'Melebihi batas, ',
   closeNotification: 'Tutup notifikasi',

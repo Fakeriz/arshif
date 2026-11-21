@@ -14,7 +14,7 @@ const inv: Messages['inv'] = {
   loadErrorTitle: 'Invoices could not be loaded',
   loadErrorMessage: 'Check your connection and try again. Your data is still safe on the server.',
   quotaLine: 'This month: {used} of {limit} invoices and quotes (Free plan)',
-  limitReason: 'The Free plan includes {free} invoices and quotes per month. Premium has no limit.',
+  limitReason: 'The Free plan includes {free} invoices and quotes per month. Pro has no limit.',
   emptyInvoiceTitle: 'No invoices yet',
   emptyInvoiceMessage: 'Bill clients with automatic numbering. When you mark one Paid, the income is recorded right away.',
   emptyQuoteTitle: 'No quotes yet',

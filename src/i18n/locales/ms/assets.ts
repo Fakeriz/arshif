@@ -20,7 +20,7 @@ const assets: Messages['assets'] = {
   totalDebts: 'Jumlah hutang',
   noDebts: 'Tiada hutang direkodkan.',
   add: 'Tambah aset',
-  limitReason: 'Pelan Free merekod sehingga 5 aset. Premium merekod aset tanpa had.',
+  limitReason: 'Pelan Free merekod sehingga 5 aset. Pro merekod aset tanpa had.',
   emptyTitle: 'Belum ada aset yang dijejaki',
   emptyMessage: 'Tambah saham, kripto, emas atau hartanah supaya nilai bersih anda lengkap.',
   loadErrorTitle: 'Data aset gagal dimuatkan',

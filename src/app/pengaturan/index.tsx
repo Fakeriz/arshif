@@ -1,5 +1,5 @@
 import { useRouter } from 'expo-router';
-import { Bell, BellRing, ChevronRight, CreditCard, Crown, Database, DatabaseBackup, LogOut, Palette, Shapes, ShieldCheck, Wallet } from 'lucide-react-native';
+import { Bell, BellRing, ChevronRight, CreditCard, Database, DatabaseBackup, LogOut, Palette, Shapes, ShieldCheck, Wallet } from 'lucide-react-native';
 import { useEffect, useState } from 'react';
 import { Platform, StyleSheet, View } from 'react-native';
 
@@ -41,16 +41,8 @@ export default function PengaturanScreen() {
   }, []);
   const name = profileName(state.displayName, state.email);
   const notifOn = Object.values(state.notifPrefs).filter(Boolean).length;
-  const premium = state.plan === 'premium';
-
-  const planLine = premium
-    ? state.premiumUntil
-      ? t('billing.settings.until', { date: isoDateLabel(state.premiumUntil, lang) })
-      : t('settings.usage.planPremium')
-    : t('settings.usage.planFree');
-
   const account: MenuEntry[] = [
-    { key: 'plan', icon: Crown, title: t('settings.menu.plan'), subtitle: planLine, onPress: () => router.push('/pengaturan/paket') },
+    // Paket & masa aktif Pro ada di Profil (kartu di atas).
     { key: 'accounts', icon: CreditCard, title: t('settings.accounts.title'), subtitle: t('settings.menu.accountsCount', { count: state.accounts.length }), onPress: () => router.push('/pengaturan/akun') },
     { key: 'smartlog', icon: BellRing, title: t('slog.automation.entry'), subtitle: t('slog.automation.entrySub'), onPress: () => router.push('/otomasi') },
   ];

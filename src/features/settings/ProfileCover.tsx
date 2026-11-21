@@ -5,11 +5,12 @@ import Svg, { Circle, Line } from 'react-native-svg';
 
 import { parseCover, type CoverPreset } from '@/lib/cover';
 import { useTheme } from '@/theme/ThemeProvider';
-import { inkCard } from '@/theme/tokens';
+import { inkCard, type ColorScheme } from '@/theme/tokens';
 
 import { useSignedUrl } from './ProfileAvatar';
 
 // Pola digambar di kanvas 300x100 (rasio sampul 3:1) lalu di-"slice" ke ukuran sebenarnya.
+const PHOTO_FALLBACK = '#262626';
 const LINES = Array.from({ length: 28 }, (_, i) => i * 14);
 const RINGS = Array.from({ length: 12 }, (_, i) => 24 + i * 22);
 
@@ -17,7 +18,7 @@ const RINGS = Array.from({ length: 12 }, (_, i) => 24 + i * 22);
  * Sampul profil. Preset memakai warna kartu tinta (ikut terbalik di tema gelap) supaya tetap satu titik paling kontras
  * di layar; garis tipis memakai warna track tinta (dekoratif, tanpa teks di atasnya). Foto gagal dimuat = preset bawaan.
  */
-export function ProfileCover({ value, uri, preset }: { value?: string | null; uri?: string | null; preset?: CoverPreset }) {
+export function ProfileCover({ value, uri, preset, scrim }: { value?: string | null; uri?: string | null; preset?: CoverPreset; scrim?: boolean }) {
   const { scheme, colors } = useTheme();
   const ink = inkCard[scheme];
   const cover = preset ? ({ kind: 'preset', key: preset } as const) : parseCover(value ?? null);
@@ -26,10 +27,17 @@ export function ProfileCover({ value, uri, preset }: { value?: string | null; ur
   const src = uri ?? remote;
 
   if (src && failed !== src) {
-    return <Image source={{ uri: src }} style={styles.fill} contentFit="cover" accessible={false} onError={() => setFailed(src)} transition={150} />;
+    return (
+      <View style={styles.fill} accessible={false}>
+        <Image source={{ uri: src }} style={styles.fill} contentFit="cover" onError={() => setFailed(src)} transition={150} />
+        {/* Redup tetap di atas foto: teks nama di atasnya tetap 4.5:1 walau fotonya putih (#FFF x 0.4 = #666, #F4F4F4 = 5.4:1). */}
+        {scrim ? <View style={[StyleSheet.absoluteFill, styles.scrim]} /> : null}
+      </View>
+    );
   }
-  const key = cover.kind === 'preset' ? cover.key : 'tinta';
-  const bg = key === 'batu' ? colors.textSecondary : ink.bg;
+  // Foto yang masih dimuat atau gagal: latar gelap tetap, karena teks di atasnya sudah memakai warna terang untuk foto.
+  const key = cover.kind === 'preset' ? cover.key : null;
+  const bg = key === 'batu' ? colors.textSecondary : key ? ink.bg : PHOTO_FALLBACK;
   return (
     <View style={[styles.fill, { backgroundColor: bg }]} accessible={false}>
       {key === 'garis' || key === 'lingkar' ? (
@@ -43,6 +51,20 @@ export function ProfileCover({ value, uri, preset }: { value?: string | null; ur
   );
 }
 
+/**
+ * Warna teks di atas sampul. Tinta/garis/lingkar = teks kartu tinta (ikut terbalik di tema gelap).
+ * Batu: teks redup kartu tinta gagal kontras (±2.9:1), jadi nama dan email sama-sama memakai teks utama.
+ * Foto: teks terang di atas redup (lihat scrim).
+ */
+export function coverTextColors(value: string | null, scheme: ColorScheme): { text: string; muted: string } {
+  const ink = inkCard[scheme];
+  const c = parseCover(value);
+  if (c.kind === 'photo') return { text: '#F4F4F4', muted: '#E0E0E0' };
+  if (c.kind === 'preset' && c.key === 'batu') return { text: ink.text, muted: ink.text };
+  return { text: ink.text, muted: ink.textMuted };
+}
+
 const styles = StyleSheet.create({
   fill: { width: '100%', height: '100%' },
+  scrim: { backgroundColor: 'rgba(10, 10, 10, 0.6)' },
 });

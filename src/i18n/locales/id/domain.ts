@@ -115,7 +115,7 @@ const domain = {
     // Broadcast admin: judul + isi bebas dari panel /admin, tidak diterjemahkan.
     broadcastTitle: '{title}',
     broadcastMessage: '{message}',
-    premiumTitle: 'Premium aktif',
+    premiumTitle: 'Pro aktif',
     premiumMessage: 'Semua batas Free sudah terbuka. Masa aktif tercatat di Pengaturan.',
     billTodayTitle: 'Tagihan {biller} jatuh tempo hari ini',
     billSoonTitle: 'Tagihan {biller} jatuh tempo {days} hari lagi',
@@ -124,9 +124,9 @@ const domain = {
     subMessage: '{amount} pada {date}. Hentikan sebelum itu kalau sudah tidak dipakai.',
     goalTitle: 'Goal {name} tercapai',
     goalMessage: 'Target {amount} sudah terkumpul penuh.',
-    premiumMessageStore: 'Langganan Premium aktif. Kelola perpanjangan di App Store atau Google Play.',
+    premiumMessageStore: 'Langganan Pro aktif. Kelola perpanjangan di App Store atau Google Play.',
     smartlogQuotaTitle: 'Kuota Smart Log habis',
-    smartlogQuotaMessage: 'Notifikasi bank tidak diproses otomatis sampai kuota automation pulih tanggal 1. Premium tanpa batas.',
+    smartlogQuotaMessage: 'Notifikasi bank tidak diproses otomatis sampai kuota automation pulih tanggal 1. Pro tanpa batas.',
   },
   date: {
     today: 'Hari ini',

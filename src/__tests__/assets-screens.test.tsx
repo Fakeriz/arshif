@@ -171,7 +171,7 @@ describe('tab Aset', () => {
     await act(async () => {
       fireEvent.press(screen.getByLabelText('Tambah aset'));
     });
-    expect(screen.getByText('Paket Free mencatat sampai 5 aset. Premium mencatat aset tanpa batas.')).toBeTruthy();
+    expect(screen.getByText('Paket Free mencatat sampai 5 aset. Pro mencatat aset tanpa batas.')).toBeTruthy();
     expect(screen.queryByText('Jenis')).toBeNull();
   });
 });

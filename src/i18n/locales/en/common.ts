@@ -22,7 +22,7 @@ const common: Messages['common'] = {
   suspendedMessage: 'This account is suspended, so its data cannot be opened or changed. Contact Arshif support if you think this is a mistake.',
   bootErrorTitle: 'Could not load your data',
   bootErrorMessage: 'Check your internet connection and try again. Your data is safe on the server.',
-  premiumFeature: 'Premium feature',
+  premiumFeature: 'Pro feature',
   balanceHidden: 'Balance hidden',
   overLimitPrefix: 'Over limit, ',
   closeNotification: 'Close notification',

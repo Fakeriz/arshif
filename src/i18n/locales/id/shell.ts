@@ -42,14 +42,14 @@ const shell = {
     markAll: 'Tandai semua dibaca',
   },
   paywall: {
-    title: 'Buka batas dengan Premium',
+    title: 'Buka batas dengan Pro',
     benefitScan: 'Scan struk {premium}/bulan (Free {free})',
     benefitPdf: 'Import rekening koran PDF {premium}/bulan (Free {free})',
     benefitUnlimited: 'Akun, goals, dan tagihan tanpa batas',
     benefitVoice: 'Voice Log dan automation tanpa batas',
     benefitCoach: 'Recap bulanan dan Tanya Coach 20 pertanyaan/hari',
     benefitTax: 'Alat pajak lengkap dan ekspor PDF',
-    cta: 'Lihat paket Premium',
+    cta: 'Lihat paket Pro',
     later: 'Nanti saja',
   },
 };

@@ -10,7 +10,7 @@ const capture: Messages['capture'] = {
     understand: 'Memahami percakapan',
     review: 'Semak hasil',
   },
-  seePremium: 'Lihat Premium',
+  seePremium: 'Lihat Pro',
   confidence: 'Keyakinan {pct}, sila semak semula.',
   error: {
     rateLimitedTitle: 'Terlalu banyak permintaan',

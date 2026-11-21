@@ -14,7 +14,7 @@ const inv: Messages['inv'] = {
   loadErrorTitle: 'Invois gagal dimuatkan',
   loadErrorMessage: 'Semak sambungan dan cuba lagi. Data anda masih selamat di pelayan.',
   quotaLine: 'Bulan ini: {used} daripada {limit} invois dan sebut harga (pelan Free)',
-  limitReason: 'Pelan Free boleh membuat {free} invois dan sebut harga sebulan. Premium tanpa had.',
+  limitReason: 'Pelan Free boleh membuat {free} invois dan sebut harga sebulan. Pro tanpa had.',
   emptyInvoiceTitle: 'Belum ada invois',
   emptyInvoiceMessage: 'Tagih pelanggan dengan nombor automatik. Apabila ditanda Dibayar, pendapatannya terus direkod.',
   emptyQuoteTitle: 'Belum ada sebut harga',

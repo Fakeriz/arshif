@@ -89,10 +89,10 @@ describe('layar Automation', () => {
     expect(v.setLink).toHaveBeenCalledWith('com.bca', null);
   });
 
-  it('kuota habis: jumlah yang ditahan + jalan ke Premium', async () => {
+  it('kuota habis: jumlah yang ditahan + jalan ke Pro', async () => {
     await wrap(<AutomationScreen />, fake({ enabled: true, permission: true, held: 3 }));
     expect(screen.getByText(/3 notifikasi bank ditahan/)).toBeTruthy();
-    await fireEvent.press(screen.getByLabelText('Lihat Premium'));
+    await fireEvent.press(screen.getByLabelText('Lihat Pro'));
     expect(mockPush).toHaveBeenCalledWith('/premium');
   });
 

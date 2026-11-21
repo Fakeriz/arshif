@@ -20,7 +20,7 @@ const assets: Messages['assets'] = {
   totalDebts: 'Total debts',
   noDebts: 'No debts recorded.',
   add: 'Add asset',
-  limitReason: 'The Free plan tracks up to 5 assets. Premium tracks unlimited assets.',
+  limitReason: 'The Free plan tracks up to 5 assets. Pro tracks unlimited assets.',
   emptyTitle: 'No tracked assets yet',
   emptyMessage: 'Add stocks, crypto, gold, or property to complete your net worth.',
   loadErrorTitle: 'Couldn’t load your assets',

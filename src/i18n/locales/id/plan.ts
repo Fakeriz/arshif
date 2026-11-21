@@ -77,7 +77,7 @@ const plan = {
     depositDone: '{amount} disetor ke {name}',
     reachedTitle: 'Goal tercapai',
     reachedMessage: '{name} sudah terkumpul penuh.',
-    limitReason: 'Paket Free bisa punya 3 goal aktif. Selesaikan salah satu atau buka Premium untuk tanpa batas.',
+    limitReason: 'Paket Free bisa punya 3 goal aktif. Selesaikan salah satu atau buka Pro untuk tanpa batas.',
     depositNote: 'Setoran dicatat sebagai pengeluaran kategori Tabungan dari akun yang dipilih.',
   },
   bills: {
@@ -124,7 +124,7 @@ const plan = {
     legendOverdue: 'Terlambat',
     dayLabel: '{date}: {names}',
     paidPeriods: 'Periode lunas',
-    limitReason: 'Paket Free bisa mencatat 3 tagihan dan utang (gabungan). Buka Premium untuk tanpa batas.',
+    limitReason: 'Paket Free bisa mencatat 3 tagihan dan utang (gabungan). Buka Pro untuk tanpa batas.',
   },
   debts: {
     title: 'Utang & piutang',
@@ -163,7 +163,7 @@ const plan = {
     overpay: 'Maksimal {amount} (sisa saldo).',
     fromSplit: 'Dari split bill {title}',
     simulator: 'Simulator pelunasan',
-    limitReason: 'Paket Free bisa mencatat 3 tagihan dan utang (gabungan). Buka Premium untuk tanpa batas.',
+    limitReason: 'Paket Free bisa mencatat 3 tagihan dan utang (gabungan). Buka Pro untuk tanpa batas.',
   },
   sim: {
     title: 'Simulator pelunasan',
@@ -212,7 +212,7 @@ const plan = {
     resume: 'Aktifkan lagi',
     stopped: 'Dihentikan',
     stoppedSection: 'Dihentikan',
-    limitReason: 'Paket Free bisa memantau 5 langganan aktif. Buka Premium untuk tanpa batas.',
+    limitReason: 'Paket Free bisa memantau 5 langganan aktif. Buka Pro untuk tanpa batas.',
   },
   split: {
     title: 'Split bill',

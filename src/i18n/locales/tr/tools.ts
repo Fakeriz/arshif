@@ -20,7 +20,7 @@ const tools: Messages['tools'] = {
     checking: 'Paket kontrol ediliyor',
     gateErrorTitle: 'Paket kontrol edilemedi',
     gateErrorMessage: 'Bağlantınızı kontrol edip tekrar deneyin.',
-    seePremium: 'Premium\'u gör',
+    seePremium: 'Pro\'u gör',
   },
   fx: {
     title: 'Döviz çevirici',
@@ -63,8 +63,8 @@ const tools: Messages['tools'] = {
   },
   tax: {
     title: 'Vergi tahmini',
-    reason: 'PPh 21, PCB/MTD ve Gelir Vergisi tahmini Premium paketine dahildir.',
-    lockedTitle: 'Vergi tahmini Premium\'da',
+    reason: 'PPh 21, PCB/MTD ve Gelir Vergisi tahmini Pro paketine dahildir.',
+    lockedTitle: 'Vergi tahmini Pro\'da',
     disclaimer: 'Bu sonuç yalnızca bir tahmindir, resmi vergi danışmanlığı değildir. Resmi vergi beyanı (e-Filing) Arshif\'te yapılmaz. Önemli kararlar için bir mali müşavire veya ülkenizin vergi idaresine danışın.',
     country: 'Ülke',
     countryId: 'Endonezya',
@@ -147,8 +147,8 @@ const tools: Messages['tools'] = {
   },
   report: {
     title: 'Yıllık vergi raporu',
-    reason: 'İşlem verilerinden yıllık vergi raporu Premium paketine dahildir.',
-    lockedTitle: 'Vergi raporu Premium\'da',
+    reason: 'İşlem verilerinden yıllık vergi raporu Pro paketine dahildir.',
+    lockedTitle: 'Vergi raporu Pro\'da',
     year: 'Yıl',
     dependents: '{count} bakmakla yükümlü kişi',
     dependents_one: '{count} bakmakla yükümlü kişi',
@@ -186,8 +186,8 @@ const tools: Messages['tools'] = {
   },
   export: {
     title: 'PDF dışa aktar',
-    reason: 'PDF dışa aktarma (aylık rapor, vergi raporu, işlem geçmişi) Premium paketine dahildir.',
-    lockedTitle: 'PDF dışa aktarma Premium\'da',
+    reason: 'PDF dışa aktarma (aylık rapor, vergi raporu, işlem geçmişi) Pro paketine dahildir.',
+    lockedTitle: 'PDF dışa aktarma Pro\'da',
     monthlyTitle: 'Aylık rapor',
     monthlyHint: 'Kategoriye göre gelir ve gider, {currency} cinsinden.',
     pickMonth: 'Ay seçin',

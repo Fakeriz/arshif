@@ -20,7 +20,7 @@ const tools: Messages['tools'] = {
     checking: 'Menyemak pelan',
     gateErrorTitle: 'Pelan belum dapat disemak',
     gateErrorMessage: 'Semak sambungan dan cuba lagi.',
-    seePremium: 'Lihat Premium',
+    seePremium: 'Lihat Pro',
   },
   fx: {
     title: 'Penukar mata wang',
@@ -63,8 +63,8 @@ const tools: Messages['tools'] = {
   },
   tax: {
     title: 'Anggaran cukai',
-    reason: 'Anggaran PPh 21, PCB/MTD, dan Gelir Vergisi termasuk dalam pelan Premium.',
-    lockedTitle: 'Anggaran cukai untuk Premium',
+    reason: 'Anggaran PPh 21, PCB/MTD, dan Gelir Vergisi termasuk dalam pelan Pro.',
+    lockedTitle: 'Anggaran cukai untuk Pro',
     disclaimer: 'Hasil ini hanya anggaran, bukan nasihat cukai rasmi. Pemfailan cukai rasmi (e-Filing) tidak dibuat dalam Arshif. Untuk keputusan penting, rujuk perunding cukai atau pihak berkuasa cukai negara anda.',
     country: 'Negara',
     countryId: 'Indonesia',
@@ -147,8 +147,8 @@ const tools: Messages['tools'] = {
   },
   report: {
     title: 'Laporan cukai tahunan',
-    reason: 'Laporan cukai tahunan daripada data transaksi termasuk dalam pelan Premium.',
-    lockedTitle: 'Laporan cukai untuk Premium',
+    reason: 'Laporan cukai tahunan daripada data transaksi termasuk dalam pelan Pro.',
+    lockedTitle: 'Laporan cukai untuk Pro',
     year: 'Tahun',
     dependents: '{count} tanggungan',
     dependents_one: '{count} tanggungan',
@@ -186,8 +186,8 @@ const tools: Messages['tools'] = {
   },
   export: {
     title: 'Eksport PDF',
-    reason: 'Eksport PDF (laporan bulanan, laporan cukai, sejarah transaksi) termasuk dalam pelan Premium.',
-    lockedTitle: 'Eksport PDF untuk Premium',
+    reason: 'Eksport PDF (laporan bulanan, laporan cukai, sejarah transaksi) termasuk dalam pelan Pro.',
+    lockedTitle: 'Eksport PDF untuk Pro',
     monthlyTitle: 'Laporan bulanan',
     monthlyHint: 'Pendapatan dan perbelanjaan mengikut kategori, dalam {currency}.',
     pickMonth: 'Pilih bulan',

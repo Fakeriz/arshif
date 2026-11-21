@@ -20,7 +20,7 @@ const tools: Messages['tools'] = {
     checking: 'Checking your plan',
     gateErrorTitle: 'Your plan could not be checked',
     gateErrorMessage: 'Check your connection and try again.',
-    seePremium: 'See Premium',
+    seePremium: 'See Pro',
   },
   fx: {
     title: 'Currency converter',
@@ -63,8 +63,8 @@ const tools: Messages['tools'] = {
   },
   tax: {
     title: 'Tax estimate',
-    reason: 'PPh 21, PCB/MTD, and Gelir Vergisi estimates are part of Premium.',
-    lockedTitle: 'Tax estimates are Premium',
+    reason: 'PPh 21, PCB/MTD, and Gelir Vergisi estimates are part of Pro.',
+    lockedTitle: 'Tax estimates are Pro',
     disclaimer: 'This is only an estimate, not official tax advice. Official tax filing (e-Filing) is not done in Arshif. For important decisions, check with a tax consultant or your country\'s tax authority.',
     country: 'Country',
     countryId: 'Indonesia',
@@ -147,8 +147,8 @@ const tools: Messages['tools'] = {
   },
   report: {
     title: 'Annual tax report',
-    reason: 'The annual tax report from your transactions is part of Premium.',
-    lockedTitle: 'Tax report is Premium',
+    reason: 'The annual tax report from your transactions is part of Pro.',
+    lockedTitle: 'Tax report is Pro',
     year: 'Year',
     dependents: '{count} dependents',
     dependents_one: '{count} dependent',
@@ -186,8 +186,8 @@ const tools: Messages['tools'] = {
   },
   export: {
     title: 'PDF export',
-    reason: 'PDF export (monthly report, tax report, transaction history) is part of Premium.',
-    lockedTitle: 'PDF export is Premium',
+    reason: 'PDF export (monthly report, tax report, transaction history) is part of Pro.',
+    lockedTitle: 'PDF export is Pro',
     monthlyTitle: 'Monthly report',
     monthlyHint: 'Income and expenses by category, in {currency}.',
     pickMonth: 'Choose month',

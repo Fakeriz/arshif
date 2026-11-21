@@ -4,6 +4,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { discardPrivate, uploadPrivate } from '@/data/remote/upload';
 import { updateProfile } from '@/data/remote/api';
 import { coverFile, presetValue, type CoverPreset } from '@/lib/cover';
+import type { Rect, Size } from '@/lib/crop';
 
 export type ImageKind = 'avatar' | 'cover';
 
@@ -20,32 +21,36 @@ export class CameraDeniedError extends Error {
   }
 }
 
-/** Potongan tengah terbesar dengan rasio w:h di dalam gambar W x H. */
-export function centerCrop(W: number, H: number, [w, h]: [number, number]) {
-  const r = w / h;
-  const width = W / H > r ? Math.round(H * r) : W;
-  const height = W / H > r ? H : Math.round(W / r);
-  return { originX: Math.floor((W - width) / 2), originY: Math.floor((H - height) / 2), width, height };
-}
+// Foto kamera 12-50 MP diperkecil dulu: crop tetap tajam, memori dan waktu proses jauh lebih kecil.
+const WORK_MAX = 2400;
 
 /**
- * Pilih foto dari kamera/galeri, potong tengah sesuai bentuknya, kecilkan, simpan JPEG 80%.
- * Native sudah menawarkan potong (allowsEditing); web tidak, jadi potong tengah selalu dilakukan di sini. Batal = null.
+ * Pilih foto dari kamera/galeri. Tanpa crop bawaan sistem (web tidak punya; iOS hanya persegi):
+ * crop dilakukan di CropModal. Foto dinormalkan lewat manipulator (orientasi EXIF diterapkan, sisi terpanjang
+ * maks 2400 px) supaya ukuran yang dipakai crop sama dengan piksel sebenarnya. Batal = null.
  */
-export async function pickImage(source: 'camera' | 'library', kind: ImageKind): Promise<string | null> {
+export async function pickImage(source: 'camera' | 'library'): Promise<{ uri: string } & Size | null> {
   if (source === 'camera') {
     const perm = await ImagePicker.requestCameraPermissionsAsync();
     if (!perm.granted) throw new CameraDeniedError();
   }
-  const { aspect, width } = SHAPE[kind];
-  const opts: ImagePicker.ImagePickerOptions = { mediaTypes: ['images'], allowsEditing: true, aspect, quality: 1 };
+  const opts: ImagePicker.ImagePickerOptions = { mediaTypes: ['images'], quality: 1 };
   const r = await (source === 'camera' ? ImagePicker.launchCameraAsync(opts) : ImagePicker.launchImageLibraryAsync(opts));
   const a = r.canceled ? undefined : r.assets[0];
   if (!a) return null;
-  const crop = centerCrop(a.width, a.height, aspect);
   const ctx = ImageManipulator.manipulate(a.uri);
-  ctx.crop(crop);
-  if (crop.width > width) ctx.resize({ width, height: Math.round((width * aspect[1]) / aspect[0]) });
+  const big = Math.max(a.width, a.height);
+  if (big > WORK_MAX) ctx.resize(a.width >= a.height ? { width: WORK_MAX } : { height: WORK_MAX });
+  const out = await (await ctx.renderAsync()).saveAsync({ compress: 0.92, format: SaveFormat.JPEG });
+  return { uri: out.uri, w: out.width, h: out.height };
+}
+
+/** Potong sesuai pilihan di CropModal, kecilkan ke ukuran akhir, JPEG 80%. */
+export async function cropImage(uri: string, rect: Rect, kind: ImageKind): Promise<string> {
+  const { aspect, width } = SHAPE[kind];
+  const ctx = ImageManipulator.manipulate(uri);
+  ctx.crop(rect);
+  if (rect.width > width) ctx.resize({ width, height: Math.round((width * aspect[1]) / aspect[0]) });
   const out = await (await ctx.renderAsync()).saveAsync({ compress: 0.8, format: SaveFormat.JPEG });
   return out.uri;
 }

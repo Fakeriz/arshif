@@ -14,7 +14,7 @@ const inv: Messages['inv'] = {
   loadErrorTitle: 'Faturalar yüklenemedi',
   loadErrorMessage: 'Bağlantınızı kontrol edip tekrar deneyin. Verileriniz sunucuda güvende.',
   quotaLine: 'Bu ay: {used} / {limit} fatura ve teklif (Free paket)',
-  limitReason: 'Free paketle ayda {free} fatura ve teklif oluşturabilirsiniz. Premium sınırsızdır.',
+  limitReason: 'Free paketle ayda {free} fatura ve teklif oluşturabilirsiniz. Pro sınırsızdır.',
   emptyInvoiceTitle: 'Henüz fatura yok',
   emptyInvoiceMessage: 'Müşterilerinize otomatik numaralı fatura kesin. Ödendi olarak işaretlediğinizde gelir hemen kaydedilir.',
   emptyQuoteTitle: 'Henüz teklif yok',

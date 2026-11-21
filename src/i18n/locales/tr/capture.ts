@@ -10,7 +10,7 @@ const capture: Messages['capture'] = {
     understand: 'Söyleneni anlama',
     review: 'Sonucu kontrol et',
   },
-  seePremium: 'Premium’u gör',
+  seePremium: 'Pro’u gör',
   confidence: 'Güven {pct}, tekrar kontrol et.',
   error: {
     rateLimitedTitle: 'Çok fazla istek',

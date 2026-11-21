@@ -43,14 +43,14 @@ const shell: Messages['shell'] = {
     markAll: 'Mark all as read',
   },
   paywall: {
-    title: 'Lift the limits with Premium',
+    title: 'Lift the limits with Pro',
     benefitScan: '{premium} receipt scans/month (Free {free})',
     benefitPdf: '{premium} PDF statement imports/month (Free {free})',
     benefitUnlimited: 'Unlimited accounts, goals, and bills',
     benefitVoice: 'Unlimited Voice Log and automation',
     benefitCoach: 'Monthly recap and Ask Coach, 20 questions/day',
     benefitTax: 'Full tax tools and PDF export',
-    cta: 'See Premium plans',
+    cta: 'See Pro plans',
     later: 'Not now',
   },
 };

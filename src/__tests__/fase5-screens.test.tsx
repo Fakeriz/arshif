@@ -108,7 +108,7 @@ describe('alert harga di detail aset', () => {
 });
 
 describe('Tanya harga wajar di detail aset', () => {
-  it('Premium: request hanya angka ringkasan; jawaban memakai harga live yang sama dengan layar', async () => {
+  it('Pro: request hanya angka ringkasan; jawaban memakai harga live yang sama dengan layar', async () => {
     mockInvoke.mockResolvedValue({ verdict: 'fair', targetLow: 4900, targetHigh: 5600, livePrice: 5200, currency: 'IDR', reasons: ['Harga sekarang Rp 5.200 ada di tengah kisaran.', 'Ini perkiraan, bukan rekomendasi.'] });
     await wrap(<AssetDetail />, { state: { plan: 'premium' } });
     await press('Tanya Coach');
@@ -128,7 +128,7 @@ describe('Tanya harga wajar di detail aset', () => {
     expect(screen.getAllByText('PRO').length).toBeGreaterThan(0);
     await press('Tanya Coach');
     expect(mockInvoke).not.toHaveBeenCalled();
-    expect(screen.getAllByText('Tanya Coach (20 pertanyaan/hari) hanya ada di Premium.').length).toBeGreaterThan(1);
+    expect(screen.getAllByText('Tanya Coach (20 pertanyaan/hari) hanya ada di Pro.').length).toBeGreaterThan(1);
   });
 
   it('kuota harian habis dari server: pesan batas, bukan diam', async () => {

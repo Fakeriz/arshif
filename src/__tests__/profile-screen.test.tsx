@@ -17,13 +17,16 @@ jest.mock('@/state/AppStore', () => {
 });
 const mockUpdate = jest.fn(async (..._a: unknown[]) => undefined);
 jest.mock('@/data/remote/api', () => ({ ...jest.requireActual('@/data/remote/api'), updateProfile: (...a: unknown[]) => mockUpdate(...a), avatarUrl: async () => 'https://x/a.jpg' }));
-const mockPick = jest.fn(async (..._a: unknown[]): Promise<string | null> => 'file:///tmp/a.jpg');
+const PICKED = { uri: 'file:///tmp/raw.jpg', w: 4000, h: 3000 };
+const mockPick = jest.fn(async (..._a: unknown[]): Promise<typeof PICKED | null> => PICKED);
+const mockCrop = jest.fn(async (..._a: unknown[]) => 'file:///tmp/cropped.jpg');
 const mockSave = jest.fn(async (..._a: unknown[]) => 'u1/new.jpg');
 const mockPreset = jest.fn(async (..._a: unknown[]) => 'preset:garis');
 const mockRemove = jest.fn(async (..._a: unknown[]) => undefined);
 jest.mock('@/features/settings/avatar', () => ({
   ...jest.requireActual('@/features/settings/avatar'),
   pickImage: (...a: unknown[]) => mockPick(...a),
+  cropImage: (...a: unknown[]) => mockCrop(...a),
   saveImage: (...a: unknown[]) => mockSave(...a),
   setCoverPreset: (...a: unknown[]) => mockPreset(...a),
   removeAvatar: (...a: unknown[]) => mockRemove(...a),
@@ -42,21 +45,28 @@ const wrap = (ui: ReactNode, preset = sampleState(), mode: 'light' | 'dark' = 'l
     </SafeAreaProvider>,
   );
 
-beforeEach(() => [mockUpdate, mockPick, mockSave, mockRemove, mockPreset].forEach((m) => m.mockClear()));
+beforeEach(() => [mockUpdate, mockPick, mockCrop, mockSave, mockRemove, mockPreset].forEach((m) => m.mockClear()));
 
 describe('Pengaturan > Profil', () => {
-  it('menampilkan nama, email, paket, dan info akun; paket Free tanpa badge PRO', async () => {
+  it('nama + email di kartu, tanpa baris email ganda; Free tanpa ikon Pro', async () => {
     await wrap(<ProfilScreen />);
     expect(screen.getAllByText('Rani Pratiwi').length).toBeGreaterThan(0);
-    expect(screen.getAllByText('rani.pratiwi@example.com').length).toBeGreaterThan(0);
+    // Email hanya sekali (di bawah nama), tidak diulang sebagai baris daftar.
+    expect(screen.getAllByText('rani.pratiwi@example.com')).toHaveLength(1);
+    expect(screen.queryByText('Email masuk')).toBeNull();
     expect(screen.getByText('Paket')).toBeTruthy();
     expect(screen.getByText('Free')).toBeTruthy();
-    expect(screen.queryByLabelText('Paket Premium aktif')).toBeNull();
-    expect(screen.getByText('Email masuk')).toBeTruthy();
+    expect(screen.queryByLabelText('Paket Pro aktif')).toBeNull();
     expect(screen.getByText('Bergabung sejak')).toBeTruthy();
-    // Belum ada foto: foto berlabel "Tambah foto", bukan "Ganti foto".
     expect(screen.getByLabelText('Tambah foto')).toBeTruthy();
     expect(screen.getByLabelText('Ubah sampul')).toBeTruthy();
+  });
+
+  it('Pro: ikon mahkota di lingkaran foto, baris Paket menulis tanggal akhir', async () => {
+    await wrap(<ProfilScreen />, { ...sampleState(), plan: 'premium', premiumUntil: '2026-12-21T00:00:00Z' }, 'dark');
+    expect(screen.getByLabelText('Paket Pro aktif')).toBeTruthy();
+    expect(screen.getByText(/^Pro aktif sampai 21 Des/)).toBeTruthy();
+    expect(screen.queryByText('Free')).toBeNull();
   });
 
   it('ubah nama: disimpan ke profil, nama baru tampil; >80 karakter ditolak', async () => {
@@ -82,14 +92,19 @@ describe('Pengaturan > Profil', () => {
     expect(screen.queryByText('Budi')).toBeNull();
   });
 
-  it('ganti foto dari galeri lalu hapus dengan konfirmasi', async () => {
+  it('foto: pilih dari galeri -> crop lingkaran -> unggah; lalu hapus dengan konfirmasi', async () => {
     await wrap(<ProfilScreen />);
     await fireEvent.press(screen.getByLabelText('Tambah foto'));
     await act(async () => fireEvent.press(screen.getByText('Pilih dari galeri')));
-    expect(mockPick).toHaveBeenCalledWith('library', 'avatar');
-    expect(mockSave).toHaveBeenCalledWith('u1', 'avatar', 'file:///tmp/a.jpg', null);
+    expect(mockPick).toHaveBeenCalledWith('library');
+    // Crop terbuka; belum ada unggahan sebelum "Gunakan".
+    expect(screen.getByText('Atur foto profil')).toBeTruthy();
+    expect(mockSave).not.toHaveBeenCalled();
+    await act(async () => fireEvent.press(screen.getByText('Gunakan')));
+    // Zoom 1 tanpa geser = potong tengah persegi terbesar dari 4000x3000.
+    expect(mockCrop).toHaveBeenCalledWith(PICKED.uri, { originX: 500, originY: 0, width: 3000, height: 3000 }, 'avatar');
+    expect(mockSave).toHaveBeenCalledWith('u1', 'avatar', 'file:///tmp/cropped.jpg', null);
     expect(screen.getByText('Foto profil diperbarui')).toBeTruthy();
-    expect(screen.getByLabelText('Ganti foto')).toBeTruthy();
 
     await fireEvent.press(screen.getByLabelText('Ganti foto'));
     await fireEvent.press(screen.getByText('Hapus foto'));
@@ -99,22 +114,17 @@ describe('Pengaturan > Profil', () => {
     expect(screen.getByText('Foto profil dihapus')).toBeTruthy();
   });
 
-  it('batal memilih foto: tidak ada unggahan', async () => {
-    mockPick.mockResolvedValueOnce(null);
+  it('batal di layar crop: tidak ada unggahan', async () => {
     await wrap(<ProfilScreen />);
     await fireEvent.press(screen.getByLabelText('Tambah foto'));
     await act(async () => fireEvent.press(screen.getByText('Pilih dari galeri')));
+    await fireEvent.press(screen.getByText('Batal'));
+    expect(screen.queryByText('Atur foto profil')).toBeNull();
+    expect(mockCrop).not.toHaveBeenCalled();
     expect(mockSave).not.toHaveBeenCalled();
   });
 
-  it('PRO: badge tampil di lingkaran foto untuk paket Premium', async () => {
-    // Tema gelap sekalian: badge dan cincin kertas harus tetap tampil di kartu tinta terbalik.
-    await wrap(<ProfilScreen />, { ...sampleState(), plan: 'premium' }, 'dark');
-    expect(screen.getByLabelText('Paket Premium aktif')).toBeTruthy();
-    expect(screen.queryByText('Free')).toBeNull();
-  });
-
-  it('sampul: pilih preset, lalu unggah foto sampul sendiri', async () => {
+  it('sampul: pilih preset, lalu unggah foto sampul sendiri dengan crop 3:1', async () => {
     await wrap(<ProfilScreen />);
     await fireEvent.press(screen.getByLabelText('Ubah sampul'));
     // Bawaan (null) = Tinta terpilih: mengetuknya lagi tidak menyimpan apa-apa.
@@ -128,8 +138,10 @@ describe('Pengaturan > Profil', () => {
 
     await fireEvent.press(screen.getByLabelText('Ubah sampul'));
     await act(async () => fireEvent.press(screen.getByText('Unggah foto sampul')));
-    expect(mockPick).toHaveBeenCalledWith('library', 'cover');
+    expect(screen.getByText('Atur sampul')).toBeTruthy();
+    await act(async () => fireEvent.press(screen.getByText('Gunakan')));
+    expect(mockCrop).toHaveBeenCalledWith(PICKED.uri, { originX: 0, originY: 833, width: 4000, height: 1333 }, 'cover');
     // Preset sebelumnya tidak punya berkas untuk dibuang.
-    expect(mockSave).toHaveBeenCalledWith('u1', 'cover', 'file:///tmp/a.jpg', null);
+    expect(mockSave).toHaveBeenCalledWith('u1', 'cover', 'file:///tmp/cropped.jpg', null);
   });
 });

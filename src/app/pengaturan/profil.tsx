@@ -1,14 +1,15 @@
 import { useRouter } from 'expo-router';
-import { CalendarDays, Camera, Check, Crown, ImagePlus, ImageUp, Mail, Pencil, Trash2, UserRound } from 'lucide-react-native';
+import { CalendarDays, Camera, Check, Crown, ImagePlus, ImageUp, Pencil, Trash2, UserRound } from 'lucide-react-native';
 import { useState } from 'react';
 import { Platform, StyleSheet, View } from 'react-native';
 
-import { AppText, BottomSheet, Button, Card, Dialog, Icon, IconTile, Input, ListCard, ListItem, PressableScale, ProBadge, useToast } from '@/components/ui';
+import { AppText, BottomSheet, Button, Card, Dialog, Icon, IconTile, Input, ListCard, ListItem, PressableScale, useToast } from '@/components/ui';
 import { updateProfile } from '@/data/remote/api';
-import { CameraDeniedError, pickImage, removeAvatar, saveImage, setCoverPreset, type ImageKind } from '@/features/settings/avatar';
+import { CameraDeniedError, cropImage, pickImage, removeAvatar, saveImage, setCoverPreset, type ImageKind } from '@/features/settings/avatar';
+import { CropModal } from '@/features/settings/CropModal';
 import { SettingsScreen } from '@/features/settings/kit';
 import { ProfileAvatar } from '@/features/settings/ProfileAvatar';
-import { ProfileCover } from '@/features/settings/ProfileCover';
+import { coverTextColors, ProfileCover } from '@/features/settings/ProfileCover';
 import { useI18n } from '@/i18n';
 import { COVER_PRESETS, coverFile, parseCover, type CoverPreset } from '@/lib/cover';
 import { isoDateLabel } from '@/lib/dates';
@@ -16,13 +17,11 @@ import { cleanName, NAME_MAX, profileName } from '@/lib/profile';
 import { useStore } from '@/state/AppStore';
 import { useSession } from '@/state/session';
 import { useTheme } from '@/theme/ThemeProvider';
+import type { Rect, Size } from '@/lib/crop';
 import { layout, radius, space } from '@/theme/tokens';
 
 const AVATAR = 96;
 const RING = 4;
-const COVER_H = 132;
-// Foto menumpang setengah di atas sampul: identitas tetap jadi titik fokus, sampul hanya latar.
-const OVERLAP = (AVATAR + RING * 2) / 2;
 const PENCIL = 32;
 
 /**
@@ -32,7 +31,7 @@ const PENCIL = 32;
  */
 export default function ProfilScreen() {
   const { t, lang } = useI18n();
-  const { colors } = useTheme();
+  const { colors, scheme } = useTheme();
   const router = useRouter();
   const { state, userId, applyLocal } = useStore();
   const { session } = useSession();
@@ -44,29 +43,48 @@ export default function ProfilScreen() {
   const [nameOpen, setNameOpen] = useState(false);
   const [draft, setDraft] = useState('');
   const [savingName, setSavingName] = useState(false);
+  const [cropping, setCropping] = useState<({ kind: ImageKind; uri: string } & Size) | null>(null);
 
   const name = profileName(state.displayName, state.email);
   const premium = state.plan === 'premium';
   const joined = session?.user.created_at;
   const nameCheck = cleanName(draft);
   const cover = parseCover(state.coverPath);
+  // Pratinjau foto sampul yang sedang diunggah dihitung sebagai foto (teks terang).
+  const ink = coverTextColors(preview?.kind === 'cover' ? 'photo' : state.coverPath, scheme);
+  const planLine = premium
+    ? state.premiumUntil
+      ? t('billing.settings.until', { date: isoDateLabel(state.premiumUntil, lang) })
+      : t('settings.usage.planPremium')
+    : t('settings.profile.planFree');
   const failed = () => show({ tone: 'error', title: t('settings.profile.photoFailed'), message: t('settings.profile.tryAgain') });
   const photoLabel = state.avatarPath ? t('settings.profile.photoChange') : t('settings.profile.photoAdd');
 
   const choose = async (kind: ImageKind, source: 'camera' | 'library') => {
     setSheet(null);
     if (!userId) return;
-    let uri: string | null;
     try {
-      uri = await pickImage(source, kind);
+      const picked = await pickImage(source);
+      if (picked) setCropping({ kind, ...picked });
     } catch (e) {
       if (e instanceof CameraDeniedError) show({ tone: 'warning', title: t('settings.profile.cameraDenied'), message: t('settings.profile.cameraDeniedMessage') });
       else failed();
+    }
+  };
+
+  const upload = async (kind: ImageKind, source: string, rect: Rect) => {
+    setCropping(null);
+    if (!userId) return;
+    setBusy(kind);
+    let uri: string;
+    try {
+      uri = await cropImage(source, rect, kind);
+    } catch {
+      setBusy(null);
+      failed();
       return;
     }
-    if (!uri) return;
     setPreview({ kind, uri });
-    setBusy(kind);
     try {
       if (kind === 'avatar') {
         const path = await saveImage(userId, kind, uri, state.avatarPath);
@@ -132,23 +150,24 @@ export default function ProfilScreen() {
 
   return (
     <SettingsScreen title={t('settings.profile.title')}>
+      {/* Sampul memenuhi kartu identitas (kartu tinta layar ini); warna teks mengikuti sampul supaya tetap 4.5:1. */}
       <Card padding={0} style={styles.heroCard}>
-        <View style={[styles.cover, busy === 'cover' && styles.busy]}>
-          <ProfileCover value={state.coverPath} uri={preview?.kind === 'cover' ? preview.uri : null} />
-          {/* Kertas di atas sampul apa pun (tinta, batu, foto) tetap terbaca. 36 + hitSlop 4 = target 44. */}
-          <PressableScale
-            accessibilityRole="button"
-            accessibilityLabel={t('settings.profile.coverChange')}
-            focusRadius={radius.full}
-            hitSlop={4}
-            disabled={busy !== null}
-            onPress={() => setSheet('cover')}
-            containerStyle={styles.coverBtnWrap}
-            style={[styles.coverBtn, { backgroundColor: colors.surface }]}
-          >
-            <Icon icon={ImagePlus} color={colors.text} size={layout.iconSize.sm} />
-          </PressableScale>
+        <View style={[StyleSheet.absoluteFill, busy === 'cover' && styles.busy]}>
+          <ProfileCover value={state.coverPath} uri={preview?.kind === 'cover' ? preview.uri : null} scrim />
         </View>
+        {/* Kertas di atas sampul apa pun (tinta, batu, foto) tetap terbaca. 36 + hitSlop 4 = target 44. */}
+        <PressableScale
+          accessibilityRole="button"
+          accessibilityLabel={t('settings.profile.coverChange')}
+          focusRadius={radius.full}
+          hitSlop={4}
+          disabled={busy !== null}
+          onPress={() => setSheet('cover')}
+          containerStyle={styles.coverBtnWrap}
+          style={[styles.coverBtn, { backgroundColor: colors.surface }]}
+        >
+          <Icon icon={ImagePlus} color={colors.text} size={layout.iconSize.sm} />
+        </PressableScale>
 
         <View style={styles.hero}>
           <View style={styles.avatarWrap}>
@@ -157,21 +176,21 @@ export default function ProfilScreen() {
                 <ProfileAvatar size={AVATAR} uri={preview?.kind === 'avatar' ? preview.uri : null} />
               </View>
             </PressableScale>
+            {/* Pro = ikon mahkota saja di kanan atas lingkaran; pensil (ganti foto) di kanan bawah. Cincin kertas memisahkan dari foto. */}
             {premium ? (
-              <View style={[styles.pro, { backgroundColor: colors.surface }]} accessible accessibilityLabel={t('settings.profile.proA11y')}>
-                <ProBadge size="sm" />
+              <View style={[styles.dot, styles.pro, { backgroundColor: colors.accent, borderColor: colors.surface }]} accessible accessibilityLabel={t('settings.profile.proA11y')}>
+                <Icon icon={Crown} color={colors.onAccent} size={14} />
               </View>
             ) : null}
-            {/* Pensil: tanda bahwa foto bisa diganti. Dekoratif untuk pembaca layar (foto sudah punya label). */}
-            <View pointerEvents="none" style={[styles.pencil, { backgroundColor: colors.accent, borderColor: colors.surface }]} accessible={false}>
+            <View pointerEvents="none" style={[styles.dot, styles.pencil, { backgroundColor: colors.accent, borderColor: colors.surface }]} accessible={false}>
               <Icon icon={Pencil} color={colors.onAccent} size={14} />
             </View>
           </View>
           <View style={styles.names}>
-            <AppText variant="h2" numberOfLines={2} style={styles.center}>
+            <AppText variant="h2" numberOfLines={2} style={[styles.center, { color: ink.text }]}>
               {name}
             </AppText>
-            <AppText variant="caption" tone="secondary" numberOfLines={1}>
+            <AppText variant="caption" numberOfLines={1} style={{ color: ink.muted }}>
               {state.email}
             </AppText>
           </View>
@@ -190,15 +209,7 @@ export default function ProfilScreen() {
             setNameOpen(true);
           }}
         />
-        <ListItem leading={<IconTile icon={Mail} tone="neutral" />} title={t('settings.profile.email')} subtitle={state.email} divider />
-        <ListItem
-          leading={<IconTile icon={Crown} tone="neutral" />}
-          title={t('settings.profile.plan')}
-          trailing={premium ? <ProBadge size="sm" /> : t('settings.profile.planFree')}
-          chevron
-          divider
-          onPress={() => router.push('/pengaturan/paket')}
-        />
+        <ListItem leading={<IconTile icon={Crown} tone="neutral" />} title={t('settings.profile.plan')} subtitle={planLine} chevron divider onPress={() => router.push('/pengaturan/paket')} />
         <ListItem leading={<IconTile icon={CalendarDays} tone="neutral" />} title={t('settings.profile.joined')} trailing={joined ? isoDateLabel(joined, lang) : '-'} />
       </ListCard>
       <AppText variant="caption" tone="secondary" style={styles.note}>
@@ -282,6 +293,15 @@ export default function ProfilScreen() {
         </View>
       </BottomSheet>
 
+      {cropping ? (
+        <CropModal
+          image={cropping}
+          shape={cropping.kind === 'avatar' ? 'circle' : 'wide'}
+          onCancel={() => setCropping(null)}
+          onConfirm={(rect) => void upload(cropping.kind, cropping.uri, rect)}
+        />
+      ) : null}
+
       <Dialog
         visible={confirmRemove}
         tone="danger"
@@ -298,15 +318,15 @@ export default function ProfilScreen() {
 
 const styles = StyleSheet.create({
   heroCard: { overflow: 'hidden' },
-  cover: { height: COVER_H },
-  coverBtnWrap: { position: 'absolute', top: space.md, right: space.md },
+  coverBtnWrap: { position: 'absolute', top: space.md, right: space.md, zIndex: 1 },
   coverBtn: { width: 36, height: 36, borderRadius: radius.full, alignItems: 'center', justifyContent: 'center' },
-  hero: { alignItems: 'center', gap: space.md, marginTop: -OVERLAP, paddingHorizontal: space.xl, paddingBottom: space.xl },
+  hero: { alignItems: 'center', gap: space.md, paddingHorizontal: space.xl, paddingTop: space.xxl, paddingBottom: space.xl },
   avatarWrap: { position: 'relative' },
   ring: { padding: RING, borderRadius: radius.full },
   // PRO menempel di garis lingkaran kanan atas, pensil di kanan bawah (cincin kertas memisahkan dari foto).
-  pro: { position: 'absolute', top: 2, right: -22, padding: 2, borderRadius: radius.full },
-  pencil: { position: 'absolute', right: 2, bottom: 2, width: PENCIL, height: PENCIL, borderRadius: radius.full, borderWidth: 2, alignItems: 'center', justifyContent: 'center' },
+  dot: { position: 'absolute', width: PENCIL, height: PENCIL, borderRadius: radius.full, borderWidth: 2, alignItems: 'center', justifyContent: 'center' },
+  pro: { right: 2, top: 2 },
+  pencil: { right: 2, bottom: 2 },
   names: { alignItems: 'center', gap: space.xxs, maxWidth: '100%' },
   center: { textAlign: 'center' },
   busy: { opacity: 0.5 },

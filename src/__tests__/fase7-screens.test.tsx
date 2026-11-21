@@ -211,15 +211,15 @@ describe('perbaikan uji HP', () => {
     expect(inScroll).toBe(true);
   });
 
-  it('Free: Tanya Coach terkunci, tombol membuka Premium', async () => {
+  it('Free: Tanya Coach terkunci, tombol membuka Pro', async () => {
     await act(async () => {
       wrap(<AskTab />, { plan: 'free' });
     });
-    expect(screen.getByText('Tanya Coach khusus Premium')).toBeTruthy();
+    expect(screen.getByText('Tanya Coach khusus Pro')).toBeTruthy();
     expect(screen.queryByLabelText('Kirim pertanyaan')).toBeNull();
   });
 
-  it('Premium: kirim pertanyaan -> jawaban Coach; hanya ringkasan angka yang dikirim', async () => {
+  it('Pro: kirim pertanyaan -> jawaban Coach; hanya ringkasan angka yang dikirim', async () => {
     let resolve: (v: unknown) => void = () => undefined;
     mockInvoke.mockReturnValueOnce(new Promise((r) => (resolve = r)));
     // Rumah Rp900 juta: kekayaan bersih untuk Coach harus sama dengan Beranda (termasuk aset), bukan hanya rekening.
@@ -250,7 +250,7 @@ describe('perbaikan uji HP', () => {
     for (const merchant of base.transactions.map((x) => x.merchant).filter((m) => m.length > 3)) expect(sent).not.toContain(merchant);
   });
 
-  it('Premium: kuota 20/hari habis -> input dimatikan dengan pesan', async () => {
+  it('Pro: kuota 20/hari habis -> input dimatikan dengan pesan', async () => {
     await act(async () => {
       wrap(<AskTab />, { plan: 'premium', usage: { ...base.usage, coachAsk: 20 } });
     });
@@ -260,7 +260,7 @@ describe('perbaikan uji HP', () => {
   const octTx: Transaction[] = [{ id: 'm', type: 'expense', merchant: 'Toko', categoryKey: 'food', accountId: 'a-bca', date: '2026-10-10', time: '10:00', amount: 50_000, currency: 'IDR', source: 'manual' }];
   const atNov5 = () => jest.useFakeTimers({ now: new Date('2026-11-05T10:00:00'), doNotFake: ['setTimeout', 'setInterval', 'nextTick', 'setImmediate', 'queueMicrotask', 'requestAnimationFrame'] });
 
-  it('Free: tab Bulan lalu menampilkan ajakan Premium', async () => {
+  it('Free: tab Bulan lalu menampilkan ajakan Pro', async () => {
     atNov5();
     try {
       await act(async () => {
@@ -273,7 +273,7 @@ describe('perbaikan uji HP', () => {
     }
   });
 
-  it('Premium: tab Bulan lalu menampilkan recap bulanan', async () => {
+  it('Pro: tab Bulan lalu menampilkan recap bulanan', async () => {
     atNov5();
     try {
       await act(async () => {

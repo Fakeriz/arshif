@@ -79,7 +79,7 @@ const plan: Messages['plan'] = {
     depositDone: '{amount} deposited to {name}',
     reachedTitle: 'Goal reached',
     reachedMessage: '{name} is fully funded.',
-    limitReason: 'The Free plan allows 3 active goals. Complete one or get Premium for no limit.',
+    limitReason: 'The Free plan allows 3 active goals. Complete one or get Pro for no limit.',
     depositNote: 'Deposits are logged as Savings expenses from the selected account.',
   },
   bills: {
@@ -126,7 +126,7 @@ const plan: Messages['plan'] = {
     legendOverdue: 'Overdue',
     dayLabel: '{date}: {names}',
     paidPeriods: 'Paid periods',
-    limitReason: 'The Free plan allows 3 bills and debts combined. Get Premium for no limit.',
+    limitReason: 'The Free plan allows 3 bills and debts combined. Get Pro for no limit.',
   },
   debts: {
     title: 'Debts & loans',
@@ -165,7 +165,7 @@ const plan: Messages['plan'] = {
     overpay: 'Up to {amount} (remaining balance).',
     fromSplit: 'From split bill {title}',
     simulator: 'Payoff simulator',
-    limitReason: 'The Free plan allows 3 bills and debts combined. Get Premium for no limit.',
+    limitReason: 'The Free plan allows 3 bills and debts combined. Get Pro for no limit.',
   },
   sim: {
     title: 'Payoff simulator',
@@ -214,7 +214,7 @@ const plan: Messages['plan'] = {
     resume: 'Resume',
     stopped: 'Stopped',
     stoppedSection: 'Stopped',
-    limitReason: 'The Free plan tracks 5 active subscriptions. Get Premium for no limit.',
+    limitReason: 'The Free plan tracks 5 active subscriptions. Get Pro for no limit.',
   },
   split: {
     title: 'Split bill',

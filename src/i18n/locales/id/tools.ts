@@ -19,7 +19,7 @@ const tools = {
     checking: 'Memeriksa paket',
     gateErrorTitle: 'Paket belum bisa diperiksa',
     gateErrorMessage: 'Periksa koneksi lalu coba lagi.',
-    seePremium: 'Lihat Premium',
+    seePremium: 'Lihat Pro',
   },
   fx: {
     title: 'Konverter mata uang',
@@ -62,8 +62,8 @@ const tools = {
   },
   tax: {
     title: 'Estimasi pajak',
-    reason: 'Estimasi PPh 21, PCB/MTD, dan Gelir Vergisi termasuk paket Premium.',
-    lockedTitle: 'Estimasi pajak untuk Premium',
+    reason: 'Estimasi PPh 21, PCB/MTD, dan Gelir Vergisi termasuk paket Pro.',
+    lockedTitle: 'Estimasi pajak untuk Pro',
     disclaimer: 'Hasil ini hanya estimasi, bukan nasihat pajak resmi. Pelaporan pajak resmi (e-Filing) tidak dilakukan di Arshif. Untuk keputusan penting, cek ke konsultan pajak atau otoritas pajak negara Anda.',
     country: 'Negara',
     countryId: 'Indonesia',
@@ -146,8 +146,8 @@ const tools = {
   },
   report: {
     title: 'Laporan pajak tahunan',
-    reason: 'Laporan pajak tahunan dari data transaksi termasuk paket Premium.',
-    lockedTitle: 'Laporan pajak untuk Premium',
+    reason: 'Laporan pajak tahunan dari data transaksi termasuk paket Pro.',
+    lockedTitle: 'Laporan pajak untuk Pro',
     year: 'Tahun',
     dependents: '{count} tanggungan',
     dependents_one: '{count} tanggungan',
@@ -185,8 +185,8 @@ const tools = {
   },
   export: {
     title: 'Ekspor PDF',
-    reason: 'Ekspor PDF (laporan bulanan, laporan pajak, riwayat transaksi) termasuk paket Premium.',
-    lockedTitle: 'Ekspor PDF untuk Premium',
+    reason: 'Ekspor PDF (laporan bulanan, laporan pajak, riwayat transaksi) termasuk paket Pro.',
+    lockedTitle: 'Ekspor PDF untuk Pro',
     monthlyTitle: 'Laporan bulanan',
     monthlyHint: 'Pemasukan dan pengeluaran per kategori, dalam {currency}.',
     pickMonth: 'Pilih bulan',
