@@ -34,3 +34,27 @@ describe('air mancur gelembung Sambut', () => {
     expect(Math.max(...a.map((p) => p.delay)) - Math.min(...a.map((p) => p.delay))).toBeGreaterThan(4000);
   });
 });
+
+describe('sapaan Beranda', () => {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const g = require('@/features/home/greeting') as typeof import('@/features/home/greeting');
+  it('jam → waktu, termasuk dini hari', () => {
+    expect([2, 6, 12, 16, 21].map(g.slotOf)).toEqual(['late', 'morning', 'afternoon', 'evening', 'night']);
+  });
+  it('gajian hari ini, 1-2 hari lagi, akhir pekan siang, malam akhir pekan tetap malam', () => {
+    expect(g.contextOf(new Date(2026, 10, 25, 9), 25)).toBe('payday');
+    expect(g.contextOf(new Date(2026, 10, 23, 9), 25)).toBe('paydaySoon');
+    expect(g.daysToPayday(new Date(2026, 10, 30, 9), 1)).toBe(1); // lintas bulan
+    expect(g.contextOf(new Date(2026, 10, 21, 12), 25)).toBe('weekend'); // Sabtu
+    expect(g.contextOf(new Date(2026, 10, 21, 21), 25)).toBe('night');
+  });
+  it('stabil dalam sehari, berganti di hari lain; judul tanpa nama tidak memuat {name}', () => {
+    const t = (k: string) => (k.startsWith('home.hello') ? 'Selamat pagi|Pagi, {name}|Halo, {name}' : 'a|b|c');
+    const a = g.greetingLines(t as never, new Date(2026, 10, 20, 8), 25, 'Ahmad Fauzi');
+    expect(g.greetingLines(t as never, new Date(2026, 10, 20, 9, 30), 25, 'Ahmad Fauzi')).toEqual(a);
+    const week = new Set(Array.from({ length: 7 }, (_, i) => g.greetingLines(t as never, new Date(2026, 10, 10 + i, 8), 25, 'Ahmad').nudge));
+    expect(week.size).toBeGreaterThan(1);
+    expect(g.greetingLines(t as never, new Date(2026, 10, 20, 8), 25, '').title).toBe('Selamat pagi');
+    expect(a.title).not.toContain('Fauzi');
+  });
+});

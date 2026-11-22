@@ -11,11 +11,12 @@ import { NotificationsSheet } from '@/components/shell/NotificationsSheet';
 import { AppText, BalanceText, Icon, PressableScale, Toggle } from '@/components/ui';
 import type { Transaction } from '@/data/types';
 import { useBalanceMeta } from '@/features/home/BalanceBlock';
+import { greetingLines } from '@/features/home/greeting';
 import { coverValueFor, SHEET_BGS, useSheetBg } from '@/features/home/sheetBg';
 import { ProfileAvatar } from '@/features/settings/ProfileAvatar';
 import { coverTextColors, ProfileCover } from '@/features/settings/ProfileCover';
 import { parseCover } from '@/lib/cover';
-import { useT, type MsgKey } from '@/i18n';
+import { useT } from '@/i18n';
 import { periodSeries } from '@/lib/budget';
 import { todayYmd } from '@/lib/dates';
 import { formatMoney } from '@/lib/money';
@@ -30,13 +31,6 @@ const NOTCH_W = 112;
 const NOTCH_H = 26;
 const MASK = '••••';
 
-/** Sapaan menurut jam perangkat. */
-export function greetingKey(hour: number): MsgKey {
-  if (hour >= 4 && hour < 11) return 'home.greeting.morning';
-  if (hour >= 11 && hour < 15) return 'home.greeting.afternoon';
-  if (hour >= 15 && hour < 18) return 'home.greeting.evening';
-  return 'home.greeting.night';
-}
 
 /**
  * Lembar kertas di puncak Beranda (ponsel), di atas dasar tinta: sapaan, kartu kekayaan bersih
@@ -69,6 +63,7 @@ export function HomeSheet({
   const unread = state.notifications.filter((n) => !n.read).length;
   const name = state.displayName?.trim() || state.email?.split('@')[0] || '';
   const initial = (name[0] ?? 'A').toUpperCase();
+  const hello = greetingLines(t, new Date(), state.payday, name);
 
   const period = useMemo(
     () => periodSeries(transactions, todayYmd(), state.payday, currency),
@@ -120,7 +115,7 @@ export function HomeSheet({
           <View style={styles.header}>
             <PressableScale accessibilityLabel={t('home.profileA11y')} focusRadius={radius.full} onPress={() => router.push('/pengaturan')}>
               {state.avatarPath ? (
-                <ProfileAvatar size={56} />
+                <ProfileAvatar size={48} />
               ) : (
                 <View style={[styles.avatar, { backgroundColor: btn.bg }]}>
                   <AppText style={[styles.initial, { color: btn.fg }]}>{initial}</AppText>
@@ -128,14 +123,12 @@ export function HomeSheet({
               )}
             </PressableScale>
             <View style={styles.hello}>
-              <AppText style={[styles.greet, { color: head.text }]} numberOfLines={1}>
-                {t(greetingKey(new Date().getHours()))}
+              <AppText style={[styles.greet, { color: head.text }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>
+                {hello.title}
               </AppText>
-              {name ? (
-                <AppText variant="body" style={{ color: head.muted }} numberOfLines={1}>
-                  {name}
-                </AppText>
-              ) : null}
+              <AppText variant="caption" style={{ color: head.muted }} numberOfLines={2}>
+                {hello.nudge}
+              </AppText>
             </View>
             <SquareButton icon={Target} label={t('home.goalsA11y')} onPress={() => router.push('/rencana/goals')} bg={btn.bg} fg={btn.fg} />
             <SquareButton
@@ -301,13 +294,13 @@ const styles = StyleSheet.create({
   wrap: { alignItems: 'center' },
   sheet: { alignSelf: 'stretch', overflow: 'hidden', borderBottomLeftRadius: 40, borderBottomRightRadius: 40, paddingHorizontal: space.lg, paddingBottom: space.xl, alignItems: 'center' },
   column: { width: '100%', maxWidth: layout.maxContentWidth, gap: space.xl },
-  header: { flexDirection: 'row', alignItems: 'center', gap: space.md },
-  avatar: { width: 56, height: 56, borderRadius: 28, alignItems: 'center', justifyContent: 'center' },
-  initial: { fontFamily: fonts.bold, fontSize: 22, lineHeight: 28 },
+  header: { flexDirection: 'row', alignItems: 'center', gap: space.sm + 2 },
+  avatar: { width: 48, height: 48, borderRadius: 24, alignItems: 'center', justifyContent: 'center' },
+  initial: { fontFamily: fonts.bold, fontSize: 19, lineHeight: 24 },
   hello: { flex: 1, gap: 2 },
-  greet: { fontFamily: fonts.bold, fontSize: 24, lineHeight: 30, letterSpacing: -0.6 },
-  square: { width: 52, height: 52, borderRadius: 18, borderWidth: layout.hairline, alignItems: 'center', justifyContent: 'center' },
-  dot: { position: 'absolute', top: 10, right: 11, width: 9, height: 9, borderRadius: 5, borderWidth: 1.5 },
+  greet: { fontFamily: fonts.bold, fontSize: 20, lineHeight: 26, letterSpacing: -0.5 },
+  square: { width: 46, height: 46, borderRadius: 16, borderWidth: layout.hairline, alignItems: 'center', justifyContent: 'center' },
+  dot: { position: 'absolute', top: 9, right: 9, width: 9, height: 9, borderRadius: 5, borderWidth: 1.5 },
   card: { borderRadius: radius.sheet, borderWidth: layout.hairline, padding: space.xl, gap: space.md },
   labelRow: { flexDirection: 'row', alignItems: 'center', gap: space.md },
   eye: { width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
