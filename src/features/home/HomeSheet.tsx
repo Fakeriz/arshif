@@ -4,7 +4,7 @@ import { setStatusBarStyle } from 'expo-status-bar';
 import { ArrowDownLeft, ArrowUpRight, Bell, Check, ChevronUp, Ellipsis, Eye, EyeOff, Target, type LucideIcon } from 'lucide-react-native';
 import { useCallback, useMemo, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
-import Animated, { FadeIn, FadeOut, LinearTransition, useAnimatedStyle, useReducedMotion, useSharedValue, withTiming } from 'react-native-reanimated';
+import Animated, { Easing, Extrapolation, interpolate, useAnimatedStyle, useReducedMotion, useSharedValue, withTiming } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { ClipPath, Defs, G, Image as SvgImage, Path } from 'react-native-svg';
 
@@ -14,7 +14,7 @@ import { AppText, BalanceText, Icon, PressableScale, Toggle } from '@/components
 import type { Transaction } from '@/data/types';
 import { useBalanceMeta } from '@/features/home/BalanceBlock';
 import { greetingLines } from '@/features/home/greeting';
-import { coverValueFor, SHEET_BGS, useSheetBg } from '@/features/home/sheetBg';
+import { coverValueFor, SHEET_BGS, useSheetBg, useWalletStack } from '@/features/home/sheetBg';
 import { ProfileAvatar, useSignedUrl } from '@/features/settings/ProfileAvatar';
 import { coverTextColors, ProfileCover } from '@/features/settings/ProfileCover';
 import { parseCover } from '@/lib/cover';
@@ -24,13 +24,14 @@ import { todayYmd } from '@/lib/dates';
 import { formatCompact, formatMoney, formatMoneyParts } from '@/lib/money';
 import { setWebChrome } from '@/lib/webChrome';
 import { useStore } from '@/state/AppStore';
-import { easeOut, haptic } from '@/theme/motion';
+import { haptic } from '@/theme/motion';
 import { SchemeScope, useTheme } from '@/theme/ThemeProvider';
-import { buildPalette, elevation, fonts, inkCard, layout, motion, radius, space, type ColorScheme } from '@/theme/tokens';
+import { buildPalette, elevation, fonts, inkCard, layout, radius, space, type ColorScheme } from '@/theme/tokens';
 
 export type SheetAction = { key: string; label: string; icon: LucideIcon; onPress: () => void };
 
 const NOTCH_W = 112;
+const FOLD_EASE = Easing.bezier(0.32, 0.72, 0, 1);
 const NOTCH_H = 26;
 const NOTCH_D = `M0 0 C 22 0, 26 ${NOTCH_H}, 46 ${NOTCH_H} L ${NOTCH_W - 46} ${NOTCH_H} C ${NOTCH_W - 26} ${NOTCH_H}, ${NOTCH_W - 22} 0, ${NOTCH_W} 0 Z`;
 const MASK = '••••';
@@ -79,23 +80,25 @@ export function HomeSheet({
   const expense = period.expense[period.expense.length - 1] ?? 0;
 
   // Lekukan: panah berputar saat kartu dilipat; isi kartu memudar dan kartu menyusut halus (bukan melompat).
-  const turn = useSharedValue(0);
-  const chevron = useAnimatedStyle(() => ({ transform: [{ rotate: `${turn.value * 180}deg` }] }));
+  // 1 = terbuka. Kurva lembar iOS: cepat di awal, mendarat pelan, tanpa pantulan (bukan gestur).
+  const open = useSharedValue(1);
+  const [moreH, setMoreH] = useState(0);
+  const chevron = useAnimatedStyle(() => ({ transform: [{ rotate: `${(1 - open.value) * 180}deg` }] }));
+  const foldStyle = useAnimatedStyle(() => (moreH > 0 ? { height: moreH * open.value, opacity: interpolate(open.value, [0.3, 1], [0, 1], Extrapolation.CLAMP) } : {}));
+  const innerStyle = useAnimatedStyle(() => ({ transform: [{ translateY: (1 - open.value) * -10 }, { scale: 0.97 + 0.03 * open.value }] }));
   const toggle = () => {
     haptic('selection');
     setFolded((f) => {
-      turn.value = reduced ? (f ? 0 : 1) : withTiming(f ? 0 : 1, { duration: motion.base, easing: easeOut });
+      open.value = reduced ? (f ? 1 : 0) : withTiming(f ? 1 : 0, { duration: 340, easing: FOLD_EASE });
       return !f;
     });
   };
-  const reflow = reduced ? undefined : LinearTransition.duration(motion.base).easing(easeOut);
-  const appear = reduced ? undefined : FadeIn.duration(motion.base).easing(easeOut);
-  const vanish = reduced ? undefined : FadeOut.duration(motion.fast);
 
   // Lembar: kertas di atas dasar batu (tema terang); di tema gelap permukaan sedikit terangkat dari dasar tergelap.
   const sheetBg = colors.surface;
   // Latar kustom (menu titik tiga kartu): sampul profil atau preset. Teks & tombol di atasnya ikut warna sampul.
   const [bg, setBg] = useSheetBg();
+  const [walletStack, setWalletStack] = useWalletStack();
   const coverVal = coverValueFor(bg, state.coverPath);
   const custom = coverVal !== undefined;
   const ink = custom ? coverTextColors(coverVal ?? null, scheme) : null;
@@ -141,9 +144,8 @@ export function HomeSheet({
 
   return (
     <View style={styles.wrap}>
-      <Animated.View layout={reflow} style={[styles.sheetShadow, scheme === 'light' && elevation.light.card]}>
+      <Animated.View style={[styles.sheetShadow, scheme === 'light' && elevation.light.card]}>
       <Animated.View
-        layout={reflow}
         onLayout={(e) => {
           const { width, height } = e.nativeEvent.layout;
           if (width !== sheetSize.w || height !== sheetSize.h) setSheetSize({ w: width, h: height });
@@ -188,7 +190,6 @@ export function HomeSheet({
           </View>
 
           <Animated.View
-            layout={reflow}
             style={[styles.card, { backgroundColor: custom ? cardGlass : cc.surfaceRaised, borderColor: custom ? cardEdge : cc.border }, custom && styles.cardGlass, elevation[scheme].card]}
           >
             {cardTone && <BlurView intensity={60} tint={cardTone} style={[StyleSheet.absoluteFill, styles.under]} />}
@@ -246,6 +247,12 @@ export function HomeSheet({
                     <View style={[styles.menuRule, { backgroundColor: cc.border }]} />
                     <View style={styles.menuRow}>
                       <AppText variant="body" style={styles.flex}>
+                        {t('home.walletStack')}
+                      </AppText>
+                      <Toggle value={walletStack} onChange={setWalletStack} accessibilityLabel={t('home.walletStack')} />
+                    </View>
+                    <View style={styles.menuRow}>
+                      <AppText variant="body" style={styles.flex}>
                         {t('settings.includeAssets')}
                       </AppText>
                       <Toggle value={state.includeAssets} onChange={(value) => dispatch({ type: 'prefs/includeAssets', value })} accessibilityLabel={t('settings.includeAssets')} />
@@ -272,8 +279,21 @@ export function HomeSheet({
             <AppText variant="caption" tone="muted" style={styles.meta}>
               {meta}
             </AppText>
-            {!folded && (
-              <Animated.View entering={appear} exiting={vanish} style={styles.more}>
+            {/* Lipat/buka: satu gerak tinggi + pudar (satu kurva), isi di bawahnya ikut bergeser halus. Bukan lepas-pasang
+                elemen: dulu isi memudar dulu lalu kartu menyusut, jadi geraknya dua tahap dan bagian bawah melompat. */}
+            <Animated.View
+              style={[styles.foldOuter, foldStyle]}
+              pointerEvents={folded ? 'none' : 'auto'}
+              accessibilityElementsHidden={folded}
+              importantForAccessibility={folded ? 'no-hide-descendants' : 'auto'}
+            >
+              <Animated.View
+                style={[styles.more, moreH > 0 && styles.moreMeasured, innerStyle]}
+                onLayout={(e) => {
+                  const h = e.nativeEvent.layout.height;
+                  if (Math.abs(h - moreH) > 0.5) setMoreH(h);
+                }}
+              >
                 {/* Dua separuh sama lebar: isi rata kiri, pembatas tepat di tengah kartu. */}
                 <View style={styles.flow}>
                   <Flow icon={ArrowDownLeft} tone="positive" label={`${t('common.income')}: ${money(income)}`} value={money(income)} />
@@ -295,7 +315,7 @@ export function HomeSheet({
                   ))}
                 </View>
               </Animated.View>
-            )}
+            </Animated.View>
           </SchemeScope>
           </Animated.View>
         </View>
@@ -303,7 +323,7 @@ export function HomeSheet({
       </Animated.View>
 
       {/* Lekukan: menyambung lembar ke dasar tinta, panahnya melipat/membuka kartu. */}
-      <Animated.View layout={reflow} style={styles.notchWrap}>
+      <Animated.View style={styles.notchWrap}>
         <PressableScale accessibilityLabel={folded ? t('home.unfold') : t('home.fold')} accessibilityState={{ expanded: !folded }} onPress={toggle} focusRadius={radius.full} scaleTo={0.96}>
           <View style={styles.notch}>
             <Svg width={NOTCH_W} height={NOTCH_H} style={StyleSheet.absoluteFill}>
@@ -392,7 +412,10 @@ const styles = StyleSheet.create({
   labelRow: { flexDirection: 'row', alignItems: 'center', gap: space.md },
   eye: { width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
   meta: { marginTop: -space.sm },
-  more: { gap: space.xl, marginTop: space.xs },
+  // Bungkus lipat: margin negatif meniadakan jarak antar-isi kartu supaya saat terlipat tidak ada sisa ruang.
+  foldOuter: { overflow: 'hidden', marginTop: -space.md },
+  more: { gap: space.xl, paddingTop: space.md + space.xs },
+  moreMeasured: { position: 'absolute', top: 0, left: 0, right: 0 },
   flow: { flexDirection: 'row', alignItems: 'center' },
   flowItem: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 6, paddingRight: space.lg },
   flowInset: { paddingLeft: space.lg, paddingRight: 0 },

@@ -28,6 +28,7 @@ const home: Messages['home'] = {
   cardMenu: 'Tetapan kad baki',
   sheetBgTitle: 'Latar belakang',
   sheetBg: { plain: 'Polos', cover: 'Sampul profil', garis: 'Garis', lingkar: 'Lingkaran', batu: 'Batu' },
+  walletStack: 'Kad akaun bertindan',
   editCover: 'Tetapkan sampul profil',
   netWorth: 'Jumlah nilai bersih',
   showBalance: 'Tunjukkan baki',

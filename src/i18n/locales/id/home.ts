@@ -27,6 +27,7 @@ const home = {
   cardMenu: 'Atur kartu saldo',
   sheetBgTitle: 'Latar belakang',
   sheetBg: { plain: 'Polos', cover: 'Sampul profil', garis: 'Garis', lingkar: 'Lingkar', batu: 'Batu' },
+  walletStack: 'Kartu akun bertumpuk',
   editCover: 'Atur sampul profil',
   netWorth: 'Total kekayaan bersih',
   showBalance: 'Tampilkan saldo',

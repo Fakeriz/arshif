@@ -11,6 +11,7 @@ import { EmptyState, Group, PromoCard, QuickActions, SwipeDismiss } from '@/comp
 import { useScanSource } from '@/components/shell/ScanSourceSheet';
 import { AccountDeck } from '@/features/home/AccountDeck';
 import { AccountsCard } from '@/features/settings/AccountsCard';
+import { useWalletStack } from '@/features/home/sheetBg';
 import { BalanceBlock } from '@/features/home/BalanceBlock';
 import { MissingRatesBanner } from '@/features/fx/MissingRatesBanner';
 import { DESKTOP_WIDE, GridCell, GridRow } from '@/components/shell/DesktopGrid';
@@ -55,6 +56,7 @@ export default function HomeScreen() {
   const openCapture = (o: typeof scan) => (o.limited ? paywall(o.reason) : o.key === 'scan' ? scanSource() : router.push(o.href));
   const desktop = useDesktop();
   const { scheme } = useTheme();
+  const [walletStack] = useWalletStack();
   // Desktop: avatar dan lonceng sudah di nav atas, jadi header ponsel diganti judul halaman.
   const header = desktop ? <HomeDesktopTitle /> : <HomeHeader />;
 
@@ -180,8 +182,8 @@ export default function HomeScreen() {
       />
       <InkScope style={styles.ink}>
         <View style={styles.inkColumn}>
-          {/* Dompet bertumpuk yang sama dengan Akun & kartu: satu cara memilih akun di seluruh aplikasi. */}
-          <AccountsCard onActiveChange={(id) => dispatch({ type: 'account/setActive', id })} />
+          {/* Pilihan di menu titik tiga kartu saldo: dompet bertumpuk (sama dengan Akun & kartu) atau strip ringkas. */}
+          {walletStack ? <AccountsCard onActiveChange={(id) => dispatch({ type: 'account/setActive', id })} /> : deck}
           <MissingRatesBanner />
           {recap}
           {recent}

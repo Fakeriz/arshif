@@ -28,6 +28,7 @@ const home: Messages['home'] = {
   cardMenu: 'Bakiye kartı seçenekleri',
   sheetBgTitle: 'Arka plan',
   sheetBg: { plain: 'Düz', cover: 'Profil kapağı', garis: 'Çizgiler', lingkar: 'Halkalar', batu: 'Taş' },
+  walletStack: 'Üst üste hesap kartları',
   editCover: 'Profil kapağını düzenle',
   netWorth: 'Toplam net varlık',
   showBalance: 'Bakiyeyi göster',

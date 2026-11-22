@@ -1,3 +1,7 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { renderHook, waitFor } from '@testing-library/react-native';
+
+import { makeDevicePref } from '@/features/home/devicePref';
 import { authErrorKey } from '@/features/auth/errors';
 import { parseFragment } from '@/features/auth/google';
 import { makeParticles } from '@/features/intro/BubbleStream';
@@ -56,5 +60,18 @@ describe('sapaan Beranda', () => {
     expect(week.size).toBeGreaterThan(1);
     expect(g.greetingLines(t as never, new Date(2026, 10, 20, 8), 25, '').title).toBe('Selamat pagi');
     expect(a.title).not.toContain('Fauzi');
+  });
+});
+
+describe('preferensi perangkat Beranda', () => {
+  it('membaca nilai lama (teks mentah) maupun JSON', async () => {
+    await AsyncStorage.setItem('t.raw', 'garis');
+    await AsyncStorage.setItem('t.json', 'false');
+    const useRaw = makeDevicePref<string>('t.raw', 'plain', (v): v is string => typeof v === 'string');
+    const useBool = makeDevicePref<boolean>('t.json', true, (v): v is boolean => typeof v === 'boolean');
+    const a = await renderHook(() => useRaw());
+    const b = await renderHook(() => useBool());
+    await waitFor(() => expect(a.result.current[0]).toBe('garis'));
+    await waitFor(() => expect(b.result.current[0]).toBe(false));
   });
 });

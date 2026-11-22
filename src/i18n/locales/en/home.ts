@@ -28,6 +28,7 @@ const home: Messages['home'] = {
   cardMenu: 'Balance card options',
   sheetBgTitle: 'Background',
   sheetBg: { plain: 'Plain', cover: 'Profile cover', garis: 'Lines', lingkar: 'Rings', batu: 'Stone' },
+  walletStack: 'Stacked account cards',
   editCover: 'Edit profile cover',
   netWorth: 'Total net worth',
   showBalance: 'Show balance',
