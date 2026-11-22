@@ -1,12 +1,11 @@
 import { BlurView } from 'expo-blur';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { setStatusBarStyle } from 'expo-status-bar';
-import { ArrowDownLeft, ArrowUpRight, Bell, Check, ChevronUp, Ellipsis, Eye, EyeOff, PiggyBank, type LucideIcon } from 'lucide-react-native';
-import { useCallback, useMemo, useState } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { ArrowDownLeft, ArrowUpRight, Bell, Check, Ellipsis, Eye, EyeOff, PiggyBank, type LucideIcon } from 'lucide-react-native';
+import { useCallback, useMemo, useRef, useState } from 'react';
+import { PanResponder, StyleSheet, View } from 'react-native';
 import Animated, { Easing, Extrapolation, interpolate, useAnimatedStyle, useReducedMotion, useSharedValue, withTiming } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import Svg, { ClipPath, Defs, G, Image as SvgImage, Path } from 'react-native-svg';
 
 import { afterSheetClose, HeaderMenu } from '@/components/shell/HeaderActions';
 import { NotificationsSheet } from '@/components/shell/NotificationsSheet';
@@ -14,7 +13,7 @@ import { AppText, BalanceText, Icon, PressableScale, Toggle } from '@/components
 import type { Transaction } from '@/data/types';
 import { greetingLines } from '@/features/home/greeting';
 import { coverValueFor, SHEET_BGS, useSheetBg, useWalletStack } from '@/features/home/sheetBg';
-import { ProfileAvatar, useSignedUrl } from '@/features/settings/ProfileAvatar';
+import { ProfileAvatar } from '@/features/settings/ProfileAvatar';
 import { coverTextColors, ProfileCover } from '@/features/settings/ProfileCover';
 import { parseCover } from '@/lib/cover';
 import { useT } from '@/i18n';
@@ -29,10 +28,7 @@ import { buildPalette, elevation, fonts, inkCard, layout, radius, space, type Co
 
 export type SheetAction = { key: string; label: string; icon: LucideIcon; onPress: () => void };
 
-const NOTCH_W = 112;
 const FOLD_EASE = Easing.bezier(0.32, 0.72, 0, 1);
-const NOTCH_H = 26;
-const NOTCH_D = `M0 0 C 22 0, 26 ${NOTCH_H}, 46 ${NOTCH_H} L ${NOTCH_W - 46} ${NOTCH_H} C ${NOTCH_W - 26} ${NOTCH_H}, ${NOTCH_W - 22} 0, ${NOTCH_W} 0 Z`;
 const MASK = '••••';
 
 
@@ -75,11 +71,10 @@ export function HomeSheet({
   const income = period.income[period.income.length - 1] ?? 0;
   const expense = period.expense[period.expense.length - 1] ?? 0;
 
-  // Lekukan: panah berputar saat kartu dilipat; isi kartu memudar dan kartu menyusut halus (bukan melompat).
+  // Lipat/buka kartu: isi kartu memudar dan kartu menyusut halus (bukan melompat).
   // 1 = terbuka. Kurva lembar iOS: cepat di awal, mendarat pelan, tanpa pantulan (bukan gestur).
   const open = useSharedValue(1);
   const [moreH, setMoreH] = useState(0);
-  const chevron = useAnimatedStyle(() => ({ transform: [{ rotate: `${(1 - open.value) * 180}deg` }] }));
   const foldStyle = useAnimatedStyle(() => (moreH > 0 ? { height: moreH * open.value, opacity: interpolate(open.value, [0.3, 1], [0, 1], Extrapolation.CLAMP) } : {}));
   const innerStyle = useAnimatedStyle(() => ({ transform: [{ translateY: (1 - open.value) * -10 }, { scale: 0.97 + 0.03 * open.value }] }));
   const toggle = () => {
@@ -89,6 +84,24 @@ export function HomeSheet({
       return !f;
     });
   };
+  // Handler gestur bisa menyimpan render lama: keadaan terkini dibaca lewat ref, bukan closure.
+  const foldedRef = useRef(folded);
+  foldedRef.current = folded;
+  const setFold = (fold: boolean) => {
+    if (fold !== foldedRef.current) toggle();
+  };
+  const setFoldRef = useRef(setFold);
+  setFoldRef.current = setFold;
+  // Geser di baris pegangan: capture merebut sentuhan dari tombol begitu jari bergerak vertikal; ketuk tetap ke tombol.
+  const [grabPan] = useState(() =>
+    PanResponder.create({
+      onMoveShouldSetPanResponderCapture: (_e, g) => Math.abs(g.dy) > 8 && Math.abs(g.dy) > Math.abs(g.dx),
+      onPanResponderRelease: (_e, g) => {
+        if (g.dy < -12 || g.vy < -0.4) setFoldRef.current(true);
+        else if (g.dy > 12 || g.vy > 0.4) setFoldRef.current(false);
+      },
+    }),
+  );
 
   // Lembar: kertas di atas dasar batu (tema terang); di tema gelap permukaan sedikit terangkat dari dasar tergelap.
   const sheetBg = colors.surface;
@@ -105,8 +118,6 @@ export function HomeSheet({
   const glass: 'dark' | 'light' | null = custom ? (lightHead ? 'dark' : 'light') : null;
   const btn = glass ? { bg: 'transparent', fg: head.text, glass } : { bg: colors.accent, fg: colors.onAccent, glass: null };
   const parsed = custom ? parseCover(coverVal ?? null) : null;
-  const photoUri = useSignedUrl(parsed?.kind === 'photo' ? parsed.path : null);
-  const [sheetSize, setSheetSize] = useState({ w: 0, h: 0 });
   // Warna dasar latar (foto: redup gelap; batu: abu; preset lain: tinta). Dipakai juga di bawah foto supaya tepi lengkung tidak bocor terang.
   const baseFill = !parsed ? sheetBg : parsed.kind === 'photo' ? '#141414' : parsed.key === 'batu' ? colors.textSecondary : inkCard[scheme].bg;
   const darkTop = custom ? lightHead : scheme === 'dark';
@@ -142,10 +153,6 @@ export function HomeSheet({
     <View style={styles.wrap}>
       <Animated.View style={[styles.sheetShadow, scheme === 'light' && elevation.light.card]}>
       <Animated.View
-        onLayout={(e) => {
-          const { width, height } = e.nativeEvent.layout;
-          if (width !== sheetSize.w || height !== sheetSize.h) setSheetSize({ w: width, h: height });
-        }}
         style={[styles.sheet, { backgroundColor: baseFill, paddingTop: insets.top + space.md }]}
       >
         {custom && (
@@ -309,41 +316,26 @@ export function HomeSheet({
                 </View>
               </Animated.View>
             </Animated.View>
+            {/* Pegangan lipat (gaya pegangan sheet iOS): ketuk, atau geser ke atas untuk melipat / ke bawah untuk membuka.
+                Gestur hanya di baris pegangan, jadi menggulir Beranda di atas kartu tidak ikut melipat. */}
+            <View style={styles.grabRow} {...grabPan.panHandlers}>
+                <PressableScale
+                  accessibilityRole="button"
+                  accessibilityLabel={folded ? t('home.unfold') : t('home.fold')}
+                  accessibilityState={{ expanded: !folded }}
+                  onPress={toggle}
+                  focusRadius={radius.full}
+                  scaleTo={0.96}
+                  hitSlop={{ top: 8, bottom: 12, left: 40, right: 40 }}
+                  style={styles.grabHit}
+                >
+                  <View style={[styles.grabber, { backgroundColor: cc.borderStrong }]} />
+                </PressableScale>
+            </View>
           </SchemeScope>
           </Animated.View>
         </View>
       </Animated.View>
-      </Animated.View>
-
-      {/* Lekukan: menyambung lembar ke dasar tinta, panahnya melipat/membuka kartu. */}
-      <Animated.View style={styles.notchWrap}>
-        <PressableScale accessibilityLabel={folded ? t('home.unfold') : t('home.fold')} accessibilityState={{ expanded: !folded }} onPress={toggle} focusRadius={radius.full} scaleTo={0.96}>
-          <View style={styles.notch}>
-            <Svg width={NOTCH_W} height={NOTCH_H} style={StyleSheet.absoluteFill}>
-              {photoUri && sheetSize.w > 0 ? (
-                // Latar foto: lekukan berisi potongan foto yang sama (posisi & skala sama dengan lembar) + redup yang sama,
-                // jadi foto menyambung mulus ke lekukan seperti latar lain.
-                <>
-                  <Defs>
-                    <ClipPath id="notchClip">
-                      <Path d={NOTCH_D} />
-                    </ClipPath>
-                  </Defs>
-                  <G clipPath="url(#notchClip)">
-                    <Path d={NOTCH_D} fill={baseFill} />
-                    <SvgImage href={{ uri: photoUri }} x={-(sheetSize.w - NOTCH_W) / 2} y={-sheetSize.h + 1} width={sheetSize.w} height={sheetSize.h} preserveAspectRatio="xMidYMid slice" />
-                    <Path d={NOTCH_D} fill="rgba(10, 10, 10, 0.6)" />
-                  </G>
-                </>
-              ) : (
-                <Path d={NOTCH_D} fill={baseFill} />
-              )}
-            </Svg>
-            <Animated.View style={chevron}>
-              <Icon icon={ChevronUp} color={head.text} size={layout.iconSize.md} />
-            </Animated.View>
-          </View>
-        </PressableScale>
       </Animated.View>
 
       <NotificationsSheet visible={notifOpen} onClose={() => setNotifOpen(false)} />
@@ -420,6 +412,8 @@ const styles = StyleSheet.create({
   actions: { flexDirection: 'row', gap: space.md },
   actionCell: { flex: 1 },
   action: { aspectRatio: 1, maxHeight: 80, borderRadius: 22, alignItems: 'center', justifyContent: 'center' },
-  notchWrap: { marginTop: -1, alignItems: 'center' },
-  notch: { width: NOTCH_W, height: NOTCH_H + 4, alignItems: 'center', paddingTop: 2 },
+  // Baris pegangan selebar kartu = area geser; area ketuk tetap pegangan + hitSlop.
+  grabRow: { alignSelf: 'stretch', alignItems: 'center', paddingVertical: space.xs, marginTop: -space.xs, marginBottom: -space.sm },
+  grabHit: { alignSelf: 'center', width: 64, height: 20, alignItems: 'center', justifyContent: 'center' },
+  grabber: { width: 36, height: 5, borderRadius: 3 },
 });
