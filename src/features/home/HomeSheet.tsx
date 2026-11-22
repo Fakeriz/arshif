@@ -25,8 +25,8 @@ import { formatCompact, formatMoney, formatMoneyParts } from '@/lib/money';
 import { setWebChrome } from '@/lib/webChrome';
 import { useStore } from '@/state/AppStore';
 import { easeOut, haptic } from '@/theme/motion';
-import { useTheme } from '@/theme/ThemeProvider';
-import { elevation, fonts, inkCard, layout, motion, radius, space } from '@/theme/tokens';
+import { SchemeScope, useTheme } from '@/theme/ThemeProvider';
+import { buildPalette, elevation, fonts, inkCard, layout, motion, radius, space, type ColorScheme } from '@/theme/tokens';
 
 export type SheetAction = { key: string; label: string; icon: LucideIcon; onPress: () => void };
 
@@ -109,9 +109,13 @@ export function HomeSheet({
   // Warna dasar latar (foto: redup gelap; batu: abu; preset lain: tinta). Dipakai juga di bawah foto supaya tepi lengkung tidak bocor terang.
   const baseFill = !parsed ? sheetBg : photo ? '#141414' : parsed.key === 'batu' ? colors.textSecondary : inkCard[scheme].bg;
   const darkTop = custom ? lightHead : scheme === 'dark';
-  // Kartu kaca hanya di atas latar kustom (di latar polos blur tidak terlihat apa-apa). Dasar cukup pekat agar angka
-  // tetap ≥4.5:1 di atas foto/pola terang: 80% di tema terang, 90% di tema gelap (teks redup terang lebih rentan).
-  const cardGlass = withAlpha(colors.surfaceRaised, scheme === 'dark' ? 0.9 : 0.8);
+  // Kartu kaca hanya di atas latar kustom (di latar polos blur tidak terlihat apa-apa). Nadanya mengikuti latar:
+  // latar gelap (foto redup, garis, lingkar) → kaca gelap tembus pandang dengan palet gelap; latar terang → kaca terang.
+  // Dasar 50%/55%: blur terlihat, teks redup tetap ≥4.5:1 karena latar di belakangnya sudah gelap/terang searah.
+  const cardTone: ColorScheme | null = custom ? (lightHead ? 'dark' : 'light') : null;
+  const cc = cardTone ? buildPalette(cardTone) : colors;
+  const cardGlass = cardTone === 'dark' ? 'rgba(18,18,18,0.5)' : 'rgba(250,250,250,0.55)';
+  const cardEdge = cardTone === 'dark' ? 'rgba(255,255,255,0.16)' : 'rgba(8,8,8,0.08)';
 
   // Status bar ikut puncak lembar selama Beranda tampil: teks terang di atas latar gelap. Web iOS: warna area status bar.
   useFocusEffect(
@@ -176,9 +180,10 @@ export function HomeSheet({
 
           <Animated.View
             layout={reflow}
-            style={[styles.card, { backgroundColor: custom ? cardGlass : colors.surfaceRaised, borderColor: colors.border }, custom && styles.cardGlass, elevation[scheme].card]}
+            style={[styles.card, { backgroundColor: custom ? cardGlass : cc.surfaceRaised, borderColor: custom ? cardEdge : cc.border }, custom && styles.cardGlass, elevation[scheme].card]}
           >
-            {custom && <BlurView intensity={40} tint={scheme === 'dark' ? 'dark' : 'light'} style={[StyleSheet.absoluteFill, styles.under]} />}
+            {cardTone && <BlurView intensity={60} tint={cardTone} style={[StyleSheet.absoluteFill, styles.under]} />}
+            <SchemeScope scheme={cardTone ?? scheme}>
             <View style={styles.labelRow}>
               <AppText variant="body" tone="secondary">
                 {t('home.netWorth')}
@@ -188,15 +193,15 @@ export function HomeSheet({
                 focusRadius={radius.full}
                 hitSlop={6}
                 onPress={() => dispatch({ type: 'prefs/hideBalance', value: !hidden })}
-                style={[styles.eye, { backgroundColor: colors.surfaceSunken }]}
+                style={[styles.eye, { backgroundColor: cc.surfaceSunken }]}
               >
-                <Icon icon={hidden ? EyeOff : Eye} color={colors.textSecondary} size={layout.iconSize.sm} />
+                <Icon icon={hidden ? EyeOff : Eye} color={cc.textSecondary} size={layout.iconSize.sm} />
               </PressableScale>
               <View style={styles.flex} />
               <HeaderMenu
                 trigger={(show) => (
                   <PressableScale accessibilityLabel={t('home.cardMenu')} focusRadius={radius.full} hitSlop={6} onPress={show} style={styles.eye}>
-                    <Icon icon={Ellipsis} color={colors.text} />
+                    <Icon icon={Ellipsis} color={cc.text} />
                   </PressableScale>
                 )}
               >
@@ -225,11 +230,11 @@ export function HomeSheet({
                           <AppText variant={bg === k ? 'bodyStrong' : 'body'} style={styles.flex}>
                             {t(`home.sheetBg.${k}`)}
                           </AppText>
-                          {bg === k && <Icon icon={Check} color={colors.text} />}
+                          {bg === k && <Icon icon={Check} color={cc.text} />}
                         </View>
                       </PressableScale>
                     ))}
-                    <View style={[styles.menuRule, { backgroundColor: colors.border }]} />
+                    <View style={[styles.menuRule, { backgroundColor: cc.border }]} />
                     <View style={styles.menuRow}>
                       <AppText variant="body" style={styles.flex}>
                         {t('settings.includeAssets')}
@@ -263,7 +268,7 @@ export function HomeSheet({
                 {/* Dua separuh sama lebar: isi rata kiri, pembatas tepat di tengah kartu. */}
                 <View style={styles.flow}>
                   <Flow icon={ArrowDownLeft} tone="positive" label={`${t('common.income')}: ${money(income)}`} value={money(income)} />
-                  <View style={[styles.divider, { backgroundColor: colors.borderStrong }]} />
+                  <View style={[styles.divider, { backgroundColor: cc.borderStrong }]} />
                   <Flow icon={ArrowUpRight} tone="negative" label={`${t('common.expense')}: ${money(expense)}`} value={money(expense)} inset />
                 </View>
                 <View style={styles.actions}>
@@ -274,14 +279,15 @@ export function HomeSheet({
                       onPress={a.onPress}
                       focusRadius={22}
                       containerStyle={styles.actionCell}
-                      style={[styles.action, { backgroundColor: colors.accent }]}
+                      style={[styles.action, { backgroundColor: cc.accent }]}
                     >
-                      <Icon icon={a.icon} color={colors.onAccent} size={layout.iconSize.lg} />
+                      <Icon icon={a.icon} color={cc.onAccent} size={layout.iconSize.lg} />
                     </PressableScale>
                   ))}
                 </View>
               </Animated.View>
             )}
+          </SchemeScope>
           </Animated.View>
           {/* Latar foto: lekukan berwarna tetap tidak bisa menyatu dengan foto, jadi panah pindah ke dalam tepi bawah lembar. */}
           {photo && (
@@ -316,12 +322,6 @@ export function HomeSheet({
       <NotificationsSheet visible={notifOpen} onClose={() => setNotifOpen(false)} />
     </View>
   );
-}
-
-/** #RRGGBB → rgba dengan alfa. */
-function withAlpha(hex: string, a: number): string {
-  const n = parseInt(hex.replace('#', '').slice(0, 6), 16);
-  return `rgba(${(n >> 16) & 255}, ${(n >> 8) & 255}, ${n & 255}, ${a})`;
 }
 
 /** Kaca: blur latar + redup + tepi terang/gelap. Dipakai tombol & avatar di atas latar kustom. */

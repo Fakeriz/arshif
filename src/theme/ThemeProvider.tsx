@@ -139,3 +139,13 @@ export function InkScope({ children, style }: { children: ReactNode; style?: Sty
 
 /** Warna dasar Beranda: batu (= latar) di tema terang; di tema gelap sedikit lebih gelap dari latar agar lembar tetap terpisah. */
 export const INK_BASE: Record<ColorScheme, string> = { light: '#E5E5E2', dark: '#050505' };
+
+/** Paksa palet terang/gelap untuk satu bagian (mis. kartu kaca di atas latar gelap di tema terang). */
+export function SchemeScope({ scheme, children }: { scheme: ColorScheme; children: ReactNode }) {
+  const theme = useTheme();
+  const value = useMemo<ThemeValue>(
+    () => (scheme === theme.scheme ? theme : { ...theme, scheme, colors: buildPalette(scheme), hues: categoryHues[scheme] }),
+    [theme, scheme],
+  );
+  return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;
+}
