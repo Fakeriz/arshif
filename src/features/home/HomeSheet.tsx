@@ -109,6 +109,9 @@ export function HomeSheet({
   // Warna dasar latar (foto: redup gelap; batu: abu; preset lain: tinta). Dipakai juga di bawah foto supaya tepi lengkung tidak bocor terang.
   const baseFill = !parsed ? sheetBg : photo ? '#141414' : parsed.key === 'batu' ? colors.textSecondary : inkCard[scheme].bg;
   const darkTop = custom ? lightHead : scheme === 'dark';
+  // Kartu kaca hanya di atas latar kustom (di latar polos blur tidak terlihat apa-apa). Dasar cukup pekat agar angka
+  // tetap ≥4.5:1 di atas foto/pola terang: 80% di tema terang, 90% di tema gelap (teks redup terang lebih rentan).
+  const cardGlass = withAlpha(colors.surfaceRaised, scheme === 'dark' ? 0.9 : 0.8);
 
   // Status bar ikut puncak lembar selama Beranda tampil: teks terang di atas latar gelap. Web iOS: warna area status bar.
   useFocusEffect(
@@ -170,7 +173,11 @@ export function HomeSheet({
             />
           </View>
 
-          <Animated.View layout={reflow} style={[styles.card, { backgroundColor: colors.surfaceRaised, borderColor: colors.border }, elevation[scheme].card]}>
+          <Animated.View
+            layout={reflow}
+            style={[styles.card, { backgroundColor: custom ? cardGlass : colors.surfaceRaised, borderColor: colors.border }, custom && styles.cardGlass, elevation[scheme].card]}
+          >
+            {custom && <BlurView intensity={40} tint={scheme === 'dark' ? 'dark' : 'light'} style={[StyleSheet.absoluteFill, styles.under]} />}
             <View style={styles.labelRow}>
               <AppText variant="body" tone="secondary">
                 {t('home.netWorth')}
@@ -309,6 +316,12 @@ export function HomeSheet({
   );
 }
 
+/** #RRGGBB → rgba dengan alfa. */
+function withAlpha(hex: string, a: number): string {
+  const n = parseInt(hex.replace('#', '').slice(0, 6), 16);
+  return `rgba(${(n >> 16) & 255}, ${(n >> 8) & 255}, ${n & 255}, ${a})`;
+}
+
 /** Kaca: blur latar + redup + tepi terang/gelap. Dipakai tombol & avatar di atas latar kustom. */
 function Glass({ tone, radius: r }: { tone: 'dark' | 'light'; radius: number }) {
   return (
@@ -355,6 +368,8 @@ const styles = StyleSheet.create({
   square: { zIndex: 0, width: 46, height: 46, borderRadius: 16, borderWidth: layout.hairline, alignItems: 'center', justifyContent: 'center' },
   dot: { position: 'absolute', top: 9, right: 9, width: 9, height: 9, borderRadius: 5, borderWidth: 1.5 },
   card: { borderRadius: radius.sheet, borderWidth: layout.hairline, padding: space.xl, gap: space.md },
+  cardGlass: { overflow: 'hidden', zIndex: 0 },
+  under: { zIndex: -1, borderRadius: radius.sheet, overflow: 'hidden' },
   labelRow: { flexDirection: 'row', alignItems: 'center', gap: space.md },
   eye: { width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
   meta: { marginTop: -space.sm },
