@@ -23,6 +23,7 @@ import Svg, { Circle } from 'react-native-svg';
 import { scheduleOnRN } from 'react-native-worklets';
 
 import { AppText, Button, Icon } from '@/components/ui';
+import { AuthPrefs } from '@/features/intro/AuthPrefs';
 import { BubbleField } from '@/features/intro/BubbleField';
 import { markIntroSeen } from '@/features/intro/introSeen';
 import { useT } from '@/i18n';
@@ -48,7 +49,7 @@ const GROW_SPRING = { duration: 700, dampingRatio: 0.8 };
 /**
  * Layar Sambut (pengguna baru, sebelum masuk). Adaptasi referensi Wabi ke Monokrom Arshif:
  * 1. Gelembung ikon keuangan menyembur dari tombol "+", lalu melayang pelan.
- * 2. Ketuk "+" / "Mulai sekarang": gelembung terbang keluar, tombol tumbuh jadi orb kertas besar
+ * 2. Ketuk "+" / "Kenali Arshif": gelembung terbang keluar, tombol tumbuh jadi orb kertas besar
  *    dengan cincin tinta yang menyapu, lalu muncul "Geser ke atas untuk menjelajah".
  * 3. Geser ke atas (atau ketuk orb) → tur perkenalan.
  */
@@ -229,7 +230,7 @@ export default function SambutScreen() {
     <GestureHandlerRootView style={styles.root}>
     <GestureDetector gesture={pan}>
     <View style={[styles.root, { backgroundColor: colors.bg }]} onLayout={onLayout}>
-      <BubbleField width={colW} originX={originX} originY={originY} leave={leave} reduced={reduced} />
+      <BubbleField width={colW} originX={originX} originY={originY} leave={leave} reduced={reduced} top={insets.top + space.sm + 44 + space.md} />
 
       {/* Denyut + cincin + orb, semuanya berpusat di titik asal. */}
       <Animated.View pointerEvents="none" style={[styles.center, { left: originX - SEED / 2, top: originY - SEED / 2, width: SEED, height: SEED }]}>
@@ -290,6 +291,12 @@ export default function SambutScreen() {
           </AppText>
         </Pressable>
       </Animated.View>
+
+      {/* Bahasa + tema bisa dipilih sebelum apa pun; paling atas supaya selalu bisa diketuk. */}
+      <View pointerEvents="box-none" style={[styles.top, { top: insets.top + space.sm }]}>
+        <AppText style={[styles.wordmark, { color: colors.text }]}>Arshif</AppText>
+        <AuthPrefs />
+      </View>
     </View>
     </GestureDetector>
     </GestureHandlerRootView>
@@ -309,4 +316,6 @@ const styles = StyleSheet.create({
   exploreHead: { position: 'absolute', left: space.x4, right: space.x4, alignItems: 'center' },
   exploreTitle: { fontFamily: fonts.semibold, fontSize: 28, lineHeight: 34, letterSpacing: -0.7, textAlign: 'center', maxWidth: 300 },
   hint: { position: 'absolute', left: 0, right: 0, alignItems: 'center', gap: space.xs },
+  top: { position: 'absolute', left: space.lg, right: space.lg, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  wordmark: { fontFamily: fonts.extrabold, fontSize: 20, lineHeight: 24, letterSpacing: -0.6 },
 });

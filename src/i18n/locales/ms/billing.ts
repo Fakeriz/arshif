@@ -23,6 +23,7 @@ const billing: Messages['billing'] = {
     coachPremium: 'Mingguan, bulanan, Tanya Coach 20/hari',
   },
   premium: {
+    welcome: 'Akaunmu sedia. Pro membuka kuota resit, suara, dan PDF yang lebih besar.',
     title: 'Arshif Pro',
     subtitle: 'Semua had Free dibuka, kuota AI lebih besar.',
     choosePlan: 'Pilih pelan',

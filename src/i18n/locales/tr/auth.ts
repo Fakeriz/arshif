@@ -3,11 +3,9 @@ import type { Messages } from '../id';
 const auth: Messages['auth'] = {
   signIn: {
     title: 'Giriş yap veya kaydol',
-    lead: 'Paranı fiş fotoğrafı, sesli kayıt veya PDF hesap özetiyle takip et.',
     emailLabel: 'E-posta',
     emailHint: 'Bu e-postaya 6 haneli bir kod göndereceğiz. Şifre gerekmez.',
     submit: 'Kod gönder',
-    pricing: 'Pro fiyatlarını gör',
     errorInvalid: 'E-posta biçimi doğru değil. Örnek: ad@email.com',
     errorRate: 'Çok fazla kod istendi. Birkaç dakika bekleyip tekrar dene.',
     errorNetwork: 'Bağlanılamıyor. İnternet bağlantını kontrol edip tekrar dene.',
@@ -29,6 +27,9 @@ const auth: Messages['auth'] = {
     errorPasswordRule: 'Şifre en az 8 karakter olmalı, harf ve rakam karışık.',
     errorGoogle: 'Google ile giriş yapılamadı. Tekrar dene veya e-posta kullan.',
     forgot: 'Şifreni mi unuttun?',
+    headline: 'Fişi çek, söyle ya da PDF yükle. Kaydı Arshif tutar.',
+    methods: { receipt: 'Fiş', voice: 'Ses', pdf: 'PDF' },
+    currencies: 'Rupi, ringgit, lira ve dolar tek kayıtta.',
   },
   verify: {
     title: 'Kodu gir',
@@ -52,9 +53,14 @@ const auth: Messages['auth'] = {
     resetDone: 'Yeni şifre kaydedildi',
     resetFailed: 'Şifre kaydedilmedi. Şifremi unuttum ile tekrar sıfırla.',
   },
+  prefs: {
+    language: 'Dil',
+    toLight: 'Açık temaya geç',
+    toDark: 'Koyu temaya geç',
+  },
   welcome: {
     tagline: 'Paranı düzene sokan finans asistanı',
-    start: 'Hemen başla',
+    start: 'Arshif\'i tanı',
     haveAccount: 'Hesabın var mı? Giriş yap',
     note: 'Google, e-posta kodu veya şifreyle giriş yap.',
     open: 'Arshif tanıtımını aç',

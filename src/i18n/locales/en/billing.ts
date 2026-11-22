@@ -23,6 +23,7 @@ const billing: Messages['billing'] = {
     coachPremium: 'Weekly, monthly, Ask Coach 20/day',
   },
   premium: {
+    welcome: 'Your account is ready. Pro unlocks bigger receipt, voice, and PDF quotas.',
     title: 'Arshif Pro',
     subtitle: 'Every Free limit lifted, with bigger AI quotas.',
     choosePlan: 'Choose a plan',

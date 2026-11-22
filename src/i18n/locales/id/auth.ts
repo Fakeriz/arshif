@@ -1,11 +1,9 @@
 const auth = {
   signIn: {
     title: 'Masuk atau daftar',
-    lead: 'Catat keuangan lewat foto struk, suara, atau rekening koran PDF.',
     emailLabel: 'Email',
     emailHint: 'Kami kirim kode 6 digit ke email ini. Tanpa kata sandi.',
     submit: 'Kirim kode',
-    pricing: 'Lihat harga Pro',
     errorInvalid: 'Format email belum benar. Contoh: nama@email.com',
     errorRate: 'Terlalu banyak permintaan kode. Tunggu beberapa menit lalu coba lagi.',
     errorNetwork: 'Tidak bisa terhubung. Periksa koneksi internetmu lalu coba lagi.',
@@ -27,6 +25,9 @@ const auth = {
     errorPasswordRule: 'Kata sandi minimal 8 karakter, campuran huruf dan angka.',
     errorGoogle: 'Belum bisa masuk dengan Google. Coba lagi atau pakai email.',
     forgot: 'Lupa kata sandi?',
+    headline: 'Foto struk, ucapkan, atau unggah PDF. Arshif yang mencatat.',
+    methods: { receipt: 'Struk', voice: 'Suara', pdf: 'PDF' },
+    currencies: 'Rupiah, ringgit, lira, dan dolar dalam satu catatan.',
   },
   verify: {
     title: 'Masukkan kode',
@@ -50,9 +51,14 @@ const auth = {
     resetDone: 'Kata sandi baru tersimpan',
     resetFailed: 'Kata sandi belum tersimpan. Atur ulang dari Lupa kata sandi.',
   },
+  prefs: {
+    language: 'Bahasa',
+    toLight: 'Ganti ke tema terang',
+    toDark: 'Ganti ke tema gelap',
+  },
   welcome: {
     tagline: 'Asisten keuangan yang bikin uangmu tertata',
-    start: 'Mulai sekarang',
+    start: 'Kenali Arshif',
     haveAccount: 'Sudah punya akun? Masuk',
     note: 'Masuk dengan Google, kode email, atau kata sandi.',
     open: 'Buka perkenalan Arshif',

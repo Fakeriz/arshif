@@ -1,5 +1,6 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getLocales } from 'expo-localization';
-import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { createContext, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { Platform } from 'react-native';
 
 import { makeT, type TFunction } from './translate';
@@ -19,6 +20,20 @@ export function detectLang(): Lang {
   }
 }
 
+/** Bahasa pilihan disimpan di perangkat: dipilih di layar Sambut sebelum login, bertahan saat dimuat ulang. */
+const LANG_KEY = 'arshif.lang';
+
+/** Web: localStorage bisa dibaca sinkron sebelum render pertama (tanpa kedipan bahasa). */
+function storedLangSync(): Lang | null {
+  if (Platform.OS !== 'web') return null;
+  try {
+    const v = globalThis.localStorage?.getItem(LANG_KEY);
+    return isLang(v) ? v : null;
+  } catch {
+    return null;
+  }
+}
+
 type I18nProviderProps = {
   children: ReactNode;
   /** Bahasa tersimpan milik pengguna. Fase 2: dibaca dari profil Supabase. */
@@ -28,7 +43,18 @@ type I18nProviderProps = {
 };
 
 export function I18nProvider({ children, initialLang, onLangChange }: I18nProviderProps) {
-  const [lang, setLangState] = useState<Lang>(() => initialLang ?? detectLang());
+  const [lang, setLangState] = useState<Lang>(() => initialLang ?? storedLangSync() ?? detectLang());
+  const touched = useRef(false);
+
+  // Native: baca bahasa tersimpan sekali, kecuali sudah diganti (profil server menang setelah login).
+  useEffect(() => {
+    if (initialLang || Platform.OS === 'web') return;
+    AsyncStorage.getItem(LANG_KEY)
+      .then((v) => {
+        if (!touched.current && isLang(v)) setLangState(v);
+      })
+      .catch(() => undefined);
+  }, [initialLang]);
 
   useEffect(() => {
     if (Platform.OS === 'web' && typeof document !== 'undefined') {
@@ -41,7 +67,9 @@ export function I18nProvider({ children, initialLang, onLangChange }: I18nProvid
       lang,
       t: makeT(lang),
       setLang: (next) => {
+        touched.current = true;
         setLangState(next);
+        AsyncStorage.setItem(LANG_KEY, next).catch(() => undefined);
         onLangChange?.(next);
       },
     }),

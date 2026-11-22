@@ -23,6 +23,7 @@ const billing: Messages['billing'] = {
     coachPremium: 'Haftalık, aylık, Coach\'a Sor 20/gün',
   },
   premium: {
+    welcome: 'Hesabın hazır. Pro daha yüksek fiş, ses ve PDF kotası açar.',
     title: 'Arshif Pro',
     subtitle: 'Free sınırlarının tümü kalkar, AI kotaları büyür.',
     choosePlan: 'Plan seç',

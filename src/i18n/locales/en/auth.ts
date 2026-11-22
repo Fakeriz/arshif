@@ -3,11 +3,9 @@ import type { Messages } from '../id';
 const auth: Messages['auth'] = {
   signIn: {
     title: 'Sign in or sign up',
-    lead: 'Track your money with receipt photos, voice, or PDF bank statements.',
     emailLabel: 'Email',
     emailHint: 'We will send a 6-digit code to this email. No password needed.',
     submit: 'Send code',
-    pricing: 'See Pro pricing',
     errorInvalid: 'That email does not look right. Example: name@email.com',
     errorRate: 'Too many code requests. Wait a few minutes and try again.',
     errorNetwork: 'Cannot connect. Check your internet connection and try again.',
@@ -29,6 +27,9 @@ const auth: Messages['auth'] = {
     errorPasswordRule: 'Password needs at least 8 characters, mixing letters and numbers.',
     errorGoogle: 'Could not sign in with Google. Try again or use email.',
     forgot: 'Forgot password?',
+    headline: 'Snap a receipt, say it, or upload a PDF. Arshif does the logging.',
+    methods: { receipt: 'Receipt', voice: 'Voice', pdf: 'PDF' },
+    currencies: 'Rupiah, ringgit, lira, and dollars in one ledger.',
   },
   verify: {
     title: 'Enter the code',
@@ -52,9 +53,14 @@ const auth: Messages['auth'] = {
     resetDone: 'New password saved',
     resetFailed: 'Password was not saved. Reset it again from Forgot password.',
   },
+  prefs: {
+    language: 'Language',
+    toLight: 'Switch to light theme',
+    toDark: 'Switch to dark theme',
+  },
   welcome: {
     tagline: 'The money assistant that keeps your finances in order',
-    start: 'Get started',
+    start: 'Take the tour',
     haveAccount: 'Already have an account? Sign in',
     note: 'Sign in with Google, an email code, or a password.',
     open: 'Open the Arshif intro',

@@ -22,6 +22,7 @@ const billing = {
     coachPremium: 'Mingguan, bulanan, Tanya Coach 20/hari',
   },
   premium: {
+    welcome: 'Akunmu siap. Pro membuka kuota scan struk, suara, dan PDF yang lebih besar.',
     title: 'Arshif Pro',
     subtitle: 'Semua batas Free terbuka, kuota AI lebih besar.',
     choosePlan: 'Pilih paket',

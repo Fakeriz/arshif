@@ -1,6 +1,6 @@
 import { Activity, LayoutGrid, Sparkles } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { ViewStyle } from 'react-native';
 
 import { CaptureSheet } from '@/components/shell/CaptureSheet';
@@ -19,6 +19,7 @@ import { HomeSkeleton } from '@/features/home/HomeSkeleton';
 import { PeriodStats } from '@/features/home/PeriodStats';
 import { RecentTransactions } from '@/features/home/RecentTransactions';
 import { useSessionDismiss } from '@/features/home/sessionDismiss';
+import { takeProOffer } from '@/features/billing/proOffer';
 import { useDesktop } from '@/hooks/useDesktop';
 import { useT } from '@/i18n';
 import { useStore } from '@/state/AppStore';
@@ -51,6 +52,15 @@ export default function HomeScreen() {
   const desktop = useDesktop();
   // Desktop: avatar dan lonceng sudah di nav atas, jadi header ponsel diganti judul halaman.
   const header = desktop ? <HomeDesktopTitle /> : <HomeHeader />;
+
+  // Baru selesai setup: tawarkan Pro sekali, setelah Beranda sempat terlihat (bukan sebelum login).
+  useEffect(() => {
+    if (!takeProOffer() || state.plan !== 'free') return;
+    const id = setTimeout(() => router.push({ pathname: '/premium', params: { alasan: t('billing.premium.welcome') } }), 700);
+    return () => clearTimeout(id);
+    // Hanya saat Beranda pertama dipasang.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   if (demo === 'error') {
     return (

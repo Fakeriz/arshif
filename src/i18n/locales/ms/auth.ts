@@ -3,11 +3,9 @@ import type { Messages } from '../id';
 const auth: Messages['auth'] = {
   signIn: {
     title: 'Log masuk atau daftar',
-    lead: 'Rekod kewangan melalui foto resit, suara, atau penyata bank PDF.',
     emailLabel: 'E-mel',
     emailHint: 'Kami akan hantar kod 6 digit ke e-mel ini. Tanpa kata laluan.',
     submit: 'Hantar kod',
-    pricing: 'Lihat harga Pro',
     errorInvalid: 'Format e-mel belum betul. Contoh: nama@email.com',
     errorRate: 'Terlalu banyak permintaan kod. Tunggu beberapa minit dan cuba lagi.',
     errorNetwork: 'Tidak dapat bersambung. Semak sambungan internet anda dan cuba lagi.',
@@ -29,6 +27,9 @@ const auth: Messages['auth'] = {
     errorPasswordRule: 'Kata laluan sekurang-kurangnya 8 aksara, campuran huruf dan nombor.',
     errorGoogle: 'Belum dapat log masuk dengan Google. Cuba lagi atau guna e-mel.',
     forgot: 'Lupa kata laluan?',
+    headline: 'Snap resit, sebut, atau muat naik PDF. Arshif yang merekod.',
+    methods: { receipt: 'Resit', voice: 'Suara', pdf: 'PDF' },
+    currencies: 'Rupiah, ringgit, lira, dan dolar dalam satu catatan.',
   },
   verify: {
     title: 'Masukkan kod',
@@ -52,9 +53,14 @@ const auth: Messages['auth'] = {
     resetDone: 'Kata laluan baharu disimpan',
     resetFailed: 'Kata laluan belum disimpan. Tetapkan semula dari Lupa kata laluan.',
   },
+  prefs: {
+    language: 'Bahasa',
+    toLight: 'Tukar ke tema cerah',
+    toDark: 'Tukar ke tema gelap',
+  },
   welcome: {
     tagline: 'Pembantu kewangan yang menyusun duitmu dengan kemas',
-    start: 'Mula sekarang',
+    start: 'Kenali Arshif',
     haveAccount: 'Sudah ada akaun? Log masuk',
     note: 'Log masuk dengan Google, kod e-mel, atau kata laluan.',
     open: 'Buka pengenalan Arshif',

@@ -2,6 +2,7 @@ import { useState } from 'react';
 
 import { insertAccount, updateProfile } from '@/data/remote/api';
 import type { Account } from '@/data/types';
+import { queueProOffer } from '@/features/billing/proOffer';
 import { useStore } from '@/state/AppStore';
 
 import { accountFromDraft, parsePayday, type SetupDraft } from './draft';
@@ -42,6 +43,7 @@ export function useFinishSetup() {
       });
       // Pembagian sudah tersimpan di atas; aksi ini menyamakan state lokal (penulisan ulang ke server idempoten).
       dispatch({ type: 'budget/split', split: d.split });
+      queueProOffer();
       dispatch({ type: 'profile/set', patch: { onboarded: true, income, payday, mainCurrency: d.mainCurrency } });
     } catch {
       setFailed(true);

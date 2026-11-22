@@ -8,19 +8,83 @@ import { z } from 'zod';
 
 import { Screen } from '@/components/shell/Screen';
 import { AppText, Button, Card, Icon, Input, Tabs } from '@/components/ui';
+import { Flag } from '@/components/ui/Flag';
 import { authErrorKey } from '@/features/auth/errors';
 import { signInWithGoogle } from '@/features/auth/google';
 import { NewPassword } from '@/features/auth/password';
+import { AuthPrefs } from '@/features/intro/AuthPrefs';
 import { useT, type MsgKey } from '@/i18n';
 import { supabase } from '@/lib/supabase';
 import { easeOut, useEnter } from '@/theme/motion';
-import { useTheme } from '@/theme/ThemeProvider';
-import { motion, radius, space } from '@/theme/tokens';
+import { InkCard, useTheme } from '@/theme/ThemeProvider';
+import { fonts, motion, radius, space } from '@/theme/tokens';
 
 const Email = z.string().trim().toLowerCase().email().max(254);
 
-/** Tiga cara mencatat yang disebut di tagline: struk, suara, rekening koran PDF. */
-const METHODS: LucideIcon[] = [Receipt, Mic, FileText];
+/** Tiga cara mencatat (struk, suara, rekening koran PDF): pembeda produk, jadi tampil di kartu tinta. */
+const METHODS: { icon: LucideIcon; key: 'receipt' | 'voice' | 'pdf' }[] = [
+  { icon: Receipt, key: 'receipt' },
+  { icon: Mic, key: 'voice' },
+  { icon: FileText, key: 'pdf' },
+];
+/** Negara yang mata uangnya didukung penuh (IDR/MYR/TRY); USD ikut di teks. */
+const FLAGS = ['ID', 'MY', 'TR'] as const;
+
+function MethodChip({ icon, label, delay }: { icon: LucideIcon; label: string; delay: number }) {
+  const { colors } = useTheme();
+  const enter = useEnter({ delay, y: 6 });
+  return (
+    <Animated.View style={[styles.chip, { backgroundColor: colors.track }, enter]}>
+      <Icon icon={icon} color={colors.text} size={16} />
+      <AppText variant="caption" style={styles.chipLabel}>
+        {label}
+      </AppText>
+    </Animated.View>
+  );
+}
+
+/**
+ * Kartu tinta: satu-satunya titik fokus layar Masuk (motif identitas Arshif: tiap layar punya tepat satu kartu tinta).
+ * Isinya fakta produk, bukan klaim: tiga cara mencatat dan mata uang yang didukung.
+ */
+function Hero() {
+  return (
+    <InkCard style={styles.hero}>
+      <HeroBody />
+    </InkCard>
+  );
+}
+
+/** Di dalam InkCard: useTheme di sini membaca warna tinta (terbalik), bukan warna halaman. */
+function HeroBody() {
+  const t = useT();
+  const { colors } = useTheme();
+  return (
+    <>
+      <AppText style={[styles.heroTitle, { color: colors.text }]} accessibilityRole="header">
+        {t('auth.signIn.headline')}
+      </AppText>
+      <View style={styles.chips}>
+        {METHODS.map((m, i) => (
+          <MethodChip key={m.key} icon={m.icon} label={t(`auth.signIn.methods.${m.key}`)} delay={160 + i * 50} />
+        ))}
+      </View>
+      <View style={[styles.heroRule, { backgroundColor: colors.track }]} />
+      <View style={styles.currencies}>
+        <View style={styles.flags} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
+          {FLAGS.map((c, i) => (
+            <View key={c} style={[styles.flag, i > 0 && styles.flagOverlap]}>
+              <Flag country={c} width={18} />
+            </View>
+          ))}
+        </View>
+        <AppText variant="caption" tone="muted" style={styles.flex}>
+          {t('auth.signIn.currencies')}
+        </AppText>
+      </View>
+    </>
+  );
+}
 
 type Mode = 'code' | 'password';
 
@@ -54,10 +118,9 @@ export default function MasukScreen() {
   const [error, setError] = useState<MsgKey | null>(null);
   const busy = sending || googleBusy;
 
-  // Masuk bergiliran sekali saat layar dibuka: judul → kartu → tautan harga.
+  // Masuk bergiliran sekali saat layar dibuka (spesifikasi "Masuk layar": naik 12px, jeda 50ms): kartu tinta → formulir.
   const headEnter = useEnter({ y: 12 });
-  const cardEnter = useEnter({ delay: 80, y: 16 });
-  const footEnter = useEnter({ delay: 160, y: 8 });
+  const cardEnter = useEnter({ delay: 100, y: 12 });
   // Kolom kata sandi muncul/hilang: isi di bawahnya bergeser halus, bukan melompat.
   const reflow = reduced ? undefined : LinearTransition.duration(motion.base).easing(easeOut);
   const appear = reduced ? undefined : FadeIn.duration(motion.base).easing(easeOut);
@@ -139,21 +202,13 @@ export default function MasukScreen() {
   const passwordError = error && mode === 'password' && error !== 'auth.signIn.errorInvalid' ? t(error) : undefined;
 
   return (
-    <Screen centered>
-      <Animated.View style={[styles.head, headEnter]}>
-        <View style={styles.methods} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
-          {METHODS.map((glyph, i) => (
-            <View key={i} style={[styles.method, { backgroundColor: colors.surfaceSunken }]}>
-              <Icon icon={glyph} color={colors.textSecondary} />
-            </View>
-          ))}
-        </View>
-        <AppText variant="display" accessibilityRole="header">
-          Arshif
-        </AppText>
-        <AppText variant="body" tone="secondary">
-          {t('auth.signIn.lead')}
-        </AppText>
+    <Screen>
+      <View style={styles.top}>
+        <AppText style={[styles.wordmark, { color: colors.text }]}>Arshif</AppText>
+        <AuthPrefs />
+      </View>
+      <Animated.View style={headEnter}>
+        <Hero />
       </Animated.View>
       <Animated.View style={cardEnter}>
         <Card>
@@ -246,17 +301,25 @@ export default function MasukScreen() {
           </View>
         </Card>
       </Animated.View>
-      <Animated.View style={footEnter}>
-        <Button label={t('auth.signIn.pricing')} variant="ghost" fullWidth onPress={() => router.push('/harga')} />
-      </Animated.View>
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  head: { gap: space.sm, paddingHorizontal: space.xs, marginBottom: space.lg },
-  methods: { flexDirection: 'row', gap: space.sm, marginBottom: space.md },
-  method: { width: space.x4, height: space.x4, borderRadius: radius.control, alignItems: 'center', justifyContent: 'center' },
+  top: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', minHeight: 44 },
+  // Wordmark: nama produk sebagai teks (belum ada logo resmi), berat 800 agar terbaca sebagai merek, bukan judul.
+  wordmark: { fontFamily: fonts.extrabold, fontSize: 20, lineHeight: 24, letterSpacing: -0.6 },
+  hero: { borderRadius: radius.card, padding: space.xl, gap: space.lg },
+  heroTitle: { fontFamily: fonts.bold, fontSize: 26, lineHeight: 32, letterSpacing: -0.8 },
+  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: space.sm },
+  chip: { flexDirection: 'row', alignItems: 'center', gap: 6, borderRadius: radius.full, paddingVertical: 6, paddingLeft: 10, paddingRight: 12 },
+  chipLabel: { fontFamily: fonts.semibold },
+  heroRule: { height: StyleSheet.hairlineWidth },
+  currencies: { flexDirection: 'row', alignItems: 'center', gap: space.md },
+  flags: { flexDirection: 'row' },
+  flag: { borderRadius: 3, overflow: 'hidden' },
+  flagOverlap: { marginLeft: -4 },
+  flex: { flex: 1 },
   form: { gap: space.lg },
   or: { flexDirection: 'row', alignItems: 'center', gap: space.md },
   rule: { flex: 1, height: StyleSheet.hairlineWidth },

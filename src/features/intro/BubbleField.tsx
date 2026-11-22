@@ -169,10 +169,12 @@ type FieldProps = {
   reduced: boolean;
   /** Naikkan untuk memutar ulang semburan. */
   playKey?: number;
+  /** Ruang di atas yang tidak boleh dimasuki gelembung (baris atas: nama + tombol bahasa/tema). */
+  top?: number;
 };
 
-export const BubbleField = memo(function BubbleField({ width, originX, originY, leave, reduced, playKey = 0 }: FieldProps) {
-  const bubbles = useMemo(() => layoutBubbles(width, originY), [width, originY]);
+export const BubbleField = memo(function BubbleField({ width, originX, originY, leave, reduced, playKey = 0, top = 0 }: FieldProps) {
+  const bubbles = useMemo(() => layoutBubbles(width, originY - top), [width, originY, top]);
   return (
     <View pointerEvents="none" style={StyleSheet.absoluteFill} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
       {bubbles.map((b, i) => (
