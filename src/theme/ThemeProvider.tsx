@@ -127,3 +127,20 @@ export function InkCard({ children, style }: { children: ReactNode; style?: Styl
     </ThemeContext.Provider>
   );
 }
+
+/**
+ * Dasar tinta Beranda (di bawah lembar kertas): isinya selalu memakai palet gelap, di tema apa pun,
+ * jadi kartu akun dan daftar transaksi otomatis terbaca di atas tinta tanpa tahu mereka ada di sana.
+ */
+export function InkScope({ children, style }: { children: ReactNode; style?: StyleProp<ViewStyle> }) {
+  const theme = useTheme();
+  const value = useMemo<ThemeValue>(() => ({ ...theme, scheme: 'dark', colors: buildPalette('dark'), hues: categoryHues.dark }), [theme]);
+  return (
+    <ThemeContext.Provider value={value}>
+      <View style={[{ backgroundColor: INK_BASE[theme.scheme] }, style]}>{children}</View>
+    </ThemeContext.Provider>
+  );
+}
+
+/** Warna dasar tinta: hitam kartu tinta di tema terang; di tema gelap sedikit lebih gelap dari latar agar lembar tetap terpisah. */
+export const INK_BASE: Record<ColorScheme, string> = { light: '#0A0A0A', dark: '#050505' };

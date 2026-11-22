@@ -1,7 +1,7 @@
 import { Activity, LayoutGrid, Sparkles } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
-import type { ViewStyle } from 'react-native';
+import { StyleSheet, View, type ViewStyle } from 'react-native';
 
 import { CaptureSheet } from '@/components/shell/CaptureSheet';
 import { captureOptions, moreOptions } from '@/components/shell/captureOptions';
@@ -15,6 +15,7 @@ import { MissingRatesBanner } from '@/features/fx/MissingRatesBanner';
 import { DESKTOP_WIDE, GridCell, GridRow } from '@/components/shell/DesktopGrid';
 import { HomeDesktopTitle } from '@/features/home/HomeDesktop';
 import { HomeHeader } from '@/features/home/HomeHeader';
+import { HomeSheet } from '@/features/home/HomeSheet';
 import { HomeSkeleton } from '@/features/home/HomeSkeleton';
 import { PeriodStats } from '@/features/home/PeriodStats';
 import { RecentTransactions } from '@/features/home/RecentTransactions';
@@ -28,6 +29,8 @@ import { useLedger } from '@/state/derived';
 import { useNetWorth, useNetWorthSnapshot } from '@/state/netWorth';
 import { useLimits } from '@/state/limits';
 import { useRetry } from '@/state/useRetry';
+import { INK_BASE, InkScope, useTheme } from '@/theme/ThemeProvider';
+import { layout, space } from '@/theme/tokens';
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -50,6 +53,7 @@ export default function HomeScreen() {
   const scanSource = useScanSource();
   const openCapture = (o: typeof scan) => (o.limited ? paywall(o.reason) : o.key === 'scan' ? scanSource() : router.push(o.href));
   const desktop = useDesktop();
+  const { scheme } = useTheme();
   // Desktop: avatar dan lonceng sudah di nav atas, jadi header ponsel diganti judul halaman.
   const header = desktop ? <HomeDesktopTitle /> : <HomeHeader />;
 
@@ -156,17 +160,37 @@ export default function HomeScreen() {
     );
   }
 
+  // Ponsel: lembar kertas (sapaan, kekayaan bersih, pemasukan/pengeluaran, aksi cepat) di atas dasar tinta
+  // yang memuat akun dan transaksi. Pemasukan/pengeluaran sudah di lembar, jadi PeriodStats tidak diulang.
+  const netAmount = state.includeAssets ? netWorth.total : netWorth.total - netWorth.assets;
   return (
-    <Screen tabs onRefresh={retry} refreshing={refreshing}>
-      {header}
-      {balance()}
-      {deck}
-      {quick}
-      <MissingRatesBanner />
-      {stats}
+    <Screen tabs bare background={INK_BASE[scheme]} onRefresh={retry} refreshing={refreshing}>
+      <HomeSheet
+        amount={netAmount}
+        currency={netWorth.currency}
+        accountCount={ledger.accounts.length}
+        transactions={ledger.transactions}
+        actions={[
+          { key: 'scan', label: t('home.quick.scan'), icon: scan.icon, onPress: () => openCapture(scan) },
+          { key: 'voice', label: voice.short, icon: voice.icon, onPress: () => openCapture(voice) },
+          { key: 'coach', label: t('home.quick.coach'), icon: Activity, onPress: () => router.push('/coach') },
+          { key: 'more', label: t('home.quick.more'), icon: LayoutGrid, onPress: () => setMore(true) },
+        ]}
+      />
+      <InkScope style={styles.ink}>
+        <View style={styles.inkColumn}>
+          {deck}
+          <MissingRatesBanner />
+          {recap}
+          {recent}
+        </View>
+      </InkScope>
       {moreSheet}
-      {recap}
-      {recent}
     </Screen>
   );
 }
+
+const styles = StyleSheet.create({
+  ink: { flexGrow: 1, alignItems: 'center', paddingHorizontal: space.lg, paddingTop: space.md },
+  inkColumn: { width: '100%', maxWidth: layout.maxContentWidth, gap: space.lg },
+});

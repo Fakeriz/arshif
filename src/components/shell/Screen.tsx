@@ -41,6 +41,10 @@ export type ScreenProps = {
   wide?: boolean;
   /** Konten pendek (layar masuk): pusatkan vertikal, tetap bisa digulir saat keyboard/teks besar. */
   centered?: boolean;
+  /** Tanpa padding atas/samping dan tanpa jarak antarbagian: layar menyusun sendiri bagian selebar layar (Beranda ponsel). */
+  bare?: boolean;
+  /** Warna dasar layar (bawaan: colors.bg). */
+  background?: string;
 };
 
 /** Kolom bawaan di desktop: lebih lega dari kolom ponsel, tetap nyaman dibaca (baris < 80 karakter). */
@@ -49,7 +53,7 @@ export const DESKTOP_COLUMN = 760;
 /** Jarak dari bawah (px) yang memicu onEndReached. */
 const END_THRESHOLD = 600;
 
-export function Screen({ children, tabs, onRefresh, refreshing, onEndReached, maxWidth, wide, centered }: ScreenProps) {
+export function Screen({ children, tabs, onRefresh, refreshing, onEndReached, maxWidth, wide, centered, bare, background }: ScreenProps) {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
   const { footprint } = useNavFootprint();
@@ -73,13 +77,18 @@ export function Screen({ children, tabs, onRefresh, refreshing, onEndReached, ma
         contentContainerStyle={[
           styles.content,
           centered && styles.centered,
-          { paddingTop: insets.top + space.md, paddingBottom: navBottom ? tabSpace : space.x4 + insets.bottom },
+          { paddingTop: bare ? 0 : insets.top + space.md, paddingBottom: navBottom ? tabSpace : space.x4 + insets.bottom },
+          bare && styles.bare,
         ]}
       >
-        <View style={[styles.column, centered && styles.columnCentered, { maxWidth: maxWidth ?? (desktop ? (wide ? DESKTOP_WIDE : DESKTOP_COLUMN) : layout.maxContentWidth) }]}>{children}</View>
+        {bare ? (
+          children
+        ) : (
+          <View style={[styles.column, centered && styles.columnCentered, { maxWidth: maxWidth ?? (desktop ? (wide ? DESKTOP_WIDE : DESKTOP_COLUMN) : layout.maxContentWidth) }]}>{children}</View>
+        )}
     </ScrollView>
   );
-  return <View style={[styles.root, { backgroundColor: colors.bg }]}>{scroll}</View>;
+  return <View style={[styles.root, { backgroundColor: background ?? colors.bg }]}>{scroll}</View>;
 }
 
 const styles = StyleSheet.create({
@@ -87,5 +96,6 @@ const styles = StyleSheet.create({
   content: { paddingHorizontal: space.lg, alignItems: 'center' },
   column: { width: '100%', maxWidth: layout.maxContentWidth, gap: space.lg },
   centered: { flexGrow: 1 },
+  bare: { paddingHorizontal: 0, alignItems: 'stretch' },
   columnCentered: { flexGrow: 1, justifyContent: 'center' },
 });

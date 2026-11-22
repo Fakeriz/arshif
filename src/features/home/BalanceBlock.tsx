@@ -37,14 +37,14 @@ function BalanceContent({
   const { colors } = useTheme();
   const { state, dispatch } = useStore();
   const hidden = state.hideBalance;
-  const { t, lang } = useI18n();
+  const { t } = useI18n();
   // Kurs hanya disebut bila ada akun bermata uang lain (FR-FX-2: "Kurs per [waktu]").
   const { snapshots } = useAssets();
   // Tren 30 hari dari snapshot harian (sama dengan tab Aset). Tanpa snapshot lama: badge tidak tampil.
   // Snapshot menyimpan total dengan aset; tanpa aset di saldo, pembandingnya tidak setara, jadi badge disembunyikan.
   const since = complete && state.includeAssets ? changeSince(snapshots, amount, todayYmd(), currency) : null;
   const change = since ? pctChange(amount - since.amount, amount) : null;
-  const converted = state.accounts.some((a) => a.currency !== currency) && state.ratesDate !== null;
+  const meta = useBalanceMeta(accountCount, currency);
   return (
     <View style={styles.wrap}>
       <View style={styles.label}>
@@ -63,12 +63,20 @@ function BalanceContent({
       <BalanceText amount={amount} currency={currency} hidden={hidden} countUp />
       {change !== null && <TrendBadge value={change} suffix={t('home.netWorthVs')} />}
       <AppText variant="caption" tone="muted" align="center">
-        {converted
-          ? t(state.ratesStale ? 'home.balanceMetaStale' : 'home.balanceMeta', { count: accountCount, currency, date: shortDate(state.ratesDate!, lang) })
-          : t('home.balanceMetaSame', { count: accountCount, currency })}
+        {meta}
       </AppText>
     </View>
   );
+}
+
+/** "N akun · kurs per [tanggal]": kurs hanya disebut bila ada akun bermata uang lain (FR-FX-2). */
+export function useBalanceMeta(accountCount: number, currency: string): string {
+  const { state } = useStore();
+  const { t, lang } = useI18n();
+  const converted = state.accounts.some((a) => a.currency !== currency) && state.ratesDate !== null;
+  return converted
+    ? t(state.ratesStale ? 'home.balanceMetaStale' : 'home.balanceMeta', { count: accountCount, currency, date: shortDate(state.ratesDate!, lang) })
+    : t('home.balanceMetaSame', { count: accountCount, currency });
 }
 
 const styles = StyleSheet.create({

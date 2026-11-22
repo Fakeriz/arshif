@@ -31,6 +31,7 @@ jest.mock('react-native-reanimated', () => {
     FadeIn: layoutAnim(),
     FadeOut: layoutAnim(),
     FadeInDown: layoutAnim(),
+    LinearTransition: layoutAnim(),
     // Deck akun Beranda: interpolasi linier (+ clamp) cukup untuk render deterministik.
     Extrapolation: { CLAMP: 'clamp', EXTEND: 'extend', IDENTITY: 'identity' },
     interpolate: (v: number, input: number[], output: number[], extrapolate?: string) => {
