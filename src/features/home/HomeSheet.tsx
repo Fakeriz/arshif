@@ -386,7 +386,8 @@ const styles = StyleSheet.create({
   square: { zIndex: 0, width: 46, height: 46, borderRadius: 16, borderWidth: layout.hairline, alignItems: 'center', justifyContent: 'center' },
   dot: { position: 'absolute', top: 9, right: 9, width: 9, height: 9, borderRadius: 5, borderWidth: 1.5 },
   card: { borderRadius: radius.sheet, borderWidth: layout.hairline, padding: space.xl, gap: space.md },
-  cardGlass: { overflow: 'hidden', zIndex: 0 },
+  // Tanpa overflow hidden di kartu: di iOS itu memotong bayangan kartu sendiri. Blur sudah dibulatkan di lapisannya.
+  cardGlass: { zIndex: 0 },
   under: { zIndex: -1, borderRadius: radius.sheet, overflow: 'hidden' },
   labelRow: { flexDirection: 'row', alignItems: 'center', gap: space.md },
   eye: { width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },

@@ -45,7 +45,7 @@ type Mode = 'stack' | 'open';
  * Geser ke samping memutar tumpukan; tarik ke bawah atau "Semua kartu" menutup. Detail akun (desain kartu, limit,
  * grup, iuran) tetap lewat tombol "Detail akun". Gerak hanya transform + opasitas; instan saat reduced motion.
  */
-export function AccountsCard() {
+export function AccountsCard({ onActiveChange }: { onActiveChange?: (id: string) => void } = {}) {
   const { t, lang } = useI18n();
   const router = useRouter();
   const { colors } = useTheme();
@@ -76,6 +76,12 @@ export function AccountsCard() {
   useEffect(() => {
     anchor.value = active;
   }, [active, anchor]);
+  // Beranda: kartu yang dibuka/digeser ke depan jadi akun aktif untuk pencatatan (sama dengan strip akun lama).
+  const activeId = mode === 'open' ? accounts[active]?.id : undefined;
+  useEffect(() => {
+    if (activeId) onActiveChange?.(activeId);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeId]);
 
   const run = (sv: SharedValue<number>, to: number, velocity = 0, cfg = SPRING) => {
     cancelAnimation(sv);

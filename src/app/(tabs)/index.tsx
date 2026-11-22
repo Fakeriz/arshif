@@ -10,6 +10,7 @@ import { Screen } from '@/components/shell/Screen';
 import { EmptyState, Group, PromoCard, QuickActions, SwipeDismiss } from '@/components/ui';
 import { useScanSource } from '@/components/shell/ScanSourceSheet';
 import { AccountDeck } from '@/features/home/AccountDeck';
+import { AccountsCard } from '@/features/settings/AccountsCard';
 import { BalanceBlock } from '@/features/home/BalanceBlock';
 import { MissingRatesBanner } from '@/features/fx/MissingRatesBanner';
 import { DESKTOP_WIDE, GridCell, GridRow } from '@/components/shell/DesktopGrid';
@@ -179,7 +180,8 @@ export default function HomeScreen() {
       />
       <InkScope style={styles.ink}>
         <View style={styles.inkColumn}>
-          {deck}
+          {/* Dompet bertumpuk yang sama dengan Akun & kartu: satu cara memilih akun di seluruh aplikasi. */}
+          <AccountsCard onActiveChange={(id) => dispatch({ type: 'account/setActive', id })} />
           <MissingRatesBanner />
           {recap}
           {recent}
