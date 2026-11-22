@@ -34,6 +34,7 @@ import { motion } from '@/theme/tokens';
 import { ThemeProvider, useTheme } from '@/theme/ThemeProvider';
 import { captureDriveRedirect } from '@/features/backup/driveToken';
 import { captureAuthRedirect } from '@/features/auth/google';
+import { setWebChrome } from '@/lib/webChrome';
 import { loadIntroSeen, useIntroSeen } from '@/features/intro/introSeen';
 
 // Web: tangkap token Google Drive dari URL sebelum router berpindah (login Drive kembali ke halaman ini).
@@ -73,6 +74,7 @@ function Shell() {
 
   useEffect(() => {
     SystemUI.setBackgroundColorAsync(colors.bg).catch(() => undefined);
+    setWebChrome(colors.bg);
   }, [colors.bg]);
 
   return (

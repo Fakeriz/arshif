@@ -1,6 +1,8 @@
-import { useRouter } from 'expo-router';
+import { BlurView } from 'expo-blur';
+import { useFocusEffect, useRouter } from 'expo-router';
+import { setStatusBarStyle } from 'expo-status-bar';
 import { ArrowDownLeft, ArrowUpRight, Bell, Check, ChevronUp, Ellipsis, Eye, EyeOff, Target, type LucideIcon } from 'lucide-react-native';
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import Animated, { FadeIn, FadeOut, LinearTransition, useAnimatedStyle, useReducedMotion, useSharedValue, withTiming } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -19,7 +21,8 @@ import { parseCover } from '@/lib/cover';
 import { useT } from '@/i18n';
 import { periodSeries } from '@/lib/budget';
 import { todayYmd } from '@/lib/dates';
-import { formatMoney } from '@/lib/money';
+import { formatCompact, formatMoney, formatMoneyParts } from '@/lib/money';
+import { setWebChrome } from '@/lib/webChrome';
 import { useStore } from '@/state/AppStore';
 import { easeOut, haptic } from '@/theme/motion';
 import { useTheme } from '@/theme/ThemeProvider';
@@ -97,15 +100,39 @@ export function HomeSheet({
   const ink = custom ? coverTextColors(coverVal ?? null, scheme) : null;
   const head = { text: ink?.text ?? colors.text, muted: ink?.muted ?? colors.textSecondary };
   const lightHead = head.text.toUpperCase() > '#C'; // teks terang (#E0E0E0/#F4F4F4) di atas latar gelap
-  const btn = custom ? { bg: lightHead ? 'rgba(255,255,255,0.14)' : 'rgba(8,8,8,0.08)', fg: head.text } : { bg: colors.accent, fg: colors.onAccent };
+  // Di atas latar kustom tombol jadi kaca (blur + redup + tepi terang): batasnya tetap terlihat di atas foto terang
+  // maupun gelap, di tema apa pun. Latar polos: kotak tinta.
+  const glass: 'dark' | 'light' | null = custom ? (lightHead ? 'dark' : 'light') : null;
+  const btn = glass ? { bg: 'transparent', fg: head.text, glass } : { bg: colors.accent, fg: colors.onAccent, glass: null };
   const parsed = custom ? parseCover(coverVal ?? null) : null;
-  // Lekukan memakai warna dasar latar (foto: redup gelap di atasnya; batu: abu; preset lain: tinta).
-  const notchFill = !parsed ? sheetBg : parsed.kind === 'photo' ? '#1E1E1E' : parsed.key === 'batu' ? colors.textSecondary : inkCard[scheme].bg;
-  const money = (v: number) => (hidden ? MASK : formatMoney(v, currency));
+  const photo = parsed?.kind === 'photo';
+  // Warna dasar latar (foto: redup gelap; batu: abu; preset lain: tinta). Dipakai juga di bawah foto supaya tepi lengkung tidak bocor terang.
+  const baseFill = !parsed ? sheetBg : photo ? '#141414' : parsed.key === 'batu' ? colors.textSecondary : inkCard[scheme].bg;
+  const darkTop = custom ? lightHead : scheme === 'dark';
+
+  // Status bar ikut puncak lembar selama Beranda tampil: teks terang di atas latar gelap. Web iOS: warna area status bar.
+  useFocusEffect(
+    useCallback(() => {
+      setStatusBarStyle(darkTop ? 'light' : 'dark');
+      setWebChrome(baseFill);
+      return () => {
+        setStatusBarStyle(scheme === 'dark' ? 'light' : 'dark');
+        setWebChrome(colors.bg);
+      };
+    }, [darkTop, baseFill, scheme, colors.bg]),
+  );
+  // Angka panjang (di atas ±13 karakter) diringkas agar separuh kartu tidak terpotong di layar 360 px.
+  const money = (v: number) => {
+    if (hidden) return MASK;
+    const full = formatMoney(v, currency);
+    if (full.length <= 13) return full;
+    const p = formatMoneyParts(v, currency);
+    return `${p.symbol}${p.gap || ' '}${formatCompact(v, currency)}`;
+  };
 
   return (
     <View style={styles.wrap}>
-      <Animated.View layout={reflow} style={[styles.sheet, { backgroundColor: sheetBg, paddingTop: insets.top + space.md }, custom && { borderColor: colors.border, borderWidth: layout.hairline }]}>
+      <Animated.View layout={reflow} style={[styles.sheet, { backgroundColor: baseFill, paddingTop: insets.top + space.md }]}>
         {custom && (
           <View style={StyleSheet.absoluteFill} pointerEvents="none">
             <ProfileCover value={coverVal} scrim />
@@ -118,6 +145,7 @@ export function HomeSheet({
                 <ProfileAvatar size={48} />
               ) : (
                 <View style={[styles.avatar, { backgroundColor: btn.bg }]}>
+                  {btn.glass && <Glass tone={btn.glass} radius={24} />}
                   <AppText style={[styles.initial, { color: btn.fg }]}>{initial}</AppText>
                 </View>
               )}
@@ -130,10 +158,11 @@ export function HomeSheet({
                 {hello.nudge}
               </AppText>
             </View>
-            <SquareButton icon={Target} label={t('home.goalsA11y')} onPress={() => router.push('/rencana/goals')} bg={btn.bg} fg={btn.fg} />
+            <SquareButton icon={Target} label={t('home.goalsA11y')} onPress={() => router.push('/rencana/goals')} bg={btn.bg} fg={btn.fg} glass={btn.glass} />
             <SquareButton
               bg={btn.bg}
               fg={btn.fg}
+              glass={btn.glass}
               icon={Bell}
               label={unread ? t('home.notifUnreadA11y', { count: unread }) : t('home.notifA11y')}
               onPress={() => setNotifOpen(true)}
@@ -246,15 +275,26 @@ export function HomeSheet({
               </Animated.View>
             )}
           </Animated.View>
+          {/* Latar foto: lekukan berwarna tetap tidak bisa menyatu dengan foto, jadi panah pindah ke dalam tepi bawah lembar. */}
+          {photo && (
+            <View style={styles.innerFold}>
+              <PressableScale accessibilityLabel={folded ? t('home.unfold') : t('home.fold')} accessibilityState={{ expanded: !folded }} onPress={toggle} focusRadius={radius.full} hitSlop={10} style={styles.innerFoldBtn}>
+                <Animated.View style={chevron}>
+                  <Icon icon={ChevronUp} color={head.text} size={layout.iconSize.md} />
+                </Animated.View>
+              </PressableScale>
+            </View>
+          )}
         </View>
       </Animated.View>
 
       {/* Lekukan: menyambung lembar ke dasar tinta, panahnya melipat/membuka kartu. */}
+      {!photo && (
       <Animated.View layout={reflow} style={styles.notchWrap}>
         <PressableScale accessibilityLabel={folded ? t('home.unfold') : t('home.fold')} accessibilityState={{ expanded: !folded }} onPress={toggle} focusRadius={radius.full} scaleTo={0.96}>
           <View style={styles.notch}>
             <Svg width={NOTCH_W} height={NOTCH_H} style={StyleSheet.absoluteFill}>
-              <Path d={`M0 0 C 22 0, 26 ${NOTCH_H}, 46 ${NOTCH_H} L ${NOTCH_W - 46} ${NOTCH_H} C ${NOTCH_W - 26} ${NOTCH_H}, ${NOTCH_W - 22} 0, ${NOTCH_W} 0 Z`} fill={notchFill} />
+              <Path d={`M0 0 C 22 0, 26 ${NOTCH_H}, 46 ${NOTCH_H} L ${NOTCH_W - 46} ${NOTCH_H} C ${NOTCH_W - 26} ${NOTCH_H}, ${NOTCH_W - 22} 0, ${NOTCH_W} 0 Z`} fill={baseFill} />
             </Svg>
             <Animated.View style={chevron}>
               <Icon icon={ChevronUp} color={head.text} size={layout.iconSize.md} />
@@ -262,18 +302,31 @@ export function HomeSheet({
           </View>
         </PressableScale>
       </Animated.View>
+      )}
 
       <NotificationsSheet visible={notifOpen} onClose={() => setNotifOpen(false)} />
     </View>
   );
 }
 
-function SquareButton({ icon, label, onPress, dot, bg, fg }: { icon: LucideIcon; label: string; onPress: () => void; dot?: boolean; bg: string; fg: string }) {
+/** Kaca: blur latar + redup + tepi terang/gelap. Dipakai tombol & avatar di atas latar kustom. */
+function Glass({ tone, radius: r }: { tone: 'dark' | 'light'; radius: number }) {
+  return (
+    // zIndex -1 di dalam induk ber-zIndex 0: di web elemen absolut tergambar di atas ikon statis kalau tidak.
+    <View pointerEvents="none" style={[StyleSheet.absoluteFill, { borderRadius: r, overflow: 'hidden', zIndex: -1 }]}>
+      <BlurView intensity={30} tint={tone} style={StyleSheet.absoluteFill} />
+      <View style={[StyleSheet.absoluteFill, { borderRadius: r, borderWidth: 1, backgroundColor: tone === 'dark' ? 'rgba(0,0,0,0.32)' : 'rgba(255,255,255,0.45)', borderColor: tone === 'dark' ? 'rgba(255,255,255,0.28)' : 'rgba(8,8,8,0.16)' }]} />
+    </View>
+  );
+}
+
+function SquareButton({ icon, label, onPress, dot, bg, fg, glass }: { icon: LucideIcon; label: string; onPress: () => void; dot?: boolean; bg: string; fg: string; glass: 'dark' | 'light' | null }) {
   const { colors } = useTheme();
   return (
-    <PressableScale accessibilityLabel={label} onPress={onPress} focusRadius={18} style={[styles.square, { backgroundColor: bg, borderColor: colors.borderStrong }]}>
+    <PressableScale accessibilityLabel={label} onPress={onPress} focusRadius={16} style={[styles.square, { backgroundColor: bg, borderColor: glass ? 'transparent' : colors.borderStrong }]}>
+      {glass && <Glass tone={glass} radius={16} />}
       <Icon icon={icon} color={fg} />
-      {dot && <View style={[styles.dot, { backgroundColor: colors.warning, borderColor: bg }]} />}
+      {dot && <View style={[styles.dot, { backgroundColor: colors.warning, borderColor: glass ? 'transparent' : bg }]} />}
     </PressableScale>
   );
 }
@@ -295,11 +348,11 @@ const styles = StyleSheet.create({
   sheet: { alignSelf: 'stretch', overflow: 'hidden', borderBottomLeftRadius: 40, borderBottomRightRadius: 40, paddingHorizontal: space.lg, paddingBottom: space.xl, alignItems: 'center' },
   column: { width: '100%', maxWidth: layout.maxContentWidth, gap: space.xl },
   header: { flexDirection: 'row', alignItems: 'center', gap: space.sm + 2 },
-  avatar: { width: 48, height: 48, borderRadius: 24, alignItems: 'center', justifyContent: 'center' },
+  avatar: { zIndex: 0, width: 48, height: 48, borderRadius: 24, alignItems: 'center', justifyContent: 'center' },
   initial: { fontFamily: fonts.bold, fontSize: 19, lineHeight: 24 },
   hello: { flex: 1, gap: 2 },
   greet: { fontFamily: fonts.bold, fontSize: 20, lineHeight: 26, letterSpacing: -0.5 },
-  square: { width: 46, height: 46, borderRadius: 16, borderWidth: layout.hairline, alignItems: 'center', justifyContent: 'center' },
+  square: { zIndex: 0, width: 46, height: 46, borderRadius: 16, borderWidth: layout.hairline, alignItems: 'center', justifyContent: 'center' },
   dot: { position: 'absolute', top: 9, right: 9, width: 9, height: 9, borderRadius: 5, borderWidth: 1.5 },
   card: { borderRadius: radius.sheet, borderWidth: layout.hairline, padding: space.xl, gap: space.md },
   labelRow: { flexDirection: 'row', alignItems: 'center', gap: space.md },
@@ -319,5 +372,7 @@ const styles = StyleSheet.create({
   actionCell: { flex: 1 },
   action: { aspectRatio: 1, maxHeight: 80, borderRadius: 22, alignItems: 'center', justifyContent: 'center' },
   notchWrap: { marginTop: -1, alignItems: 'center' },
+  innerFold: { alignItems: 'center', marginTop: -space.sm, marginBottom: -space.md },
+  innerFoldBtn: { width: 44, height: 32, alignItems: 'center', justifyContent: 'center' },
   notch: { width: NOTCH_W, height: NOTCH_H + 4, alignItems: 'center', paddingTop: 2 },
 });

@@ -16,6 +16,7 @@ import { PlanningProvider } from '@/state/planning';
 import { ThemeProvider } from '@/theme/ThemeProvider';
 
 jest.mock('expo-router', () => ({
+  useFocusEffect: () => undefined,
   useRouter: () => ({ push: jest.fn(), back: jest.fn(), navigate: jest.fn(), replace: jest.fn() }),
   useLocalSearchParams: () => ({}),
   router: { push: jest.fn() },

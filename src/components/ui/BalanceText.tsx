@@ -27,7 +27,12 @@ export function BalanceText({ amount, currency, hidden, countUp, size = 'hero', 
   const t = useT();
   const shown = useCountUp(amount, !!countUp && !hidden);
   const p = formatMoneyParts(shown, currency);
-  const base = size === 'hero' ? typeScale.balanceHero : typeScale.amountHero;
+  const raw = size === 'hero' ? typeScale.balanceHero : typeScale.amountHero;
+  // Angka panjang (ratusan juta, miliar) mengecil sendiri: adjustsFontSizeToFit tidak jalan di web,
+  // jadi ukuran diturunkan dari jumlah karakter (maks. 30% lebih kecil), lalu adjustsFontSizeToFit menyempurnakan di native.
+  const chars = (hidden ? MASK : p.whole + p.fraction).length + p.symbol.length / 2;
+  const fit = Math.max(0.7, Math.min(1, 13 / chars));
+  const base = fit === 1 ? raw : { ...raw, fontSize: Math.round(raw.fontSize * fit), lineHeight: Math.round(raw.lineHeight * fit) };
   const symbolSize = Math.round(base.fontSize * 0.55);
 
   return (

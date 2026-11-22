@@ -27,6 +27,7 @@ import { ThemeProvider } from '@/theme/ThemeProvider';
 const mockPush = jest.fn();
 let mockParams: Record<string, string> = {};
 jest.mock('expo-router', () => ({
+  useFocusEffect: () => undefined,
   useRouter: () => ({ push: mockPush, back: jest.fn(), navigate: mockPush, replace: mockPush }),
   useLocalSearchParams: () => mockParams,
   router: { push: (...a: unknown[]) => mockPush(...a) },

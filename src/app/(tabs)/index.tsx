@@ -1,4 +1,4 @@
-import { Activity, LayoutGrid, Sparkles } from 'lucide-react-native';
+import { Activity, CalendarRange, LayoutGrid } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { StyleSheet, View, type ViewStyle } from 'react-native';
@@ -124,7 +124,7 @@ export default function HomeScreen() {
   );
   const recap = state.notifPrefs.weekly_recap && ledger.transactions.length > 0 && !recapGone && (
     <SwipeDismiss onDismiss={dismissRecap} actionLabel={t('home.recapDismiss')}>
-      <PromoCard icon={Sparkles} title={t('home.recapTitle')} message={t('home.recapMessage')} onPress={() => router.push('/coach')} />
+      <PromoCard icon={CalendarRange} title={t('home.recapTitle')} message={t('home.recapMessage')} onPress={() => router.push('/coach')} />
     </SwipeDismiss>
   );
   const recent = <RecentTransactions transactions={ledger.transactions} accounts={ledger.accounts} mainCurrency={ledger.mainCurrency} />;
