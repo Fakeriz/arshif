@@ -6,7 +6,7 @@ import { useCallback, useMemo, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import Animated, { FadeIn, FadeOut, LinearTransition, useAnimatedStyle, useReducedMotion, useSharedValue, withTiming } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import Svg, { Path } from 'react-native-svg';
+import Svg, { ClipPath, Defs, G, Image as SvgImage, Path } from 'react-native-svg';
 
 import { afterSheetClose, HeaderMenu } from '@/components/shell/HeaderActions';
 import { NotificationsSheet } from '@/components/shell/NotificationsSheet';
@@ -15,7 +15,7 @@ import type { Transaction } from '@/data/types';
 import { useBalanceMeta } from '@/features/home/BalanceBlock';
 import { greetingLines } from '@/features/home/greeting';
 import { coverValueFor, SHEET_BGS, useSheetBg } from '@/features/home/sheetBg';
-import { ProfileAvatar } from '@/features/settings/ProfileAvatar';
+import { ProfileAvatar, useSignedUrl } from '@/features/settings/ProfileAvatar';
 import { coverTextColors, ProfileCover } from '@/features/settings/ProfileCover';
 import { parseCover } from '@/lib/cover';
 import { useT } from '@/i18n';
@@ -32,6 +32,7 @@ export type SheetAction = { key: string; label: string; icon: LucideIcon; onPres
 
 const NOTCH_W = 112;
 const NOTCH_H = 26;
+const NOTCH_D = `M0 0 C 22 0, 26 ${NOTCH_H}, 46 ${NOTCH_H} L ${NOTCH_W - 46} ${NOTCH_H} C ${NOTCH_W - 26} ${NOTCH_H}, ${NOTCH_W - 22} 0, ${NOTCH_W} 0 Z`;
 const MASK = '••••';
 
 
@@ -105,9 +106,10 @@ export function HomeSheet({
   const glass: 'dark' | 'light' | null = custom ? (lightHead ? 'dark' : 'light') : null;
   const btn = glass ? { bg: 'transparent', fg: head.text, glass } : { bg: colors.accent, fg: colors.onAccent, glass: null };
   const parsed = custom ? parseCover(coverVal ?? null) : null;
-  const photo = parsed?.kind === 'photo';
+  const photoUri = useSignedUrl(parsed?.kind === 'photo' ? parsed.path : null);
+  const [sheetSize, setSheetSize] = useState({ w: 0, h: 0 });
   // Warna dasar latar (foto: redup gelap; batu: abu; preset lain: tinta). Dipakai juga di bawah foto supaya tepi lengkung tidak bocor terang.
-  const baseFill = !parsed ? sheetBg : photo ? '#141414' : parsed.key === 'batu' ? colors.textSecondary : inkCard[scheme].bg;
+  const baseFill = !parsed ? sheetBg : parsed.kind === 'photo' ? '#141414' : parsed.key === 'batu' ? colors.textSecondary : inkCard[scheme].bg;
   const darkTop = custom ? lightHead : scheme === 'dark';
   // Kartu kaca hanya di atas latar kustom (di latar polos blur tidak terlihat apa-apa). Nadanya mengikuti latar:
   // latar gelap (foto redup, garis, lingkar) → kaca gelap tembus pandang dengan palet gelap; latar terang → kaca terang.
@@ -140,7 +142,14 @@ export function HomeSheet({
   return (
     <View style={styles.wrap}>
       <Animated.View layout={reflow} style={[styles.sheetShadow, scheme === 'light' && elevation.light.card]}>
-      <Animated.View layout={reflow} style={[styles.sheet, { backgroundColor: baseFill, paddingTop: insets.top + space.md }]}>
+      <Animated.View
+        layout={reflow}
+        onLayout={(e) => {
+          const { width, height } = e.nativeEvent.layout;
+          if (width !== sheetSize.w || height !== sheetSize.h) setSheetSize({ w: width, h: height });
+        }}
+        style={[styles.sheet, { backgroundColor: baseFill, paddingTop: insets.top + space.md }]}
+      >
         {custom && (
           <View style={StyleSheet.absoluteFill} pointerEvents="none">
             <ProfileCover value={coverVal} scrim />
@@ -289,27 +298,33 @@ export function HomeSheet({
             )}
           </SchemeScope>
           </Animated.View>
-          {/* Latar foto: lekukan berwarna tetap tidak bisa menyatu dengan foto, jadi panah pindah ke dalam tepi bawah lembar. */}
-          {photo && (
-            <View style={styles.innerFold}>
-              <PressableScale accessibilityLabel={folded ? t('home.unfold') : t('home.fold')} accessibilityState={{ expanded: !folded }} onPress={toggle} focusRadius={radius.full} hitSlop={10} style={styles.innerFoldBtn}>
-                <Animated.View style={chevron}>
-                  <Icon icon={ChevronUp} color={head.text} size={layout.iconSize.md} />
-                </Animated.View>
-              </PressableScale>
-            </View>
-          )}
         </View>
       </Animated.View>
       </Animated.View>
 
       {/* Lekukan: menyambung lembar ke dasar tinta, panahnya melipat/membuka kartu. */}
-      {!photo && (
       <Animated.View layout={reflow} style={styles.notchWrap}>
         <PressableScale accessibilityLabel={folded ? t('home.unfold') : t('home.fold')} accessibilityState={{ expanded: !folded }} onPress={toggle} focusRadius={radius.full} scaleTo={0.96}>
           <View style={styles.notch}>
             <Svg width={NOTCH_W} height={NOTCH_H} style={StyleSheet.absoluteFill}>
-              <Path d={`M0 0 C 22 0, 26 ${NOTCH_H}, 46 ${NOTCH_H} L ${NOTCH_W - 46} ${NOTCH_H} C ${NOTCH_W - 26} ${NOTCH_H}, ${NOTCH_W - 22} 0, ${NOTCH_W} 0 Z`} fill={baseFill} />
+              {photoUri && sheetSize.w > 0 ? (
+                // Latar foto: lekukan berisi potongan foto yang sama (posisi & skala sama dengan lembar) + redup yang sama,
+                // jadi foto menyambung mulus ke lekukan seperti latar lain.
+                <>
+                  <Defs>
+                    <ClipPath id="notchClip">
+                      <Path d={NOTCH_D} />
+                    </ClipPath>
+                  </Defs>
+                  <G clipPath="url(#notchClip)">
+                    <Path d={NOTCH_D} fill={baseFill} />
+                    <SvgImage href={{ uri: photoUri }} x={-(sheetSize.w - NOTCH_W) / 2} y={-sheetSize.h + 1} width={sheetSize.w} height={sheetSize.h} preserveAspectRatio="xMidYMid slice" />
+                    <Path d={NOTCH_D} fill="rgba(10, 10, 10, 0.6)" />
+                  </G>
+                </>
+              ) : (
+                <Path d={NOTCH_D} fill={baseFill} />
+              )}
             </Svg>
             <Animated.View style={chevron}>
               <Icon icon={ChevronUp} color={head.text} size={layout.iconSize.md} />
@@ -317,7 +332,6 @@ export function HomeSheet({
           </View>
         </PressableScale>
       </Animated.View>
-      )}
 
       <NotificationsSheet visible={notifOpen} onClose={() => setNotifOpen(false)} />
     </View>
@@ -391,7 +405,5 @@ const styles = StyleSheet.create({
   actionCell: { flex: 1 },
   action: { aspectRatio: 1, maxHeight: 80, borderRadius: 22, alignItems: 'center', justifyContent: 'center' },
   notchWrap: { marginTop: -1, alignItems: 'center' },
-  innerFold: { alignItems: 'center', marginTop: -space.sm, marginBottom: -space.md },
-  innerFoldBtn: { width: 44, height: 32, alignItems: 'center', justifyContent: 'center' },
   notch: { width: NOTCH_W, height: NOTCH_H + 4, alignItems: 'center', paddingTop: 2 },
 });
