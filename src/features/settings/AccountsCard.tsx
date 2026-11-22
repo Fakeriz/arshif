@@ -220,7 +220,7 @@ export function AccountsCard({ onActiveChange, embedded = false }: { onActiveCha
       ) : null}
 
       {mode === 'open' && current ? (
-        <Animated.View entering={reduced ? undefined : FadeInDown.delay(200).springify().stiffness(240).damping(28)} exiting={fadeOut(160)} style={styles.detail}>
+        <Animated.View entering={reduced ? undefined : FadeInDown.delay(200).springify().stiffness(240).damping(28)} exiting={fadeOut(160)} style={[styles.detail, embedded && styles.detailEmbedded]}>
           <View style={styles.dots} accessibilityRole="tablist" accessibilityLabel={t('settings.wallet.pick')}>
             {accounts.map((a, j) => (
               <Dot key={a.id} index={j} count={n} pos={pos} selected={j === active} label={`${a.name}, ${bankName(t, a.bank)}`} onSelect={() => goTo(j)} color={colors.text} />
@@ -409,6 +409,8 @@ const styles = StyleSheet.create({
   card: { position: 'absolute', top: 0, left: 0 },
   shade: { borderRadius: radius.lg, backgroundColor: '#000000' },
   detail: { gap: space.md, marginTop: space.md },
+  // Beranda: hanya titik pemilih di bawah kartu; panggung sudah memberi ruang 8 px.
+  detailEmbedded: { marginTop: 0 },
   dots: { flexDirection: 'row', justifyContent: 'center', gap: space.xxs },
   dotHit: { width: 26, height: 24, alignItems: 'center', justifyContent: 'center' },
   // Lebar dasar 22 lalu di-scaleX (transform, bukan width) supaya gerak tetap di thread UI.

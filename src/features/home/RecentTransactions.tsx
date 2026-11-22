@@ -1,10 +1,12 @@
 import { useRouter } from 'expo-router';
+import { StyleSheet, View } from 'react-native';
 
 import { useT } from '@/i18n';
 import { Button, EmptyState, Group, ListCard } from '@/components/ui';
 import type { Transaction } from '@/data/types';
 import { sortNewestFirst } from '@/lib/transactions';
 import type { AccountWithBalance } from '@/state/AppStore';
+import { space } from '@/theme/tokens';
 
 import { TransactionRow } from '../transactions/TransactionRow';
 
@@ -18,7 +20,14 @@ export function RecentTransactions({ transactions, accounts, mainCurrency, accou
   return (
     <Group
       label={account ? t('home.recent.forAccount', { name: account.name }) : t('home.recent.title')}
-      right={recent.length > 0 ? <Button label={t('home.recent.seeAll')} variant="ghost" size="sm" onPress={() => router.navigate(accountId ? { pathname: '/transaksi', params: { akun: accountId } } : '/transaksi')} /> : undefined}
+      right={
+        recent.length > 0 ? (
+          // Margin negatif: tombol tetap 42 px untuk diketuk, tapi tidak membuat baris judul setinggi tombol.
+          <View style={styles.seeAll}>
+            <Button label={t('home.recent.seeAll')} variant="ghost" size="sm" onPress={() => router.navigate(accountId ? { pathname: '/transaksi', params: { akun: accountId } } : '/transaksi')} />
+          </View>
+        ) : undefined
+      }
     >
       <ListCard>
       {recent.length === 0 ? (
@@ -40,3 +49,6 @@ export function RecentTransactions({ transactions, accounts, mainCurrency, accou
   );
 }
 
+const styles = StyleSheet.create({
+  seeAll: { marginVertical: -11, marginRight: -space.sm },
+});
