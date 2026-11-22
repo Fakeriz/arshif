@@ -60,8 +60,8 @@ const auth: Messages['auth'] = {
   },
   welcome: {
     tagline: 'Pembantu kewangan yang menyusun duitmu dengan kemas',
-    start: 'Kenali Arshif',
-    haveAccount: 'Sudah ada akaun? Log masuk',
+    email: 'Teruskan dengan e-mel',
+    tour: 'Kenali Arshif dahulu',
     note: 'Log masuk dengan Google, kod e-mel, atau kata laluan.',
     open: 'Buka pengenalan Arshif',
     swipe: 'Leret ke atas untuk meneroka',

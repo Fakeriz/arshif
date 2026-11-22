@@ -1,6 +1,6 @@
 import { authErrorKey } from '@/features/auth/errors';
 import { parseFragment } from '@/features/auth/google';
-import { layoutBubbles } from '@/features/intro/BubbleField';
+import { makeParticles } from '@/features/intro/BubbleStream';
 
 jest.mock('@/lib/supabase', () => ({ supabase: { auth: {} } }));
 
@@ -23,14 +23,14 @@ describe('error kata sandi → pesan spesifik', () => {
   });
 });
 
-describe('gelembung Sambut', () => {
-  it('susunan tetap sama, tidak keluar area, dan tidak menempel di tombol', () => {
-    const a = layoutBubbles(360, 320);
-    expect(layoutBubbles(360, 320)).toEqual(a);
-    for (const b of a) {
-      expect(Math.abs(b.x) + b.size / 2).toBeLessThanOrEqual(180);
-      expect(b.y).toBeLessThanOrEqual(-40);
-      expect(b.y - b.size / 2).toBeGreaterThanOrEqual(-320);
-    }
+describe('air mancur gelembung Sambut', () => {
+  it('deterministik, keluar lewat tepi atas, dan menyebar ke dua sisi', () => {
+    const a = makeParticles(390, 400);
+    expect(makeParticles(390, 400)).toEqual(a);
+    for (const p of a) expect(p.endY).toBeLessThan(-400);
+    expect(a.some((p) => p.endX < -60)).toBe(true);
+    expect(a.some((p) => p.endX > 60)).toBe(true);
+    // Jeda bergeser: aliran kontinu, bukan semua lahir bersamaan.
+    expect(Math.max(...a.map((p) => p.delay)) - Math.min(...a.map((p) => p.delay))).toBeGreaterThan(4000);
   });
 });

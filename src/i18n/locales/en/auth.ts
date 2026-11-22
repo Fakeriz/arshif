@@ -60,8 +60,8 @@ const auth: Messages['auth'] = {
   },
   welcome: {
     tagline: 'The money assistant that keeps your finances in order',
-    start: 'Take the tour',
-    haveAccount: 'Already have an account? Sign in',
+    email: 'Continue with email',
+    tour: 'Take the tour first',
     note: 'Sign in with Google, an email code, or a password.',
     open: 'Open the Arshif intro',
     swipe: 'Swipe up to explore',

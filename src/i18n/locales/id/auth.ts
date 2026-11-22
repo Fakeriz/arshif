@@ -58,8 +58,8 @@ const auth = {
   },
   welcome: {
     tagline: 'Asisten keuangan yang bikin uangmu tertata',
-    start: 'Kenali Arshif',
-    haveAccount: 'Sudah punya akun? Masuk',
+    email: 'Lanjut dengan email',
+    tour: 'Kenali Arshif dulu',
     note: 'Masuk dengan Google, kode email, atau kata sandi.',
     open: 'Buka perkenalan Arshif',
     swipe: 'Geser ke atas untuk menjelajah',

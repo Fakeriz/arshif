@@ -60,8 +60,8 @@ const auth: Messages['auth'] = {
   },
   welcome: {
     tagline: 'Paranı düzene sokan finans asistanı',
-    start: 'Arshif\'i tanı',
-    haveAccount: 'Hesabın var mı? Giriş yap',
+    email: 'E-postayla devam et',
+    tour: 'Önce Arshif\'i tanı',
     note: 'Google, e-posta kodu veya şifreyle giriş yap.',
     open: 'Arshif tanıtımını aç',
     swipe: 'Keşfetmek için yukarı kaydır',
