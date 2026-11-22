@@ -1,7 +1,7 @@
 import { BlurView } from 'expo-blur';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { setStatusBarStyle } from 'expo-status-bar';
-import { ArrowDownLeft, ArrowUpRight, Bell, Check, ChevronUp, Ellipsis, Eye, EyeOff, Target, type LucideIcon } from 'lucide-react-native';
+import { ArrowDownLeft, ArrowUpRight, Bell, Check, ChevronUp, Ellipsis, Eye, EyeOff, PiggyBank, type LucideIcon } from 'lucide-react-native';
 import { useCallback, useMemo, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import Animated, { Easing, Extrapolation, interpolate, useAnimatedStyle, useReducedMotion, useSharedValue, withTiming } from 'react-native-reanimated';
@@ -12,7 +12,6 @@ import { afterSheetClose, HeaderMenu } from '@/components/shell/HeaderActions';
 import { NotificationsSheet } from '@/components/shell/NotificationsSheet';
 import { AppText, BalanceText, Icon, PressableScale, Toggle } from '@/components/ui';
 import type { Transaction } from '@/data/types';
-import { useBalanceMeta } from '@/features/home/BalanceBlock';
 import { greetingLines } from '@/features/home/greeting';
 import { coverValueFor, SHEET_BGS, useSheetBg, useWalletStack } from '@/features/home/sheetBg';
 import { ProfileAvatar, useSignedUrl } from '@/features/settings/ProfileAvatar';
@@ -45,13 +44,11 @@ const MASK = '••••';
 export function HomeSheet({
   amount,
   currency,
-  accountCount,
   transactions,
   actions,
 }: {
   amount: number;
   currency: string;
-  accountCount: number;
   transactions: Transaction[];
   actions: SheetAction[];
 }) {
@@ -64,7 +61,6 @@ export function HomeSheet({
   const [notifOpen, setNotifOpen] = useState(false);
   const [folded, setFolded] = useState(false);
   const hidden = state.hideBalance;
-  const meta = useBalanceMeta(accountCount, currency);
   const unread = state.notifications.filter((n) => !n.read).length;
   const name = state.displayName?.trim() || state.email?.split('@')[0] || '';
   const initial = (name[0] ?? 'A').toUpperCase();
@@ -177,7 +173,7 @@ export function HomeSheet({
                 {hello.nudge}
               </AppText>
             </View>
-            <SquareButton icon={Target} label={t('home.goalsA11y')} onPress={() => router.push('/rencana/goals')} bg={btn.bg} fg={btn.fg} glass={btn.glass} />
+            <SquareButton icon={PiggyBank} label={t('home.goalsA11y')} onPress={() => router.push('/rencana/goals')} bg={btn.bg} fg={btn.fg} glass={btn.glass} />
             <SquareButton
               bg={btn.bg}
               fg={btn.fg}
@@ -276,9 +272,6 @@ export function HomeSheet({
               </HeaderMenu>
             </View>
             <BalanceText amount={amount} currency={currency} hidden={hidden} countUp align="left" />
-            <AppText variant="caption" tone="muted" style={styles.meta}>
-              {meta}
-            </AppText>
             {/* Lipat/buka: satu gerak tinggi + pudar (satu kurva), isi di bawahnya ikut bergeser halus. Bukan lepas-pasang
                 elemen: dulu isi memudar dulu lalu kartu menyusut, jadi geraknya dua tahap dan bagian bawah melompat. */}
             <Animated.View
@@ -411,7 +404,6 @@ const styles = StyleSheet.create({
   under: { zIndex: -1, borderRadius: radius.sheet, overflow: 'hidden' },
   labelRow: { flexDirection: 'row', alignItems: 'center', gap: space.md },
   eye: { width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
-  meta: { marginTop: -space.sm },
   // Bungkus lipat: margin negatif meniadakan jarak antar-isi kartu supaya saat terlipat tidak ada sisa ruang.
   foldOuter: { overflow: 'hidden', marginTop: -space.md },
   more: { gap: space.xl, paddingTop: space.md + space.xs },

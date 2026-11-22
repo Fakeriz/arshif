@@ -28,7 +28,7 @@ const home: Messages['home'] = {
   cardMenu: 'Tetapan kad baki',
   sheetBgTitle: 'Latar belakang',
   sheetBg: { plain: 'Polos', cover: 'Sampul profil', garis: 'Garis', lingkar: 'Lingkaran', batu: 'Batu' },
-  walletStack: 'Kad akaun bertindan',
+  walletStack: 'Tunjukkan kad akaun',
   editCover: 'Tetapkan sampul profil',
   netWorth: 'Jumlah nilai bersih',
   showBalance: 'Tunjukkan baki',
@@ -66,6 +66,7 @@ const home: Messages['home'] = {
   deck: { stripA11y: '{name}, kad akaun aktif', openHint: 'Buka kad akaun' },
   recent: {
     title: 'Transaksi terkini',
+    forAccount: 'Transaksi {name}',
     seeAll: 'Lihat semua',
     emptyTitle: 'Belum ada transaksi',
     emptyMessage: 'Foto resit atau sebut perbelanjaan anda, direkod dalam 10 saat.',

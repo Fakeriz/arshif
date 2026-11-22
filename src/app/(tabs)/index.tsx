@@ -9,7 +9,6 @@ import { usePaywall } from '@/components/shell/Paywall';
 import { Screen } from '@/components/shell/Screen';
 import { EmptyState, Group, PromoCard, QuickActions, SwipeDismiss } from '@/components/ui';
 import { useScanSource } from '@/components/shell/ScanSourceSheet';
-import { AccountDeck } from '@/features/home/AccountDeck';
 import { AccountsCard } from '@/features/settings/AccountsCard';
 import { useWalletStack } from '@/features/home/sheetBg';
 import { BalanceBlock } from '@/features/home/BalanceBlock';
@@ -90,16 +89,7 @@ export default function HomeScreen() {
   const balance = (style?: ViewStyle) => (
     <BalanceBlock style={style} amount={state.includeAssets ? netWorth.total : netWorth.total - netWorth.assets} currency={netWorth.currency} accountCount={ledger.accounts.length} complete={netWorth.complete} />
   );
-  const deck = (
-    <AccountDeck
-      accounts={ledger.accounts}
-      hidden={state.hideBalance}
-      limitReached={limits.accounts}
-      activeId={state.activeAccountId}
-      onActiveChange={(id) => dispatch({ type: 'account/setActive', id })}
-      defaultOpen={desktop}
-    />
-  );
+  const deck = <AccountsCard onActiveChange={(id) => dispatch({ type: 'account/setActive', id })} />;
   const quick = (
     <QuickActions
       actions={[
@@ -171,7 +161,6 @@ export default function HomeScreen() {
       <HomeSheet
         amount={netAmount}
         currency={netWorth.currency}
-        accountCount={ledger.accounts.length}
         transactions={ledger.transactions}
         actions={[
           { key: 'scan', label: t('home.quick.scan'), icon: scan.icon, onPress: () => openCapture(scan) },
@@ -182,11 +171,17 @@ export default function HomeScreen() {
       />
       <InkScope style={styles.ink}>
         <View style={styles.inkColumn}>
-          {/* Pilihan di menu titik tiga kartu saldo: dompet bertumpuk (sama dengan Akun & kartu) atau strip ringkas. */}
-          {walletStack ? <AccountsCard onActiveChange={(id) => dispatch({ type: 'account/setActive', id })} /> : deck}
+          {/* Dompet bertumpuk bisa disembunyikan (menu titik tiga kartu saldo). Tampil: transaksi di bawah mengikuti kartu
+              terpilih; tersembunyi: transaksi terakhir umum. Recap selalu di antara dompet dan transaksi. */}
+          {walletStack && <AccountsCard embedded onActiveChange={(id) => dispatch({ type: 'account/setActive', id })} />}
           <MissingRatesBanner />
           {recap}
-          {recent}
+          <RecentTransactions
+            transactions={ledger.transactions}
+            accounts={ledger.accounts}
+            mainCurrency={ledger.mainCurrency}
+            accountId={walletStack ? (state.activeAccountId ?? ledger.accounts[0]?.id) : undefined}
+          />
         </View>
       </InkScope>
       {moreSheet}
@@ -195,6 +190,7 @@ export default function HomeScreen() {
 }
 
 const styles = StyleSheet.create({
-  ink: { flexGrow: 1, alignItems: 'center', paddingHorizontal: space.lg, paddingTop: space.md },
-  inkColumn: { width: '100%', maxWidth: layout.maxContentWidth, gap: space.lg },
+  // Jarak antarbagian 12 (bukan 16): rapat tanpa sesak; kartu, recap, dan daftar tetap terbaca sebagai blok terpisah.
+  ink: { flexGrow: 1, alignItems: 'center', paddingHorizontal: space.lg, paddingTop: space.sm },
+  inkColumn: { width: '100%', maxWidth: layout.maxContentWidth, gap: space.md },
 });

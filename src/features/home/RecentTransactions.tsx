@@ -8,14 +8,17 @@ import type { AccountWithBalance } from '@/state/AppStore';
 
 import { TransactionRow } from '../transactions/TransactionRow';
 
-export function RecentTransactions({ transactions, accounts, mainCurrency }: { transactions: Transaction[]; accounts: AccountWithBalance[]; mainCurrency: string }) {
+/** accountId: hanya transaksi akun itu (termasuk transfer masuk), "Lihat semua" membuka Transaksi terfilter akun itu. */
+export function RecentTransactions({ transactions, accounts, mainCurrency, accountId }: { transactions: Transaction[]; accounts: AccountWithBalance[]; mainCurrency: string; accountId?: string }) {
   const router = useRouter();
   const t = useT();
-  const recent = sortNewestFirst(transactions).slice(0, 5);
+  const own = accountId ? transactions.filter((tx) => tx.accountId === accountId || tx.toAccountId === accountId) : transactions;
+  const recent = sortNewestFirst(own).slice(0, 5);
+  const account = accountId ? accounts.find((a) => a.id === accountId) : undefined;
   return (
     <Group
-      label={t('home.recent.title')}
-      right={recent.length > 0 ? <Button label={t('home.recent.seeAll')} variant="ghost" size="sm" onPress={() => router.navigate('/transaksi')} /> : undefined}
+      label={account ? t('home.recent.forAccount', { name: account.name }) : t('home.recent.title')}
+      right={recent.length > 0 ? <Button label={t('home.recent.seeAll')} variant="ghost" size="sm" onPress={() => router.navigate(accountId ? { pathname: '/transaksi', params: { akun: accountId } } : '/transaksi')} /> : undefined}
     >
       <ListCard>
       {recent.length === 0 ? (

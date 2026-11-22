@@ -28,7 +28,7 @@ const home: Messages['home'] = {
   cardMenu: 'Bakiye kartı seçenekleri',
   sheetBgTitle: 'Arka plan',
   sheetBg: { plain: 'Düz', cover: 'Profil kapağı', garis: 'Çizgiler', lingkar: 'Halkalar', batu: 'Taş' },
-  walletStack: 'Üst üste hesap kartları',
+  walletStack: 'Hesap kartlarını göster',
   editCover: 'Profil kapağını düzenle',
   netWorth: 'Toplam net varlık',
   showBalance: 'Bakiyeyi göster',
@@ -66,6 +66,7 @@ const home: Messages['home'] = {
   deck: { stripA11y: '{name}, etkin hesap kartı', openHint: 'Hesap kartlarını açar' },
   recent: {
     title: 'Son işlemler',
+    forAccount: '{name} işlemleri',
     seeAll: 'Tümünü gör',
     emptyTitle: 'Henüz işlem yok',
     emptyMessage: 'Fişin fotoğrafını çek ya da harcamanı söyle, 10 saniyede kaydedilsin.',

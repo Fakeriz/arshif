@@ -45,7 +45,8 @@ type Mode = 'stack' | 'open';
  * Geser ke samping memutar tumpukan; tarik ke bawah atau "Semua kartu" menutup. Detail akun (desain kartu, limit,
  * grup, iuran) tetap lewat tombol "Detail akun". Gerak hanya transform + opasitas; instan saat reduced motion.
  */
-export function AccountsCard({ onActiveChange }: { onActiveChange?: (id: string) => void } = {}) {
+/** embedded (Beranda): tanpa daftar transaksi per kartu, petunjuk, dan kartu grup; transaksinya ditampilkan layar induk. */
+export function AccountsCard({ onActiveChange, embedded = false }: { onActiveChange?: (id: string) => void; embedded?: boolean } = {}) {
   const { t, lang } = useI18n();
   const router = useRouter();
   const { colors } = useTheme();
@@ -225,6 +226,7 @@ export function AccountsCard({ onActiveChange }: { onActiveChange?: (id: string)
               <Dot key={a.id} index={j} count={n} pos={pos} selected={j === active} label={`${a.name}, ${bankName(t, a.bank)}`} onSelect={() => goTo(j)} color={colors.text} />
             ))}
           </View>
+          {!embedded && (
           <RecentList
             account={current}
             transactions={transactions}
@@ -238,10 +240,11 @@ export function AccountsCard({ onActiveChange }: { onActiveChange?: (id: string)
             onAll={() => router.push({ pathname: '/transaksi', params: { akun: current.id } })}
             onTx={(id) => router.push({ pathname: '/trx/[id]', params: { id } })}
           />
+          )}
         </Animated.View>
       ) : null}
 
-      {mode === 'stack' ? (
+      {mode === 'stack' && !embedded ? (
         <>
           <AppText variant="caption" tone="muted" style={styles.hint}>
             {t('settings.wallet.hint')}

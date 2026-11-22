@@ -3,6 +3,7 @@ import type { ReactNode } from 'react';
 import { Linking, TurboModuleRegistry } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
+import { BalanceBlock } from '@/features/home/BalanceBlock';
 import HomeScreen from '@/app/(tabs)/index';
 import AsetScreen from '@/app/(tabs)/aset';
 import AssetDetail from '@/app/aset/[id]';
@@ -38,7 +39,6 @@ const realGet = TurboModuleRegistry.get.bind(TurboModuleRegistry);
 jest.spyOn(TurboModuleRegistry, 'get').mockImplementation((name: string) => (name === 'RNCWebViewModule' ? ({} as never) : realGet(name)));
 
 // Deck kartu memakai Extrapolation reanimated yang tidak ada di mock jest; tidak relevan untuk angka kekayaan bersih.
-jest.mock('@/features/home/AccountDeck', () => ({ AccountDeck: () => null }));
 
 const base = sampleState();
 const fresh = new Date().toISOString();
@@ -177,14 +177,20 @@ describe('tab Aset', () => {
   });
 });
 
-describe('label kurs di Beranda (Fase 4)', () => {
+// Beranda ponsel tidak lagi menampilkan baris kurs (permintaan pemilik); kartu saldo desktop (BalanceBlock) masih.
+describe('label kurs di kartu saldo desktop (Fase 4)', () => {
   const usd = { ...base.accounts[0], id: 'usd-acc', name: 'Akun USD', currency: 'USD' };
-  it('kurs normal: "kurs per"', async () => {
+  const block = <BalanceBlock amount={1_000_000} currency="IDR" accountCount={5} />;
+  it('Beranda ponsel tanpa baris kurs', async () => {
     await wrap(<HomeScreen />, { state: { accounts: [...base.accounts, usd], ratesStale: false } });
+    expect(screen.queryByText(/kurs per /)).toBeNull();
+  });
+  it('kurs normal: "kurs per"', async () => {
+    await wrap(block, { state: { accounts: [...base.accounts, usd], ratesStale: false } });
     expect(screen.getByText(/kurs per /)).toBeTruthy();
   });
   it('kurs dari cache karena semua sumber gagal: "kurs terakhir"', async () => {
-    await wrap(<HomeScreen />, { state: { accounts: [...base.accounts, usd], ratesStale: true } });
+    await wrap(block, { state: { accounts: [...base.accounts, usd], ratesStale: true } });
     expect(screen.getByText(/kurs terakhir /)).toBeTruthy();
     expect(screen.queryByText(/kurs per /)).toBeNull();
   });

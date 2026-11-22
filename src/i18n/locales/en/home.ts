@@ -28,7 +28,7 @@ const home: Messages['home'] = {
   cardMenu: 'Balance card options',
   sheetBgTitle: 'Background',
   sheetBg: { plain: 'Plain', cover: 'Profile cover', garis: 'Lines', lingkar: 'Rings', batu: 'Stone' },
-  walletStack: 'Stacked account cards',
+  walletStack: 'Show account cards',
   editCover: 'Edit profile cover',
   netWorth: 'Total net worth',
   showBalance: 'Show balance',
@@ -66,6 +66,7 @@ const home: Messages['home'] = {
   deck: { stripA11y: '{name}, active account card', openHint: 'Opens your account cards' },
   recent: {
     title: 'Recent transactions',
+    forAccount: '{name} transactions',
     seeAll: 'See all',
     emptyTitle: 'No transactions yet',
     emptyMessage: 'Snap a receipt or say what you spent, logged in 10 seconds.',

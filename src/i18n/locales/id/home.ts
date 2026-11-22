@@ -27,7 +27,7 @@ const home = {
   cardMenu: 'Atur kartu saldo',
   sheetBgTitle: 'Latar belakang',
   sheetBg: { plain: 'Polos', cover: 'Sampul profil', garis: 'Garis', lingkar: 'Lingkar', batu: 'Batu' },
-  walletStack: 'Kartu akun bertumpuk',
+  walletStack: 'Tampilkan kartu akun',
   editCover: 'Atur sampul profil',
   netWorth: 'Total kekayaan bersih',
   showBalance: 'Tampilkan saldo',
@@ -65,6 +65,7 @@ const home = {
   deck: { stripA11y: '{name}, kartu akun aktif', openHint: 'Buka kartu akun' },
   recent: {
     title: 'Transaksi terakhir',
+    forAccount: 'Transaksi {name}',
     seeAll: 'Lihat semua',
     emptyTitle: 'Belum ada transaksi',
     emptyMessage: 'Foto struk atau ucapkan pengeluaranmu, tercatat dalam 10 detik.',

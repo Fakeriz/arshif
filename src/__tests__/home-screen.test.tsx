@@ -22,7 +22,6 @@ jest.mock('expo-router', () => ({
   router: { push: jest.fn() },
 }));
 // Deck kartu memakai Extrapolation reanimated yang tidak ada di mock jest; tidak relevan di sini.
-jest.mock('@/features/home/AccountDeck', () => ({ AccountDeck: () => null }));
 
 const base = sampleState();
 const RECAP = 'Recap mingguanmu sudah siap';

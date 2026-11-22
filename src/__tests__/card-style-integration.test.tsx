@@ -9,7 +9,6 @@ import { BankCard, ToastProvider } from '@/components/ui';
 import { toAccount } from '@/data/remote/mappers';
 import { sampleState } from '@/data/sample-state';
 import type { Account } from '@/data/types';
-import { AccountDeck } from '@/features/home/AccountDeck';
 import { AddAccountSheet } from '@/features/settings/AddAccountSheet';
 import { I18nProvider } from '@/i18n';
 import { AppStoreProvider, useStore } from '@/state/AppStore';
