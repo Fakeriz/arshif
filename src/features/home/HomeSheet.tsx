@@ -1,16 +1,20 @@
 import { useRouter } from 'expo-router';
-import { ArrowDownLeft, ArrowUpRight, Bell, ChevronUp, Eye, EyeOff, Target, type LucideIcon } from 'lucide-react-native';
+import { ArrowDownLeft, ArrowUpRight, Bell, Check, ChevronUp, Ellipsis, Eye, EyeOff, Target, type LucideIcon } from 'lucide-react-native';
 import { useMemo, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import Animated, { FadeIn, FadeOut, LinearTransition, useAnimatedStyle, useReducedMotion, useSharedValue, withTiming } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Path } from 'react-native-svg';
 
+import { afterSheetClose, HeaderMenu } from '@/components/shell/HeaderActions';
 import { NotificationsSheet } from '@/components/shell/NotificationsSheet';
-import { AppText, BalanceText, Icon, PressableScale } from '@/components/ui';
+import { AppText, BalanceText, Icon, PressableScale, Toggle } from '@/components/ui';
 import type { Transaction } from '@/data/types';
 import { useBalanceMeta } from '@/features/home/BalanceBlock';
+import { coverValueFor, SHEET_BGS, useSheetBg } from '@/features/home/sheetBg';
 import { ProfileAvatar } from '@/features/settings/ProfileAvatar';
+import { coverTextColors, ProfileCover } from '@/features/settings/ProfileCover';
+import { parseCover } from '@/lib/cover';
 import { useT, type MsgKey } from '@/i18n';
 import { periodSeries } from '@/lib/budget';
 import { todayYmd } from '@/lib/dates';
@@ -18,7 +22,7 @@ import { formatMoney } from '@/lib/money';
 import { useStore } from '@/state/AppStore';
 import { easeOut, haptic } from '@/theme/motion';
 import { useTheme } from '@/theme/ThemeProvider';
-import { elevation, fonts, layout, motion, radius, space } from '@/theme/tokens';
+import { elevation, fonts, inkCard, layout, motion, radius, space } from '@/theme/tokens';
 
 export type SheetAction = { key: string; label: string; icon: LucideIcon; onPress: () => void };
 
@@ -91,34 +95,52 @@ export function HomeSheet({
 
   // Lembar: batu di tema terang; di tema gelap permukaan sedikit terangkat agar terpisah dari dasar tinta.
   const sheetBg = scheme === 'dark' ? colors.surface : colors.bg;
+  // Latar kustom (menu titik tiga kartu): sampul profil atau preset. Teks & tombol di atasnya ikut warna sampul.
+  const [bg, setBg] = useSheetBg();
+  const coverVal = coverValueFor(bg, state.coverPath);
+  const custom = coverVal !== undefined;
+  const ink = custom ? coverTextColors(coverVal ?? null, scheme) : null;
+  const head = { text: ink?.text ?? colors.text, muted: ink?.muted ?? colors.textSecondary };
+  const lightHead = head.text.toUpperCase() > '#C'; // teks terang (#E0E0E0/#F4F4F4) di atas latar gelap
+  const btn = custom ? { bg: lightHead ? 'rgba(255,255,255,0.14)' : 'rgba(8,8,8,0.08)', fg: head.text } : { bg: colors.accent, fg: colors.onAccent };
+  const parsed = custom ? parseCover(coverVal ?? null) : null;
+  // Lekukan memakai warna dasar latar (foto: redup gelap di atasnya; batu: abu; preset lain: tinta).
+  const notchFill = !parsed ? sheetBg : parsed.kind === 'photo' ? '#1E1E1E' : parsed.key === 'batu' ? colors.textSecondary : inkCard[scheme].bg;
   const money = (v: number) => (hidden ? MASK : formatMoney(v, currency));
 
   return (
     <View style={styles.wrap}>
-      <Animated.View layout={reflow} style={[styles.sheet, { backgroundColor: sheetBg, paddingTop: insets.top + space.md }]}>
+      <Animated.View layout={reflow} style={[styles.sheet, { backgroundColor: sheetBg, paddingTop: insets.top + space.md }, custom && { borderColor: colors.border, borderWidth: layout.hairline }]}>
+        {custom && (
+          <View style={StyleSheet.absoluteFill} pointerEvents="none">
+            <ProfileCover value={coverVal} scrim />
+          </View>
+        )}
         <View style={styles.column}>
           <View style={styles.header}>
             <PressableScale accessibilityLabel={t('home.profileA11y')} focusRadius={radius.full} onPress={() => router.push('/pengaturan')}>
               {state.avatarPath ? (
                 <ProfileAvatar size={56} />
               ) : (
-                <View style={[styles.avatar, { backgroundColor: colors.accent }]}>
-                  <AppText style={[styles.initial, { color: colors.onAccent }]}>{initial}</AppText>
+                <View style={[styles.avatar, { backgroundColor: btn.bg }]}>
+                  <AppText style={[styles.initial, { color: btn.fg }]}>{initial}</AppText>
                 </View>
               )}
             </PressableScale>
             <View style={styles.hello}>
-              <AppText style={[styles.greet, { color: colors.text }]} numberOfLines={1}>
+              <AppText style={[styles.greet, { color: head.text }]} numberOfLines={1}>
                 {t(greetingKey(new Date().getHours()))}
               </AppText>
               {name ? (
-                <AppText variant="body" tone="secondary" numberOfLines={1}>
+                <AppText variant="body" style={{ color: head.muted }} numberOfLines={1}>
                   {name}
                 </AppText>
               ) : null}
             </View>
-            <SquareButton icon={Target} label={t('home.goalsA11y')} onPress={() => router.push('/rencana/goals')} />
+            <SquareButton icon={Target} label={t('home.goalsA11y')} onPress={() => router.push('/rencana/goals')} bg={btn.bg} fg={btn.fg} />
             <SquareButton
+              bg={btn.bg}
+              fg={btn.fg}
               icon={Bell}
               label={unread ? t('home.notifUnreadA11y', { count: unread }) : t('home.notifA11y')}
               onPress={() => setNotifOpen(true)}
@@ -133,12 +155,74 @@ export function HomeSheet({
               </AppText>
               <PressableScale
                 accessibilityLabel={hidden ? t('home.showBalance') : t('home.hideBalance')}
-                focusRadius={radius.control}
+                focusRadius={radius.full}
+                hitSlop={6}
                 onPress={() => dispatch({ type: 'prefs/hideBalance', value: !hidden })}
                 style={[styles.eye, { backgroundColor: colors.surfaceSunken }]}
               >
-                <Icon icon={hidden ? EyeOff : Eye} color={colors.textSecondary} />
+                <Icon icon={hidden ? EyeOff : Eye} color={colors.textSecondary} size={layout.iconSize.sm} />
               </PressableScale>
+              <View style={styles.flex} />
+              <HeaderMenu
+                trigger={(show) => (
+                  <PressableScale accessibilityLabel={t('home.cardMenu')} focusRadius={radius.full} hitSlop={6} onPress={show} style={styles.eye}>
+                    <Icon icon={Ellipsis} color={colors.text} />
+                  </PressableScale>
+                )}
+              >
+                {(close) => (
+                  <View>
+                    <AppText variant="caption" tone="muted" style={styles.menuTitle}>
+                      {t('home.sheetBgTitle')}
+                    </AppText>
+                    {SHEET_BGS.map((k) => (
+                      <PressableScale
+                        key={k}
+                        accessibilityRole="button"
+                        accessibilityLabel={t(`home.sheetBg.${k}`)}
+                        accessibilityState={{ selected: bg === k }}
+                        focusRadius={radius.sm}
+                        scaleTo={0.985}
+                        onPress={() => {
+                          if (bg !== k) {
+                            haptic('selection');
+                            setBg(k);
+                          }
+                          close();
+                        }}
+                      >
+                        <View style={styles.menuRow}>
+                          <AppText variant={bg === k ? 'bodyStrong' : 'body'} style={styles.flex}>
+                            {t(`home.sheetBg.${k}`)}
+                          </AppText>
+                          {bg === k && <Icon icon={Check} color={colors.text} />}
+                        </View>
+                      </PressableScale>
+                    ))}
+                    <View style={[styles.menuRule, { backgroundColor: colors.border }]} />
+                    <View style={styles.menuRow}>
+                      <AppText variant="body" style={styles.flex}>
+                        {t('settings.includeAssets')}
+                      </AppText>
+                      <Toggle value={state.includeAssets} onChange={(value) => dispatch({ type: 'prefs/includeAssets', value })} accessibilityLabel={t('settings.includeAssets')} />
+                    </View>
+                    <PressableScale
+                      accessibilityRole="button"
+                      accessibilityLabel={t('home.editCover')}
+                      focusRadius={radius.sm}
+                      scaleTo={0.985}
+                      onPress={() => {
+                        close();
+                        afterSheetClose(() => router.push('/pengaturan/profil'));
+                      }}
+                    >
+                      <View style={styles.menuRow}>
+                        <AppText variant="body">{t('home.editCover')}</AppText>
+                      </View>
+                    </PressableScale>
+                  </View>
+                )}
+              </HeaderMenu>
             </View>
             <BalanceText amount={amount} currency={currency} hidden={hidden} countUp align="left" />
             <AppText variant="caption" tone="muted" style={styles.meta}>
@@ -146,10 +230,11 @@ export function HomeSheet({
             </AppText>
             {!folded && (
               <Animated.View entering={appear} exiting={vanish} style={styles.more}>
+                {/* Dua separuh sama lebar: isi rata kiri, pembatas tepat di tengah kartu. */}
                 <View style={styles.flow}>
                   <Flow icon={ArrowDownLeft} tone="positive" label={`${t('common.income')}: ${money(income)}`} value={money(income)} />
                   <View style={[styles.divider, { backgroundColor: colors.borderStrong }]} />
-                  <Flow icon={ArrowUpRight} tone="negative" label={`${t('common.expense')}: ${money(expense)}`} value={money(expense)} />
+                  <Flow icon={ArrowUpRight} tone="negative" label={`${t('common.expense')}: ${money(expense)}`} value={money(expense)} inset />
                 </View>
                 <View style={styles.actions}>
                   {actions.map((a) => (
@@ -176,10 +261,10 @@ export function HomeSheet({
         <PressableScale accessibilityLabel={folded ? t('home.unfold') : t('home.fold')} accessibilityState={{ expanded: !folded }} onPress={toggle} focusRadius={radius.full} scaleTo={0.96}>
           <View style={styles.notch}>
             <Svg width={NOTCH_W} height={NOTCH_H} style={StyleSheet.absoluteFill}>
-              <Path d={`M0 0 C 22 0, 26 ${NOTCH_H}, 46 ${NOTCH_H} L ${NOTCH_W - 46} ${NOTCH_H} C ${NOTCH_W - 26} ${NOTCH_H}, ${NOTCH_W - 22} 0, ${NOTCH_W} 0 Z`} fill={sheetBg} />
+              <Path d={`M0 0 C 22 0, 26 ${NOTCH_H}, 46 ${NOTCH_H} L ${NOTCH_W - 46} ${NOTCH_H} C ${NOTCH_W - 26} ${NOTCH_H}, ${NOTCH_W - 22} 0, ${NOTCH_W} 0 Z`} fill={notchFill} />
             </Svg>
             <Animated.View style={chevron}>
-              <Icon icon={ChevronUp} color={colors.text} size={layout.iconSize.md} />
+              <Icon icon={ChevronUp} color={head.text} size={layout.iconSize.md} />
             </Animated.View>
           </View>
         </PressableScale>
@@ -190,24 +275,22 @@ export function HomeSheet({
   );
 }
 
-function SquareButton({ icon, label, onPress, dot }: { icon: LucideIcon; label: string; onPress: () => void; dot?: boolean }) {
+function SquareButton({ icon, label, onPress, dot, bg, fg }: { icon: LucideIcon; label: string; onPress: () => void; dot?: boolean; bg: string; fg: string }) {
   const { colors } = useTheme();
   return (
-    <PressableScale accessibilityLabel={label} onPress={onPress} focusRadius={18} style={[styles.square, { backgroundColor: colors.accent, borderColor: colors.borderStrong }]}>
-      <Icon icon={icon} color={colors.onAccent} />
-      {dot && <View style={[styles.dot, { backgroundColor: colors.warning, borderColor: colors.accent }]} />}
+    <PressableScale accessibilityLabel={label} onPress={onPress} focusRadius={18} style={[styles.square, { backgroundColor: bg, borderColor: colors.borderStrong }]}>
+      <Icon icon={icon} color={fg} />
+      {dot && <View style={[styles.dot, { backgroundColor: colors.warning, borderColor: bg }]} />}
     </PressableScale>
   );
 }
 
-function Flow({ icon, tone, label, value }: { icon: LucideIcon; tone: 'positive' | 'negative'; label: string; value: string }) {
+function Flow({ icon, tone, label, value, inset }: { icon: LucideIcon; tone: 'positive' | 'negative'; label: string; value: string; inset?: boolean }) {
   const { colors } = useTheme();
   return (
-    <View style={styles.flowItem} accessible accessibilityLabel={label}>
-      <View style={[styles.flowIcon, { backgroundColor: tone === 'positive' ? colors.positiveSoft : colors.negativeSoft }]}>
-        <Icon icon={icon} color={tone === 'positive' ? colors.positive : colors.negative} size={layout.iconSize.sm} />
-      </View>
-      <AppText variant="bodyStrong" numeric numberOfLines={1} style={styles.flowValue}>
+    <View style={[styles.flowItem, inset && styles.flowInset]} accessible accessibilityLabel={label}>
+      <Icon icon={icon} color={tone === 'positive' ? colors.positive : colors.negative} size={14} />
+      <AppText variant="caption" numeric numberOfLines={1} style={styles.flowValue}>
         {value}
       </AppText>
     </View>
@@ -216,7 +299,7 @@ function Flow({ icon, tone, label, value }: { icon: LucideIcon; tone: 'positive'
 
 const styles = StyleSheet.create({
   wrap: { alignItems: 'center' },
-  sheet: { alignSelf: 'stretch', borderBottomLeftRadius: 40, borderBottomRightRadius: 40, paddingHorizontal: space.lg, paddingBottom: space.xl, alignItems: 'center' },
+  sheet: { alignSelf: 'stretch', overflow: 'hidden', borderBottomLeftRadius: 40, borderBottomRightRadius: 40, paddingHorizontal: space.lg, paddingBottom: space.xl, alignItems: 'center' },
   column: { width: '100%', maxWidth: layout.maxContentWidth, gap: space.xl },
   header: { flexDirection: 'row', alignItems: 'center', gap: space.md },
   avatar: { width: 56, height: 56, borderRadius: 28, alignItems: 'center', justifyContent: 'center' },
@@ -227,14 +310,18 @@ const styles = StyleSheet.create({
   dot: { position: 'absolute', top: 10, right: 11, width: 9, height: 9, borderRadius: 5, borderWidth: 1.5 },
   card: { borderRadius: radius.sheet, borderWidth: layout.hairline, padding: space.xl, gap: space.md },
   labelRow: { flexDirection: 'row', alignItems: 'center', gap: space.md },
-  eye: { width: 44, height: 44, borderRadius: radius.control, alignItems: 'center', justifyContent: 'center' },
+  eye: { width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
   meta: { marginTop: -space.sm },
   more: { gap: space.xl, marginTop: space.xs },
-  flow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: space.lg },
-  flowItem: { flexDirection: 'row', alignItems: 'center', gap: space.sm, flexShrink: 1 },
-  flowIcon: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
-  flowValue: { flexShrink: 1 },
-  divider: { width: 2, height: 26, borderRadius: 1 },
+  flow: { flexDirection: 'row', alignItems: 'center' },
+  flowItem: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 6, paddingRight: space.lg },
+  flowInset: { paddingLeft: space.lg, paddingRight: 0 },
+  flowValue: { flexShrink: 1, fontFamily: fonts.semibold },
+  divider: { width: 1.5, height: 18, borderRadius: 1 },
+  flex: { flex: 1 },
+  menuTitle: { paddingTop: space.sm, paddingBottom: space.xs },
+  menuRow: { flexDirection: 'row', alignItems: 'center', gap: space.md, minHeight: 48, paddingVertical: space.sm },
+  menuRule: { height: layout.hairline, marginVertical: space.xs },
   actions: { flexDirection: 'row', gap: space.md },
   actionCell: { flex: 1 },
   action: { aspectRatio: 1, maxHeight: 80, borderRadius: 22, alignItems: 'center', justifyContent: 'center' },

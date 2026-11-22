@@ -46,7 +46,8 @@ export function BalanceText({ amount, currency, hidden, countUp, size = 'hero', 
         <Text style={{ fontSize: symbolSize, color: colors.textSecondary }}>
           {p.sign}
           {p.symbol}
-          {p.gap || ' '}
+          {/* Jarak tetap antara mata uang dan angka (spasi tak terputus, dua kali karena ukuran simbol lebih kecil). */}
+          {'\u00A0\u00A0'}
         </Text>
         {hidden ? MASK : p.whole}
         {!hidden && p.fraction ? <Text style={{ color: colors.textMuted }}>{p.fraction}</Text> : null}
