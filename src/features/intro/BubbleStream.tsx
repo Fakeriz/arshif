@@ -24,10 +24,12 @@ import { StyleSheet, View } from 'react-native';
 import Animated, {
   Easing,
   cancelAnimation,
+  useAnimatedReaction,
   useAnimatedStyle,
   useSharedValue,
   withDelay,
   withRepeat,
+  withSpring,
   withTiming,
   type SharedValue,
 } from 'react-native-reanimated';
@@ -58,6 +60,8 @@ export type Particle = {
   delay: number;
   sway: number;
   swayTurns: number;
+  /** Kelembaman di "air": gelembung besar lebih berat (lebih lambat menyusul), semua sedikit memantul lewat. */
+  drift: { duration: number; dampingRatio: number };
 };
 
 /** PRNG kecil yang deterministik: semburan sama setiap kali dibuka. */
@@ -95,6 +99,7 @@ export function makeParticles(width: number, rise: number, count = 80): Particle
       delay: Math.round((i / count) * avgLife * 0.9 + rand() * 260),
       sway: 4 + rand() * 10,
       swayTurns: 0.6 + rand() * 0.9,
+      drift: { duration: Math.round(650 + size * 9 + rand() * 250), dampingRatio: 0.5 + rand() * 0.18 },
     });
   }
   return out;
@@ -130,6 +135,37 @@ function BubbleView({ p, originX, originY, running, reduced }: BubbleProps) {
   // Reduce motion: diam di sepertiga perjalanan (di atas "+", belum keluar layar).
   const t = useSharedValue(reduced ? 0.32 : 0);
   const gone = useSharedValue(0);
+  // Titik lahir siklus ini: gelembung meneruskan lintasannya dari tempat ia lahir, tidak ikut digeser kaku bersama "+".
+  const spawnX = useSharedValue(originX.value);
+  const spawnY = useSharedValue(originY.value);
+  // Simpangan "arus": menyusul "+" yang diseret dengan pegas milik gelembung itu sendiri.
+  const ox = useSharedValue(0);
+  const oy = useSharedValue(0);
+
+  // Lahir lagi (t berputar 1 → 0): ambil posisi "+" sekarang sebagai titik lahir baru.
+  useAnimatedReaction(
+    () => t.value,
+    (cur, prev) => {
+      if (prev !== null && cur < prev - 0.5) {
+        spawnX.value = originX.value;
+        spawnY.value = originY.value;
+        ox.value = 0;
+        oy.value = 0;
+      }
+    },
+  );
+
+  // "+" bergerak: tiap gelembung terseret ke arahnya. Yang muda (dekat "+") ikut kuat, yang tua tertinggal,
+  // dan masing-masing menyusul dengan pegasnya sendiri → awan mengalir dan bergoyang seperti di air, bukan kaku.
+  useAnimatedReaction(
+    () => [originX.value, originY.value] as const,
+    ([x, y], prev) => {
+      if (prev === null) return;
+      const pull = 0.95 - 0.7 * Math.min(1, t.value);
+      ox.value = withSpring((x - spawnX.value) * pull, p.drift);
+      oy.value = withSpring((y - spawnY.value) * pull, p.drift);
+    },
+  );
 
   useEffect(() => {
     if (reduced) {
@@ -165,7 +201,7 @@ function BubbleView({ p, originX, originY, running, reduced }: BubbleProps) {
     const fadeIn = Math.min(1, k / 0.04);
     return {
       opacity: fadeIn * (1 - gone.value),
-      transform: [{ translateX: originX.value + x - p.size / 2 }, { translateY: originY.value + y - p.size / 2 }, { scale }],
+      transform: [{ translateX: spawnX.value + ox.value + x - p.size / 2 }, { translateY: spawnY.value + oy.value + y - p.size / 2 }, { scale }],
     };
   });
 

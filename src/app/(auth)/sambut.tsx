@@ -43,8 +43,6 @@ const COMMIT_VY = -650;
 const SNAP_BACK = { duration: 450, dampingRatio: 0.72 };
 /** Orb naik dari bawah layar dan mendarat dengan pantulan kecil. */
 const ORB_SPRING = { duration: 900, dampingRatio: 0.78 };
-/** Titik lahir gelembung mengikuti "+" sedikit terlambat: gelembung terasa ditarik olehnya. */
-const FOLLOW = { duration: 350, dampingRatio: 0.85 };
 
 /** Logo "G" berwarna resmi (pedoman merek Google Sign-In). */
 function GoogleMark() {
@@ -183,8 +181,9 @@ export default function SambutScreen() {
       if (!idle.value) return;
       dragX.value = e.translationX;
       dragY.value = e.translationY;
-      birthX.value = withSpring(cx + e.translationX, FOLLOW);
-      birthY.value = withSpring(seedY + e.translationY, FOLLOW);
+      // Titik lahir langsung di jari; kelembaman tiap gelembung yang membuat awan mengalir di belakangnya.
+      birthX.value = cx + e.translationX;
+      birthY.value = seedY + e.translationY;
     },
     onDeactivate: (e) => {
       if (!idle.value) return;
