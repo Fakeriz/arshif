@@ -91,8 +91,8 @@ export function HomeSheet({
   const appear = reduced ? undefined : FadeIn.duration(motion.base).easing(easeOut);
   const vanish = reduced ? undefined : FadeOut.duration(motion.fast);
 
-  // Lembar: batu di tema terang; di tema gelap permukaan sedikit terangkat agar terpisah dari dasar tinta.
-  const sheetBg = scheme === 'dark' ? colors.surface : colors.bg;
+  // Lembar: kertas di atas dasar batu (tema terang); di tema gelap permukaan sedikit terangkat dari dasar tergelap.
+  const sheetBg = colors.surface;
   // Latar kustom (menu titik tiga kartu): sampul profil atau preset. Teks & tombol di atasnya ikut warna sampul.
   const [bg, setBg] = useSheetBg();
   const coverVal = coverValueFor(bg, state.coverPath);
@@ -135,6 +135,7 @@ export function HomeSheet({
 
   return (
     <View style={styles.wrap}>
+      <Animated.View layout={reflow} style={[styles.sheetShadow, scheme === 'light' && elevation.light.card]}>
       <Animated.View layout={reflow} style={[styles.sheet, { backgroundColor: baseFill, paddingTop: insets.top + space.md }]}>
         {custom && (
           <View style={StyleSheet.absoluteFill} pointerEvents="none">
@@ -294,6 +295,7 @@ export function HomeSheet({
           )}
         </View>
       </Animated.View>
+      </Animated.View>
 
       {/* Lekukan: menyambung lembar ke dasar tinta, panahnya melipat/membuka kartu. */}
       {!photo && (
@@ -358,6 +360,8 @@ function Flow({ icon, tone, label, value, inset }: { icon: LucideIcon; tone: 'po
 
 const styles = StyleSheet.create({
   wrap: { alignItems: 'center' },
+  // Bayangan di lapisan luar: overflow hidden pada lembar memotong bayangannya sendiri di iOS.
+  sheetShadow: { alignSelf: 'stretch', borderBottomLeftRadius: 40, borderBottomRightRadius: 40 },
   sheet: { alignSelf: 'stretch', overflow: 'hidden', borderBottomLeftRadius: 40, borderBottomRightRadius: 40, paddingHorizontal: space.lg, paddingBottom: space.xl, alignItems: 'center' },
   column: { width: '100%', maxWidth: layout.maxContentWidth, gap: space.xl },
   header: { flexDirection: 'row', alignItems: 'center', gap: space.sm + 2 },

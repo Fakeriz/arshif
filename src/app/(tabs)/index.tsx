@@ -160,7 +160,7 @@ export default function HomeScreen() {
     );
   }
 
-  // Ponsel: lembar kertas (sapaan, kekayaan bersih, pemasukan/pengeluaran, aksi cepat) di atas dasar tinta
+  // Ponsel: lembar (sapaan, kekayaan bersih, pemasukan/pengeluaran, aksi cepat) di atas dasar (batu di tema terang, tinta di tema gelap)
   // yang memuat akun dan transaksi. Pemasukan/pengeluaran sudah di lembar, jadi PeriodStats tidak diulang.
   const netAmount = state.includeAssets ? netWorth.total : netWorth.total - netWorth.assets;
   return (
