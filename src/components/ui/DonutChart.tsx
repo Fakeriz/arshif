@@ -40,9 +40,9 @@ export function DonutChart({
 }: DonutChartProps) {
   const { colors } = useTheme();
   const t = useT();
-  const { timing } = useMotion();
+  const { reduced, timing } = useMotion();
   const [selected, setSelected] = useState<string | null>(null);
-  const appear = useSharedValue(0);
+  const appear = useSharedValue(reduced ? 1 : 0);
 
   useEffect(() => {
     appear.value = timing(1, motion.slow);

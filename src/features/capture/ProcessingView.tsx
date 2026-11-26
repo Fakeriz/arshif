@@ -1,6 +1,6 @@
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
 
-import { AppText, GlassView, StepList } from '@/components/ui';
+import { AppText, GlassView, StepList, UploadProgress } from '@/components/ui';
 import { useTheme } from '@/theme/ThemeProvider';
 import { radius, space } from '@/theme/tokens';
 
@@ -8,7 +8,19 @@ import { radius, space } from '@/theme/tokens';
  * Keadaan "AI sedang bekerja": menyebut apa yang sedang dikerjakan dan bahwa gagal tidak memotong kuota.
  * `steps` + `done`: urutan proses (Motion Kit "Langkah"), supaya pengguna tahu sedang di tahap mana.
  */
-export function ProcessingView({ title, message, steps, done = 0 }: { title: string; message: string; steps?: string[]; done?: number }) {
+export function ProcessingView({
+  title,
+  message,
+  steps,
+  done = 0,
+  upload,
+}: {
+  title: string;
+  message: string;
+  steps?: string[];
+  done?: number;
+  upload?: { fileName: string; progress: number };
+}) {
   const { colors } = useTheme();
   return (
     <GlassView level="floating" radius={radius.lg} style={styles.card} accessibilityLabel={`${title}. ${message}`}>
@@ -19,6 +31,11 @@ export function ProcessingView({ title, message, steps, done = 0 }: { title: str
       <AppText variant="caption" tone="secondary" align="center">
         {message}
       </AppText>
+      {upload ? (
+        <View style={styles.steps}>
+          <UploadProgress fileName={upload.fileName} progress={upload.progress} />
+        </View>
+      ) : null}
       {steps ? (
         <View style={styles.steps}>
           <StepList steps={steps} done={done} />

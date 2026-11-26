@@ -16,17 +16,19 @@ import { CurrencyText } from './CurrencyText';
 export function CashflowSummary({ point, currency }: { point: CashflowPoint; currency: string }) {
   const { colors } = useTheme();
   const t = useT();
-  const net = point.income - point.expense;
+  const income = Number.isFinite(point.income) ? Math.max(0, point.income) : 0;
+  const expense = Number.isFinite(point.expense) ? Math.max(0, point.expense) : 0;
+  const net = income - expense;
   return (
     <View style={[styles.box, { backgroundColor: colors.surfaceSunken, borderColor: colors.border }]}>
       <AppText variant="overline" tone="muted" uppercase>
         {point.label}
       </AppText>
       <Stat label={t('common.income')} dot={colors.positive}>
-        <CurrencyText amount={point.income} currency={currency} kind="income" variant="bodyStrong" />
+        <CurrencyText amount={income} currency={currency} kind="income" variant="bodyStrong" />
       </Stat>
       <Stat label={t('common.expense')} dot={colors.textSecondary}>
-        <CurrencyText amount={point.expense} currency={currency} kind="expense" variant="bodyStrong" />
+        <CurrencyText amount={expense} currency={currency} kind="expense" variant="bodyStrong" />
       </Stat>
       <View style={[styles.divider, { backgroundColor: colors.border }]} />
       <Stat label={t('common.difference')}>

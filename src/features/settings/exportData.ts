@@ -3,6 +3,7 @@ import * as Sharing from 'expo-sharing';
 import { Platform } from 'react-native';
 
 import type { Account, Transaction } from '@/data/types';
+import { todayYmd } from '@/lib/dates';
 import { currencyMeta } from '@/lib/money';
 
 export type ExportFormat = 'JSON' | 'CSV';
@@ -55,19 +56,30 @@ export function buildExport(format: ExportFormat, accounts: Account[], transacti
 
 /** Web: unduh berkas. Native: simpan ke cache lalu buka lembar bagikan sistem. */
 export async function saveExport(format: ExportFormat, content: string): Promise<void> {
-  const name = `arshif-${new Date().toISOString().slice(0, 10)}.${format.toLowerCase()}`;
+  const name = `arshif-${todayYmd()}.${format.toLowerCase()}`;
   const mime = format === 'JSON' ? 'application/json' : 'text/csv';
   if (Platform.OS === 'web') {
     const url = URL.createObjectURL(new Blob([content], { type: mime }));
     const a = document.createElement('a');
     a.href = url;
     a.download = name;
+    document.body.appendChild(a);
     a.click();
-    URL.revokeObjectURL(url);
+    a.remove();
+    const timer = setTimeout(() => URL.revokeObjectURL(url), 10_000);
+    (timer as unknown as { unref?: () => void })?.unref?.();
     return;
   }
   const file = new File(Paths.cache, name);
   file.create({ overwrite: true });
   file.write(content);
-  await Sharing.shareAsync(file.uri, { mimeType: mime, dialogTitle: name });
+  try {
+    await Sharing.shareAsync(file.uri, { mimeType: mime, dialogTitle: name });
+  } finally {
+    try {
+      if (file.exists) file.delete();
+    } catch {
+      /* abaikan gagal hapus cache */
+    }
+  }
 }

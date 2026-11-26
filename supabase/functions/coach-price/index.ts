@@ -16,9 +16,20 @@ serve(async (req) => {
   const input = PriceAskRequest.safeParse(await readJson(req));
   if (!input.success) throw new HttpError('bad_request', 400);
   const { lang, asset } = input.data;
+  const db = adminClient();
 
-  const result = await runAiJob(adminClient(), user.id, 'coach', 'coachAsk', async () => {
-    const answer = normalizePrice(await generateJson(pricePrompt(lang, asset), PRICE_SCHEMA), asset.livePrice, asset.currency);
+  // Cross-check authoritative live price from asset_prices when available.
+  const { data: priceRow, error: priceErr } = await db
+    .from('asset_prices')
+    .select('price, currency')
+    .eq('symbol', `${asset.market}:${asset.symbol}`)
+    .maybeSingle();
+  if (priceErr) throw new HttpError('server', 500);
+  const serverLive = priceRow && priceRow.currency === asset.currency && Number(priceRow.price) > 0 ? Number(priceRow.price) : asset.livePrice;
+  const effectiveAsset = { ...asset, livePrice: serverLive };
+
+  const result = await runAiJob(db, user.id, 'coach', 'coachAsk', async () => {
+    const answer = normalizePrice(await generateJson(pricePrompt(lang, effectiveAsset), PRICE_SCHEMA), effectiveAsset.livePrice, effectiveAsset.currency);
     if (!answer) throw new HttpError('ai_failed', 502);
     return answer;
   });

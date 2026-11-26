@@ -32,10 +32,16 @@ export default function MyRates() {
   const { state, dispatch } = useStore();
   const missing = useMissingRates();
   const [editing, setEditing] = useState<string | null>(null);
+  const [sheetCode, setSheetCode] = useState<string | null>(null);
   const saved = state.userRates;
   // Mata uang yang bisa diberi kurs sendiri: yang tidak punya kurs harian dan belum disimpan.
   const candidates = Object.keys(CURRENCIES).filter((c) => !hasDailyRate(c) && !saved.some((r) => r.code === c) && !missing.includes(c));
-  const current = saved.find((r) => r.code === editing);
+  const activeCode = editing ?? sheetCode;
+  const current = saved.find((r) => r.code === activeCode);
+  const openRate = (code: string) => {
+    setSheetCode(code);
+    setEditing(code);
+  };
 
   let body;
   if (load === 'error') {
@@ -61,7 +67,7 @@ export default function MyRates() {
                   trailing={<Badge label={t('acct.rates.needBadge')} tone="warning" />}
                   chevron
                   divider={i < missing.length - 1}
-                  onPress={() => setEditing(code)}
+                  onPress={() => openRate(code)}
                 />
               ))}
             </ListCard>
@@ -82,7 +88,7 @@ export default function MyRates() {
                   subtitleLines={2}
                   chevron
                   divider={i < saved.length - 1}
-                  onPress={() => setEditing(r.code)}
+                  onPress={() => openRate(r.code)}
                 />
               ))}
             </ListCard>
@@ -92,7 +98,7 @@ export default function MyRates() {
           <Group label={t('acct.rates.addTitle')}>
             <ListCard>
               {candidates.map((code, i) => (
-                <ListItem key={code} title={`${code} · ${currencyName(t, code)}`} subtitle={t('acct.rates.addSub')} chevron divider={i < candidates.length - 1} onPress={() => setEditing(code)} />
+                <ListItem key={code} title={`${code} · ${currencyName(t, code)}`} subtitle={t('acct.rates.addSub')} chevron divider={i < candidates.length - 1} onPress={() => openRate(code)} />
               ))}
             </ListCard>
           </Group>
@@ -109,9 +115,9 @@ export default function MyRates() {
       </AppText>
       {body}
       <RateSheet
-        key={editing ?? 'none'}
+        key={sheetCode ?? 'none'}
         visible={editing !== null}
-        code={editing}
+        code={activeCode}
         main={state.mainCurrency}
         initial={current}
         onClose={() => setEditing(null)}

@@ -97,6 +97,7 @@ const coach: Messages['coach'] = {
       spentLessMonth: 'Spending down {pct}% from the month before',
       cookedMonth: 'Ate out less than the month before',
       noSpend: '{count} no-spend days',
+      noSpend_one: '{count} no-spend day',
       spentLess: 'Spending down {pct}% from last week',
       saved: 'Saved {amount}',
       debtPaid: 'Paid {amount} of debt',

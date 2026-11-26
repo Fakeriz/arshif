@@ -42,6 +42,9 @@ export default function TransaksiScreen() {
   const { akun } = useLocalSearchParams<{ akun?: string }>();
   const ledger = useLedger();
   const [filter, setFilter] = useState<TxFilter>({ type: 'all', accountId: akun ?? null });
+  useEffect(() => {
+    if (akun !== undefined) setFilter((f) => ({ ...f, accountId: akun || null }));
+  }, [akun]);
   const [sheet, setSheet] = useState(false);
   // Render bertahap: daftar panjang (ratusan baris di ScrollView) membuat scroll patah-patah.
   const [limit, setLimit] = useState(PAGE_ROWS);

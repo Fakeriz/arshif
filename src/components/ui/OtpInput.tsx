@@ -70,6 +70,7 @@ export function OtpInput({ value, onChangeText, label, length = 6, error, disabl
         <TextInput
           accessibilityLabel={label}
           accessibilityHint={error}
+          accessibilityState={{ disabled: !!disabled }}
           value={digits}
           onChangeText={onChangeText}
           editable={!disabled}

@@ -1,5 +1,5 @@
 import { useNavigation, useRouter } from 'expo-router';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 import { Screen } from '@/components/shell/Screen';
 import { ScreenHeader } from '@/components/shell/ScreenHeader';
@@ -22,13 +22,25 @@ export default function VoiceReviewScreen() {
   const saved = useRef(false);
   const [data] = useState(() => peekHandoff('voice'));
 
+  useEffect(() => {
+    return () => {
+      if (!saved.current) clearHandoff('voice');
+    };
+  }, []);
+
   return (
     <Screen>
       <ScreenHeader title={t('capture.voiceReview.title')} />
       {data ? (
         <VoiceReview
           result={data.result}
+          audioUri={data.audioUri}
+          durationSec={data.durationSec}
           accounts={accounts}
+          onRetry={() => {
+            clearHandoff('voice');
+            router.replace('/voice');
+          }}
           onSave={(txs) => {
             if (saved.current) return;
             saved.current = true;

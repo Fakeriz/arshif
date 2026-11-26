@@ -16,8 +16,12 @@ export function todayYmd(now: Date = new Date()): string {
   return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
 }
 
-/** "YYYY-MM-DD" yang valid (bulan 01-12, tanggal ada). Satu-satunya pemeriksa tanggal teks di aplikasi. */
-export const isYmd = (s: string): boolean => /^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$/.test(s) && !Number.isNaN(Date.parse(`${s}T00:00:00Z`));
+/** "YYYY-MM-DD" yang valid (bulan 01-12, tanggal kalender ada). Satu-satunya pemeriksa tanggal teks di aplikasi. */
+export const isYmd = (s: string): boolean => {
+  if (!/^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$/.test(s)) return false;
+  const d = new Date(`${s}T00:00:00Z`);
+  return !Number.isNaN(d.getTime()) && d.toISOString().slice(0, 10) === s;
+};
 
 export type YMD = { y: number; m: number; d: number };
 

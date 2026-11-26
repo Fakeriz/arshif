@@ -35,6 +35,7 @@ const shell: Messages['shell'] = {
   notifications: {
     title: 'Bildirimler',
     unread: '{count} okunmamış',
+    unread_one: '{count} okunmamış',
     allRead: 'Hepsi okundu',
     emptyTitle: 'Henüz bildirim yok',
     emptyMessage: 'Fatura hatırlatmaları ve bütçe uyarıları burada görünür.',

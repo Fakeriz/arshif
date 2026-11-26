@@ -1,11 +1,12 @@
 import { RotateCcw } from 'lucide-react-native';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import { useT } from '@/i18n';
 import { AmountField, AppText, Button, DateField, Input, useSaveThen } from '@/components/ui';
 import type { ReceiptDetails, ReceiptItem, Transaction, TxPlace } from '@/data/types';
 import { PlaceField, type PlaceGuess } from '@/features/places/PlaceField';
+import { tryConvert } from '@/lib/fx';
 import { formatMoney } from '@/lib/money';
 import { discountsTotal, isLowConfidence, itemsTotal, subtotalMismatch, totalCheck } from '@/lib/receipt';
 import { newId } from '@/lib/uuid';
@@ -63,6 +64,9 @@ export function ScanReview({ result: r, receiptPath, accounts, existing, onSave,
   const [category, setCategory] = useState<string | null>(r.categoryKey);
   const activeId = useActiveAccountId();
   const [accountId, setAccountId] = useState<string | null>(existing?.accountId ?? activeId ?? accounts[0]?.id ?? null);
+  useEffect(() => {
+    if (!accountId && accounts[0]) setAccountId(existing?.accountId ?? activeId ?? accounts[0].id);
+  }, [accountId, accounts, activeId, existing?.accountId]);
   const [items, setItems] = useState<ReceiptItem[]>(
     r.items.map((i) => ({ name: i.name, qty: i.qty, unitPrice: i.unitPrice, total: i.total, discount: i.discount || undefined, taxRate: opt(i.taxRate) })),
   );
@@ -85,6 +89,8 @@ export function ScanReview({ result: r, receiptPath, accounts, existing, onSave,
   const save = () => {
     setTried(true);
     if (!merchant.trim() || !isYmd(date) || !total || total <= 0 || !accountId || !category) return;
+    const acc = accounts.find((a) => a.id === accountId);
+    const accountAmount = acc && acc.currency !== r.currency ? (tryConvert(total, r.currency, acc.currency) ?? undefined) : undefined;
     saving.run(() =>
       onSave({
         id: existing?.id ?? newId(),
@@ -96,12 +102,15 @@ export function ScanReview({ result: r, receiptPath, accounts, existing, onSave,
         time: r.time ?? existing?.time ?? localHm(),
         amount: total,
         currency: r.currency,
+        accountAmount,
         note: existing?.note,
         source: existing?.source ?? 'scan',
         receiptPath,
         items: items.length ? items : undefined,
         receipt,
         place: place ?? undefined,
+        reimburseStatus: existing?.reimburseStatus,
+        reimbursedBy: existing?.reimbursedBy,
       }),
     );
   };

@@ -1,5 +1,5 @@
 import { ChevronLeft, ChevronRight } from 'lucide-react-native';
-import { useEffect, useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue } from 'react-native-reanimated';
 
@@ -42,6 +42,17 @@ export function Calendar({ value, onChange, marked = [], today = new Date(), min
   const anchor = value ?? today;
   const [view, setView] = useState({ y: anchor.getFullYear(), m: anchor.getMonth(), dir: 1 as 1 | -1 });
   const [width, setWidth] = useState(0);
+  const wasLaidOut = useRef(false);
+  const lastValueMs = useRef<number | null>(value ? value.getTime() : null);
+
+  useEffect(() => {
+    const ms = value ? value.getTime() : null;
+    if (ms === null || ms === lastValueMs.current) return;
+    lastValueMs.current = ms;
+    const ny = value!.getFullYear();
+    const nm = value!.getMonth();
+    setView((prev) => (prev.y === ny && prev.m === nm ? prev : { y: ny, m: nm, dir: ny * 12 + nm >= prev.y * 12 + prev.m ? 1 : -1 }));
+  }, [value]);
 
   const first = new Date(view.y, view.m, 1).getDay();
   const count = new Date(view.y, view.m + 1, 0).getDate();
@@ -53,12 +64,21 @@ export function Calendar({ value, onChange, marked = [], today = new Date(), min
   const y = useSharedValue(0);
   const shown = useSharedValue(0);
   useEffect(() => {
+    if (width <= 0) return;
     if (inView) {
-      x.value = spring((index % 7) * cell + (cell - DOT) / 2);
-      y.value = spring(Math.floor(index / 7) * ROW + (ROW - DOT) / 2);
+      const tx = (index % 7) * cell + (cell - DOT) / 2;
+      const ty = Math.floor(index / 7) * ROW + (ROW - DOT) / 2;
+      if (!wasLaidOut.current) {
+        x.value = tx;
+        y.value = ty;
+      } else {
+        x.value = spring(tx);
+        y.value = spring(ty);
+      }
     }
+    wasLaidOut.current = true;
     shown.value = timing(inView ? 1 : 0, motion.fast);
-  }, [inView, index, cell, x, y, shown, spring, timing]);
+  }, [width, inView, index, cell, x, y, shown, spring, timing]);
   const dot = useAnimatedStyle(() => ({ opacity: shown.value, transform: [{ translateX: x.value }, { translateY: y.value }] }));
 
   const go = (dir: 1 | -1) => {
@@ -85,7 +105,7 @@ export function Calendar({ value, onChange, marked = [], today = new Date(), min
         </PressableScale>
       </View>
 
-      <View style={styles.week} aria-hidden>
+      <View style={styles.week} aria-hidden accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
         {cal.daysShort.map((d) => (
           <AppText key={d} variant="overline" tone="muted" align="center" style={styles.weekCell}>
             {d}
@@ -109,6 +129,7 @@ export function Calendar({ value, onChange, marked = [], today = new Date(), min
                 key={key}
                 accessibilityRole="button"
                 accessibilityLabel={`${cal.days[date.getDay()]}, ${i + 1} ${cal.months[view.m]} ${view.y}`}
+                accessibilityState={{ selected, disabled }}
                 aria-selected={selected}
                 aria-disabled={disabled}
                 disabled={disabled}

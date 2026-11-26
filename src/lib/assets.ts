@@ -3,6 +3,7 @@ import type { Debt } from '@/data/planning';
 import type { Account } from '@/data/types';
 import { pctChange } from '@/lib/chart';
 import { isCreditType } from '@/lib/credit';
+import { addDays } from '@/lib/dates';
 import { tryConvert } from '@/lib/fx';
 import type { Lang } from '@/i18n/types';
 import { currencyMeta } from '@/lib/money';
@@ -49,7 +50,11 @@ export function chartSymbol(a: Pick<Asset, 'type' | 'symbol'>): string | null {
 const quoteCurrency = (code: string): string => (code === 'USDT' || code === 'USDC' ? 'USD' : code.toUpperCase());
 
 /** Bulatkan ke integer setelah memangkas galat float (0,5 × 76039,51 harus ...75,5 lalu naik, bukan ...75,4999). */
-const roundMinor = (x: number): number => Math.round(Number(x.toFixed(6)));
+const roundMinor = (x: number): number => {
+  if (!Number.isFinite(x)) return 0;
+  const clamped = Math.max(-9_000_000_000_000_000, Math.min(9_000_000_000_000_000, x));
+  return Math.round(Number(clamped.toFixed(6)));
+};
 export const toMinor = (major: number, code: string): number => roundMinor(major * Math.pow(10, currencyMeta(code).exponent));
 
 export type ValueSource = 'manual' | 'live' | 'buy' | 'none';
@@ -165,17 +170,21 @@ const MARKET_OF: Partial<Record<AssetType, 'IDX' | 'US' | 'CRYPTO' | 'GOLD'>> = 
 export function priceAskInput(a: Asset, prices: Record<string, AssetPrice>, now: number) {
   const market = MARKET_OF[a.type];
   const p = a.priceKey ? prices[a.priceKey] : undefined;
-  if (!market || !a.symbol || !p) return null;
+  if (!market || !a.symbol || !p || !Number.isFinite(p.price) || p.price <= 0 || p.price > 1e12) return null;
   const currency = quoteCurrency(p.currency);
-  const sameUnit = a.type !== 'gold' && a.currency === currency && a.buyPrice !== undefined;
+  const exp = Math.pow(10, currencyMeta(currency).exponent);
+  const rawBuy = a.type !== 'gold' && a.currency === currency && a.buyPrice !== undefined && a.buyPrice > 0 ? a.buyPrice / exp : null;
+  const buyPrice = rawBuy !== null && Number.isFinite(rawBuy) && rawBuy > 0 && rawBuy <= 1e12 ? rawBuy : null;
   const gain = gainOf(a, valueAsset(a, prices, now));
+  const rawPct = gain?.pct == null ? null : Math.round(gain.pct * 1000) / 10;
+  const changePct = rawPct !== null && Number.isFinite(rawPct) ? Math.max(-100, Math.min(100000, rawPct)) : null;
   return {
     market,
     symbol: a.symbol,
     currency,
     livePrice: p.price,
-    buyPrice: sameUnit ? a.buyPrice! / Math.pow(10, currencyMeta(currency).exponent) : null,
-    changePct: gain?.pct == null ? null : Math.round(gain.pct * 1000) / 10,
+    buyPrice,
+    changePct,
   };
 }
 
@@ -266,7 +275,7 @@ export function computeNetWorth({ accounts, assets, prices, debts, main, now }: 
 
 /** Snapshot dalam `days` hari terakhir (tanpa hari ini), terlama dulu. */
 function recentSnapshots(snapshots: NetWorthSnapshot[], today: string, currency: string, days: number): NetWorthSnapshot[] {
-  const from = new Date(Date.parse(`${today}T00:00:00Z`) - days * 86_400_000).toISOString().slice(0, 10);
+  const from = addDays(today, -days);
   return snapshots.filter((s) => s.date >= from && s.date < today && s.currency === currency).sort((a, b) => a.date.localeCompare(b.date));
 }
 

@@ -24,12 +24,14 @@ serve(async (req) => {
     const eventId = `refund:${body.data.id}`;
     const invoiceId = body.data.invoice_id;
     return handleEventOnce(db, 'xendit', eventId, async () => {
-      const { data: order, error } = await db.from('orders').select('id, amount, currency').eq('provider', 'xendit').eq('provider_ref', invoiceId).maybeSingle();
+      const { data: order, error } = await db.from('orders').select('id, amount, currency, status').eq('provider', 'xendit').eq('provider_ref', invoiceId).maybeSingle();
       if (error) throw new Error(`order_read_${error.code}`);
       if (!order) return json({ ok: true, unknown: true });
+      if (order.status !== 'paid' && order.status !== 'refunded') throw new Error('order_not_paid_yet');
       // Refund sebagian (mis. kompensasi) tidak mencabut seluruh masa Premium: admin yang memutuskan (sama seperti Paddle).
-      const refunded = Number(body.data?.amount);
-      if (Number.isFinite(refunded) && refunded < minorToMajor(order.amount, exponentOf(order.currency))) {
+      const rawAmount = body.data?.amount;
+      const refunded = typeof rawAmount === 'number' ? rawAmount : Number.NaN;
+      if (Number.isFinite(refunded) && refunded > 0 && refunded < minorToMajor(order.amount, exponentOf(order.currency))) {
         await db.from('orders').update({ grant_error: 'partial_refund', updated_at: new Date().toISOString() }).eq('id', order.id);
         return json({ ok: true, partial: true });
       }

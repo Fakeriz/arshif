@@ -77,6 +77,17 @@ export function AccountsCard({ onActiveChange, embedded = false }: { onActiveCha
   useEffect(() => {
     anchor.value = active;
   }, [active, anchor]);
+  useEffect(() => {
+    if (n === 0) {
+      setActive(0);
+      setMode('stack');
+      pos.value = 0;
+    } else if (active >= n) {
+      setActive(n - 1);
+      pos.value = n - 1;
+    }
+  }, [n, active, pos]);
+
   // Beranda: kartu yang dibuka/digeser ke depan jadi akun aktif untuk pencatatan (sama dengan strip akun lama).
   const activeId = mode === 'open' ? accounts[active]?.id : undefined;
   useEffect(() => {

@@ -2,7 +2,7 @@ import { BlurView } from 'expo-blur';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { setStatusBarStyle } from 'expo-status-bar';
 import { ArrowDownLeft, ArrowUpRight, Bell, Check, Ellipsis, Eye, EyeOff, PiggyBank, type LucideIcon } from 'lucide-react-native';
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { PanResponder, StyleSheet, View } from 'react-native';
 import Animated, { Easing, Extrapolation, interpolate, useAnimatedStyle, useReducedMotion, useSharedValue, withTiming } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -86,12 +86,14 @@ export function HomeSheet({
   };
   // Handler gestur bisa menyimpan render lama: keadaan terkini dibaca lewat ref, bukan closure.
   const foldedRef = useRef(folded);
-  foldedRef.current = folded;
   const setFold = (fold: boolean) => {
     if (fold !== foldedRef.current) toggle();
   };
   const setFoldRef = useRef(setFold);
-  setFoldRef.current = setFold;
+  useEffect(() => {
+    foldedRef.current = folded;
+    setFoldRef.current = setFold;
+  });
   // Geser di baris pegangan: capture merebut sentuhan dari tombol begitu jari bergerak vertikal; ketuk tetap ke tombol.
   const [grabPan] = useState(() =>
     PanResponder.create({
@@ -133,10 +135,10 @@ export function HomeSheet({
   useFocusEffect(
     useCallback(() => {
       setStatusBarStyle(darkTop ? 'light' : 'dark');
-      setWebChrome(baseFill);
+      setWebChrome(baseFill, darkTop ? 'dark' : 'light');
       return () => {
         setStatusBarStyle(scheme === 'dark' ? 'light' : 'dark');
-        setWebChrome(colors.bg);
+        setWebChrome(colors.bg, scheme);
       };
     }, [darkTop, baseFill, scheme, colors.bg]),
   );

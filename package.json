@@ -80,6 +80,7 @@
   "private": true,
   "jest": {
     "preset": "jest-expo",
+    "workerIdleMemoryLimit": "512MB",
     "testMatch": [
       "**/__tests__/**/*.test.ts?(x)"
     ],

@@ -119,10 +119,12 @@ export function perUsd(code: string, date: string | null = null, depth = 0): str
   if (hasDailyRate(code)) return dailyOn(code, date);
   const own = userRates[code];
   if (!own || depth > 0) return null;
+  const ownScaled = rateToScaled(own.rate);
+  if (ownScaled === BigInt(0)) return null;
   // 1 code = rate base  ->  per_usd(code) = per_usd(base) / rate
   const base = perUsd(own.base, date, depth + 1);
   if (!base) return null;
-  return fromScaled((rateToScaled(base) * SCALE) / rateToScaled(own.rate));
+  return fromScaled((rateToScaled(base) * SCALE) / ownScaled);
 }
 
 /** Ada kurs yang bisa dipakai (harian atau "Kurs saya"). */
@@ -143,7 +145,9 @@ export function crossRate(from: string, to: string, table?: Record<string, strin
   const t = table ? (to === 'USD' ? '1' : table[to]) : perUsd(to, date);
   if (!f) throw new MissingRateError(from);
   if (!t) throw new MissingRateError(to);
-  return fromScaled((rateToScaled(t) * SCALE) / rateToScaled(f));
+  const fScaled = rateToScaled(f);
+  if (fScaled === BigInt(0)) throw new MissingRateError(from);
+  return fromScaled((rateToScaled(t) * SCALE) / fScaled);
 }
 
 /** Konversi dengan kurs hari ini (saldo), atau dengan `table` yang diberikan. */
@@ -158,13 +162,12 @@ export function convertOn(minor: number, from: string, to: string, date: string)
   return convertMinor(minor, from, to, crossRate(from, to, undefined, date));
 }
 
-/** Seperti convert/convertOn, tapi null bila kurs hilang (untuk agregat). */
+/** Seperti convert/convertOn, tapi null bila kurs hilang atau melampaui batas aman (untuk agregat). */
 export function tryConvert(minor: number, from: string, to: string, date: string | null = null): number | null {
   try {
     return date ? convertOn(minor, from, to, date) : convert(minor, from, to);
-  } catch (e) {
-    if (e instanceof MissingRateError) return null;
-    throw e;
+  } catch {
+    return null;
   }
 }
 
@@ -173,8 +176,10 @@ export function withUserRates(table: Record<string, string>, date: string | null
   const out: Record<string, string> = { ...table, USD: '1' };
   for (const r of Object.values(userRates)) {
     if (out[r.code]) continue;
+    const ownScaled = rateToScaled(r.rate);
+    if (ownScaled === BigInt(0)) continue;
     const base = r.base === 'USD' ? '1' : (out[r.base] ?? perUsd(r.base, date, 1));
-    if (base) out[r.code] = fromScaled((rateToScaled(base) * SCALE) / rateToScaled(r.rate));
+    if (base) out[r.code] = fromScaled((rateToScaled(base) * SCALE) / ownScaled);
   }
   return out;
 }

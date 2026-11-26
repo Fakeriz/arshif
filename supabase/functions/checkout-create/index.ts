@@ -5,7 +5,7 @@
 import { adminClient, requireUser } from '../_shared/auth.ts';
 import { METHODS_BY_CURRENCY } from '../_shared/billing.ts';
 import { CheckoutRequest } from '../_shared/contracts.ts';
-import { APP_URL, configured } from '../_shared/env.ts';
+import { APP_URL, paymentEnvValid } from '../_shared/env.ts';
 import { HttpError, json, readJson, serve } from '../_shared/http.ts';
 import { createTransaction } from '../_shared/paddle.ts';
 import { createInvoice } from '../_shared/xendit.ts';
@@ -23,10 +23,7 @@ serve(async (req) => {
   const { data: price } = await db.from('prices').select('amount, provider').eq('period', period).eq('currency', currency).maybeSingle();
   if (!price) throw new HttpError('bad_request', 400, { message: 'no_price' });
   const provider = price.provider as 'xendit' | 'paddle';
-  const needed = provider === 'xendit'
-    ? ['XENDIT_SECRET_KEY', 'XENDIT_CALLBACK_TOKEN', 'APP_URL', 'RC_SECRET_KEY']
-    : ['PADDLE_API_KEY', 'PADDLE_WEBHOOK_SECRET', `PADDLE_PRICE_${period.toUpperCase()}`, 'RC_SECRET_KEY'];
-  if (!configured(...needed)) throw new HttpError('not_configured', 503, { message: provider });
+  if (!paymentEnvValid(provider, period)) throw new HttpError('not_configured', 503, { message: provider });
 
   const { data: order, error } = await db
     .from('orders')

@@ -4,6 +4,7 @@ const home: Messages['home'] = {
   profileA11y: 'Profil ve ayarlar',
   notifA11y: 'Bildirimler',
   notifUnreadA11y: 'Bildirimler, {count} okunmamış',
+  notifUnreadA11y_one: 'Bildirimler, {count} okunmamış',
   // Beberapa variasi dipisah "|": dipilih satu per hari (features/home/greeting.ts).
   hello: {
     late: 'Hâlâ uyanık mısın?|Selam, {name}|İyi geceler, {name}',

@@ -54,6 +54,8 @@ const tapMenu = async (label: string) =>
   });
 const openMenu = async () => fireEvent.press(screen.getByLabelText(EDIT));
 
+jest.setTimeout(15_000);
+
 beforeEach(() => [mockUpdate, mockPick, mockCrop, mockSave, mockRemove, mockPreset].forEach((m) => m.mockClear()));
 
 describe('Pengaturan > Profil', () => {

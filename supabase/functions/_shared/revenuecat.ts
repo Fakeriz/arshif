@@ -6,6 +6,7 @@ const BASE = 'https://api.revenuecat.com/v2';
 async function rc(path: string, init: RequestInit = {}): Promise<Response> {
   return fetch(`${BASE}/projects/${encodeURIComponent(RC_PROJECT_ID())}${path}`, {
     ...init,
+    signal: init.signal ?? AbortSignal.timeout(10_000),
     headers: { Authorization: `Bearer ${RC_SECRET_KEY()}`, 'Content-Type': 'application/json', ...(init.headers ?? {}) },
   });
 }

@@ -67,6 +67,19 @@ export type PlanningData = {
   splits: SplitBill[];
 };
 
+const PAGE = 1000;
+
+async function pagedSplits(): Promise<SplitRow[]> {
+  const out: SplitRow[] = [];
+  for (let from = 0; ; from += PAGE) {
+    const rows = must(
+      await supabase.from('split_bills').select('*').order('date', { ascending: false }).order('id', { ascending: false }).range(from, from + PAGE - 1).returns<SplitRow[]>(),
+    );
+    out.push(...rows);
+    if (rows.length < PAGE) return out;
+  }
+}
+
 export async function loadPlanning(): Promise<PlanningData> {
   const [goals, deposits, bills, debts, payments, subs, splits] = await Promise.all([
     supabase.from('goals').select('*').order('created_at').returns<GoalRow[]>(),
@@ -75,7 +88,7 @@ export async function loadPlanning(): Promise<PlanningData> {
     supabase.from('debts').select('*').order('created_at').returns<DebtRow[]>(),
     supabase.from('debt_payments').select('*').order('date', { ascending: false }).limit(1000).returns<PaymentRow[]>(),
     supabase.from('subscriptions').select('*').order('next_renewal').returns<SubRow[]>(),
-    supabase.from('split_bills').select('*').order('date', { ascending: false }).limit(200).returns<SplitRow[]>(),
+    pagedSplits(),
   ]);
   return {
     goals: must(goals).map(toGoal),
@@ -84,7 +97,7 @@ export async function loadPlanning(): Promise<PlanningData> {
     debts: must(debts).map(toDebt),
     payments: must(payments).map(toPayment),
     subscriptions: must(subs).map(toSub),
-    splits: must(splits).map(toSplit),
+    splits: splits.map(toSplit),
   };
 }
 

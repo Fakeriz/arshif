@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState, type ReactNode } from 'react';
-import { Modal, PanResponder, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
+import { Modal, PanResponder, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -37,32 +37,46 @@ export function BottomSheet({ visible, onClose, title, subtitle, children, scrol
   const desktop = useDesktop();
   const [mounted, setMounted] = useState(visible);
   const sheetHeight = useRef(720);
-  const hiddenY = () => (desktop ? DIALOG_OFFSET : sheetHeight.current);
+  const wasVisible = useRef(false);
+  const hiddenY = useCallback(() => (desktop ? DIALOG_OFFSET : sheetHeight.current), [desktop]);
   const y = useSharedValue(hiddenY());
   const fade = useSharedValue(0);
 
-  useEffect(() => {
-    if (visible) {
-      setMounted(true);
-      return;
-    }
-    fade.value = timing(0, motion.fast);
-    y.value = timing(hiddenY(), desktop ? motion.fast : motion.base);
-    const t = setTimeout(() => setMounted(false), motion.base);
-    return () => clearTimeout(t);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [visible, fade, y, timing]);
-
-  const onShow = () => {
+  const onShow = useCallback(() => {
     y.value = hiddenY();
     fade.value = timing(1, motion.base);
     y.value = spring(0);
-  };
+  }, [fade, hiddenY, spring, timing, y]);
 
   const onCloseRef = useRef(onClose);
   useEffect(() => {
     onCloseRef.current = onClose;
   }, [onClose]);
+
+  useEffect(() => {
+    if (visible) {
+      const reopenedWhileMounted = mounted && !wasVisible.current;
+      wasVisible.current = true;
+      setMounted(true);
+      if (reopenedWhileMounted) onShow();
+      return;
+    }
+    wasVisible.current = false;
+    if (!mounted) return;
+    fade.value = timing(0, motion.fast);
+    y.value = timing(hiddenY(), desktop ? motion.fast : motion.base);
+    const t = setTimeout(() => setMounted(false), motion.base);
+    return () => clearTimeout(t);
+  }, [visible, mounted, desktop, fade, y, timing, hiddenY, onShow]);
+
+  useEffect(() => {
+    if (!visible || Platform.OS !== 'web' || typeof window === 'undefined') return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onCloseRef.current();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [visible]);
 
   const pan = useRef(
     PanResponder.create({

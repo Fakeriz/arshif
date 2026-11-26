@@ -36,12 +36,14 @@ export type Parsed = {
 
 export type ParseResult = Parsed | { ok: false; reason: DropReason };
 
-const OTP = /\b(otp|kode (verifikasi|otentikasi|rahasia|akses|aktivasi)|verification code|one[- ]time|pin\b|m-?pin|password|kata sandi|log ?in|masuk ke akun|perangkat baru|aktivasi|jangan (berikan|bagikan))/i;
+const OTP = /\b(otp|kode (verifikasi|otentikasi|rahasia|akses|aktivasi|keamanan|pin)|verification code|security code|one[- ]time|passcode|pin\b|m-?pin|password|kata sandi|log ?in|masuk ke akun|perangkat baru|aktivasi|jangan (berikan|bagikan))/i;
 const FAILED = /\b(gagal|ditolak|dibatalkan|batal|tidak berhasil|belum berhasil|failed|declined|unsuccessful|pending|tertunda|sedang diproses|dalam proses|menunggu (pembayaran|konfirmasi|persetujuan)|kedaluwarsa|expired)\b/i;
 const PROMO = /\b(promo|diskon|voucher|kupon|hadiah|undian|flash ?sale|penawaran|dapatkan|nikmati|buruan|jangan lewatkan|klaim|cashback (s\.?d\.?|hingga|sampai|up to)|giveaway)\b/i;
+const TX_CONFIRMED = /\b(berhasil|sukses|telah (dibayar|diterima|dikirim)|didebit|dikredit|terpotong)\b/i;
 const TX_KEYWORD = /\b(transaksi|pembayaran|bayar|dibayar|membayar|pembelian|beli|belanja|transfer|kirim|dikirim|mengirim|terima|diterima|menerima|masuk|keluar|debit|didebit|kredit|top ?up|isi saldo|tarik tunai|penarikan|setor|setoran|qris|berkurang|bertambah|terpotong|payment|paid|received|sent|purchase|withdrawal)\b/i;
 const BALANCE = /\b(sisa saldo|saldo|balance|sisa limit|limit|available|tersedia|poin|points?)\b/i;
 const BALANCE_IS_TX = /\b(berkurang|bertambah|terpotong|didebit|dikredit)\b/i;
+const SALDO_TX_VERB = /\b(?:isi|pakai|top\s*up)\s+saldo\b/i;
 const INCOME = /\b(masuk|diterima|terima|menerima|received|kredit|dikredit|bertambah|incoming|refund|pengembalian dana|dana kembali)\b/i;
 const EXPENSE = /\b(keluar|pembayaran|bayar|dibayar|membayar|pembelian|beli|belanja|transfer ke|kirim|dikirim|mengirim|debit|didebit|tarik tunai|penarikan|berkurang|terpotong|payment|paid|purchase|sent|qris)\b/i;
 const TOPUP = /\b(top ?up|isi saldo)\b/i;
@@ -92,6 +94,7 @@ export function parseAmount(raw: string, currency: string): number | null {
 function findAmounts(text: string): Money[] {
   const out: Money[] = [];
   for (const m of text.matchAll(AMOUNT_BEFORE)) {
+    if (m.index! > 0 && /[A-Za-z]/.test(text[m.index! - 1]!)) continue;
     const currency = CUR_TOKEN[m[1]!.toLowerCase()]!;
     const amount = parseAmount(m[2]!, currency);
     if (amount) out.push({ index: m.index!, amount, currency });
@@ -104,7 +107,7 @@ function findAmounts(text: string): Money[] {
   return out.sort((a, b) => a.index - b.index);
 }
 
-/** Pecah per kalimat/baris lalu buang bagian saldo/limit. "Saldo GoPay berkurang Rp..." adalah transaksi, bukan saldo. */
+/** Pecah per kalimat/baris lalu buang bagian saldo/limit. "Saldo GoPay berkurang Rp..." atau "Isi saldo Rp..." adalah transaksi, bukan saldo. */
 function stripBalance(text: string): string {
   const lines = text
     .replace(/\bRp\.\s*/gi, 'Rp ')
@@ -114,8 +117,9 @@ function stripBalance(text: string): string {
   for (const line of lines) {
     const m = BALANCE.exec(line);
     if (!m) kept.push(line);
-    else if (BALANCE_IS_TX.test(line)) kept.push(line);
-    else if (m.index > 0) kept.push(line.slice(0, m.index).replace(/[\s,;:(-]+$/, ''));
+    else if (BALANCE_IS_TX.test(line) || SALDO_TX_VERB.test(line)) {
+      kept.push(line.replace(/[.,;\s-]*\b(sisa saldo|saldo akhir|sisa limit|available balance)\b.*$/i, ''));
+    } else if (m.index > 0) kept.push(line.slice(0, m.index).replace(/[\s,;:(-]+$/, ''));
   }
   return kept.map((l) => l.trim()).filter(Boolean).join('\n');
 }
@@ -123,6 +127,7 @@ function stripBalance(text: string): string {
 const MERCHANT = /\b(?:di|ke|kepada|dari|at|to|from|merchant)\s*:?\s+([A-Za-z0-9][\w&'./*-]*(?:\s+[A-Za-z0-9&][\w&'./*-]*){0,5})/gi;
 const MERCHANT_STOP = /^(sebesar|senilai|berhasil|sukses|pada|tgl|tanggal|dengan|via|menggunakan|pakai|memakai|telah|sudah|rp|idr|untuk|jam|pukul|ke|dari|di|anda|kamu|rekening|akun|nomor|no|on|for|with)$/i;
 const MERCHANT_GENERIC = /^(rekening|akun|nomor|no|anda|kamu|saldo|aplikasi|merchant)$/i;
+const CORP_ABBR = /^(pt|cv|tbk|ud|fa|nv|ltd|inc|co)\.$/i;
 
 /** Nama setelah "di/ke/dari ...". Bagian setelah nominal dicoba dulu: judul sering menyebut kantong/akun sendiri. */
 function findMerchant(text: string, afterIndex: number): string {
@@ -132,8 +137,9 @@ function findMerchant(text: string, afterIndex: number): string {
       for (const w of m[1]!.split(/\s+/)) {
         const bare = w.replace(/[.,;:!]+$/, '');
         if (MERCHANT_STOP.test(bare) || /^\d[\d.,]*$/.test(bare)) break;
-        words.push(bare);
-        if (bare !== w) break;
+        const keepAbbr = CORP_ABBR.test(w);
+        words.push(keepAbbr ? w : bare);
+        if (bare !== w && !keepAbbr) break;
       }
       const name = words.join(' ');
       if (name.length >= 2 && !MERCHANT_GENERIC.test(name)) return name.slice(0, 60);
@@ -163,7 +169,7 @@ export function parseNotification(c: Pick<Capture, 'pkg' | 'title' | 'text'>): P
   const full = `${c.title}\n${c.text}`.trim();
   if (OTP.test(full)) return { ok: false, reason: 'otp' };
   if (FAILED.test(full)) return { ok: false, reason: 'failed' };
-  if (PROMO.test(full)) return { ok: false, reason: 'promo' };
+  if (PROMO.test(full) && (/^\s*promo\b/i.test(c.title) || !TX_CONFIRMED.test(full))) return { ok: false, reason: 'promo' };
   if (!TX_KEYWORD.test(full)) return { ok: false, reason: 'no_keyword' };
 
   const body = stripBalance(full);

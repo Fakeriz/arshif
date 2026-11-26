@@ -1,37 +1,69 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 
+import { revokeGrants } from './entitlement.ts';
 import { HttpError } from './http.ts';
 
-async function removeFolder(db: SupabaseClient, bucket: string, userId: string): Promise<number> {
+type StorageItem = { id?: string | null; name: string };
+
+async function removeFolder(db: SupabaseClient, bucket: string, prefix: string, depth = 0): Promise<{ removed: number; incomplete: boolean }> {
   let removed = 0;
-  // Hapus per halaman sampai folder kosong.
-  for (let guard = 0; guard < 100; guard++) {
-    const { data, error } = await db.storage.from(bucket).list(userId, { limit: 1000 });
+  let incomplete = false;
+  if (depth > 8) return { removed, incomplete: true };
+  // Hapus per halaman sampai folder kosong (maks 100 halaman * 1000 item per direktori).
+  let guard = 0;
+  for (; guard < 100; guard++) {
+    const { data, error } = await db.storage.from(bucket).list(prefix, { limit: 1000 });
     if (error) throw new Error(`storage_list_${bucket}`);
     if (!data || data.length === 0) break;
-    const paths = data.map((f: { name: string }) => `${userId}/${f.name}`);
-    const { error: rmError } = await db.storage.from(bucket).remove(paths);
+    const files: string[] = [];
+    for (const item of data as StorageItem[]) {
+      const childPath = `${prefix}/${item.name}`;
+      // Di Supabase Storage, folder virtual memiliki id === null (bukan undefined seperti di mock test).
+      if (item.id === null) {
+        const sub = await removeFolder(db, bucket, childPath, depth + 1);
+        removed += sub.removed;
+        if (sub.incomplete) incomplete = true;
+      } else {
+        files.push(childPath);
+      }
+    }
+    if (files.length === 0) break;
+    const { error: rmError } = await db.storage.from(bucket).remove(files);
     if (rmError) throw new Error(`storage_remove_${bucket}`);
-    removed += paths.length;
+    removed += files.length;
   }
-  return removed;
+  if (guard >= 100) incomplete = true;
+  return { removed, incomplete };
 }
 
 /**
  * Hapus akun: pengguna Auth DULU (tabel ikut terhapus lewat cascade; pesanan disimpan tanpa pemilik), baru berkas.
  * Urutan sebaliknya membuat akun yang gagal dihapus kehilangan semua foto struknya.
- * Berkas yang gagal dihapus setelah akun hilang dilaporkan (`filesPending`), bukan error: akun sudah terhapus.
+ * Berkas atau grant yang gagal dibersihkan setelah akun hilang dilaporkan (`filesPending`), bukan error: akun sudah terhapus.
  */
 export async function deleteAccount(db: SupabaseClient, userId: string): Promise<{ deleted: true; files: number; filesPending?: boolean }> {
   const { error } = await db.auth.admin.deleteUser(userId);
   if (error) throw new HttpError('server', 500);
+
   let files = 0;
+  let filesPending = false;
   try {
-    for (const bucket of ['receipts', 'statements', 'avatars']) files += await removeFolder(db, bucket, userId);
+    await revokeGrants(userId);
   } catch (e) {
-    // Folder per pengguna (<uid>/...): sisa berkas tetap bisa dibersihkan admin berdasarkan ID ini.
-    console.error('delete_account_files_pending', userId, e instanceof Error ? e.message : String(e));
-    return { deleted: true, files, filesPending: true };
+    console.error('delete_account_revoke_grants', userId, e instanceof Error ? e.message : String(e));
+    filesPending = true;
   }
-  return { deleted: true, files };
+
+  for (const bucket of ['receipts', 'statements', 'avatars']) {
+    try {
+      const res = await removeFolder(db, bucket, userId);
+      files += res.removed;
+      if (res.incomplete) filesPending = true;
+    } catch (e) {
+      // Lanjutkan bucket berikutnya agar kegagalan satu bucket tidak menghentikan pembersihan lainnya.
+      console.error('delete_account_files_pending', bucket, userId, e instanceof Error ? e.message : String(e));
+      filesPending = true;
+    }
+  }
+  return filesPending ? { deleted: true, files, filesPending: true } : { deleted: true, files };
 }

@@ -30,7 +30,7 @@ const round1 = (n: number) => Math.round(n * 10) / 10;
 export function healthPillars(i: HealthInputs): Pillar[] {
   const savingsRatio = i.income > 0 ? i.saved / i.income : 0;
   const adherence = i.budgetedCategories > 0 ? i.withinBudget / i.budgetedCategories : 1;
-  const dti = i.income > 0 ? i.debtPayments / i.income : 1;
+  const dti = i.income > 0 ? Math.max(0, i.debtPayments) / i.income : 1;
   const months = i.monthlyExpense > 0 ? i.liquidBalance / i.monthlyExpense : 0;
   const onTime = i.billsDue > 0 ? i.billsOnTime / i.billsDue : 1;
   return [

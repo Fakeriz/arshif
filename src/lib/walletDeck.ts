@@ -22,12 +22,14 @@ export function clamp(v: number, a: number, b: number): number {
 /** Modulo yang selalu positif: tumpukan berputar, indeks dibungkus ke 0..n-1. */
 export function mod(a: number, n: number): number {
   'worklet';
+  if (n <= 0 || !Number.isFinite(n)) return 0;
   return ((a % n) + n) % n;
 }
 
 /** Jarak melingkar antara posisi `p` dan indeks `j` (0..n/2). */
 export function ringDist(j: number, p: number, n: number): number {
   'worklet';
+  if (n <= 0 || !Number.isFinite(n)) return 0;
   const d = mod(j - p, n);
   return Math.min(d, n - d);
 }
@@ -35,6 +37,7 @@ export function ringDist(j: number, p: number, n: number): number {
 /** Karet: makin jauh ditarik, makin berat. Batas `max`. */
 export function rubber(v: number, max: number, k = 1): number {
   'worklet';
+  if (max <= 0 || !Number.isFinite(max) || !Number.isFinite(v)) return 0;
   return max * (1 - 1 / (1 + (Math.abs(v) * k) / max)) * Math.sign(v);
 }
 
@@ -57,6 +60,8 @@ function layerPose(d: number, h: number): Pose {
 
 export function deckPose(d: number, n: number, unit: number, h: number): Pose {
   'worklet';
+  if (n <= 0) return { x: 0, y: OPEN_TOP, scale: 1, rotate: 0, rotateY: 0, opacity: 0, shade: 0, z: 0 };
+  if (n === 1) return layerPose(0, h);
   if (d <= n - 1) return layerPose(d, h);
   const s = n - d; // 0 = baru meninggalkan depan, 1 = sudah di lapis paling belakang
   if (s <= 0.5) {

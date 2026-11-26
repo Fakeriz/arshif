@@ -53,3 +53,5 @@ export { Slider } from './Slider';
 export { StepList } from './StepList';
 export { Stepper } from './Stepper';
 export { Tooltip } from './Tooltip';
+export { UploadProgress, type UploadProgressProps } from './UploadProgress';
+export { VoicePlayer, type VoicePlayerProps } from './VoicePlayer';

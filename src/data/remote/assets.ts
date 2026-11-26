@@ -1,4 +1,5 @@
 import type { Asset, AssetAlert, AssetPrice, AssetType, NetWorthSnapshot, PricePoint } from '@/data/assets';
+import { addDays, todayYmd } from '@/lib/dates';
 import { supabase } from '@/lib/supabase';
 
 import { check as checkWith, must as mustWith, type Res } from './api';
@@ -58,18 +59,27 @@ export async function deleteAlert(id: string): Promise<void> {
   check(await supabase.from('asset_price_alerts').delete().eq('id', id));
 }
 
+const PAGE = 1000;
+
 /** Harga harian sejak `since` untuk kunci yang dipakai. Gagal = kosong (Replay hanya tidak menampilkan penggerak). */
 export async function loadPriceHistory(keys: string[], since: string): Promise<Record<string, PricePoint[]>> {
   if (keys.length === 0) return {};
-  const res = await supabase
-    .from('asset_price_history')
-    .select('symbol, day, price, currency')
-    .in('symbol', keys)
-    .gte('day', since)
-    .order('day')
-    .returns<{ symbol: string; day: string; price: string | number; currency: string }[]>();
   const out: Record<string, PricePoint[]> = {};
-  for (const r of res.error ? [] : (res.data ?? [])) (out[r.symbol] ??= []).push({ day: r.day, price: Number(r.price), currency: r.currency });
+  for (let from = 0; ; from += PAGE) {
+    const res = await supabase
+      .from('asset_price_history')
+      .select('symbol, day, price, currency')
+      .in('symbol', keys)
+      .gte('day', since)
+      .order('day')
+      .order('symbol')
+      .range(from, from + PAGE - 1)
+      .returns<{ symbol: string; day: string; price: string | number; currency: string }[]>();
+    if (res.error) break;
+    const rows = res.data ?? [];
+    for (const r of rows) (out[r.symbol] ??= []).push({ day: r.day, price: Number(r.price), currency: r.currency });
+    if (rows.length < PAGE) break;
+  }
   return out;
 }
 
@@ -81,7 +91,7 @@ export async function loadAssets(sinceYmd: string): Promise<AssetsData> {
   ]);
   const list = must(assets).map(toAsset);
   const keys = [...new Set(list.map((a) => a.priceKey).filter((k): k is string => !!k))];
-  const weekAgo = new Date(Date.now() - 10 * 86_400_000).toISOString().slice(0, 10);
+  const weekAgo = addDays(todayYmd(), -10);
   const [prices, alerts, history] = await Promise.all([loadPrices(list), loadAlerts(), loadPriceHistory(keys, weekAgo)]);
   return { assets: list, prices, snapshots: must(snapshots).map(toSnapshot), alerts, history };
 }

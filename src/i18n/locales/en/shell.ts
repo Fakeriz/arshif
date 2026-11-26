@@ -35,6 +35,7 @@ const shell: Messages['shell'] = {
   notifications: {
     title: 'Notifications',
     unread: '{count} unread',
+    unread_one: '{count} unread',
     allRead: 'All caught up',
     emptyTitle: 'No notifications yet',
     emptyMessage: 'Bill reminders and budget alerts show up here.',

@@ -18,13 +18,14 @@ serve(async (req) => {
   const { lang, weekStart, score, pillars, facts } = input.data;
   const db = adminClient();
 
-  const { data: cached } = await db
+  const { data: cached, error: cacheReadError } = await db
     .from('coach_narrations')
     .select('narration, actions, score')
     .eq('user_id', user.id)
     .eq('week_start', weekStart)
     .eq('lang', lang)
     .maybeSingle();
+  if (cacheReadError) throw new HttpError('server', 500);
   // Cache dipakai hanya bila skornya masih sama; data baru minggu ini = narasi baru.
   if (cached && cached.score === score) return json({ narration: cached.narration, actions: cached.actions, cached: true });
 
@@ -36,6 +37,9 @@ serve(async (req) => {
     return coach;
   });
 
-  await db.from('coach_narrations').upsert({ user_id: user.id, week_start: weekStart, lang, score, narration: result.narration, actions: result.actions });
+  const { error: upsertError } = await db
+    .from('coach_narrations')
+    .upsert({ user_id: user.id, week_start: weekStart, lang, score, narration: result.narration, actions: result.actions });
+  if (upsertError) console.error('coach_cache_upsert_failed', user.id, upsertError.code);
   return json({ ...result, cached: false });
 });

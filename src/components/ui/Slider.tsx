@@ -26,7 +26,8 @@ export function Slider({ value, onChange, accessibilityLabel, min = 0, max = 100
   const { spring } = useMotion();
   const [width, setWidth] = useState(0);
   const dragging = useRef(false);
-  const ratio = max > min ? (Math.min(max, Math.max(min, value)) - min) / (max - min) : 0;
+  const safeStep = Number.isFinite(step) && step > 0 ? step : 1;
+  const ratio = max > min && Number.isFinite(value) ? (Math.min(max, Math.max(min, value)) - min) / (max - min) : 0;
   const p = useSharedValue(ratio);
   const grip = useSharedValue(1);
 
@@ -39,7 +40,9 @@ export function Slider({ value, onChange, accessibilityLabel, min = 0, max = 100
   const thumb = useAnimatedStyle(() => ({ transform: [{ translateX: p.value * span }, { scale: grip.value }] }));
 
   const commit = (next: number) => {
-    const snapped = Math.min(max, Math.max(min, Math.round(next / step) * step));
+    if (max <= min || !Number.isFinite(next)) return;
+    const raw = min + Math.round((next - min) / safeStep) * safeStep;
+    const snapped = Math.min(max, Math.max(min, Number(raw.toFixed(6))));
     if (snapped !== value) {
       haptic('selection');
       onChange(snapped);
@@ -53,7 +56,7 @@ export function Slider({ value, onChange, accessibilityLabel, min = 0, max = 100
     const d = e.key === 'ArrowRight' || e.key === 'ArrowUp' ? 1 : e.key === 'ArrowLeft' || e.key === 'ArrowDown' ? -1 : 0;
     if (!d) return;
     e.preventDefault();
-    commit(value + d * step);
+    commit(value + d * safeStep);
   };
 
   return (
@@ -62,9 +65,10 @@ export function Slider({ value, onChange, accessibilityLabel, min = 0, max = 100
       focusable={!disabled}
       accessibilityRole="adjustable"
       accessibilityLabel={accessibilityLabel}
+      accessibilityState={{ disabled: !!disabled }}
       accessibilityValue={{ min, max, now: value }}
       accessibilityActions={[{ name: 'increment' }, { name: 'decrement' }]}
-      onAccessibilityAction={(e) => commit(value + (e.nativeEvent.actionName === 'increment' ? step : -step))}
+      onAccessibilityAction={(e) => commit(value + (e.nativeEvent.actionName === 'increment' ? safeStep : -safeStep))}
       aria-disabled={!!disabled}
       onLayout={(e) => setWidth(e.nativeEvent.layout.width)}
       onStartShouldSetResponder={() => !disabled}

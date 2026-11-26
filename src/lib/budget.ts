@@ -19,9 +19,11 @@ export function splitIsValid(split: Split): boolean {
 
 /** Batas per bucket dalam minor units. Sisa pembulatan jatuh ke Tabungan agar jumlahnya pas. */
 export function bucketLimits(income: number, split: Split): Record<Bucket, number> {
-  const needs = Math.round((income * split.needs) / 100);
-  const wants = Math.round((income * split.wants) / 100);
-  return { needs, wants, savings: income - needs - wants };
+  const safe = Number.isFinite(income) && income > 0 ? Math.min(Math.trunc(income), 90_000_000_000_000) : 0;
+  if (safe === 0) return { needs: 0, wants: 0, savings: 0 };
+  const needs = Math.min(safe, Math.max(0, Math.round((safe * split.needs) / 100)));
+  const wants = Math.min(safe - needs, Math.max(0, Math.round((safe * split.wants) / 100)));
+  return { needs, wants, savings: safe - needs - wants };
 }
 
 export type BudgetPeriod = { start: string; end: string; totalDays: number; elapsedDays: number; daysLeft: number };

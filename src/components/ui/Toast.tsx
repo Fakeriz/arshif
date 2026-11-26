@@ -53,17 +53,23 @@ function ToastView({ item, onDone }: { item: ToastItem; onDone: () => void }) {
   const t = useSharedValue(0);
   const leaving = useSharedValue(0);
 
+  const dismissTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   // Keluar lebih cepat dari masuk (Motion Kit "Notifikasi"): mengecil sedikit sambil memudar.
   const dismiss = useCallback(() => {
     leaving.value = timing(1, motion.fast);
-    setTimeout(onDone, motion.fast);
+    if (dismissTimer.current) clearTimeout(dismissTimer.current);
+    dismissTimer.current = setTimeout(onDone, motion.fast);
   }, [onDone, leaving, timing]);
 
   const duration = item.durationMs ?? (item.actions?.length ? 7000 : 3500);
   useEffect(() => {
     t.value = spring(1);
     const id = setTimeout(dismiss, duration);
-    return () => clearTimeout(id);
+    return () => {
+      clearTimeout(id);
+      if (dismissTimer.current) clearTimeout(dismissTimer.current);
+    };
   }, [dismiss, duration, spring, t]);
 
   const style = useAnimatedStyle(() => ({

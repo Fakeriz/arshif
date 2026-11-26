@@ -41,6 +41,11 @@ export default function AsetScreen() {
   const nw = useNetWorth();
   useNetWorthSnapshot(nw);
   const [form, setForm] = useState(false);
+  const [formKey, setFormKey] = useState(0);
+  const openForm = () => {
+    setFormKey((k) => k + 1);
+    setForm(true);
+  };
   const now = Date.now();
   const currency = nw.currency;
   const today = todayYmd();
@@ -209,7 +214,7 @@ export default function AsetScreen() {
         right={
           // Tambah aset + pengaturan tampilan aset (menu titik tiga), bukan di tengah layar.
           <>
-            {status === 'ready' && <AddButton label={t('assets.add')} limited={limits.assets} reason={t('assets.limitReason')} onPress={() => setForm(true)} />}
+            {status === 'ready' && <AddButton label={t('assets.add')} limited={limits.assets} reason={t('assets.limitReason')} onPress={openForm} />}
             <HeaderMenu>
               {() => (
                 <ListItem
@@ -265,7 +270,7 @@ export default function AsetScreen() {
               {debtsGroup}
             </>
           )}
-          <AssetForm key={form ? 'open' : 'closed'} visible={form} onClose={() => setForm(false)} />
+          <AssetForm key={formKey} visible={form} onClose={() => setForm(false)} />
         </>
       )}
     </Screen>

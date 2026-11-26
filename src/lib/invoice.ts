@@ -47,19 +47,26 @@ export function qtyCenti(qty: number): number | null {
 
 export function lineTotal(item: Pick<InvoiceItem, 'qty' | 'unitPrice'>): number {
   const c = qtyCenti(item.qty);
-  if (c === null || item.unitPrice < 0) return 0;
-  const n = BigInt(c) * BigInt(Math.trunc(item.unitPrice));
-  return Number((n + BigInt(50)) / BigInt(100));
+  if (c === null || !Number.isFinite(item.unitPrice) || item.unitPrice < 0) return 0;
+  const price = Math.min(Math.trunc(item.unitPrice), Number.MAX_SAFE_INTEGER);
+  const n = BigInt(c) * BigInt(price);
+  const raw = (n + BigInt(50)) / BigInt(100);
+  return raw > BigInt(Number.MAX_SAFE_INTEGER) ? Number.MAX_SAFE_INTEGER : Number(raw);
 }
 
 export type InvoiceTotals = { subtotal: number; discount: number; tax: number; total: number };
 
 export function invoiceTotals(items: Pick<InvoiceItem, 'qty' | 'unitPrice'>[], discount: number, taxBp: number): InvoiceTotals {
-  const subtotal = items.reduce((s, i) => s + lineTotal(i), 0);
-  const d = Math.max(0, Math.min(Math.trunc(discount), subtotal));
+  const rawSub = items.reduce((s, i) => Math.min(Number.MAX_SAFE_INTEGER, s + lineTotal(i)), 0);
+  const subtotal = Math.min(Number.MAX_SAFE_INTEGER, Math.max(0, Math.trunc(rawSub)));
+  const safeDisc = Number.isFinite(discount) ? Math.trunc(discount) : 0;
+  const d = Math.max(0, Math.min(safeDisc, subtotal));
   const base = subtotal - d;
-  const tax = taxBp > 0 ? Number((BigInt(base) * BigInt(taxBp) + BigInt(5000)) / BigInt(10000)) : 0;
-  return { subtotal, discount: d, tax, total: base + tax };
+  const safeTaxBp = Number.isFinite(taxBp) && taxBp > 0 ? Math.min(Math.trunc(taxBp), 10000) : 0;
+  const rawTax = safeTaxBp > 0 ? (BigInt(base) * BigInt(safeTaxBp) + BigInt(5000)) / BigInt(10000) : BigInt(0);
+  const tax = rawTax > BigInt(Number.MAX_SAFE_INTEGER) ? Number.MAX_SAFE_INTEGER : Number(rawTax);
+  const total = Math.min(Number.MAX_SAFE_INTEGER, base + tax);
+  return { subtotal, discount: d, tax, total };
 }
 
 /** Teks qty untuk tampilan: 1, 1,5, 2,25 (pemisah desimal ikut bahasa). */

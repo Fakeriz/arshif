@@ -31,6 +31,7 @@ const acct: Messages['acct'] = {
     groupNote: 'Total used by the {count} cards in this group, divided by the shared limit.',
     ownLimit: "This card's own limit: {amount}. While in the group, the shared limit applies.",
     skipped: "{count} card(s) not counted because their exchange rate isn't available.",
+    skipped_one: "{count} card not counted because its exchange rate isn't available.",
     cardShort: '{pct}% of limit',
     cardGroupShort: '{pct}% of {name}',
   },
@@ -67,6 +68,7 @@ const acct: Messages['acct'] = {
     joinSub: 'For cards from one bank that share a limit',
     rowSub: 'Cards from one bank that share a limit',
     rowCount: '{count} groups',
+    rowCount_one: '{count} group',
   },
   fee: {
     title: 'Annual fee',

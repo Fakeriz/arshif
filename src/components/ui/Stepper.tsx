@@ -1,5 +1,5 @@
 import { Minus, Plus } from 'lucide-react-native';
-import { useRef } from 'react';
+import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import { useT } from '@/i18n';
@@ -29,12 +29,14 @@ export type StepperProps = {
 export function Stepper({ value, onChange, accessibilityLabel, min = 0, max = Number.MAX_SAFE_INTEGER, step = 1, format = String, size = 'md' }: StepperProps) {
   const { colors } = useTheme();
   const t = useT();
-  const prev = useRef(value);
-  const direction = value >= prev.current ? 1 : -1;
-  prev.current = value;
+  const [tracked, setTracked] = useState<{ val: number; d: 1 | -1 }>({ val: value, d: 1 });
+  if (tracked.val !== value) setTracked({ val: value, d: value >= tracked.val ? 1 : -1 });
+  const direction = tracked.d;
+  const safeStep = Number.isFinite(step) && step > 0 ? step : 1;
+  const safeMax = Math.max(min, max);
 
   const bump = (d: 1 | -1) => {
-    const next = Math.min(max, Math.max(min, value + d * step));
+    const next = Math.min(safeMax, Math.max(min, value + d * safeStep));
     if (next === value) return;
     haptic('selection');
     onChange(next);
@@ -47,18 +49,18 @@ export function Stepper({ value, onChange, accessibilityLabel, min = 0, max = Nu
       accessible
       accessibilityRole="adjustable"
       accessibilityLabel={accessibilityLabel}
-      accessibilityValue={{ text: format(value) }}
+      accessibilityValue={{ min, max: safeMax, now: value, text: format(value) }}
       accessibilityActions={[{ name: 'increment' }, { name: 'decrement' }]}
       onAccessibilityAction={(e) => bump(e.nativeEvent.actionName === 'increment' ? 1 : -1)}
       style={[styles.row, size === 'lg' && styles.spread, size === 'sm' && styles.tight]}
     >
-      <PressableScale accessibilityLabel={t('common.ui.decrease')} disabled={value <= min} onPress={() => bump(-1)} focusRadius={radius.full} hitSlop={6} style={button}>
+      <PressableScale accessibilityLabel={t('common.ui.decrease')} disabled={value <= min} accessibilityState={{ disabled: value <= min }} onPress={() => bump(-1)} focusRadius={radius.full} hitSlop={6} style={button}>
         <Icon icon={Minus} color={colors.text} size={18} />
       </PressableScale>
       <View style={size === 'md' ? styles.mdValue : size === 'sm' ? styles.smValue : undefined}>
         <RollingNumber value={format(value)} variant={size === 'lg' ? 'amountHero' : size === 'sm' ? 'bodyStrong' : 'h1'} direction={direction} />
       </View>
-      <PressableScale accessibilityLabel={t('common.ui.increase')} disabled={value >= max} onPress={() => bump(1)} focusRadius={radius.full} hitSlop={6} style={button}>
+      <PressableScale accessibilityLabel={t('common.ui.increase')} disabled={value >= safeMax} accessibilityState={{ disabled: value >= safeMax }} onPress={() => bump(1)} focusRadius={radius.full} hitSlop={6} style={button}>
         <Icon icon={Plus} color={colors.text} size={18} />
       </PressableScale>
     </View>

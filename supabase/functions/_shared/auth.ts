@@ -21,6 +21,15 @@ export async function requireUser(req: Request): Promise<{ id: string }> {
   if (!token) throw new HttpError('unauthorized', 401);
   const { data, error } = await adminClient().auth.getUser(token);
   if (error || !data.user) throw new HttpError('unauthorized', 401);
+
+  const bannedUntil = (data.user as { banned_until?: string | null }).banned_until;
+  if (bannedUntil && Date.parse(bannedUntil) > Date.now()) {
+    throw new HttpError('forbidden', 403, { message: 'account_suspended' });
+  }
+  const { data: profile, error: profError } = await adminClient().from('profiles').select('suspended_at').eq('id', data.user.id).maybeSingle();
+  if (profError) throw new HttpError('server', 500);
+  if (profile?.suspended_at) throw new HttpError('forbidden', 403, { message: 'account_suspended' });
+
   return { id: data.user.id };
 }
 

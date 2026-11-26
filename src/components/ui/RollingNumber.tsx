@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue } from 'react-native-reanimated';
 
@@ -36,15 +36,15 @@ export function RollingNumber({ value, variant = 'amountHero', tone = 'primary',
 type SlotProps = { ch: string; variant: TypeVariant; tone: TextTone; direction: 1 | -1 };
 
 function RollSlot({ ch, ...rest }: SlotProps) {
-  const seen = useRef<{ cur: string; prev: string | null }>({ cur: ch, prev: null });
-  if (seen.current.cur !== ch) seen.current = { cur: ch, prev: seen.current.cur };
+  const [tracked, setTracked] = useState<{ cur: string; prev: string | null }>({ cur: ch, prev: null });
+  if (tracked.cur !== ch) setTracked({ cur: ch, prev: tracked.cur });
   // Kunci = karakter: pasangan baru dipasang dengan nilai awal 0, jadi tidak ada kedipan satu frame.
-  return <RollPair key={ch} cur={ch} prev={seen.current.prev} {...rest} />;
+  return <RollPair key={tracked.cur} cur={tracked.cur} prev={tracked.prev} {...rest} />;
 }
 
 function RollPair({ cur, prev, variant, tone, direction }: Omit<SlotProps, 'ch'> & { cur: string; prev: string | null }) {
-  const { timing } = useMotion();
-  const t = useSharedValue(prev === null ? 1 : 0);
+  const { reduced, timing } = useMotion();
+  const t = useSharedValue(prev === null || reduced ? 1 : 0);
   const travel = typeScale[variant].lineHeight * 0.6 * direction;
 
   useEffect(() => {

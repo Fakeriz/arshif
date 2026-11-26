@@ -86,6 +86,7 @@ export function DesktopNav() {
               <PressableScale
                 key={tab.href}
                 accessibilityRole="tab"
+                accessibilityState={{ selected: on }}
                 aria-selected={on}
                 focusRadius={radius.full}
                 onLayout={(e) => {

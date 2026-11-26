@@ -25,7 +25,8 @@ function lookup(catalog: Catalog, key: string): string | undefined {
  */
 export function translate(lang: Lang, key: MsgKey | string, vars?: Vars): string {
   const cat = CATALOGS[lang] as unknown as Catalog;
-  const one = vars?.count === 1 ? lookup(cat, `${key}_one`) : undefined;
+  const isOne = vars?.count === 1 || (vars?.count === undefined && vars?.n === 1);
+  const one = isOne ? lookup(cat, `${key}_one`) : undefined;
   const raw = one ?? lookup(cat, key) ?? lookup(CATALOGS.id as unknown as Catalog, key) ?? key;
   if (!vars) return raw;
   return raw.replace(/\{(\w+)\}/g, (m, name: string) => (name in vars ? String(vars[name]) : m));

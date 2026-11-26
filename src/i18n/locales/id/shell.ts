@@ -34,6 +34,7 @@ const shell = {
   notifications: {
     title: 'Notifikasi',
     unread: '{count} belum dibaca',
+    unread_one: '{count} belum dibaca',
     allRead: 'Semua sudah dibaca',
     emptyTitle: 'Belum ada notifikasi',
     emptyMessage: 'Pengingat tagihan dan peringatan anggaran muncul di sini.',

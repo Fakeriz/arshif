@@ -53,7 +53,11 @@ const common: Messages['common'] = {
     stepsDone: 'Done',
     valid: 'Valid',
     more: '{n} more',
+    play: 'Play',
+    pause: 'Pause',
     timeLeft: '{time} left',
+    uploaded: 'Uploaded',
+    uploading: 'Uploading {pct}',
   },
   fin: {
     pct: '{n}%',
@@ -64,6 +68,7 @@ const common: Messages['common'] = {
     vsLastMonth: 'vs last month',
     vsLastWeek: 'vs last week',
     sparkline: 'Trend over {count} periods, from {from} to {to}',
+    sparkline_one: 'Trend over {count} period, from {from} to {to}',
     goal: '{label}, {pct} reached',
     goalDone: 'Reached',
   },
@@ -73,7 +78,9 @@ const common: Messages['common'] = {
     needsData: 'Needs 1 month of data',
     outOf: 'out of 100 · {band}',
     up: 'Up {n} points from last month',
+    up_one: 'Up {n} point from last month',
     down: 'Down {n} points from last month',
+    down_one: 'Down {n} point from last month',
   },
 };
 

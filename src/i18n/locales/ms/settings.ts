@@ -175,6 +175,7 @@ const settings: Messages['settings'] = {
     exportDone: 'Fail {format} sedia',
     exportFailed: 'Eksport gagal. Cuba lagi.',
     exportNote: '{count} transaksi dan semua akaun anda akan dieksport.',
+    exportNote_one: '{count} transaksi dan semua akaun anda akan dieksport.',
     deleteFailed: 'Akaun belum dipadam',
     deleteFailedMessage: 'Semak sambungan anda dan cuba lagi. Tiada data yang dipadam.',
     deleting: 'Memadam…',

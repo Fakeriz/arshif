@@ -1,7 +1,7 @@
 import * as DocumentPicker from 'expo-document-picker';
 import { FileText, X } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import { usePaywall } from '@/components/shell/Paywall';
@@ -9,7 +9,7 @@ import { Screen } from '@/components/shell/Screen';
 import { ScreenHeader } from '@/components/shell/ScreenHeader';
 import { AppText, Button, Card, EmptyState, Icon, PressableScale } from '@/components/ui';
 import { invokeFn } from '@/data/remote/functions';
-import { uploadPrivate } from '@/data/remote/upload';
+import { discardPrivate, uploadPrivate } from '@/data/remote/upload';
 import { CaptureError, failureOf, type CaptureFailure } from '@/features/capture/CaptureError';
 import { putHandoff } from '@/features/capture/handoff';
 import { ProcessingView } from '@/features/capture/ProcessingView';
@@ -42,6 +42,12 @@ export default function ImportScreen() {
   const [phase, setPhase] = useState<Phase>({ kind: 'form' });
   const [accountId, setAccountId] = useState<string | null>(activeId ?? accounts[0]?.id ?? null);
   const [file, setFile] = useState<Picked | null>(null);
+  const readingRef = useRef(false);
+
+  useEffect(() => {
+    const fallbackId = activeId ?? accounts[0]?.id;
+    if (!accountId && fallbackId) setAccountId(fallbackId);
+  }, [accountId, activeId, accounts]);
 
   if (limits.importPdf) {
     return (
@@ -53,31 +59,40 @@ export default function ImportScreen() {
   }
 
   const pick = async () => {
-    const res = await DocumentPicker.getDocumentAsync({ type: 'application/pdf', copyToCacheDirectory: true, multiple: false });
-    if (res.canceled || !res.assets[0]) return;
-    const a = res.assets[0];
-    if (a.size !== undefined && a.size > MAX_BYTES) return setPhase({ kind: 'failed', failure: 'too_large' });
-    setFile({ uri: a.uri, name: a.name, size: a.size ?? null });
+    try {
+      const res = await DocumentPicker.getDocumentAsync({ type: 'application/pdf', copyToCacheDirectory: true, multiple: false });
+      if (res.canceled || !res.assets[0]) return;
+      const a = res.assets[0];
+      if (a.size !== undefined && a.size > MAX_BYTES) return setPhase({ kind: 'failed', failure: 'too_large' });
+      setFile({ uri: a.uri, name: a.name, size: a.size ?? null });
+    } catch (e) {
+      setPhase({ kind: 'failed', failure: failureOf(e) });
+    }
   };
 
   const read = async () => {
-    if (!file || !accountId) return;
+    if (!file || !accountId || readingRef.current) return;
     if (!userId) return setPhase({ kind: 'failed', failure: 'session' });
+    readingRef.current = true;
+    let uploadedPath: string | null = null;
     try {
       setPhase({ kind: 'uploading' });
-      const path = await uploadPrivate({ bucket: 'statements', userId, uri: file.uri, ext: 'pdf', contentType: 'application/pdf', maxBytes: MAX_BYTES });
+      uploadedPath = await uploadPrivate({ bucket: 'statements', userId, uri: file.uri, ext: 'pdf', contentType: 'application/pdf', maxBytes: MAX_BYTES });
       setPhase({ kind: 'processing' });
-      const result = await invokeFn(FUNCTIONS.import, { path, accountId, lang, categories: aiCategories(state.categories) }, ImportResult);
+      const result = await invokeFn(FUNCTIONS.import, { path: uploadedPath, accountId, lang, categories: aiCategories(state.categories) }, ImportResult);
       refreshUsage();
       putHandoff('import', { result, accountId });
       router.replace('/import-review');
     } catch (e) {
+      if (uploadedPath) void discardPrivate('statements', uploadedPath);
       refreshUsage();
       const failure = failureOf(e);
       if (failure === 'quota') {
         setPhase({ kind: 'form' });
         paywall(t('capture.import.limitReason'));
       } else setPhase({ kind: 'failed', failure });
+    } finally {
+      readingRef.current = false;
     }
   };
 
@@ -89,6 +104,7 @@ export default function ImportScreen() {
           <ProcessingView
             title={phase.kind === 'uploading' ? t('capture.import.uploading') : t('capture.import.processingTitle')}
             message={t('capture.import.processingMessage')}
+            upload={{ fileName: file?.name ?? 'statement.pdf', progress: phase.kind === 'uploading' ? 0.45 : 1 }}
             steps={[t('capture.steps.uploadPdf'), t('capture.steps.readStatement'), t('capture.steps.review')]}
             done={phase.kind === 'uploading' ? 0 : 1}
           />

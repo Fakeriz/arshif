@@ -5,7 +5,7 @@
  */
 import { adminClient, requireUser } from '../_shared/auth.ts';
 import { safeEqual } from '../_shared/billing.ts';
-import { CRON_SECRET } from '../_shared/env.ts';
+import { configured, CRON_SECRET } from '../_shared/env.ts';
 import { HttpError, json, serve } from '../_shared/http.ts';
 
 const API = 'https://api.frankfurter.dev/v1';
@@ -30,7 +30,11 @@ async function fetchJson<T>(url: string): Promise<T> {
 serve(async (req) => {
   const db = adminClient();
   let trigger: 'cron' | 'admin' = 'cron';
-  if (!safeEqual(req.headers.get('x-cron-secret') ?? '', CRON_SECRET())) {
+  const cron = req.headers.get('x-cron-secret');
+  if (cron !== null) {
+    if (!configured('CRON_SECRET')) throw new HttpError('not_configured', 503);
+    if (!safeEqual(cron, CRON_SECRET())) throw new HttpError('unauthorized', 401);
+  } else {
     const user = await requireUser(req);
     const { data: isAdmin } = await db.from('admin_users').select('user_id').eq('user_id', user.id).maybeSingle();
     if (!isAdmin) throw new HttpError('forbidden', 403);

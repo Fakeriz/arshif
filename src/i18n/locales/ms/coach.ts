@@ -97,6 +97,7 @@ const coach: Messages['coach'] = {
       spentLessMonth: 'Perbelanjaan turun {pct}% daripada bulan sebelumnya',
       cookedMonth: 'Kurang makan di luar berbanding bulan sebelumnya',
       noSpend: '{count} hari tanpa belanja',
+      noSpend_one: '{count} hari tanpa belanja',
       spentLess: 'Perbelanjaan turun {pct}% daripada minggu lalu',
       saved: 'Menyimpan {amount}',
       debtPaid: 'Membayar hutang {amount}',

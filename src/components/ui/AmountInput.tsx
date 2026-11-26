@@ -1,5 +1,5 @@
 import { ChevronDown } from 'lucide-react-native';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { StyleSheet, TextInput, View } from 'react-native';
 
 import { currencyName, useT } from '@/i18n';
@@ -40,13 +40,25 @@ export function AmountInput({
   const m = currencyMeta(currency);
   const name = currencyName(t, currency);
   const [text, setText] = useState(() => (value == null ? '' : formatNumber(value, currency)));
+  const emittedRef = useRef<number | null>(value);
+  const currencyRef = useRef(currency);
+
+  useEffect(() => {
+    if (value !== emittedRef.current || currency !== currencyRef.current) {
+      emittedRef.current = value;
+      currencyRef.current = currency;
+      setText(value == null ? '' : formatNumber(value, currency));
+    }
+  }, [value, currency]);
 
   const handleChange = (raw: string) => {
     const justTypedSeparator = raw.length === text.length + 1 && /[.,]$/.test(raw);
     const display = formatTypedAmount(raw, currency, justTypedSeparator);
     if (display.replace(/\D/g, '').length > 15) return;
+    const nextVal = display ? parseAmountInput(display, currency) : null;
+    emittedRef.current = nextVal;
     setText(display);
-    onChange(display ? parseAmountInput(display, currency) : null);
+    onChange(nextVal);
   };
 
   return (

@@ -76,11 +76,6 @@
     },
     "backgroundColor": "#0D0C0A",
     "extra": {
-      "router": {
-        "asyncRoutes": {
-          "web": true
-        }
-      },
       "eas": {
         "projectId": "cb2a9ff2-2ae6-40f2-87cd-cd6b4707116d"
       }

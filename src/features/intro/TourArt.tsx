@@ -328,20 +328,27 @@ function GrowBar({ h, i, last }: { h: number; i: number; last: boolean }) {
   return <Animated.View style={[styles.gBar, { height: 60 * h, backgroundColor: last ? ramp[4] : ramp[Math.min(3, 1 + (i % 3))] }, style]} />;
 }
 
-export function OverviewArt(_: { active: boolean }) {
+export function OverviewArt({ active }: { active: boolean }) {
   const t = useT();
+  const reduced = useReducedMotion();
   const { card } = useSurface();
-  const [worth, setWorth] = useState('Rp 0');
-  const [goal, setGoal] = useState(0);
+  const [worth, setWorth] = useState(reduced ? 'Rp 48.250.000' : 'Rp 0');
+  const [goal, setGoal] = useState(reduced ? 0.72 : 0);
 
   useEffect(() => {
+    if (reduced) {
+      setWorth('Rp 48.250.000');
+      setGoal(0.72);
+      return;
+    }
+    if (!active) return;
     const a = setTimeout(() => setWorth('Rp 48.250.000'), 300);
     const b = setTimeout(() => setGoal(0.72), 520);
     return () => {
       clearTimeout(a);
       clearTimeout(b);
     };
-  }, []);
+  }, [active, reduced]);
 
   return (
     <View style={styles.art}>

@@ -175,6 +175,7 @@ const settings: Messages['settings'] = {
     exportDone: '{format} dosyası hazır',
     exportFailed: 'Dışa aktarma başarısız. Tekrar dene.',
     exportNote: '{count} işlem ve tüm hesapların dışa aktarılacak.',
+    exportNote_one: '{count} işlem ve tüm hesapların dışa aktarılacak.',
     deleteFailed: 'Hesap silinemedi',
     deleteFailedMessage: 'Bağlantını kontrol edip tekrar dene. Hiçbir veri silinmedi.',
     deleting: 'Siliniyor…',

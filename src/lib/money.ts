@@ -114,19 +114,31 @@ export function formatCompact(minor: number, code: string): string {
   const units: [number, string][] = idStyle
     ? [[1e12, ' T'], [1e9, ' M'], [1e6, ' jt'], [1e3, ' rb']]
     : [[1e9, 'B'], [1e6, 'M'], [1e3, 'k']];
-  for (const [size, suffix] of units) {
+  for (let i = 0; i < units.length; i++) {
+    const [size, suffix] = units[i]!;
     if (major >= size) {
-      const v = Math.round((major / size) * 10) / 10;
+      let v = Math.round((major / size) * 10) / 10;
+      let outSuffix = suffix;
+      if (v >= 1000 && i > 0) {
+        const [nextSize, nextSuffix] = units[i - 1]!;
+        v = Math.round((major / nextSize) * 10) / 10;
+        outSuffix = nextSuffix;
+      }
       const text = Number.isInteger(v) ? String(v) : v.toFixed(1).replace('.', m.decimal);
-      return `${neg}${text}${suffix}`;
+      return `${neg}${text}${outSuffix}`;
     }
   }
-  return `${neg}${Math.round(major)}`;
+  const rounded = Math.round(major);
+  if (rounded >= 1000) {
+    const [, lastSuffix] = units[units.length - 1]!;
+    return `${neg}1${lastSuffix}`;
+  }
+  return `${neg}${rounded}`;
 }
 
 /**
  * Parse teks input pengguna menjadi minor units. Mengembalikan null jika tidak valid.
- * Untuk mata uang berdesimal: pemisah terakhir dianggap desimal bila diikuti 1–2 digit.
+ * Untuk mata uang berdesimal: pemisah terakhir dianggap desimal bila diikuti 1–2 digit (dan tidak berulang di depan).
  */
 export function parseAmountInput(text: string, code: string): number | null {
   const m = currencyMeta(code);
@@ -135,10 +147,10 @@ export function parseAmountInput(text: string, code: string): number | null {
   let intDigits = cleaned;
   let fracDigits = '';
   if (m.exponent > 0) {
-    const match = /^(.*)[.,](\d{1,2})$/.exec(cleaned);
-    if (match) {
-      intDigits = match[1];
-      fracDigits = match[2];
+    const match = /^(.*?)([.,])(\d{1,2})$/.exec(cleaned);
+    if (match && !match[1]!.includes(match[2]!)) {
+      intDigits = match[1]!;
+      fracDigits = match[3]!;
     }
   }
   intDigits = intDigits.replace(/[.,]/g, '') || '0';

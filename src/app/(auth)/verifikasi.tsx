@@ -65,7 +65,15 @@ export default function VerifikasiScreen() {
     if (!recovery) return;
     // Kode benar = sesi aktif. Gerbang rute bisa memindahkan layar sebelum ini selesai, jadi hasilnya lewat toast global.
     const { error: upd } = await supabase.auth.updateUser({ password });
-    show(upd ? { tone: 'error', title: t('auth.verify.resetFailed') } : { tone: 'success', title: t('auth.verify.resetDone') });
+    if (upd) {
+      await supabase.auth.signOut({ scope: 'local' }).catch(() => undefined);
+      setBusy(false);
+      submitted.current = '';
+      show({ tone: 'error', title: t('auth.verify.resetFailed') });
+      return;
+    }
+    await supabase.auth.signOut({ scope: 'others' }).catch(() => undefined);
+    show({ tone: 'success', title: t('auth.verify.resetDone') });
   };
 
   const onChange = (v: string) => {

@@ -36,7 +36,7 @@ export function Composer({ value, onChangeText, onSend, placeholder, disabled, m
         style={[styles.input, typeScale.input, { color: colors.text }]}
       />
       <PopIn visible={ready} from={0.3}>
-        <PressableScale accessibilityLabel={sendLabel ?? t('common.ui.send')} onPress={send} hapticOnPress focusRadius={radius.full} hitSlop={2} style={[styles.send, { backgroundColor: colors.accent }]}>
+        <PressableScale accessibilityLabel={sendLabel ?? t('common.ui.send')} accessibilityState={{ disabled: !ready }} onPress={send} hapticOnPress focusRadius={radius.full} hitSlop={2} style={[styles.send, { backgroundColor: colors.accent }]}>
           <Icon icon={ArrowUp} color={colors.onAccent} size={iconBox[40].icon} />
         </PressableScale>
       </PopIn>

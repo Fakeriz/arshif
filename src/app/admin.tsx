@@ -15,6 +15,7 @@ import { UsersSection } from '@/features/admin/Users';
 import { clearReturnTo, setReturnTo } from '@/lib/returnTo';
 import { supabase } from '@/lib/supabase';
 import { useSession } from '@/state/session';
+import { clearUserLocalData } from '@/state/sessionCleanup';
 import { radius, space } from '@/theme/tokens';
 
 const SECTIONS = ['dasbor', 'pengguna', 'ai', 'pesanan', 'kurs', 'broadcast'] as const;
@@ -68,7 +69,7 @@ function AdminWeb() {
   if (!access.data) {
     return (
       <Gate>
-        <EmptyState kind="error" title={copy.gate.forbiddenTitle} message={copy.gate.forbiddenMessage(email)} actionLabel={copy.signOut} onAction={() => void supabase.auth.signOut()} />
+        <EmptyState kind="error" title={copy.gate.forbiddenTitle} message={copy.gate.forbiddenMessage(email)} actionLabel={copy.signOut} onAction={() => void clearUserLocalData().finally(() => supabase.auth.signOut())} />
       </Gate>
     );
   }
@@ -109,7 +110,7 @@ function Panel({ email }: { email: string }) {
             {copy.signedInAs(email)}
           </AppText>
         </View>
-        <Button label={copy.signOut} icon={LogOut} variant="ghost" size="sm" onPress={() => void supabase.auth.signOut()} />
+        <Button label={copy.signOut} icon={LogOut} variant="ghost" size="sm" onPress={() => void clearUserLocalData().finally(() => supabase.auth.signOut())} />
       </View>
       <View style={styles.nav} accessibilityRole="radiogroup" accessibilityLabel={copy.title}>
         {SECTIONS.map((s) => (

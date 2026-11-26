@@ -1,7 +1,8 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 
 import type { Asset, AssetAlert, AssetType, NetWorthSnapshot } from '@/data/assets';
 import * as api from '@/data/remote/assets';
+import { addDays, todayYmd } from '@/lib/dates';
 import { newId } from '@/lib/uuid';
 
 import { useStore } from './AppStore';
@@ -27,7 +28,7 @@ type AssetsValue = AssetsState & {
 
 const AssetsContext = createContext<AssetsValue | null>(null);
 
-const sinceYmd = () => new Date(Date.now() - HISTORY_DAYS * 86_400_000).toISOString().slice(0, 10);
+const sinceYmd = () => addDays(todayYmd(), -HISTORY_DAYS);
 const upsert = (list: Asset[], item: Asset): Asset[] => (list.some((x) => x.id === item.id) ? list.map((x) => (x.id === item.id ? item : x)) : [...list, item]);
 
 /**
@@ -37,25 +38,29 @@ const upsert = (list: Asset[], item: Asset): Asset[] => (list.some((x) => x.id =
 export function AssetsProvider({ children, preset }: { children: ReactNode; preset?: api.AssetsData }) {
   const { state: app, userId, refreshUsage } = useStore();
   const [state, setState] = useState<AssetsState>(() => (preset ? { ...preset, status: 'ready' } : EMPTY));
+  const reloadSeq = useRef(0);
+  const prevUserRef = useRef<string | null>(userId);
 
   const reload = useCallback(async () => {
     if (!userId) return;
+    const seq = ++reloadSeq.current;
     setState((s) => ({ ...s, status: s.status === 'ready' ? 'ready' : 'loading' }));
     try {
       const data = await api.loadAssets(sinceYmd());
-      setState({ ...data, status: 'ready' });
+      if (seq === reloadSeq.current) setState({ ...data, status: 'ready' });
     } catch {
-      setState((s) => ({ ...s, status: s.status === 'ready' ? 'ready' : 'error' }));
+      if (seq === reloadSeq.current) setState((s) => ({ ...s, status: s.status === 'ready' ? 'ready' : 'error' }));
     }
   }, [userId]);
 
   useEffect(() => {
     if (preset) return;
-    if (!userId) {
+    if (prevUserRef.current !== userId) {
+      prevUserRef.current = userId;
+      reloadSeq.current += 1;
       setState(EMPTY);
-      return;
     }
-    if (app.status === 'ready' && app.onboarded) void reload();
+    if (userId && app.status === 'ready' && app.onboarded) void reload();
   }, [userId, app.status, app.onboarded, reload, preset]);
 
   const value = useMemo<AssetsValue>(() => {
@@ -81,7 +86,7 @@ export function AssetsProvider({ children, preset }: { children: ReactNode; pres
       },
       recordSnapshot: (snap) => {
         const today = state.snapshots.find((x) => x.date === snap.date);
-        if (today && today.total === snap.total && today.liabilitiesTotal === snap.liabilitiesTotal && today.currency === snap.currency) return;
+        if (today && today.total === snap.total && today.assetsTotal === snap.assetsTotal && today.liabilitiesTotal === snap.liabilitiesTotal && today.currency === snap.currency) return;
         setState((s) => ({ ...s, snapshots: [...s.snapshots.filter((x) => x.date !== snap.date), snap].sort((a, b) => a.date.localeCompare(b.date)) }));
         if (!preset) api.saveSnapshot(snap).catch(() => undefined);
       },

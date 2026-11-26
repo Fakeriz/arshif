@@ -43,7 +43,8 @@ export function groupUtilization(group: LimitGroup, accounts: WithBalance[]): Ut
     if (v === null) skipped++;
     else used += v;
   }
-  return { scope: 'group', used, limit: group.sharedLimit, currency: group.currency, ratio: used / group.sharedLimit, groupName: group.name, members: members.length, skipped };
+  const ratio = Number.isFinite(group.sharedLimit) && group.sharedLimit > 0 ? used / group.sharedLimit : 0;
+  return { scope: 'group', used, limit: group.sharedLimit, currency: group.currency, ratio, groupName: group.name, members: members.length, skipped };
 }
 
 /** Utilisasi untuk satu kartu: grupnya bila ada, selain itu limit kartu sendiri. null = tanpa limit. */

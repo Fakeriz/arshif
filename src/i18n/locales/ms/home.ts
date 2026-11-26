@@ -4,6 +4,7 @@ const home: Messages['home'] = {
   profileA11y: 'Profil dan tetapan',
   notifA11y: 'Pemberitahuan',
   notifUnreadA11y: 'Pemberitahuan, {count} belum dibaca',
+  notifUnreadA11y_one: 'Pemberitahuan, {count} belum dibaca',
   // Beberapa variasi dipisah "|": dipilih satu per hari (features/home/greeting.ts).
   hello: {
     late: 'Belum tidur?|Hai, {name}|Malam, {name}',

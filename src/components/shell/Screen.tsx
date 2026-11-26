@@ -73,7 +73,17 @@ export function Screen({ children, tabs, onRefresh, refreshing, onEndReached, ma
               }
             : undefined
         }
-        refreshControl={onRefresh ? <RefreshControl refreshing={!!refreshing} onRefresh={onRefresh} tintColor={colors.accentText} /> : undefined}
+        refreshControl={
+          onRefresh ? (
+            <RefreshControl
+              refreshing={!!refreshing}
+              onRefresh={onRefresh}
+              tintColor={colors.accentText}
+              colors={[colors.accent]}
+              progressBackgroundColor={colors.surfaceRaised}
+            />
+          ) : undefined
+        }
         contentContainerStyle={[
           styles.content,
           centered && styles.centered,

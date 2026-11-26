@@ -8,17 +8,12 @@ import { adminClient, assertOwnPath, requireUser, toBase64 } from '../_shared/au
 import { ImportRequest } from '../_shared/contracts.ts';
 import { runAiJob } from '../_shared/guard.ts';
 import { HttpError, json, readJson, serve } from '../_shared/http.ts';
+import { inspectPdf } from '../_shared/media.ts';
 import { normalizeStatement } from '../_shared/normalize.ts';
 import { STATEMENT_SCHEMA, statementPrompt } from '../_shared/prompts.ts';
 
 const MAX_BYTES = 15 * 1024 * 1024;
-
-/** PDF terenkripsi punya kamus /Encrypt; Gemini tidak bisa membukanya tanpa sandi. */
-function isEncrypted(bytes: Uint8Array): boolean {
-  const text = new TextDecoder('latin1').decode(bytes.subarray(Math.max(0, bytes.length - 4096)));
-  const head = new TextDecoder('latin1').decode(bytes.subarray(0, Math.min(bytes.length, 65536)));
-  return text.includes('/Encrypt') || head.includes('/Encrypt');
-}
+const MAX_PAGES = 30;
 
 serve(async (req) => {
   const user = await requireUser(req);
@@ -37,7 +32,7 @@ serve(async (req) => {
       if (error || !file) throw new HttpError('not_found', 404);
       if (file.size > MAX_BYTES) throw new HttpError('too_large', 413);
       const bytes = new Uint8Array(await file.arrayBuffer());
-      if (isEncrypted(bytes)) throw new HttpError('encrypted_pdf', 422);
+      inspectPdf(bytes, MAX_PAGES);
       const raw = await generateJson(statementPrompt(account.currency, categories), STATEMENT_SCHEMA, { mimeType: 'application/pdf', base64: toBase64(bytes) });
       const parsed = normalizeStatement(raw, account.currency, categories.map((c) => c.key));
       if (parsed.rows.length === 0) throw new HttpError('unreadable', 422);

@@ -18,6 +18,10 @@ export function PriceChart({ symbol, label }: { symbol: string; label: string })
   const [state, setState] = useState<'loading' | 'ready' | 'error'>('loading');
 
   useEffect(() => {
+    setState('loading');
+  }, [symbol]);
+
+  useEffect(() => {
     const onMessage = (e: MessageEvent) => {
       if (e.source === frame.current?.contentWindow && e.data === CHART_ERROR_MESSAGE) setState('error');
     };
@@ -40,8 +44,8 @@ export function PriceChart({ symbol, label }: { symbol: string; label: string })
         ref={frame}
         title={label}
         srcDoc={chartHtml(symbol, { scheme, background: colors.surface, grid: colors.border, line: chartArea[scheme].line, fill: chartArea[scheme].fill, text: colors.textMuted }, lang)}
-        // allow-popups: tautan atribusi TradingView membuka tab baru; halaman aplikasi tidak bisa dinavigasi dari grafik.
-        sandbox="allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox"
+        // Tanpa allow-same-origin: skrip embed TradingView berjalan di origin terisolasi dan tidak bisa membaca sesi/storage aplikasi.
+        sandbox="allow-scripts allow-popups allow-popups-to-escape-sandbox"
         onLoad={() => setState((s) => (s === 'loading' ? 'ready' : s))}
         style={{ border: 0, width: '100%', height: CHART_HEIGHT, display: 'block', background: colors.surface }}
       />

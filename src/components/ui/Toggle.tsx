@@ -34,7 +34,9 @@ export function Toggle({ value, onChange, accessibilityLabel, disabled }: Toggle
     <Pressable
       accessibilityRole="switch"
       accessibilityLabel={accessibilityLabel}
-      aria-checked={value} aria-disabled={!!disabled}
+      accessibilityState={{ checked: value, disabled: !!disabled }}
+      aria-checked={value}
+      aria-disabled={!!disabled}
       disabled={disabled}
       hitSlop={6}
       onPress={() => {
@@ -44,7 +46,7 @@ export function Toggle({ value, onChange, accessibilityLabel, disabled }: Toggle
       style={[styles.track, { backgroundColor: colors.fill, borderColor: value ? colors.accent : colors.borderStrong }, disabled && styles.off]}
     >
       <Animated.View style={[styles.fill, { backgroundColor: colors.accent }, fill]} />
-      <Animated.View style={[styles.thumb, { backgroundColor: value && scheme === 'dark' ? '#080808' : '#FFFFFF' }, thumb]} />
+      <Animated.View style={[styles.thumb, { backgroundColor: value ? colors.onAccent : '#FFFFFF' }, thumb]} />
     </Pressable>
   );
 }

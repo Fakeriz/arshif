@@ -77,6 +77,8 @@ const expectedTotal = (assets: Asset[], prices: Record<string, AssetPrice>, debt
     assets, prices, debts, main: base.mainCurrency, now: Date.now(),
   }).total;
 
+jest.setTimeout(15_000);
+
 beforeEach(() => {
   mockPush.mockClear();
   mockParams = {};

@@ -27,6 +27,11 @@ export function BudgetPlanCard({ style }: { style?: StyleProp<ViewStyle> } = {})
   const { mainCurrency } = state;
   const b = useBudget();
   const [open, setOpen] = useState(false);
+  const [sheetKey, setSheetKey] = useState(0);
+  const openSheet = () => {
+    setSheetKey((k) => k + 1);
+    setOpen(true);
+  };
   const limited = Object.keys(b.categoryLimits).length;
 
   const copyLast = () => {
@@ -55,10 +60,10 @@ export function BudgetPlanCard({ style }: { style?: StyleProp<ViewStyle> } = {})
       )}
       <View style={styles.actions}>
         {!b.record && b.lastPeriod && <Button label={t('budget.plan.copyLast')} variant="secondary" size="md" onPress={copyLast} />}
-        <Button label={b.record ? t('budget.plan.edit') : t('budget.plan.create')} variant={!b.record && b.lastPeriod ? 'ghost' : 'secondary'} size="md" onPress={() => setOpen(true)} />
+        <Button label={b.record ? t('budget.plan.edit') : t('budget.plan.create')} variant={!b.record && b.lastPeriod ? 'ghost' : 'secondary'} size="md" onPress={openSheet} />
       </View>
       <BudgetSheet
-        key={open ? 'open' : 'closed'}
+        key={sheetKey}
         visible={open}
         onClose={() => setOpen(false)}
         currency={mainCurrency}

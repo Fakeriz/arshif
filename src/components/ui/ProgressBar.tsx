@@ -37,9 +37,10 @@ export function ProgressBar({
   accessibilityLabel,
 }: ProgressBarProps) {
   const { colors } = useTheme();
-  const { timing } = useMotion();
-  const clamped = Math.max(0, Math.min(1, Number.isFinite(value) ? value : 0));
-  const progress = useSharedValue(0);
+  const { reduced, timing } = useMotion();
+  const safeValue = Number.isFinite(value) ? Math.max(0, value) : 0;
+  const clamped = Math.min(1, safeValue);
+  const progress = useSharedValue(reduced ? clamped : 0);
 
   useEffect(() => {
     progress.value = timing(clamped, 500);
@@ -50,16 +51,18 @@ export function ProgressBar({
 
   if (loading) return <Skeleton height={height} radius={radius.full} />;
 
-  const resolved = tone === 'auto' ? progressTone(value) : tone;
+  const resolved = tone === 'auto' ? progressTone(safeValue) : tone;
   const color = { accent: colors.accent, positive: colors.positive, warning: colors.warning, negative: colors.negative }[resolved];
+  const pct = Math.round(safeValue * 100);
 
   return (
     <View
       accessibilityRole="progressbar"
       accessibilityLabel={accessibilityLabel}
+      accessibilityValue={{ min: 0, max: 100, now: pct }}
       aria-valuemin={0}
       aria-valuemax={100}
-      aria-valuenow={Math.round(Math.max(0, value) * 100)}
+      aria-valuenow={pct}
       style={[styles.track, { height, backgroundColor: colors.track }]}
     >
       <Animated.View style={[styles.fill, { backgroundColor: color }, fill]} />

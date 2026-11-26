@@ -31,6 +31,7 @@ const acct: Messages['acct'] = {
     groupNote: 'Bu gruptaki {count} kartın toplam kullanımı, ortak limite bölünerek hesaplanır.',
     ownLimit: 'Bu kartın kendi limiti: {amount}. Grupta olduğu sürece ortak limit geçerlidir.',
     skipped: '{count} kart, döviz kuru olmadığı için hesaba katılmadı.',
+    skipped_one: '{count} kart, döviz kuru olmadığı için hesaba katılmadı.',
     cardShort: 'Limit %{pct}',
     cardGroupShort: '{name} %{pct}',
   },
@@ -67,6 +68,7 @@ const acct: Messages['acct'] = {
     joinSub: 'Aynı bankanın limit paylaşan kartları için',
     rowSub: 'Aynı bankanın limit paylaşan kartları',
     rowCount: '{count} grup',
+    rowCount_one: '{count} grup',
   },
   fee: {
     title: 'Yıllık ücret',

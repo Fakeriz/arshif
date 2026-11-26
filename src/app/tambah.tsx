@@ -3,12 +3,13 @@ import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router';
 import { useT } from '@/i18n';
 import { Screen } from '@/components/shell/Screen';
 import { ScreenHeader } from '@/components/shell/ScreenHeader';
-import { EmptyState, useToast } from '@/components/ui';
+import { EmptyState, Skeleton, useToast } from '@/components/ui';
 import { TransactionForm } from '@/features/transactions/TransactionForm';
 import { formatMoney } from '@/lib/money';
 import { useStore } from '@/state/AppStore';
 import { useLedger } from '@/state/derived';
 import { goBack } from '@/components/shell/goBack';
+import { radius } from '@/theme/tokens';
 
 export default function TambahScreen() {
   const { id } = useLocalSearchParams<{ id?: string }>();
@@ -17,14 +18,20 @@ export default function TambahScreen() {
   const navigation = useNavigation();
   const t = useT();
   const { show } = useToast();
-  const { state, dispatch } = useStore();
+  const { state, dispatch, reload } = useStore();
   const { accounts } = useLedger();
   const initial = id ? state.transactions.find((t) => t.id === id) : undefined;
+  const loading = !!id && !initial && (state.status === 'idle' || state.status === 'loading');
+  const failed = !!id && !initial && state.status === 'error';
 
   return (
     <Screen>
       <ScreenHeader title={initial ? t('tx.form.titleEdit') : t('tx.form.titleNew')} />
-      {id && !initial ? (
+      {loading ? (
+        <Skeleton height={280} radius={radius.lg} />
+      ) : failed ? (
+        <EmptyState kind="error" title={t('tx.errorTitle')} message={t('tx.errorMessage')} actionLabel={t('common.retry')} onAction={reload} />
+      ) : id && !initial ? (
         <EmptyState title={t('tx.form.notFound')} actionLabel={t('common.back')} onAction={() => goBack(router)} />
       ) : (
         <TransactionForm

@@ -22,6 +22,7 @@ export function RadioList<K extends string>({ items, value, onChange, accessibil
           <PressableScale
             key={item.key}
             accessibilityRole="radio"
+            accessibilityState={{ checked: on }}
             aria-checked={on}
             accessibilityLabel={item.hint ? `${item.label}, ${item.hint}` : item.label}
             onPress={() => {

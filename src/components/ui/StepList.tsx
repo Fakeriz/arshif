@@ -38,13 +38,13 @@ export function StepList({ steps, done, onChange }: StepListProps) {
         );
         if (!onChange) {
           return (
-            <View key={label} accessible accessibilityRole="checkbox" aria-checked={on} accessibilityLabel={label}>
+            <View key={label} accessible accessibilityRole="checkbox" accessibilityState={{ checked: on }} aria-checked={on} accessibilityLabel={label}>
               {row}
             </View>
           );
         }
         return (
-          <PressableScale key={label} accessibilityRole="checkbox" aria-checked={on} accessibilityLabel={label} onPress={() => onChange(on ? i : i + 1)} scaleTo={0.985} focusRadius={radius.sm}>
+          <PressableScale key={label} accessibilityRole="checkbox" accessibilityState={{ checked: on }} aria-checked={on} accessibilityLabel={label} onPress={() => onChange(on ? i : i + 1)} scaleTo={0.985} focusRadius={radius.sm}>
             {row}
           </PressableScale>
         );

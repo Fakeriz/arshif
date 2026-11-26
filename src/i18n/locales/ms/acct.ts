@@ -31,6 +31,7 @@ const acct: Messages['acct'] = {
     groupNote: 'Dikira daripada jumlah penggunaan {count} kad dalam kumpulan ini dibahagi had gabungan.',
     ownLimit: 'Had kad ini sendiri: {amount}. Selagi dalam kumpulan, had gabungan yang digunakan.',
     skipped: '{count} kad tidak dikira kerana kadar pertukarannya belum ada.',
+    skipped_one: '{count} kad tidak dikira kerana kadar pertukarannya belum ada.',
     cardShort: '{pct}% had',
     cardGroupShort: '{pct}% had {name}',
   },
@@ -67,6 +68,7 @@ const acct: Messages['acct'] = {
     joinSub: 'Untuk kad daripada satu bank yang berkongsi had',
     rowSub: 'Kad daripada satu bank yang berkongsi had',
     rowCount: '{count} kumpulan',
+    rowCount_one: '{count} kumpulan',
   },
   fee: {
     title: 'Yuran tahunan',

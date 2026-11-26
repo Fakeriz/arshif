@@ -102,11 +102,15 @@ export function useTheme(): ThemeValue {
 export function InkCard({ children, style }: { children: ReactNode; style?: StyleProp<ViewStyle> }) {
   const theme = useTheme();
   const ink = inkCard[theme.scheme];
+  const innerScheme: ColorScheme = theme.scheme === 'dark' ? 'light' : 'dark';
   const value = useMemo<ThemeValue>(
     () => ({
       ...theme,
+      scheme: innerScheme,
+      hues: categoryHues[innerScheme],
       colors: {
-        ...theme.colors,
+        ...buildPalette(innerScheme),
+        bg: ink.bg,
         text: ink.text,
         textSecondary: ink.textMuted,
         textMuted: ink.textMuted,
@@ -119,7 +123,7 @@ export function InkCard({ children, style }: { children: ReactNode; style?: Styl
         focus: ink.text,
       },
     }),
-    [theme, ink],
+    [theme, ink, innerScheme],
   );
   return (
     <ThemeContext.Provider value={value}>

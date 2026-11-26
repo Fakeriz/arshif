@@ -41,7 +41,9 @@ export type TrMonth = { month: number; tax: number; exemption: number; payable: 
 
 /** Rincian 12 bulan untuk gaji brüt yang sama tiap bulan. */
 export function trWageMonths(monthlyGross: number): { months: TrMonth[]; sgk: number; matrah: number } {
-  const gross = Math.max(0, Math.trunc(monthlyGross));
+  const gross = Number.isFinite(monthlyGross)
+    ? Math.max(0, Math.min(Math.trunc(monthlyGross), 500_000_000_000_000))
+    : 0;
   const { matrah, sgk } = monthlyMatrah(gross);
   const mw = monthlyMatrah(TR_MIN_WAGE).matrah;
   const months: TrMonth[] = [];
@@ -55,7 +57,9 @@ export function trWageMonths(monthlyGross: number): { months: TrMonth[]; sgk: nu
 }
 
 export function estimateTr(input: { monthlyGross: number }): TaxResult {
-  const gross = Math.max(0, Math.trunc(input.monthlyGross));
+  const gross = Number.isFinite(input.monthlyGross)
+    ? Math.max(0, Math.min(Math.trunc(input.monthlyGross), 500_000_000_000_000))
+    : 0;
   const { months, sgk, matrah } = trWageMonths(gross);
   const sum = (k: keyof TrMonth) => months.reduce((s, m) => s + m[k], 0);
   const tax = sum('tax');
@@ -84,6 +88,6 @@ export function estimateTr(input: { monthlyGross: number }): TaxResult {
 
 /** Laporan tahunan: pemasukan selain gaji, tarif ücret dışı, tanpa istisna asgari ücret. */
 export function annualTr(income: number): { taxable: number; tax: number; allowance: number } {
-  const taxable = Math.max(0, income);
+  const taxable = Number.isFinite(income) ? Math.max(0, Math.min(Math.trunc(income), Number.MAX_SAFE_INTEGER)) : 0;
   return { taxable, tax: progressive(taxable, TR_OTHER_RATES), allowance: 0 };
 }

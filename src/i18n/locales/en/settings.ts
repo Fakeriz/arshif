@@ -175,6 +175,7 @@ const settings: Messages['settings'] = {
     exportDone: '{format} file ready',
     exportFailed: 'Export failed. Try again.',
     exportNote: '{count} transactions and all your accounts will be exported.',
+    exportNote_one: '{count} transaction and all your accounts will be exported.',
     deleteFailed: 'Account not deleted',
     deleteFailedMessage: 'Check your connection and try again. No data was deleted.',
     deleting: 'Deleting…',

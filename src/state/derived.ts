@@ -1,17 +1,19 @@
 import { useMemo } from 'react';
 
-import { todayYmd } from '@/lib/dates';
+import { addDays, todayYmd } from '@/lib/dates';
 import { missingRates, tryConvert } from '@/lib/fx';
 import {
   averageBudget, budgetFor, bucketLimits, budgetPeriod, pace, previousBudgets, safeToSpend, spendByBucket, spendByCategory,
 } from '@/lib/budget';
 import { cardUtilization } from '@/lib/credit';
 import { healthPillars, healthScore } from '@/lib/health';
+import { occurrencesInMonth } from '@/lib/planning/schedule';
 import { accountBalance } from '@/lib/transactions';
 
 import type { Transaction } from '@/data/types';
 
 import { usedCodes, useStore, type AccountWithBalance } from './AppStore';
+import { usePlanningOptional } from './planning';
 
 type Ledger = { accounts: AccountWithBalance[]; transactions: Transaction[]; mainCurrency: string };
 // Satu hitungan dibagi semua pemanggil: Beranda memanggil useLedger 3x dan Coach 4x+, masing-masing
@@ -88,18 +90,43 @@ export function useBudget() {
       bucketPace: (b: 'needs' | 'wants' | 'savings') => pace(spent[b], limits[b], period.elapsedDays, period.totalDays),
       safePerDay: safeToSpend(flexLimit, flexSpent, period.daysLeft),
     };
-  }, [today, state.payday, state.income, state.split, state.budgets, transactions, mainCurrency]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [today, state.payday, state.income, state.split, state.budgets, transactions, mainCurrency, state.ratesDate, state.ratesVersion, state.userRates, state.categories]);
 }
 
 export function useHealth() {
   const { accounts, transactions, mainCurrency } = useLedger();
   const budget = useBudget();
+  const planning = usePlanningOptional();
+  const bills = planning?.status === 'ready' ? planning.bills : null;
   return useMemo(() => {
     const limited = Object.keys(budget.categoryLimits);
     const within = limited.filter((k) => budget.categorySpent(k) <= budget.categoryLimits[k]).length;
     const liquid = accounts.reduce((s, a) => s + (tryConvert(a.balance, a.currency, mainCurrency) ?? 0), 0);
-    // Rata-rata pengeluaran bulanan = belanja periode berjalan diproyeksikan ke satu periode penuh.
-    const projected = Math.round((budget.flexSpent * budget.period.totalDays) / budget.period.elapsedDays);
+    // Rata-rata pengeluaran bulanan = proyeksi periode berjalan; pada awal periode (belanja 0) jatuh ke 30 hari terakhir.
+    let projected = Math.round((budget.flexSpent * budget.period.totalDays) / budget.period.elapsedDays);
+    if (projected === 0 && transactions.length > 0) {
+      const today = todayYmd();
+      const tailPeriod = { start: addDays(today, -29), end: today, totalDays: 30, elapsedDays: 30, daysLeft: 1 };
+      const tailSpent = spendByBucket(spendByCategory(transactions, tailPeriod, mainCurrency));
+      projected = tailSpent.needs + tailSpent.wants;
+    }
+    let billsDue = 0;
+    let billsOnTime = 0;
+    if (bills && bills.length > 0) {
+      const [sy, sm] = budget.period.start.split('-').map(Number);
+      const [ey, em] = budget.period.end.split('-').map(Number);
+      const today = todayYmd();
+      for (const b of bills) {
+        const occ = occurrencesInMonth(b.dueDate, b.frequency, b.anchorDay, sy!, sm!);
+        if (sy !== ey || sm !== em) occ.push(...occurrencesInMonth(b.dueDate, b.frequency, b.anchorDay, ey!, em!));
+        const inPeriod = [...new Set(occ)].filter((d) => d >= budget.period.start && d <= budget.period.end && (d <= today || b.paidPeriods.includes(d)));
+        for (const d of inPeriod) {
+          billsDue++;
+          if (b.paidPeriods.includes(d)) billsOnTime++;
+        }
+      }
+    }
     const inputs = {
       income: transactions.length === 0 ? 0 : budget.income,
       saved: budget.categorySpent('savings'),
@@ -108,11 +135,10 @@ export function useHealth() {
       debtPayments: budget.categorySpent('debt'),
       liquidBalance: liquid,
       monthlyExpense: projected,
-      // Modul Tagihan belum ada (di luar layar inti): pilar tagihan penuh sampai ada data tagihan.
-      billsDue: 0,
-      billsOnTime: 0,
+      billsDue,
+      billsOnTime,
     };
     const score = transactions.length === 0 ? null : healthScore(inputs);
     return { inputs, score, pillars: healthPillars(inputs), delta: 0 }; // belum ada riwayat skor bulanan: baris naik/turun disembunyikan
-  }, [accounts, transactions, mainCurrency, budget]);
+  }, [accounts, transactions, mainCurrency, budget, bills]);
 }

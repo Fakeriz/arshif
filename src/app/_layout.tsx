@@ -6,10 +6,11 @@ import {
   PlusJakartaSans_800ExtraBold,
 } from '@expo-google-fonts/plus-jakarta-sans';
 import { useFonts } from 'expo-font';
-import { Stack } from 'expo-router';
+import { Stack, usePathname } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import * as SystemUI from 'expo-system-ui';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { useEffect, useRef } from 'react';
 import { Platform, StyleSheet } from 'react-native';
 import Animated, { FadeIn } from 'react-native-reanimated';
@@ -59,13 +60,15 @@ export default function RootLayout() {
   if (!loaded && !error) return null;
 
   return (
-    <I18nProvider>
-      <ThemeProvider>
-        <SessionProvider>
-          <Shell />
-        </SessionProvider>
-      </ThemeProvider>
-    </I18nProvider>
+    <GestureHandlerRootView style={styles.fill}>
+      <I18nProvider>
+        <ThemeProvider>
+          <SessionProvider>
+            <Shell />
+          </SessionProvider>
+        </ThemeProvider>
+      </I18nProvider>
+    </GestureHandlerRootView>
   );
 }
 
@@ -74,8 +77,8 @@ function Shell() {
 
   useEffect(() => {
     SystemUI.setBackgroundColorAsync(colors.bg).catch(() => undefined);
-    setWebChrome(colors.bg);
-  }, [colors.bg]);
+    setWebChrome(colors.bg, scheme);
+  }, [colors.bg, scheme]);
 
   return (
     <BlurTargetScope>
@@ -118,6 +121,7 @@ function Routes() {
   const booting = !ready || (!signedIn && introSeen === null) || (signedIn && (state.status === 'idle' || state.status === 'loading'));
   const splashHidden = useRef(false);
   const desktop = useDesktop();
+  const path = usePathname();
 
   useEffect(() => {
     if (booting) return;
@@ -132,6 +136,7 @@ function Routes() {
   if (signedIn && state.suspended) return <SuspendedScreen />;
 
   const onboarded = signedIn && state.onboarded;
+  const showDesktopNav = desktop && onboarded && path !== '/admin' && !path.startsWith('/admin/') && path !== '/scan';
   // Web: /admin yang dibuka sebelum login kembali ke /admin setelah login (bukan ke Home).
   const afterLogin = onboarded ? (readReturnTo() ?? '/') : '/setup';
   // Pengguna baru mendarat di Sambut; yang sudah melihat perkenalan langsung ke Masuk.
@@ -140,7 +145,7 @@ function Routes() {
   return (
     <Animated.View style={[styles.fill, { backgroundColor: colors.bg }]} entering={FadeIn.duration(motion.base)}>
       {/* Web layar lebar: satu nav atas untuk semua layar aplikasi (tab dan stack), seperti Talmo. */}
-      {desktop && onboarded && <DesktopNav />}
+      {showDesktopNav && <DesktopNav />}
       <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.bg }, animation: 'slide_from_right' }}>
         {/* Layar auth didaftarkan satu per satu (tanpa layout grup) supaya redirect guard jatuh ke "masuk"
             dan "/" tetap milik (tabs)/index. */}

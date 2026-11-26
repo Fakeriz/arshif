@@ -173,6 +173,7 @@ const settings = {
     exportDone: 'Berkas {format} siap',
     exportFailed: 'Ekspor gagal. Coba lagi.',
     exportNote: '{count} transaksi dan semua akunmu akan diekspor.',
+    exportNote_one: '{count} transaksi dan semua akunmu akan diekspor.',
     deleteFailed: 'Akun belum terhapus',
     deleteFailedMessage: 'Periksa koneksimu lalu coba lagi. Belum ada data yang dihapus.',
     deleting: 'Menghapus…',

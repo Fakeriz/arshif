@@ -18,15 +18,18 @@ export type ChipProps = {
 };
 
 export function Chip({ label, selected, onPress, icon, count, disabled }: ChipProps) {
-  const { colors } = useTheme();
+  const { colors, scheme } = useTheme();
   const fg = selected ? colors.onAccent : colors.textMuted;
+  const selectedCountBg = scheme === 'dark' ? 'rgba(0, 0, 0, 0.14)' : 'rgba(255, 255, 255, 0.18)';
 
   return (
     <PressableScale
       onPress={onPress}
       disabled={disabled}
       accessibilityRole="checkbox"
-      aria-checked={!!selected} aria-disabled={!!disabled}
+      accessibilityState={{ checked: !!selected, disabled: !!disabled }}
+      aria-checked={!!selected}
+      aria-disabled={!!disabled}
       accessibilityLabel={count != null ? `${label}, ${count}` : label}
       focusRadius={radius.chip}
       style={[
@@ -43,7 +46,7 @@ export function Chip({ label, selected, onPress, icon, count, disabled }: ChipPr
           {label}
         </AppText>
         {count != null && (
-          <View style={[styles.count, { backgroundColor: selected ? 'rgba(255, 255, 255, 0.16)' : colors.fill }]}>
+          <View style={[styles.count, { backgroundColor: selected ? selectedCountBg : colors.fill }]}>
             <AppText variant="overline" tone={selected ? 'onAccent' : 'secondary'} numeric>
               {count}
             </AppText>

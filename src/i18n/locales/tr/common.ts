@@ -53,7 +53,11 @@ const common: Messages['common'] = {
     stepsDone: 'Tamamlandı',
     valid: 'Geçerli',
     more: '{n} tane daha',
+    play: 'Oynat',
+    pause: 'Duraklat',
     timeLeft: 'Kalan süre {time}',
+    uploaded: 'Yüklendi',
+    uploading: 'Yükleniyor {pct}',
   },
   fin: {
     pct: '%{n}',
@@ -64,6 +68,7 @@ const common: Messages['common'] = {
     vsLastMonth: 'geçen aya göre',
     vsLastWeek: 'geçen haftaya göre',
     sparkline: '{count} dönemlik eğilim, {from} değerinden {to} değerine',
+    sparkline_one: '{count} dönemlik eğilim, {from} değerinden {to} değerine',
     goal: '{label}, {pct} tamamlandı',
     goalDone: 'Tamamlandı',
   },
@@ -73,7 +78,9 @@ const common: Messages['common'] = {
     needsData: '1 aylık veri gerekiyor',
     outOf: '/ 100 · {band}',
     up: 'Geçen aya göre {n} puan arttı',
+    up_one: 'Geçen aya göre {n} puan arttı',
     down: 'Geçen aya göre {n} puan düştü',
+    down_one: 'Geçen aya göre {n} puan düştü',
   },
 };
 

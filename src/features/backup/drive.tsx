@@ -1,6 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Google from 'expo-auth-session/providers/google';
-import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react';
+import { getRandomBytes } from 'expo-crypto';
+import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
 import { Platform } from 'react-native';
 
 import { BACKUP_MIME } from './service';
@@ -106,11 +107,14 @@ function useDriveCore(live: string | null, clear: () => void, connect: () => voi
   const [acc, setAcc] = useState<{ token: string; email: string | null } | null>(null);
   const account = acc && acc.token === live ? acc.email : null;
   const [history, setHistory] = useState<DriveFile[]>([]);
+  const historyRef = useRef<DriveFile[]>([]);
   const [busy, setBusy] = useState(false);
 
-  const saveHistory = useCallback((files: DriveFile[]) => {
-    setHistory(files);
-    void AsyncStorage.setItem(HISTORY_KEY, JSON.stringify(files.slice(0, 50))).catch(() => undefined);
+  const saveHistory = useCallback((filesOrUpdater: DriveFile[] | ((prev: DriveFile[]) => DriveFile[])) => {
+    const next = (typeof filesOrUpdater === 'function' ? filesOrUpdater(historyRef.current) : filesOrUpdater).slice(0, 50);
+    historyRef.current = next;
+    setHistory(next);
+    void AsyncStorage.setItem(HISTORY_KEY, JSON.stringify(next)).catch(() => undefined);
   }, []);
 
   const run = useCallback(
@@ -132,7 +136,12 @@ function useDriveCore(live: string | null, clear: () => void, connect: () => voi
 
   useEffect(() => {
     void AsyncStorage.getItem(HISTORY_KEY)
-      .then((v) => (v ? setHistory(JSON.parse(v) as DriveFile[]) : undefined))
+      .then((v) => {
+        if (!v) return;
+        const parsed = JSON.parse(v) as DriveFile[];
+        historyRef.current = parsed;
+        setHistory(parsed);
+      })
       .catch(() => undefined);
   }, []);
 
@@ -153,7 +162,7 @@ function useDriveCore(live: string | null, clear: () => void, connect: () => voi
     disconnect: clear,
     upload: async (name, bytes) => {
       const f = await run((t) => upload(t, name, bytes));
-      saveHistory([f, ...history.filter((h) => h.id !== f.id)]);
+      saveHistory((prev) => [f, ...prev.filter((h) => h.id !== f.id)]);
     },
     download: (id) => run((t) => download(t, id)),
   };
@@ -172,7 +181,7 @@ function DriveWeb({ clientId, children }: { clientId: string; children: ReactNod
     setToken(null);
   }, []);
   const connect = useCallback(() => {
-    const state = Math.random().toString(36).slice(2) + Date.now().toString(36);
+    const state = Array.from(getRandomBytes(16), (b) => b.toString(16).padStart(2, '0')).join('');
     sessionStorage.setItem(DRIVE_STATE_KEY, state);
     const params = new URLSearchParams({
       client_id: clientId,

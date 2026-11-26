@@ -1,5 +1,5 @@
-import { useEffect, useState, type ReactNode } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { Platform, Pressable, StyleSheet, View } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue } from 'react-native-reanimated';
 
 import { useMotion } from '@/theme/motion';
@@ -24,8 +24,13 @@ export function Tooltip({ text, accessibilityLabel, children, durationMs = 2600 
   const { spring, timing } = useMotion();
   const [open, setOpen] = useState(false);
   const t = useSharedValue(0);
+  const firstMount = useRef(true);
 
   useEffect(() => {
+    if (firstMount.current) {
+      firstMount.current = false;
+      if (!open) return;
+    }
     t.value = open ? spring(1) : timing(0, motion.fast);
   }, [open, t, spring, timing]);
   useEffect(() => {
@@ -41,7 +46,13 @@ export function Tooltip({ text, accessibilityLabel, children, durationMs = 2600 
 
   return (
     <View style={styles.wrap}>
-      <Animated.View pointerEvents="none" aria-hidden style={[styles.bubble, { backgroundColor: colors.text }, bubble]}>
+      <Animated.View
+        pointerEvents="none"
+        aria-hidden
+        accessibilityElementsHidden
+        importantForAccessibility="no-hide-descendants"
+        style={[styles.bubble, { backgroundColor: colors.text }, bubble]}
+      >
         <AppText variant="caption" align="center" style={{ color: colors.bg }}>
           {text}
         </AppText>
@@ -51,9 +62,10 @@ export function Tooltip({ text, accessibilityLabel, children, durationMs = 2600 
         accessibilityRole="button"
         accessibilityLabel={accessibilityLabel}
         accessibilityHint={text}
+        accessibilityState={{ expanded: open }}
         hitSlop={8}
-        // Selalu membuka (bukan toggle): di web, hover sudah membukanya sebelum klik.
-        onPress={() => setOpen(true)}
+        // Di web, hover sudah membukanya sebelum klik; di layar sentuh ketuk berulang bisa menutup.
+        onPress={() => setOpen((o) => (Platform.OS === 'web' ? true : !o))}
         onHoverIn={() => setOpen(true)}
         onHoverOut={() => setOpen(false)}
         onFocus={() => setOpen(true)}

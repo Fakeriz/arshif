@@ -7,17 +7,24 @@ import { HttpError, json, readJson, serve } from '../_shared/http.ts';
 import { normalizeVoice } from '../_shared/normalize.ts';
 import { VOICE_SCHEMA, voicePrompt } from '../_shared/prompts.ts';
 
+const MAX_VOICE_JSON_BYTES = 10 * 1024 * 1024;
+
 serve(async (req) => {
   const user = await requireUser(req);
-  const input = VoiceRequest.safeParse(await readJson(req));
+  const input = VoiceRequest.safeParse(await readJson(req, MAX_VOICE_JSON_BYTES));
   if (!input.success) throw new HttpError('bad_request', 400);
   const body = input.data;
   const db = adminClient();
 
-  // Daftar akun dari klien hanya dipercaya bila memang milik pengguna.
-  const { data: owned } = await db.from('accounts').select('id').eq('user_id', user.id);
-  const ownedIds = new Set((owned ?? []).map((a: { id: string }) => a.id));
-  const accounts = body.accounts.filter((a) => ownedIds.has(a.id));
+  // Muat akun resmi milik pengguna dari DB (tidak mempercayai metadata name/bank/currency dari klien).
+  const { data: owned, error: accErr } = await db
+    .from('accounts')
+    .select('id, name, bank, currency')
+    .eq('user_id', user.id)
+    .order('created_at', { ascending: true })
+    .limit(50);
+  if (accErr) throw new HttpError('server', 500);
+  const accounts = (owned ?? []) as { id: string; name: string; bank: string; currency: string }[];
 
   const result = await runAiJob(db, user.id, 'voice', 'automation', async () => {
     const mimeType = body.mimeType === 'audio/m4a' ? 'audio/mp4' : body.mimeType;

@@ -14,6 +14,7 @@ import { LANGS, useI18n } from '@/i18n';
 import { isoDateLabel } from '@/lib/dates';
 import { supabase } from '@/lib/supabase';
 import { useStore } from '@/state/AppStore';
+import { clearUserLocalData } from '@/state/sessionCleanup';
 import { useTheme } from '@/theme/ThemeProvider';
 import { space } from '@/theme/tokens';
 import { ProfileAvatar } from '@/features/settings/ProfileAvatar';
@@ -122,7 +123,7 @@ export default function PengaturanScreen() {
         onCancel={() => setSigningOut(false)}
         onConfirm={() => {
           setSigningOut(false);
-          void supabase.auth.signOut();
+          void clearUserLocalData().finally(() => supabase.auth.signOut());
         }}
       />
     </Screen>

@@ -53,7 +53,11 @@ const common: Messages['common'] = {
     stepsDone: 'Selesai',
     valid: 'Sah',
     more: '{n} lagi',
+    play: 'Main',
+    pause: 'Jeda',
     timeLeft: 'Baki masa {time}',
+    uploaded: 'Dimuat naik',
+    uploading: 'Memuat naik {pct}',
   },
   fin: {
     pct: '{n}%',
@@ -64,6 +68,7 @@ const common: Messages['common'] = {
     vsLastMonth: 'berbanding bulan lepas',
     vsLastWeek: 'berbanding minggu lepas',
     sparkline: 'Trend {count} tempoh, dari {from} ke {to}',
+    sparkline_one: 'Trend {count} tempoh, dari {from} ke {to}',
     goal: '{label}, {pct} tercapai',
     goalDone: 'Tercapai',
   },
@@ -73,7 +78,9 @@ const common: Messages['common'] = {
     needsData: 'Perlu data 1 bulan',
     outOf: 'daripada 100 · {band}',
     up: 'Naik {n} mata dari bulan lepas',
+    up_one: 'Naik {n} mata dari bulan lepas',
     down: 'Turun {n} mata dari bulan lepas',
+    down_one: 'Turun {n} mata dari bulan lepas',
   },
 };
 

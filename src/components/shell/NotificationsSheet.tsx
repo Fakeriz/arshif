@@ -76,7 +76,7 @@ export function NotificationsSheet({ visible, onClose }: { visible: boolean; onC
                 style={styles.item}
               >
                 <View style={[styles.icon, { backgroundColor: n.read ? colors.track : colors.accentSoft }]}>
-                  <Icon icon={ICONS[n.type]} color={n.read ? colors.textSecondary : colors.accentText} size={iconBox[40].icon} />
+                  <Icon icon={ICONS[n.type] ?? Bell} color={n.read ? colors.textSecondary : colors.accentText} size={iconBox[40].icon} />
                 </View>
                 <View style={styles.text}>
                   <AppText variant="bodyStrong">{title}</AppText>

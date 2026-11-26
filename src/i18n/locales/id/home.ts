@@ -3,6 +3,7 @@ const home = {
   profileA11y: 'Profil dan pengaturan',
   notifA11y: 'Notifikasi',
   notifUnreadA11y: 'Notifikasi, {count} belum dibaca',
+  notifUnreadA11y_one: 'Notifikasi, {count} belum dibaca',
   // Beberapa variasi dipisah "|": dipilih satu per hari (features/home/greeting.ts).
   hello: {
     late: 'Masih bangun?|Halo, {name}|Malam, {name}',

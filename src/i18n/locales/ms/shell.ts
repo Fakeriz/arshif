@@ -35,6 +35,7 @@ const shell: Messages['shell'] = {
   notifications: {
     title: 'Pemberitahuan',
     unread: '{count} belum dibaca',
+    unread_one: '{count} belum dibaca',
     allRead: 'Semua sudah dibaca',
     emptyTitle: 'Belum ada pemberitahuan',
     emptyMessage: 'Peringatan bil dan amaran belanjawan muncul di sini.',

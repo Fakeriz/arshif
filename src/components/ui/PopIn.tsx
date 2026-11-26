@@ -13,7 +13,13 @@ type PopInProps = { visible: boolean; children: ReactNode; style?: StyleProp<Vie
 export function PopIn({ visible, children, style, from }: PopInProps) {
   const anim = usePresence(visible, from);
   return (
-    <Animated.View pointerEvents={visible ? 'auto' : 'none'} aria-hidden={!visible} style={[style, anim]}>
+    <Animated.View
+      pointerEvents={visible ? 'auto' : 'none'}
+      aria-hidden={!visible}
+      accessibilityElementsHidden={!visible}
+      importantForAccessibility={visible ? 'auto' : 'no-hide-descendants'}
+      style={[style, anim]}
+    >
       {children}
     </Animated.View>
   );

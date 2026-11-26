@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import { AppText, Button, Input } from '@/components/ui';
 import { FormSheet } from '@/features/planning/kit';
@@ -10,6 +10,14 @@ export function parseRate(text: string): string | null {
   const s = text.trim().replace(',', '.');
   if (!/^\d{1,12}(\.\d{1,10})?$/.test(s)) return null;
   return Number(s) > 0 ? s : null;
+}
+
+function formatInitialRate(rate?: string): string {
+  if (!rate) return '';
+  const n = Number(rate);
+  if (!Number.isFinite(n) || n <= 0) return '';
+  const s = String(n);
+  return /^\d+(\.\d+)?$/.test(s) ? s : n.toFixed(10).replace(/\.?0+$/, '');
 }
 
 /** Basis kurs: mata uang utama bila punya kurs harian, selain itu USD. */
@@ -25,8 +33,15 @@ export function RateSheet({ visible, code, main, initial, onClose, onSave, onDel
 }) {
   const t = useT();
   const base = initial?.base ?? rateBase(main);
-  const [text, setText] = useState(initial?.rate ? String(Number(initial.rate)) : '');
+  const [text, setText] = useState(() => formatInitialRate(initial?.rate));
   const [tried, setTried] = useState(false);
+
+  useEffect(() => {
+    if (visible) {
+      setText(formatInitialRate(initial?.rate));
+      setTried(false);
+    }
+  }, [visible, code, initial?.rate]);
   const parsed = parseRate(text);
 
   const submit = () => {

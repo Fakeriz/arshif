@@ -3,6 +3,7 @@ import { ActivityIndicator, StyleSheet, View } from 'react-native';
 import { AppText, EmptyState } from '@/components/ui';
 import { useT } from '@/i18n';
 import { supabase } from '@/lib/supabase';
+import { clearUserLocalData } from '@/state/sessionCleanup';
 import { useTheme } from '@/theme/ThemeProvider';
 import { space } from '@/theme/tokens';
 
@@ -40,7 +41,7 @@ export function SuspendedScreen() {
         title={t('common.suspendedTitle')}
         message={t('common.suspendedMessage')}
         actionLabel={t('settings.signOut')}
-        onAction={() => void supabase.auth.signOut()}
+        onAction={() => void clearUserLocalData().finally(() => supabase.auth.signOut())}
       />
     </View>
   );

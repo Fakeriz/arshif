@@ -1,14 +1,14 @@
 import { useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import { useT, type MsgKey } from '@/i18n';
 import { CurrencySheet } from '@/components/shell/CurrencySheet';
-import { AmountInput, Button, Chip, DateField, Input, Tabs, useSaveThen } from '@/components/ui';
+import { AmountInput, Button, Chip, DateField, Input, Tabs, useSaveThen, useToast } from '@/components/ui';
 import type { Transaction, TxPlace, TxType } from '@/data/types';
 import { PlaceField } from '@/features/places/PlaceField';
 import { addDays, todayYmd } from '@/lib/dates';
-import { convert } from '@/lib/fx';
+import { tryConvert } from '@/lib/fx';
 import { validateTx } from '@/lib/validate';
 import { newId } from '@/lib/uuid';
 import { useActiveAccountId, type AccountWithBalance } from '@/state/AppStore';
@@ -33,6 +33,7 @@ export type TransactionFormProps = {
 export function TransactionForm({ accounts, initial, onSubmit }: TransactionFormProps) {
   const t = useT();
   const router = useRouter();
+  const { show } = useToast();
   const activeId = useActiveAccountId();
   const first = accounts.find((a) => a.id === activeId) ?? accounts[0];
   const [type, setType] = useState<TxType>(initial?.type ?? 'expense');
@@ -49,6 +50,13 @@ export function TransactionForm({ accounts, initial, onSubmit }: TransactionForm
   const [place, setPlace] = useState<TxPlace | null>(initial?.place ?? null);
   const [submitted, setSubmitted] = useState(false);
   const [sheet, setSheet] = useState(false);
+
+  useEffect(() => {
+    if (!accountId && first) {
+      setAccountId(first.id);
+      if (!currencyTouched) setCurrency(first.currency);
+    }
+  }, [accountId, first, currencyTouched]);
 
   const errorKeys = submitted ? validateTx({ type, amount, merchant, accountId, toAccountId, categoryKey, date }) : {};
   const errors = Object.fromEntries(Object.entries(errorKeys).map(([k, v]) => [k, t(v)])) as Partial<Record<keyof typeof errorKeys, string>>;
@@ -70,8 +78,25 @@ export function TransactionForm({ accounts, initial, onSubmit }: TransactionForm
     setSubmitted(true);
     if (Object.keys(validateTx({ type, amount, merchant, accountId, toAccountId, categoryKey, date })).length > 0 || !amount || !account) return;
     const to = accounts.find((a) => a.id === toAccountId);
-    const accountAmount = account.currency !== currency ? convert(amount, currency, account.currency) : undefined;
+    let accountAmount: number | undefined;
+    if (account.currency !== currency) {
+      const converted = tryConvert(amount, currency, account.currency);
+      if (converted === null) {
+        show({ tone: 'error', title: t('acct.rates.needBadge'), message: t('acct.rates.needSub') });
+        return;
+      }
+      accountAmount = converted;
+    }
     const sourceAmount = accountAmount ?? amount;
+    let toAmount: number | undefined;
+    if (type === 'transfer' && to && to.currency !== account.currency) {
+      const convertedTo = tryConvert(sourceAmount, account.currency, to.currency);
+      if (convertedTo === null) {
+        show({ tone: 'error', title: t('acct.rates.needBadge'), message: t('acct.rates.needSub') });
+        return;
+      }
+      toAmount = convertedTo;
+    }
     saving.run(() =>
       onSubmit({
         id: initial?.id ?? newId(),
@@ -80,7 +105,7 @@ export function TransactionForm({ accounts, initial, onSubmit }: TransactionForm
         categoryKey: type === 'transfer' ? 'savings' : (categoryKey as string),
         accountId: account.id,
         toAccountId: type === 'transfer' ? (toAccountId ?? undefined) : undefined,
-        toAmount: type === 'transfer' && to && to.currency !== account.currency ? convert(sourceAmount, account.currency, to.currency) : undefined,
+        toAmount,
         date,
         time: initial?.time ?? '09:30',
         amount,
@@ -88,9 +113,12 @@ export function TransactionForm({ accounts, initial, onSubmit }: TransactionForm
         accountAmount,
         note: note.trim() || undefined,
         source: initial?.source ?? 'manual',
+        receiptPath: initial?.receiptPath,
         items: initial?.items,
         receipt: initial?.receipt,
         place: type === 'transfer' ? undefined : (place ?? undefined),
+        reimburseStatus: type === 'expense' ? initial?.reimburseStatus : undefined,
+        reimbursedBy: type === 'expense' ? initial?.reimbursedBy : undefined,
       }),
     );
   };

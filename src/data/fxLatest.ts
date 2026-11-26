@@ -35,7 +35,8 @@ type Cached = Parsed & { source: string; savedAt: number };
 function rateString(n: unknown): string | null {
   if (typeof n !== 'number' || !Number.isFinite(n) || n <= 0) return null;
   const plain = String(n);
-  return /^\d+(\.\d+)?$/.test(plain) ? plain : n.toFixed(12).replace(/\.?0+$/, '');
+  const out = /^\d+(\.\d+)?$/.test(plain) ? plain : n.toFixed(12).replace(/\.?0+$/, '');
+  return out && out !== '0' && Number(out) > 0 ? out : null;
 }
 
 /** Ambil kode yang diizinkan saja (fawazahmed0 juga memuat kripto 3 huruf seperti btc). */

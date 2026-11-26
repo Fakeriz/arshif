@@ -64,6 +64,7 @@ export function Button({
       hapticOnPress={variant === 'primary'}
       accessibilityLabel={label}
       accessibilityHint={accessibilityHint}
+      accessibilityState={{ disabled: !!(disabled || loading || done), busy: !!loading }}
       aria-disabled={!!(disabled || loading || done)} aria-busy={!!loading}
       focusRadius={radius.button}
       style={[
@@ -114,7 +115,8 @@ export function useSaveThen(delayMs = 450) {
       setDone(true);
       // Sengaja tidak dibatalkan saat layar ditinggal: datanya tetap disimpan; pemanggil hanya berpindah
       // layar bila masih aktif (navigation.isFocused), jadi tombol kembali yang cepat tidak memicu lompatan ganda.
-      setTimeout(fn, reduced ? 0 : delayMs);
+      const timer = setTimeout(fn, reduced ? 0 : delayMs);
+      (timer as unknown as { unref?: () => void })?.unref?.();
     },
     [reduced, delayMs],
   );

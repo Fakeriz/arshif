@@ -34,10 +34,11 @@ export function Select<K extends string>({ label, items, value, onChange }: Sele
       t.value = spring(1);
       return;
     }
+    if (!mounted) return;
     t.value = timing(0, motion.fast);
     const id = setTimeout(() => setMounted(false), motion.fast);
     return () => clearTimeout(id);
-  }, [open, t, spring, timing]);
+  }, [open, mounted, t, spring, timing]);
 
   const menu = useAnimatedStyle(() => ({
     opacity: Math.max(0, Math.min(1, t.value)),
@@ -51,7 +52,9 @@ export function Select<K extends string>({ label, items, value, onChange }: Sele
         {label}
       </AppText>
       <PressableScale
+        accessibilityRole="button"
         accessibilityLabel={`${label}, ${current?.label ?? ''}`}
+        accessibilityState={{ expanded: open }}
         aria-expanded={open}
         onPress={() => setOpen((o) => !o)}
         scaleTo={0.985}
@@ -94,7 +97,7 @@ function Option({ label, selected, index, onPress }: { label: string; selected: 
   const enter = useEnter({ delay: 30 + index * 35, y: -6 });
   return (
     <Animated.View style={enter}>
-      <PressableScale accessibilityRole="menuitem" aria-selected={selected} accessibilityLabel={label} onPress={onPress} scaleTo={0.985} focusRadius={radius.inset} style={[styles.option, selected && { backgroundColor: colors.accentSoft }]}>
+      <PressableScale accessibilityRole="menuitem" accessibilityState={{ selected }} aria-selected={selected} accessibilityLabel={label} onPress={onPress} scaleTo={0.985} focusRadius={radius.inset} style={[styles.option, selected && { backgroundColor: colors.accentSoft }]}>
         <AppText variant="body" tone={selected ? 'accent' : 'secondary'} style={styles.flex}>
           {label}
         </AppText>

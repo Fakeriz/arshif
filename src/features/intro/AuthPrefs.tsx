@@ -7,6 +7,7 @@ import { LANGS, useI18n } from '@/i18n';
 import { haptic } from '@/theme/motion';
 import { useTheme } from '@/theme/ThemeProvider';
 import { layout, radius, space } from '@/theme/tokens';
+import { withThemeTransition } from '@/theme/viewTransition';
 
 /**
  * Bahasa + tema sebelum login (Sambut, Masuk). Bola dunia membuka menu bahasa melayang di bawahnya;
@@ -56,7 +57,7 @@ export function AuthPrefs() {
         icon={dark ? Sun : Moon}
         onPress={() => {
           haptic('selection');
-          setMode(dark ? 'light' : 'dark');
+          withThemeTransition(() => setMode(dark ? 'light' : 'dark'));
         }}
       />
     </View>

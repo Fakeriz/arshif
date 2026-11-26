@@ -58,3 +58,16 @@ export const APP_URL = (): string => required('APP_URL').replace(/\/+$/, '');
 export function configured(...names: string[]): boolean {
   return names.every((n) => !!Deno.env.get(n));
 }
+
+/** Ensures billing environment variables and live/sandbox key prefixes are consistent before checkout. */
+export function paymentEnvValid(provider: 'xendit' | 'paddle', period: 'monthly' | 'yearly'): boolean {
+  if (!configured('RC_SECRET_KEY', 'RC_PROJECT_ID', 'RC_ENTITLEMENT_ID')) return false;
+  if (provider === 'xendit') return configured('XENDIT_SECRET_KEY', 'XENDIT_CALLBACK_TOKEN', 'APP_URL');
+  const priceKey = period === 'monthly' ? 'PADDLE_PRICE_MONTHLY' : 'PADDLE_PRICE_YEARLY';
+  if (!configured('PADDLE_API_KEY', 'PADDLE_WEBHOOK_SECRET', priceKey)) return false;
+  const apiKey = Deno.env.get('PADDLE_API_KEY') ?? '';
+  const isProd = Deno.env.get('PADDLE_ENV') === 'production';
+  if (apiKey.startsWith('pdl_live_') && !isProd) return false;
+  if (apiKey.startsWith('pdl_sdbx_') && isProd) return false;
+  return true;
+}

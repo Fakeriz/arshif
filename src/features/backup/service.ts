@@ -6,6 +6,7 @@ import { Platform } from 'react-native';
 
 import { BackupError, decryptBackup, encryptBackup, formatRecoveryKey, parseRecoveryKey, readBackupHeader, type BackupHeader } from '@/lib/backup/crypto';
 import { collectBackup, parsePayload, restoreBackup, type BackupPayload, type RestoreReport } from '@/lib/backup/data';
+import { todayYmd } from '@/lib/dates';
 
 export const BACKUP_MIME = 'application/octet-stream';
 const KEY_ITEM = 'arshif.backup.key';
@@ -26,7 +27,7 @@ export async function storeKey(key: Uint8Array): Promise<void> {
 }
 
 export function backupFileName(date = new Date()): string {
-  return `arshif-cadangan-${date.toISOString().slice(0, 10)}.arshif`;
+  return `arshif-cadangan-${todayYmd(date)}.arshif`;
 }
 
 /** Kumpulkan semua data akun lalu enkripsi jadi satu file. */
@@ -44,14 +45,25 @@ export async function saveBackupFile(bytes: Uint8Array, name = backupFileName())
     const a = document.createElement('a');
     a.href = url;
     a.download = name;
+    document.body.appendChild(a);
     a.click();
-    URL.revokeObjectURL(url);
+    a.remove();
+    const timer = setTimeout(() => URL.revokeObjectURL(url), 10_000);
+    (timer as unknown as { unref?: () => void })?.unref?.();
     return;
   }
   const file = new File(Paths.cache, name);
   file.create({ overwrite: true });
   file.write(bytes);
-  await Sharing.shareAsync(file.uri, { mimeType: BACKUP_MIME, dialogTitle: name, UTI: 'public.data' });
+  try {
+    await Sharing.shareAsync(file.uri, { mimeType: BACKUP_MIME, dialogTitle: name, UTI: 'public.data' });
+  } finally {
+    try {
+      if (file.exists) file.delete();
+    } catch {
+      /* abaikan gagal hapus cache */
+    }
+  }
 }
 
 /** Header dibaca tanpa kunci (tanggal dibuat, struk ikut atau tidak); melempar BackupError bila bukan file cadangan. */

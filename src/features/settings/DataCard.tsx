@@ -8,6 +8,7 @@ import { invokeFn } from '@/data/remote/functions';
 import { useT } from '@/i18n';
 import { supabase } from '@/lib/supabase';
 import { useStore } from '@/state/AppStore';
+import { clearUserLocalData } from '@/state/sessionCleanup';
 
 import { buildExport, saveExport, type ExportFormat } from './exportData';
 
@@ -36,7 +37,8 @@ export function DataCard() {
     setDeleting(true);
     try {
       await invokeFn(FUNCTIONS.deleteAccount, { confirm: 'DELETE' }, Deleted);
-      // Pengguna sudah terhapus di server; buang sesi lokal → kembali ke layar masuk.
+      // Pengguna sudah terhapus di server; bersihkan cache lokal lalu buang sesi lokal → kembali ke layar masuk.
+      await clearUserLocalData();
       await supabase.auth.signOut({ scope: 'local' });
     } catch {
       setDeleting(false);

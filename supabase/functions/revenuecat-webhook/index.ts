@@ -6,20 +6,20 @@
 import { adminClient } from '../_shared/auth.ts';
 import { revenueCatUserIds, verifyStaticToken } from '../_shared/billing.ts';
 import { configured, RC_WEBHOOK_AUTH } from '../_shared/env.ts';
-import { handleEventOnce, syncPlan } from '../_shared/entitlement.ts';
+import { handleEventOnce, revenueCatReady, syncPlan } from '../_shared/entitlement.ts';
 import { HttpError, json, readJson, serve } from '../_shared/http.ts';
 
 const NOTIFY_ON = new Set(['INITIAL_PURCHASE', 'NON_RENEWING_PURCHASE', 'UNCANCELLATION']);
 
 serve(async (req) => {
   // Secret belum diisi: 503 not_configured (bukan 500), penyedia mengirim ulang setelah dikonfigurasi.
-  if (!configured('RC_WEBHOOK_AUTH')) throw new HttpError('not_configured', 503);
+  if (!configured('RC_WEBHOOK_AUTH') || !revenueCatReady()) throw new HttpError('not_configured', 503);
   if (!verifyStaticToken(req.headers.get('authorization'), RC_WEBHOOK_AUTH())) throw new HttpError('unauthorized', 401);
   const body = (await readJson(req)) as { event?: Record<string, unknown> };
   const event = body.event;
-  if (!event || typeof event.id !== 'string') throw new HttpError('bad_request', 400);
+  if (!event || typeof event.id !== 'string' || !event.id.trim()) throw new HttpError('bad_request', 400);
   const db = adminClient();
-  return handleEventOnce(db, 'revenuecat', event.id, async () => {
+  return handleEventOnce(db, 'revenuecat', event.id.trim(), async () => {
     for (const userId of revenueCatUserIds(event)) {
       const { data: exists } = await db.from('profiles').select('id, plan').eq('id', userId).maybeSingle();
       if (!exists) continue;

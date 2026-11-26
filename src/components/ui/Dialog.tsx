@@ -1,6 +1,6 @@
 import { CircleAlert, Info, TriangleAlert, type LucideIcon } from 'lucide-react-native';
-import { useEffect, useState } from 'react';
-import { Modal, Pressable, StyleSheet, View } from 'react-native';
+import { useEffect, useRef, useState } from 'react';
+import { Modal, Platform, Pressable, StyleSheet, View } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue } from 'react-native-reanimated';
 
 import { useI18n } from '@/i18n';
@@ -43,6 +43,10 @@ export function Dialog({
   const { timing, spring } = useMotion();
   const [mounted, setMounted] = useState(visible);
   const t = useSharedValue(0);
+  const onCancelRef = useRef(onCancel);
+  useEffect(() => {
+    onCancelRef.current = onCancel;
+  }, [onCancel]);
 
   useEffect(() => {
     if (visible) {
@@ -50,10 +54,20 @@ export function Dialog({
       t.value = spring(1);
       return;
     }
+    if (!mounted) return;
     t.value = timing(0, motion.fast);
     const id = setTimeout(() => setMounted(false), motion.fast);
     return () => clearTimeout(id);
-  }, [visible, t, timing, spring]);
+  }, [visible, mounted, t, timing, spring]);
+
+  useEffect(() => {
+    if (!visible || Platform.OS !== 'web' || typeof window === 'undefined') return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && !loading) onCancelRef.current();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [visible, loading]);
 
   const backdrop = useAnimatedStyle(() => ({ opacity: Math.max(0, Math.min(1, t.value)) }));
   const card = useAnimatedStyle(() => ({

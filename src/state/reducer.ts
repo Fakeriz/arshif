@@ -176,7 +176,13 @@ export function undoActions(action: Action, before: AppState): Action[] {
     action.type === 'tx/add' ? [{ type: 'tx/delete', id: action.tx.id }]
       : action.type === 'tx/addMany' ? action.txs.map((t) => ({ type: 'tx/delete', id: t.id }))
         : action.type === 'tx/update' ? [prev(action.tx.id) ? { type: 'tx/update', tx: prev(action.tx.id)! } : { type: 'tx/delete', id: action.tx.id }]
-          : action.type === 'tx/delete' ? (prev(action.id) ? [{ type: 'tx/add', tx: prev(action.id)! }] : [])
+          : action.type === 'tx/delete'
+            ? [
+                ...(prev(action.id) ? [{ type: 'tx/add' as const, tx: prev(action.id)! }] : []),
+                ...before.transactions
+                  .filter((t) => t.reimbursedBy === action.id)
+                  .map((t) => ({ type: 'tx/reimburse' as const, id: t.id, status: null, reimbursedBy: action.id })),
+              ]
             : [];
   // Bagian lain (pemakaian kuota, preferensi, anggaran) dikembalikan utuh ke nilai sebelum aksi.
   const keys = changedSlices(before, action).filter((k) => k !== 'transactions');
@@ -184,8 +190,11 @@ export function undoActions(action: Action, before: AppState): Action[] {
 }
 
 export function keepReimbursement(next: Transaction, prev: Transaction | undefined): Transaction {
-  if (!prev || next.reimburseStatus !== undefined || next.reimbursedBy !== undefined) return next;
-  return next.type === 'expense' ? { ...next, reimburseStatus: prev.reimburseStatus, reimbursedBy: prev.reimbursedBy } : next;
+  if (!prev) return next;
+  const receiptPath = next.receiptPath !== undefined ? next.receiptPath : prev.receiptPath;
+  const withReceipt = receiptPath === next.receiptPath ? next : { ...next, receiptPath };
+  if (withReceipt.reimburseStatus !== undefined || withReceipt.reimbursedBy !== undefined) return withReceipt;
+  return withReceipt.type === 'expense' ? { ...withReceipt, reimburseStatus: prev.reimburseStatus, reimbursedBy: prev.reimbursedBy } : withReceipt;
 }
 
 /** Anggota grup: kartu di `members` masuk grup, kartu lain yang sebelumnya di grup ini dilepas. */
@@ -214,7 +223,7 @@ export function reducer(state: AppState, action: Action): AppState {
     case 'usage/set':
       return { ...state, usage: action.usage };
     case 'plan/set':
-      return { ...state, plan: action.plan, premiumUntil: action.premiumUntil, premiumSource: action.premiumSource ?? state.premiumSource };
+      return { ...state, plan: action.plan, premiumUntil: action.premiumUntil, premiumSource: action.premiumSource !== undefined ? action.premiumSource : state.premiumSource };
     case 'profile/set':
       return { ...state, ...action.patch };
     case 'account/add':

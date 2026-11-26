@@ -75,6 +75,10 @@ type ProfileRow = {
   categories?: unknown;
 };
 
+function effectivePlan(plan: Plan, until: string | null): Plan {
+  return plan === 'premium' && until && Date.parse(until) <= Date.now() ? 'free' : plan;
+}
+
 export async function loadProfile(userId: string, email: string): Promise<Profile> {
   const r = must(await supabase.from('profiles').select('*').eq('id', userId).single<ProfileRow>());
   return {
@@ -94,7 +98,7 @@ export async function loadProfile(userId: string, email: string): Promise<Profil
     split: { needs: r.split_needs, wants: r.split_wants, savings: r.split_savings },
     notifPrefs: r.notif_prefs,
     activeAccountId: r.active_account_id,
-    plan: r.plan,
+    plan: effectivePlan(r.plan, r.premium_until),
     premiumUntil: r.premium_until,
     premiumSource: r.premium_source,
     onboarded: r.onboarded_at !== null,
@@ -108,7 +112,7 @@ export async function loadProfile(userId: string, email: string): Promise<Profil
 /** Paket saja (dibaca ulang saat aplikasi kembali aktif, mis. setelah grant Premium). */
 export async function loadPlan(userId: string): Promise<{ plan: Plan; premiumUntil: string | null; premiumSource: Profile['premiumSource'] }> {
   const r = must(await supabase.from('profiles').select('plan, premium_until, premium_source').eq('id', userId).single<Pick<ProfileRow, 'plan' | 'premium_until' | 'premium_source'>>());
-  return { plan: r.plan, premiumUntil: r.premium_until, premiumSource: r.premium_source };
+  return { plan: effectivePlan(r.plan, r.premium_until), premiumUntil: r.premium_until, premiumSource: r.premium_source };
 }
 
 export type ProfilePatch = Partial<{
@@ -171,6 +175,15 @@ export async function loadLatestRates(): Promise<{ table: Record<string, string>
   return ratesOn(null);
 }
 
+const plainRate = (v: string | number): string => {
+  if (typeof v === 'number') {
+    if (!Number.isFinite(v) || v <= 0) return '0';
+    const s = String(v);
+    return /^\d+(\.\d+)?$/.test(s) ? s : v.toFixed(10).replace(/\.?0+$/, '');
+  }
+  return v;
+};
+
 /** Kurs pada (atau sebelum) tanggal transaksi: belanja memakai kurs pada harinya (FR-FX-4). */
 export async function ratesOn(date: string | null): Promise<{ table: Record<string, string>; date: string | null }> {
   let q = supabase.from('fx_rates').select('rate_date, code, per_usd').order('rate_date', { ascending: false }).limit(400);
@@ -181,7 +194,7 @@ export async function ratesOn(date: string | null): Promise<{ table: Record<stri
     rows = must(await supabase.from('fx_rates').select('rate_date, code, per_usd').order('rate_date', { ascending: true }).limit(400).returns<{ rate_date: string; code: string; per_usd: string | number }[]>());
   }
   const table: Record<string, string> = {};
-  for (const r of rows) if (!(r.code in table)) table[r.code] = String(r.per_usd);
+  for (const r of rows) if (!(r.code in table)) table[r.code] = plainRate(r.per_usd);
   return { table, date: rows[0]?.rate_date ?? null };
 }
 
@@ -205,7 +218,7 @@ export async function loadRateHistory(codes: string[], since: string): Promise<R
         .range(from, from + PAGE - 1)
         .returns<{ rate_date: string; code: string; per_usd: string | number }[]>(),
     );
-    out.push(...rows.map((r) => ({ date: r.rate_date, code: r.code, perUsd: String(r.per_usd) })));
+    out.push(...rows.map((r) => ({ date: r.rate_date, code: r.code, perUsd: plainRate(r.per_usd) })));
     if (rows.length < PAGE) return out;
   }
 }
@@ -213,8 +226,19 @@ export async function loadRateHistory(codes: string[], since: string): Promise<R
 // ------------------------------------------------------------------ Fase 7: anggaran, grup limit, kurs saya
 
 export async function loadBudgets(): Promise<BudgetRecord[]> {
-  const rows = must(await supabase.from('budgets').select('id, period_start, total, category_limits').order('period_start', { ascending: false }).limit(24).returns<BudgetRow[]>());
-  return rows.map(toBudget);
+  const out: BudgetRecord[] = [];
+  for (let from = 0; ; from += PAGE) {
+    const rows = must(
+      await supabase
+        .from('budgets')
+        .select('id, period_start, total, category_limits')
+        .order('period_start', { ascending: false })
+        .range(from, from + PAGE - 1)
+        .returns<BudgetRow[]>(),
+    );
+    out.push(...rows.map(toBudget));
+    if (rows.length < PAGE) return out;
+  }
 }
 
 /**
@@ -253,7 +277,7 @@ export async function updateAccountCredit(id: string, a: Pick<Account, 'creditLi
 
 export async function loadUserRates(): Promise<UserRate[]> {
   const rows = must(await supabase.from('user_rates').select('code, base, rate').returns<{ code: string; base: string; rate: string | number }[]>());
-  return rows.map((r) => ({ code: r.code, base: r.base, rate: String(r.rate) }));
+  return rows.map((r) => ({ code: r.code, base: r.base, rate: plainRate(r.rate) }));
 }
 
 /** Update dulu lalu insert (kode tidak punya hak update). */
@@ -341,6 +365,10 @@ export async function setReimbursement(id: string, status: 'pending' | 'reimburs
 
 export async function deleteTransaction(id: string): Promise<void> {
   check(await supabase.from('transactions').delete().eq('id', id));
+}
+
+export async function removeReceipt(path: string): Promise<void> {
+  await supabase.storage.from('receipts').remove([path]);
 }
 
 export async function markNotificationsRead(ids: string[]): Promise<void> {

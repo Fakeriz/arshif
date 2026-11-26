@@ -5,7 +5,7 @@
  * adjustment (refund/chargeback penuh yang disetujui) -> refunded + cabut grant.
  */
 import { adminClient } from '../_shared/auth.ts';
-import { verifyPaddleSignature } from '../_shared/billing.ts';
+import { isUuid, verifyPaddleSignature } from '../_shared/billing.ts';
 import { configured, PADDLE_PRICE_ID, PADDLE_WEBHOOK_SECRET } from '../_shared/env.ts';
 import { grantOrder, handleEventOnce, refundOrder, transitionOrder } from '../_shared/entitlement.ts';
 import { HttpError, json, serve } from '../_shared/http.ts';
@@ -43,13 +43,16 @@ serve(async (req) => {
     if (event.event_type.startsWith('adjustment.')) {
       const d = event.data;
       if ((d.action === 'refund' || d.action === 'chargeback') && d.status === 'approved' && d.transaction_id) {
-        const { data: order, error } = await db.from('orders').select('id').eq('provider', 'paddle').eq('provider_ref', d.transaction_id).maybeSingle();
+        const { data: order, error } = await db.from('orders').select('id, status').eq('provider', 'paddle').eq('provider_ref', d.transaction_id).maybeSingle();
         if (error) throw new Error(`order_read_${error.code}`);
-        if (order && d.type === 'partial') {
-          // Refund sebagian: Premium tidak dicabut otomatis, ditandai untuk diputuskan admin.
-          await db.from('orders').update({ grant_error: 'partial_refund', updated_at: new Date().toISOString() }).eq('id', order.id);
-        } else if (order) {
-          await refundOrder(db, order.id);
+        if (order) {
+          if (order.status !== 'paid' && order.status !== 'refunded') throw new Error('order_not_paid_yet');
+          if (d.type === 'partial') {
+            // Refund sebagian: Premium tidak dicabut otomatis, ditandai untuk diputuskan admin.
+            await db.from('orders').update({ grant_error: 'partial_refund', updated_at: new Date().toISOString() }).eq('id', order.id);
+          } else {
+            await refundOrder(db, order.id);
+          }
         }
       }
       return json({ ok: true });
@@ -57,6 +60,7 @@ serve(async (req) => {
 
     const orderId = event.data.custom_data?.order_id;
     if (!orderId) return json({ ok: true, ignored: event.event_type });
+    if (!isUuid(orderId)) return json({ ok: true, unknown: true });
     const { data: order, error } = await db.from('orders').select('id, period, provider_ref').eq('id', orderId).eq('provider', 'paddle').maybeSingle();
     if (error) throw new Error(`order_read_${error.code}`);
     if (!order || (order.provider_ref && order.provider_ref !== event.data.id)) return json({ ok: true, unknown: true });

@@ -1,12 +1,14 @@
+import { useAudioPlayer, useAudioPlayerStatus } from 'expo-audio';
 import { Trash2 } from 'lucide-react-native';
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import { useT } from '@/i18n';
-import { AmountField, AppText, Button, Card, EmptyState, Input, useSaveThen } from '@/components/ui';
+import { AmountField, AppText, Button, Card, EmptyState, Input, useSaveThen, VoicePlayer } from '@/components/ui';
 import type { Transaction, TxPlace } from '@/data/types';
 import { PlaceField, type PlaceGuess } from '@/features/places/PlaceField';
 import { todayYmd } from '@/lib/dates';
+import { tryConvert } from '@/lib/fx';
 import { newId } from '@/lib/uuid';
 import { useActiveAccountId, type AccountWithBalance } from '@/state/AppStore';
 import { space } from '@/theme/tokens';
@@ -18,7 +20,21 @@ import { localHm } from './clock';
 type Draft = VoiceResult['items'][number] & { key: string; amountEdit: number | null; hint: string | null; accountPick: string; place: TxPlace | null; guess?: PlaceGuess };
 
 /** Review Voice Log (FR-VOICE-3): satu kartu per transaksi, bisa diedit atau dibuang sebelum "Simpan semua". */
-export function VoiceReview({ result, accounts, onSave }: { result: VoiceResult; accounts: AccountWithBalance[]; onSave: (txs: Transaction[]) => void }) {
+export function VoiceReview({
+  result,
+  audioUri,
+  durationSec,
+  accounts,
+  onSave,
+  onRetry,
+}: {
+  result: VoiceResult;
+  audioUri?: string;
+  durationSec?: number;
+  accounts: AccountWithBalance[];
+  onSave: (txs: Transaction[]) => void;
+  onRetry?: () => void;
+}) {
   const t = useT();
   const activeId = useActiveAccountId();
   const fallback = accounts.find((a) => a.id === activeId) ?? accounts[0];
@@ -47,25 +63,51 @@ export function VoiceReview({ result, accounts, onSave }: { result: VoiceResult;
     setTried(true);
     if (invalid || drafts.length === 0) return;
     const now = localHm();
-    const txs = drafts.map((d) => ({
-      id: newId(), type: d.type, merchant: d.merchant.trim(), categoryKey: d.categoryKey, accountId: d.accountPick,
-      // Jam yang diucapkan ("jam 8 pagi"); tidak disebut = jam sekarang.
-      date: d.date, time: d.time ?? now, amount: d.amountEdit as number, currency: d.currency, note: d.note ?? undefined, source: 'voice' as const, place: d.place ?? undefined,
-    }));
+    const txs = drafts.map((d) => {
+      const acc = accounts.find((a) => a.id === d.accountPick);
+      const accountAmount = acc && acc.currency !== d.currency ? (tryConvert(d.amountEdit as number, d.currency, acc.currency) ?? undefined) : undefined;
+      return {
+        id: newId(), type: d.type, merchant: d.merchant.trim(), categoryKey: d.categoryKey, accountId: d.accountPick,
+        // Jam yang diucapkan ("jam 8 pagi"); tidak disebut = jam sekarang.
+        date: d.date, time: d.time ?? now, amount: d.amountEdit as number, currency: d.currency, accountAmount, note: d.note ?? undefined, source: 'voice' as const, place: d.place ?? undefined,
+      };
+    });
     saving.run(() => onSave(txs));
   };
 
-  if (result.items.length === 0) return <EmptyState title={t('capture.voiceReview.noneTitle')} message={t('capture.voiceReview.noneMessage')} />;
-  if (drafts.length === 0) return <EmptyState title={t('capture.voiceReview.allDiscardedTitle')} message={t('capture.voiceReview.allDiscardedMessage')} />;
+  if (result.items.length === 0) {
+    return (
+      <EmptyState
+        title={t('capture.voiceReview.noneTitle')}
+        message={t('capture.voiceReview.noneMessage')}
+        actionLabel={onRetry ? t('capture.voice.rerecord') : undefined}
+        onAction={onRetry}
+      />
+    );
+  }
+  if (drafts.length === 0) {
+    return (
+      <EmptyState
+        title={t('capture.voiceReview.allDiscardedTitle')}
+        message={t('capture.voiceReview.allDiscardedMessage')}
+        actionLabel={onRetry ? t('capture.voice.rerecord') : undefined}
+        onAction={onRetry}
+      />
+    );
+  }
 
   return (
     <View style={styles.wrap}>
-      <Card>
-        <AppText variant="caption" tone="secondary">
-          {t('capture.voiceReview.heard')}
-        </AppText>
-        <AppText variant="body" style={styles.quote}>{`“${result.transcript}”`}</AppText>
-      </Card>
+      {audioUri ? (
+        <VoiceClipPlayer uri={audioUri} transcript={result.transcript} durationSec={durationSec ?? 1} />
+      ) : (
+        <Card>
+          <AppText variant="caption" tone="secondary">
+            {t('capture.voiceReview.heard')}
+          </AppText>
+          <AppText variant="body" style={styles.quote}>{`“${result.transcript}”`}</AppText>
+        </Card>
+      )}
       {drafts.map((d, i) => (
         <Card key={d.key}>
           <View style={styles.head}>
@@ -91,6 +133,38 @@ export function VoiceReview({ result, accounts, onSave }: { result: VoiceResult;
         {t('capture.voiceReview.footer')}
       </AppText>
     </View>
+  );
+}
+
+function VoiceClipPlayer({ uri, transcript, durationSec }: { uri: string; transcript: string; durationSec: number }) {
+  const t = useT();
+  const player = useAudioPlayer(uri);
+  const status = useAudioPlayerStatus(player);
+  const total = status.duration > 0 ? status.duration : durationSec;
+  const progress = total > 0 ? Math.max(0, Math.min(1, status.currentTime / total)) : 0;
+
+  const onToggle = () => {
+    if (status.playing) {
+      player.pause();
+      return;
+    }
+    if (status.didJustFinish || (total > 0 && status.currentTime >= total - 0.1)) {
+      void player.seekTo(0).catch(() => undefined);
+    }
+    player.play();
+  };
+
+  return (
+    <Card>
+      <VoicePlayer
+        title={t('capture.voiceReview.heard')}
+        subtitle={`“${transcript}”`}
+        playing={status.playing}
+        onToggle={onToggle}
+        progress={progress}
+        durationSec={total}
+      />
+    </Card>
   );
 }
 

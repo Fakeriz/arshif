@@ -5,6 +5,8 @@
  */
 jest.mock('@react-native-async-storage/async-storage', () => require('@react-native-async-storage/async-storage/jest/async-storage-mock'));
 
+import 'react-native-gesture-handler/jestSetup';
+
 jest.mock('react-native-reanimated', () => {
   const { View } = require('react-native');
   const identity = (to: unknown) => to;

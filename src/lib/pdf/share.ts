@@ -39,7 +39,15 @@ export async function sharePdf(html: string, fileBase: string): Promise<void> {
   const target = new File(Paths.cache, name);
   if (target.exists) target.delete();
   new File(uri).move(target);
-  await Sharing.shareAsync(target.uri, { mimeType: 'application/pdf', UTI: 'com.adobe.pdf', dialogTitle: name });
+  try {
+    await Sharing.shareAsync(target.uri, { mimeType: 'application/pdf', UTI: 'com.adobe.pdf', dialogTitle: name });
+  } finally {
+    try {
+      if (target.exists) target.delete();
+    } catch {
+      /* abaikan gagal hapus cache */
+    }
+  }
 }
 
 function printOnWeb(html: string): void {
@@ -50,10 +58,14 @@ function printOnWeb(html: string): void {
   frame.style.height = '0';
   frame.style.border = '0';
   frame.srcdoc = html;
+  const cleanup = () => frame.remove();
   frame.onload = () => {
-    frame.contentWindow?.focus();
-    frame.contentWindow?.print();
-    setTimeout(() => frame.remove(), 1000);
+    const win = frame.contentWindow;
+    win?.addEventListener('afterprint', cleanup, { once: true });
+    win?.focus();
+    win?.print();
+    const timer = setTimeout(cleanup, 60_000);
+    (timer as unknown as { unref?: () => void })?.unref?.();
   };
   document.body.appendChild(frame);
 }

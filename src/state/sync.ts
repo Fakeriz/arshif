@@ -51,9 +51,14 @@ export async function syncAction(action: Action, state: AppState, userId: string
       await api.updateTransaction(rated);
       return [rated];
     }
-    case 'tx/delete':
+    case 'tx/delete': {
+      const removed = state.transactions.find((t) => t.id === action.id);
       await api.deleteTransaction(action.id);
+      if (removed?.receiptPath && !state.transactions.some((t) => t.id !== action.id && t.receiptPath === removed.receiptPath)) {
+        await api.removeReceipt(removed.receiptPath).catch(() => undefined);
+      }
       return [];
+    }
     case 'notif/read':
       await api.markNotificationsRead([action.id]);
       return [];

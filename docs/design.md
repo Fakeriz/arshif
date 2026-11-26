@@ -45,9 +45,9 @@ Palet **batu & kertas** (revisi 2026-11-20, mengikuti bahasa visual Talmo Studio
 
 | Token | Gelap | Terang | Aturan |
 |---|---|---|---|
-| `positive` | `#7FC79B` | `#2E6B46` | Pemasukan, kenaikan, target tercapai |
+| `positive` | `#7FC79B` | `#265C3B` | Pemasukan, kenaikan, target tercapai |
 | `negative` | `#F08A80` | `#A8322B` | Pengeluaran berlebih, over budget, error |
-| `warning` | `#E0B05C` | `#8A5A00` | Status "Pending Setup", jatuh tempo dekat |
+| `warning` | `#E0B05C` | `#7A4E00` | Status "Pending Setup", jatuh tempo dekat |
 | `info` | `#9DB8DE` | `#3D5A80` | Tautan informatif, tips |
 
 Hijau dan merah tanah yang kalem, bukan warna lampu lalu lintas. Setiap token punya pasangan `*Soft` (tinta 10–14%) untuk latar badge status. Badge status selalu memakai **titik berwarna + teks netral** (contoh: ● Pending Setup), bukan teks berwarna penuh.

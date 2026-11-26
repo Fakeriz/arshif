@@ -42,7 +42,7 @@ async function localPremiumUntil(db: SupabaseClient, userId: string): Promise<nu
 
 const premiumUntil = (db: SupabaseClient, userId: string) => (revenueCatReady() ? rc.premiumUntil(userId) : localPremiumUntil(db, userId));
 const grantPremium = (userId: string, untilMs: number) => (revenueCatReady() ? rc.grantPremium(userId, untilMs) : Promise.resolve());
-const revokeGrants = (userId: string) => (revenueCatReady() ? rc.revokeGrants(userId) : Promise.resolve());
+export const revokeGrants = (userId: string) => (revenueCatReady() ? rc.revokeGrants(userId) : Promise.resolve());
 
 /**
  * Cermin paket di profil = entitlement aktif di RevenueCat. Dipanggil setelah grant/revoke, dari webhook
@@ -126,8 +126,17 @@ export async function grantOrder(db: SupabaseClient, order: OrderRow): Promise<s
     const target = (reserved as { granted_until: string }[] | null)?.[0]?.granted_until;
     if (error || !target) throw new Error(`reserve_grant_${error?.code ?? 'empty'}`);
     await grantPremium(userId, Date.parse(target));
-    const { error: doneError } = await db.from('orders').update({ grant_error: null, updated_at: new Date().toISOString() }).eq('id', order.id);
+    const { error: doneError } = await db.from('orders').update({ grant_error: null, updated_at: new Date().toISOString() }).eq('id', order.id).eq('status', 'paid');
     if (doneError) throw new Error(`order_update_${doneError.code}`);
+
+    // Re-check status in case a concurrent refund occurred while grantPremium was in flight.
+    const { data: latest } = await db.from('orders').select('status').eq('id', order.id).maybeSingle<{ status?: OrderStatus }>();
+    if (latest?.status === 'refunded') {
+      await revokeGrants(userId);
+      await syncPlan(db, userId);
+      return null;
+    }
+
     const { premiumUntil: until } = await syncPlan(db, userId);
     await db.from('notifications').insert({
       user_id: userId,
@@ -140,7 +149,7 @@ export async function grantOrder(db: SupabaseClient, order: OrderRow): Promise<s
     return until ?? target;
   } catch (e) {
     const message = (e instanceof Error ? e.message : String(e)).slice(0, 200);
-    await db.from('orders').update({ grant_error: message, updated_at: new Date().toISOString() }).eq('id', order.id);
+    await db.from('orders').update({ grant_error: message, updated_at: new Date().toISOString() }).eq('id', order.id).eq('status', 'paid');
     console.error('grant_failed', order.id, message);
     return null;
   }
@@ -154,14 +163,28 @@ export async function grantOrder(db: SupabaseClient, order: OrderRow): Promise<s
  */
 export async function refundOrder(db: SupabaseClient, orderId: string): Promise<void> {
   await transitionOrder(db, orderId, 'refunded');
-  const { data: order, error } = await db.from('orders').select('user_id, status').eq('id', orderId).maybeSingle();
+  const { data: order, error } = await db.from('orders').select('user_id, status').eq('id', orderId).maybeSingle<{ user_id: string | null; status: OrderStatus }>();
   if (error) throw new Error(`order_read_${error.code}`);
+  if (!order) return;
+  if (order.status !== 'refunded') throw new Error(`order_not_refunded_${order.status}`);
   // Akun sudah dihapus: status refund tetap tercatat, tidak ada grant yang perlu dicabut.
-  if (!order || order.status !== 'refunded' || !order.user_id) return;
+  if (!order.user_id) return;
   const { data: end, error: shiftError } = await db.rpc('refund_shift', { p_order: orderId });
   if (shiftError) throw new Error(`refund_shift_${shiftError.code}`);
   await revokeGrants(order.user_id);
-  if (end) await grantPremium(order.user_id, Date.parse(end as string));
+  if (end) {
+    try {
+      await grantPremium(order.user_id, Date.parse(end as string));
+    } catch (e) {
+      await db
+        .from('orders')
+        .update({ grant_error: 'refund_regrant_pending', updated_at: new Date().toISOString() })
+        .eq('user_id', order.user_id)
+        .eq('status', 'paid')
+        .gt('granted_until', new Date().toISOString());
+      throw e;
+    }
+  }
   await syncPlan(db, order.user_id);
 }
 

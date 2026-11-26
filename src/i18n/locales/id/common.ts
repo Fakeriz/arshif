@@ -52,7 +52,11 @@ const common = {
     stepsDone: 'Selesai',
     valid: 'Valid',
     more: '{n} lainnya',
+    play: 'Putar',
+    pause: 'Jeda',
     timeLeft: 'Sisa waktu {time}',
+    uploaded: 'Terunggah',
+    uploading: 'Mengunggah {pct}',
   },
   fin: {
     pct: '{n}%',
@@ -63,6 +67,7 @@ const common = {
     vsLastMonth: 'vs bulan lalu',
     vsLastWeek: 'vs minggu lalu',
     sparkline: 'Tren {count} periode, dari {from} ke {to}',
+    sparkline_one: 'Tren {count} periode, dari {from} ke {to}',
     goal: '{label}, {pct} tercapai',
     goalDone: 'Tercapai',
   },
@@ -72,7 +77,9 @@ const common = {
     needsData: 'Butuh data 1 bulan',
     outOf: 'dari 100 · {band}',
     up: 'Naik {n} poin dari bulan lalu',
+    up_one: 'Naik {n} poin dari bulan lalu',
     down: 'Turun {n} poin dari bulan lalu',
+    down_one: 'Turun {n} poin dari bulan lalu',
   },
 };
 

@@ -60,28 +60,33 @@ const without = <T extends { id: string }>(list: T[], id: string): T[] => list.f
  * jadi saldo akun dan anggaran ikut berubah.
  */
 export function PlanningProvider({ children, preset }: { children: ReactNode; preset?: api.PlanningData }) {
-  const { state: app, userId, commitTx, refreshUsage } = useStore();
+  const { state: app, userId, dispatch: appDispatch, commitTx, refreshUsage } = useStore();
   const [state, setState] = useState<PlanningState>(() => (preset ? { ...preset, status: 'ready' } : EMPTY));
   const tzSent = useRef<string | null>(null);
+  const reloadSeq = useRef(0);
+  const prevUserRef = useRef<string | null>(userId);
 
   const reload = useCallback(async () => {
     if (!userId) return;
+    const seq = ++reloadSeq.current;
     setState((s) => ({ ...s, status: s.status === 'ready' ? 'ready' : 'loading' }));
     try {
       const data = await api.loadPlanning();
-      setState({ ...data, status: 'ready' });
+      if (seq === reloadSeq.current) setState({ ...data, status: 'ready' });
     } catch {
-      setState((s) => ({ ...s, status: s.status === 'ready' ? 'ready' : 'error' }));
+      if (seq === reloadSeq.current) setState((s) => ({ ...s, status: s.status === 'ready' ? 'ready' : 'error' }));
     }
   }, [userId]);
 
   useEffect(() => {
     if (preset) return;
-    if (!userId) {
+    if (prevUserRef.current !== userId) {
+      prevUserRef.current = userId;
+      reloadSeq.current += 1;
+      tzSent.current = null;
       setState(EMPTY);
-      return;
     }
-    if (app.status === 'ready' && app.onboarded) void reload();
+    if (userId && app.status === 'ready' && app.onboarded) void reload();
   }, [userId, app.status, app.onboarded, reload, preset]);
 
   // Zona waktu perangkat untuk pengingat jam 07.00 lokal (server mengabaikan nilai yang tidak dikenal).
@@ -95,12 +100,19 @@ export function PlanningProvider({ children, preset }: { children: ReactNode; pr
 
   const tx = useCallback(
     async (p: PayInput, fields: Pick<Transaction, 'type' | 'merchant' | 'categoryKey' | 'currency'>): Promise<Transaction> => {
-      // Transaksi sudah tersimpan di percobaan sebelumnya (catatan keduanya yang gagal): jangan buat lagi.
+      // Transaksi sudah tersimpan di percobaan sebelumnya: perbarui bila detail berubah agar tidak selisih dengan pembayaran.
       const existing = app.transactions.find((t) => t.id === p.id);
-      if (existing) return existing;
+      if (existing) {
+        if (existing.amount !== p.amount || existing.accountId !== p.accountId || existing.date !== p.date || existing.currency !== fields.currency) {
+          const updated: Transaction = { ...existing, ...fields, accountId: p.accountId, date: p.date, amount: p.amount, note: p.note };
+          appDispatch({ type: 'tx/update', tx: updated });
+          return updated;
+        }
+        return existing;
+      }
       return commitTx({ id: p.id, ...fields, accountId: p.accountId, date: p.date, time: localHm(), amount: p.amount, note: p.note, source: 'manual' });
     },
-    [commitTx, app.transactions],
+    [commitTx, appDispatch, app.transactions],
   );
 
   const value = useMemo<PlanningValue>(() => {
@@ -242,4 +254,8 @@ export function usePlanning(): PlanningValue {
   const ctx = useContext(PlanningContext);
   if (!ctx) throw new Error('usePlanning harus dipakai di dalam <PlanningProvider>');
   return ctx;
+}
+
+export function usePlanningOptional(): PlanningValue | null {
+  return useContext(PlanningContext);
 }

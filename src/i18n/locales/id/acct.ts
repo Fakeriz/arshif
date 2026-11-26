@@ -30,6 +30,7 @@ const acct = {
     groupNote: 'Dihitung dari total terpakai {count} kartu di grup ini dibagi limit gabungan.',
     ownLimit: 'Limit kartu ini sendiri: {amount}. Selama di grup, yang dipakai limit gabungan.',
     skipped: '{count} kartu tidak ikut dihitung karena kursnya belum ada.',
+    skipped_one: '{count} kartu tidak ikut dihitung karena kursnya belum ada.',
     cardShort: '{pct}% limit',
     cardGroupShort: '{pct}% limit {name}',
   },
@@ -66,6 +67,7 @@ const acct = {
     joinSub: 'Untuk kartu dari satu bank yang berbagi limit',
     rowSub: 'Kartu dari satu bank yang berbagi limit',
     rowCount: '{count} grup',
+    rowCount_one: '{count} grup',
   },
   fee: {
     title: 'Iuran tahunan',

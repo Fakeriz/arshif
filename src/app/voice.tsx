@@ -1,7 +1,7 @@
 import { RecordingPresets, requestRecordingPermissionsAsync, setAudioModeAsync, useAudioRecorder, useAudioRecorderState } from 'expo-audio';
 import { Mic, Square } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import { usePaywall } from '@/components/shell/Paywall';
@@ -43,35 +43,57 @@ export default function VoiceScreen() {
   const rec = useAudioRecorderState(recorder, 100);
   const [phase, setPhase] = useState<Phase>({ kind: 'idle' });
   const seconds = Math.min(MAX_SECONDS, Math.floor(rec.durationMillis / 1000));
+  const stoppingRef = useRef(false);
+  const recordingRef = useRef(false);
+
+  useEffect(() => {
+    return () => {
+      if (recordingRef.current) {
+        recordingRef.current = false;
+        void recorder.stop().catch(() => undefined);
+        void setAudioModeAsync({ allowsRecording: false }).catch(() => undefined);
+      }
+    };
+  }, [recorder]);
 
   const start = async () => {
     try {
       const perm = await requestRecordingPermissionsAsync();
       if (!perm.granted) return setPhase({ kind: 'failed', failure: 'permission' });
+      stoppingRef.current = false;
       await setAudioModeAsync({ allowsRecording: true, playsInSilentMode: true });
       await recorder.prepareToRecordAsync();
       recorder.record();
+      recordingRef.current = true;
       haptic('tap');
       setPhase({ kind: 'recording' });
     } catch (e) {
+      recordingRef.current = false;
       setPhase({ kind: 'failed', failure: failureOf(e) });
     }
   };
 
   const stop = async () => {
+    if (stoppingRef.current) return;
+    stoppingRef.current = true;
+    recordingRef.current = false;
     const millis = rec.durationMillis;
     setPhase({ kind: 'processing' });
     try {
       await recorder.stop();
       await setAudioModeAsync({ allowsRecording: false }).catch(() => undefined);
-      if (!recorder.uri || millis < MIN_MILLIS) return setPhase({ kind: 'failed', failure: 'too_short' });
+      if (!recorder.uri || millis < MIN_MILLIS) {
+        stoppingRef.current = false;
+        return setPhase({ kind: 'failed', failure: 'too_short' });
+      }
       const { audio, mimeType } = await readRecording(recorder.uri);
       const accounts = state.accounts.map((a) => ({ id: a.id, name: a.name, bank: a.bank, currency: a.currency }));
       const result = await invokeFn(FUNCTIONS.voice, { audio, mimeType, lang, today: todayYmd(), timezone: localTimezone(), defaultCurrency: state.mainCurrency, accounts, categories: aiCategories(state.categories) }, VoiceResult);
       refreshUsage();
-      putHandoff('voice', { result });
+      putHandoff('voice', { result, audioUri: recorder.uri, durationSec: Math.max(1, Math.round(millis / 1000)) });
       router.replace('/voice-review');
     } catch (e) {
+      stoppingRef.current = false;
       refreshUsage();
       const failure = failureOf(e);
       if (failure === 'quota') {

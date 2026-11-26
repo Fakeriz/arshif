@@ -35,9 +35,29 @@ const cols = (i: InvoiceInput) => ({
   discount: i.discount, tax_bp: i.taxBp, notes: i.notes ?? null,
 });
 
+const PAGE = 500;
+
 export async function loadInvoices(): Promise<Invoice[]> {
-  const rows = must(await supabase.from('invoices').select('*').order('issue_date', { ascending: false }).order('seq', { ascending: false }).limit(500).returns<InvoiceRow[]>());
-  return rows.map(toInvoice);
+  const out: Invoice[] = [];
+  const seen = new Set<string>();
+  for (let from = 0; ; from += PAGE) {
+    const rows = must(
+      await supabase
+        .from('invoices')
+        .select('*')
+        .order('issue_date', { ascending: false })
+        .order('seq', { ascending: false })
+        .range(from, from + PAGE - 1)
+        .returns<InvoiceRow[]>(),
+    );
+    for (const r of rows) {
+      if (!seen.has(r.id)) {
+        seen.add(r.id);
+        out.push(toInvoice(r));
+      }
+    }
+    if (rows.length < PAGE) return out;
+  }
 }
 
 export async function insertInvoice(id: string, kind: InvoiceKind, i: InvoiceInput): Promise<Invoice> {

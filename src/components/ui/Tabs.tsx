@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue } from 'react-native-reanimated';
 
@@ -38,10 +38,17 @@ export function Tabs<K extends string>({
   const pad = segmented ? layout.segPad : 0;
   const segment = items.length > 0 ? width / items.length : 0;
   const x = useSharedValue(0);
+  const laidOut = useRef(false);
 
   useEffect(() => {
+    if (width <= 0) return;
+    if (!laidOut.current) {
+      laidOut.current = true;
+      x.value = index * segment;
+      return;
+    }
     x.value = spring(index * segment);
-  }, [index, segment, spring, x]);
+  }, [width, index, segment, spring, x]);
 
   const indicator = useAnimatedStyle(() => ({ transform: [{ translateX: x.value }] }));
   const ink = segmented && tone === 'ink';
@@ -78,6 +85,7 @@ export function Tabs<K extends string>({
           <PressableScale
             key={item.key}
             accessibilityRole="tab"
+            accessibilityState={{ selected: active }}
             aria-selected={active}
             accessibilityLabel={item.label}
             onPress={() => onChange(item.key)}

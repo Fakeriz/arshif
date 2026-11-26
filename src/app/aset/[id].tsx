@@ -6,7 +6,7 @@ import { StyleSheet, View } from 'react-native';
 import { Screen } from '@/components/shell/Screen';
 import { HeaderActions } from '@/components/shell/HeaderActions';
 import { ScreenHeader } from '@/components/shell/ScreenHeader';
-import { AppText, Badge, Button, Card, CurrencyText, Dialog, EmptyState, TrendBadge, useToast } from '@/components/ui';
+import { AppText, Badge, Button, Card, CurrencyText, Dialog, EmptyState, Skeleton, TrendBadge, useToast } from '@/components/ui';
 import { AssetForm } from '@/features/assets/AssetForm';
 import { FairPriceCard } from '@/features/assets/FairPriceCard';
 import { PriceAlertCard } from '@/features/assets/PriceAlertCard';
@@ -19,7 +19,8 @@ import { shortDate } from '@/lib/dates';
 import { formatMoney } from '@/lib/money';
 import { useStore } from '@/state/AppStore';
 import { useAssets } from '@/state/assets';
-import { space } from '@/theme/tokens';
+import { InkCard } from '@/theme/ThemeProvider';
+import { radius, space } from '@/theme/tokens';
 import { goBack } from '@/components/shell/goBack';
 
 /** Detail aset (brief §6). Grafik harga = widget embed resmi TradingView (Live Market v2 Fase 3), hanya tampilan. */
@@ -29,10 +30,30 @@ export default function AssetDetail() {
   const { t, lang } = useI18n();
   const { show } = useToast();
   const { state } = useStore();
-  const { assets, prices, removeAsset } = useAssets();
+  const { assets, prices, status, reload, removeAsset } = useAssets();
   const [edit, setEdit] = useState(false);
+  const [editKey, setEditKey] = useState(0);
   const [confirm, setConfirm] = useState(false);
   const asset = assets.find((a) => a.id === id);
+
+  if (!asset && (status === 'idle' || status === 'loading')) {
+    return (
+      <Screen>
+        <ScreenHeader title={t('assets.detail.title')} />
+        <Skeleton height={140} radius={radius.lg} />
+        <Skeleton height={220} radius={radius.lg} />
+      </Screen>
+    );
+  }
+
+  if (!asset && status === 'error') {
+    return (
+      <Screen>
+        <ScreenHeader title={t('assets.detail.title')} />
+        <EmptyState kind="error" title={t('assets.loadErrorTitle')} message={t('assets.loadErrorMessage')} actionLabel={t('common.retry')} onAction={() => void reload()} />
+      </Screen>
+    );
+  }
 
   if (!asset) {
     return (
@@ -42,6 +63,11 @@ export default function AssetDetail() {
       </Screen>
     );
   }
+
+  const openEdit = () => {
+    setEditKey((k) => k + 1);
+    setEdit(true);
+  };
 
   const now = Date.now();
   const v = valueAsset(asset, prices, now);
@@ -70,37 +96,35 @@ export default function AssetDetail() {
         right={
           <HeaderActions
             actions={[
-              { key: 'edit', label: t('plan.common.edit'), icon: Pencil, onPress: () => setEdit(true) },
+              { key: 'edit', label: t('plan.common.edit'), icon: Pencil, onPress: openEdit },
               { key: 'delete', label: t('plan.common.delete'), icon: Trash2, danger: true, onPress: () => setConfirm(true) },
             ]}
           />
         }
       />
-      <Card>
-        <View style={styles.hero}>
-          <AppText variant="caption" tone="secondary">
-            {t(`assets.type.${asset.type}`)}
-            {asset.symbol && asset.type !== 'gold' ? ` · ${asset.symbol}` : ''}
-          </AppText>
-          {v.value === null ? (
-            <AppText variant="h2">{t('assets.priceNone')}</AppText>
-          ) : (
-            <CurrencyText amount={v.value} currency={v.currency} kind="balance" variant="amountHero" hidden={state.hideBalance} />
-          )}
-          {gain?.pct != null && !state.hideBalance && <TrendBadge value={gain.pct} suffix={t('assets.detail.vsBuy')} />}
-          {v.stale && <Badge label={t('assets.lastPrice')} icon={History} tone="warning" />}
-          <AppText variant="caption" tone="muted" align="center">
-            {priceLabel(asset, v, t, lang, now)}
-          </AppText>
-        </View>
-      </Card>
+      <InkCard style={[styles.hero, styles.heroCard]}>
+        <AppText variant="caption" tone="secondary">
+          {t(`assets.type.${asset.type}`)}
+          {asset.symbol && asset.type !== 'gold' ? ` · ${asset.symbol}` : ''}
+        </AppText>
+        {v.value === null ? (
+          <AppText variant="h2">{t('assets.priceNone')}</AppText>
+        ) : (
+          <CurrencyText amount={v.value} currency={v.currency} kind="balance" variant="amountHero" hidden={state.hideBalance} />
+        )}
+        {gain?.pct != null && !state.hideBalance && <TrendBadge value={gain.pct} suffix={t('assets.detail.vsBuy')} />}
+        {v.stale && <Badge label={t('assets.lastPrice')} icon={History} tone="warning" />}
+        <AppText variant="caption" tone="muted" align="center">
+          {priceLabel(asset, v, t, lang, now)}
+        </AppText>
+      </InkCard>
       {liveTrouble && (
         <Card padding="md">
           <View style={styles.trouble}>
             <AppText variant="caption" tone="secondary">
               {v.stale ? t('assets.detail.staleNote') : t('assets.detail.noLiveNote')}
             </AppText>
-            <Button label={t('assets.detail.setManual')} variant="secondary" size="md" fullWidth onPress={() => setEdit(true)} />
+            <Button label={t('assets.detail.setManual')} variant="secondary" size="md" fullWidth onPress={openEdit} />
           </View>
         </Card>
       )}
@@ -124,7 +148,7 @@ export default function AssetDetail() {
           ))}
         </Card>
       )}
-      <AssetForm key={edit ? `edit-${asset.id}` : 'closed'} visible={edit} onClose={() => setEdit(false)} asset={asset} />
+      <AssetForm key={`edit-${asset.id}-${editKey}`} visible={edit} onClose={() => setEdit(false)} asset={asset} />
       <Dialog
         visible={confirm}
         tone="danger"
@@ -147,6 +171,7 @@ export default function AssetDetail() {
 }
 
 const styles = StyleSheet.create({
+  heroCard: { borderRadius: radius.lg, paddingVertical: 18, paddingHorizontal: space.xl },
   hero: { alignItems: 'center', gap: space.xs },
   trouble: { gap: space.md },
   chart: { gap: space.md },

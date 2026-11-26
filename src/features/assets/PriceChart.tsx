@@ -1,6 +1,6 @@
 import * as WebBrowser from 'expo-web-browser';
 import { ExternalLink } from 'lucide-react-native';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Linking, StyleSheet, View } from 'react-native';
 import type { WebViewNavigation } from 'react-native-webview';
 
@@ -22,6 +22,9 @@ export function PriceChart({ symbol, label }: { symbol: string; label: string })
   const { colors, scheme } = useTheme();
   const { t, lang } = useI18n();
   const [state, setState] = useState<'loading' | 'ready' | 'error'>('loading');
+  useEffect(() => {
+    setState('loading');
+  }, [symbol]);
   const WebView = loadWebView();
 
   if (!WebView) {

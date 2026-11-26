@@ -13,6 +13,7 @@ describe.each(schemes)('kontras tema %s', (scheme) => {
     surface: p.surface,
     surfaceAlt: p.surfaceAlt,
     surfaceRaised: p.surfaceRaised,
+    surfaceSunken: p.surfaceSunken,
     fillOnSurface: composite(p.fill, p.surface),
   };
   const textTokens = {
@@ -64,6 +65,29 @@ describe.each(schemes)('kontras tema %s', (scheme) => {
     const ink = inkCard[scheme];
     const soft = composite(ink[`${key}Soft`], ink.bg);
     expect(contrastRatio(ink[key], soft)).toBeGreaterThanOrEqual(AA_TEXT);
+  });
+
+  it('kartu tinta terbalik: seluruh token palet turunan >= 4.5:1', () => {
+    const ink = inkCard[scheme];
+    const innerScheme = scheme === 'dark' ? 'light' : 'dark';
+    const inner = {
+      ...buildPalette(innerScheme),
+      bg: ink.bg,
+      text: ink.text,
+      textSecondary: ink.textMuted,
+      textMuted: ink.textMuted,
+      accentText: ink.text,
+      positive: ink.positive,
+      positiveSoft: ink.positiveSoft,
+      negative: ink.negative,
+      negativeSoft: ink.negativeSoft,
+      track: ink.track,
+      focus: ink.text,
+    };
+    for (const key of ['text', 'textSecondary', 'textMuted', 'accentText', 'positive', 'negative', 'warning', 'info'] as const) {
+      expect(contrastRatio(inner[key], inner.bg)).toBeGreaterThanOrEqual(AA_TEXT);
+    }
+    expect(contrastRatio(inner.onAccent, inner.accent)).toBeGreaterThanOrEqual(AA_TEXT);
   });
 
   it.each(Object.entries(categoryHues[scheme]))('ikon kategori %s >= 3:1 di kaca', (_, color) => {

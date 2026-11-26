@@ -51,11 +51,14 @@ function ScanInner() {
   const { show } = useToast();
   const [pick] = useState(pendingPick);
   const [phase, setPhase] = useState<Phase>({ kind: 'starting' });
+  const [fileName, setFileName] = useState('receipt.jpg');
 
   /** Unggah + baca satu struk lewat pipeline OCR yang sama (Gemini di server). Foto dikompres dulu; PDF apa adanya. */
   const scanOne = async (file: PickedReceipt, n: number, total: number) => {
     let receiptPath: string | null = null;
     try {
+      const cleanName = file.uri.split(/[\\/]/).pop()?.split('?')[0] || (file.pdf ? 'receipt.pdf' : 'receipt.jpg');
+      setFileName(cleanName);
       setPhase({ kind: 'uploading', n, total });
       const uri = file.pdf ? file.uri : await compressReceipt(file.uri, file.width);
       const [ext, contentType] = file.pdf ? ['pdf', 'application/pdf'] : ['jpg', 'image/jpeg'];
@@ -127,6 +130,10 @@ function ScanInner() {
       <ProcessingView
         title={`${phase.kind === 'uploading' ? t('capture.scan.uploading') : t('capture.scan.processingTitle')}${phase.total > 1 ? ` (${phase.n}/${phase.total})` : ''}`}
         message={t('capture.scan.processingMessage')}
+        upload={{
+          fileName,
+          progress: phase.kind === 'uploading' ? Math.max(0.15, (phase.n - 0.5) / phase.total) : phase.n / phase.total,
+        }}
         steps={[t('capture.steps.uploadPhoto'), t('capture.steps.readReceipt'), t('capture.steps.review')]}
         done={phase.kind === 'uploading' ? 0 : 1}
       />

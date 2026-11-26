@@ -37,9 +37,15 @@ export function serve(handler: (req: Request) => Promise<Response>): void {
   });
 }
 
-export async function readJson(req: Request): Promise<unknown> {
+const DEFAULT_MAX_JSON_BYTES = 4 * 1024 * 1024;
+
+export async function readJson(req: Request, maxBytes = DEFAULT_MAX_JSON_BYTES): Promise<unknown> {
+  const len = Number(req.headers.get('content-length'));
+  if (Number.isFinite(len) && len > maxBytes) throw new HttpError('too_large', 413);
+  const text = await req.text();
+  if (new TextEncoder().encode(text).length > maxBytes) throw new HttpError('too_large', 413);
   try {
-    return await req.json();
+    return JSON.parse(text);
   } catch {
     throw new HttpError('bad_request', 400, { message: 'invalid_json' });
   }

@@ -11,7 +11,7 @@ import { addRateHistory, historyCodes, setRateHistory, setUsdRates, setUserRates
 import { addDays } from '@/lib/dates';
 import { supabase } from '@/lib/supabase';
 import { useTheme } from '@/theme/ThemeProvider';
-import { setUserCategories } from '@/constants/categories';
+import { EMPTY_CATEGORY_SETTINGS, setUserCategories } from '@/constants/categories';
 
 import { changedSlices, initialState, keepReimbursement, mergePending, reducer, undoActions, type Action, type AppState } from './reducer';
 import { useSession } from './session';
@@ -62,6 +62,8 @@ export function AppStoreProvider({ children, preset }: { children: ReactNode; pr
   // Muat ulang yang sedang berjalan: hasil yang usang (ada muat ulang lebih baru) dibuang, dan perubahan
   // yang selesai disimpan SELAMA muat ulang (tidak ada di potret server) tetap dipertahankan.
   const reloadSeq = useRef(0);
+  const sessionSeq = useRef(0);
+  const prevUserRef = useRef<string | null>(null);
   const reloading = useRef(false);
   const settledDuringReload = useRef(new Map<string, Transaction>());
   const deletedDuringReload = useRef(new Set<string>());
@@ -102,13 +104,16 @@ export function AppStoreProvider({ children, preset }: { children: ReactNode; pr
         loadLatestRates({ server: api.loadLatestRates }),
         api.loadBudgets(), api.loadLimitGroups(), api.loadUserRates(),
       ]);
+      if (seq !== reloadSeq.current) return;
       setUsdRates(rates.table, rates.date);
       setUserRates(userRates);
       api.touchLastSeen().catch(() => undefined);
       // Riwayat kurs harian untuk semua kode yang dipakai, sejak transaksi tertua (FR-FX-4).
       const codes = usedCodes(accounts, transactions, profile.mainCurrency, limitGroups.map((g) => g.currency));
       const oldest = transactions.reduce<string | null>((min, t) => (min === null || t.date < min ? t.date : min), null);
-      setRateHistory(oldest ? await api.loadRateHistory(codes, addDays(oldest, -7)) : []);
+      const rateHistory = oldest ? await api.loadRateHistory(codes, addDays(oldest, -7)) : [];
+      if (seq !== reloadSeq.current) return;
+      setRateHistory(rateHistory);
       historyTried.current = new Set(codes);
       const cur = currentPrefs.current;
       if (!profile.onboarded) {
@@ -124,7 +129,6 @@ export function AppStoreProvider({ children, preset }: { children: ReactNode; pr
         applyPrefs.current.setLang(profile.lang);
         applyPrefs.current.setMode(profile.themeMode);
       }
-      if (seq !== reloadSeq.current) return;
       const removed = new Set([...deleting.current, ...deletedDuringReload.current]);
       const kept = [...pending.current.values(), ...settledDuringReload.current.values()];
       const loaded = {
@@ -149,14 +153,30 @@ export function AppStoreProvider({ children, preset }: { children: ReactNode; pr
     }
   }, [userId, email]);
 
-  // Login → muat; logout → kosongkan.
+  // Login → muat; logout / ganti akun → bersihkan seluruh state + ref + singleton agar tidak bocor lintas akun.
   useEffect(() => {
     if (preset) return;
-    if (userId) void reload();
-    else {
+    if (prevUserRef.current !== userId) {
+      prevUserRef.current = userId;
+      sessionSeq.current += 1;
+      reloadSeq.current += 1;
+      reloading.current = false;
+      pending.current.clear();
+      deleting.current.clear();
+      settledDuringReload.current.clear();
+      deletedDuringReload.current.clear();
+      dirtyDuringReload.current.clear();
+      chains.current.clear();
+      historyTried.current.clear();
       synced.current = null;
+      applying.current = false;
+      setRefreshing(false);
+      setUserRates([]);
+      setRateHistory([]);
+      setUserCategories(EMPTY_CATEGORY_SETTINGS);
       localDispatch({ type: 'reset' });
     }
+    if (userId) void reload();
   }, [userId, reload, preset]);
 
   // Bahasa dan tema disimpan per pengguna (FR-SET-1). Hanya perubahan dari pengguna
@@ -259,13 +279,16 @@ export function AppStoreProvider({ children, preset }: { children: ReactNode; pr
       if (deleted) deleting.current.add(deleted);
       if (reloading.current && !saving.length && !deleted) changedSlices(before, action).forEach((k) => dirtyDuringReload.current.add(k));
       const ids = deleted ? [deleted] : saving.map((x) => x.id);
+      const opSession = sessionSeq.current;
       inOrder(ids, () => syncAction(action, before, userId))
         .then((rated) => {
+          if (opSession !== sessionSeq.current) return;
           settle(saving);
           if (deleted) settleDelete(deleted);
           rated.forEach((tx) => localDispatch({ type: 'tx/rates', tx }));
         })
         .catch(() => {
+          if (opSession !== sessionSeq.current) return;
           settle(saving);
           if (deleted) settleDelete(deleted);
           // Batalkan dulu di layar (muat ulang juga gagal saat offline), lalu ambil versi server.
@@ -279,7 +302,8 @@ export function AppStoreProvider({ children, preset }: { children: ReactNode; pr
 
   const refreshUsage = useCallback(() => {
     if (!userId) return;
-    api.loadUsage().then((usage) => localDispatch({ type: 'usage/set', usage })).catch(() => undefined);
+    const opSession = sessionSeq.current;
+    api.loadUsage().then((usage) => opSession === sessionSeq.current && localDispatch({ type: 'usage/set', usage })).catch(() => undefined);
   }, [userId]);
 
   const commitTx = useCallback(
@@ -287,15 +311,20 @@ export function AppStoreProvider({ children, preset }: { children: ReactNode; pr
       const before = stateRef.current;
       localDispatch({ type: 'tx/add', tx });
       if (!userId) return tx;
+      const opSession = sessionSeq.current;
       track([tx]);
       try {
         const [rated] = await inOrder([tx.id], () => syncAction({ type: 'tx/add', tx }, before, userId));
-        settle([tx]);
-        localDispatch({ type: 'tx/rates', tx: rated });
+        if (opSession === sessionSeq.current) {
+          settle([tx]);
+          localDispatch({ type: 'tx/rates', tx: rated });
+        }
         return rated;
       } catch (e) {
-        settle([tx]);
-        localDispatch({ type: 'tx/delete', id: tx.id });
+        if (opSession === sessionSeq.current) {
+          settle([tx]);
+          localDispatch({ type: 'tx/delete', id: tx.id });
+        }
         throw e;
       }
     },

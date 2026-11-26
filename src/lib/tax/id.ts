@@ -89,7 +89,9 @@ export type IdInput = PtkpStatus & {
 
 /** Estimasi PPh 21 pegawai tetap, penghasilan sama tiap bulan selama 12 bulan. */
 export function estimateId(input: IdInput): TaxResult {
-  const gross = Math.max(0, Math.trunc(input.monthlyGross));
+  const gross = Number.isFinite(input.monthlyGross)
+    ? Math.max(0, Math.min(Math.trunc(input.monthlyGross), 500_000_000_000_000))
+    : 0;
   const pension = Math.max(0, Math.trunc(input.monthlyPension));
   const cat = terCategory(input);
   const bp = terRate(cat, gross);
@@ -131,7 +133,8 @@ export function estimateId(input: IdInput): TaxResult {
 
 /** Laporan tahunan: pemasukan dianggap penghasilan neto, dikurangi PTKP, tarif Pasal 17. */
 export function annualId(income: number, s: PtkpStatus): { taxable: number; tax: number; allowance: number } {
+  const safeIncome = Number.isFinite(income) ? Math.max(0, Math.min(Math.trunc(income), Number.MAX_SAFE_INTEGER)) : 0;
   const allowance = ptkp(s);
-  const taxable = Math.max(0, Math.floor((income - allowance) / 1000) * 1000);
+  const taxable = Math.max(0, Math.floor((safeIncome - allowance) / 1000) * 1000);
   return { taxable, tax: progressive(taxable, PASAL17), allowance };
 }

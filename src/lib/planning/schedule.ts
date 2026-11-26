@@ -24,16 +24,47 @@ export function prevDue(date: string, freq: Frequency, anchor: number): string {
 
 /** Semua tanggal jatuh tempo (masa lalu dan depan) di bulan y-m, dari satu tanggal acuan. */
 export function occurrencesInMonth(date: string, freq: Frequency, anchor: number, y: number, m: number): string[] {
+  if (!Number.isFinite(y) || !Number.isFinite(m) || m < 1 || m > 12) return [];
   const start = ymd(y, m, 1);
   const end = ymd(y, m, daysInMonth(y, m));
   let d = date;
+  const stepMonths = (MONTHS as Record<string, number | undefined>)[freq];
+  if (stepMonths && stepMonths > 0) {
+    const dy = Number(date.slice(0, 4));
+    const dm = Number(date.slice(5, 7));
+    if (Number.isFinite(dy) && Number.isFinite(dm)) {
+      const steps = Math.trunc(((y - dy) * 12 + (m - dm)) / stepMonths);
+      if (steps !== 0) d = shiftMonths(date, steps * stepMonths, anchor);
+    }
+  } else {
+    const stepDays = diffDays(nextDue(date, freq, anchor), date);
+    if (stepDays > 0) {
+      const steps = Math.trunc(diffDays(start, date) / stepDays);
+      if (steps !== 0) {
+        const baseMs = Date.parse(`${date}T00:00:00Z`);
+        if (Number.isFinite(baseMs)) {
+          d = new Date(baseMs + steps * stepDays * 86_400_000).toISOString().slice(0, 10);
+        }
+      }
+    }
+  }
   let guard = 0;
-  while (diffDays(d, start) > 0 && guard++ < 600) d = prevDue(d, freq, anchor);
-  while (diffDays(d, start) < 0 && guard++ < 1200) d = nextDue(d, freq, anchor);
+  while (diffDays(d, start) > 0 && guard++ < 600) {
+    const prev = prevDue(d, freq, anchor);
+    if (diffDays(d, prev) <= 0) break;
+    d = prev;
+  }
+  while (diffDays(d, start) < 0 && guard++ < 1200) {
+    const nxt = nextDue(d, freq, anchor);
+    if (diffDays(nxt, d) <= 0) break;
+    d = nxt;
+  }
   const out: string[] = [];
   while (diffDays(d, end) <= 0 && guard++ < 1300) {
-    out.push(d);
-    d = nextDue(d, freq, anchor);
+    if (diffDays(d, start) >= 0) out.push(d);
+    const nxt = nextDue(d, freq, anchor);
+    if (diffDays(nxt, d) <= 0) break;
+    d = nxt;
   }
   return out;
 }

@@ -40,7 +40,9 @@ export type MyInput = {
 };
 
 export function estimateMy(input: MyInput): TaxResult {
-  const gross = Math.max(0, Math.trunc(input.monthlyGross));
+  const gross = Number.isFinite(input.monthlyGross)
+    ? Math.max(0, Math.min(Math.trunc(input.monthlyGross), 500_000_000_000_000))
+    : 0;
   const children = Math.max(0, Math.min(20, Math.trunc(input.children)));
   const annual = gross * 12;
   const epfYear = input.epf ? applyBp(gross, MY_EPF_BP) * 12 : 0;
@@ -79,7 +81,8 @@ export function estimateMy(input: MyInput): TaxResult {
 
 /** Laporan tahunan: pemasukan dikurangi pelepasan diri, tarif penduduk, rebat bila <= RM35.000. */
 export function annualMy(income: number): { taxable: number; tax: number; allowance: number } {
-  const taxable = Math.max(0, income - MY_RELIEF_SELF);
+  const safeIncome = Number.isFinite(income) ? Math.max(0, Math.min(Math.trunc(income), Number.MAX_SAFE_INTEGER)) : 0;
+  const taxable = Math.max(0, safeIncome - MY_RELIEF_SELF);
   const raw = progressive(taxable, MY_RATES);
   const tax = taxable <= MY_REBATE_LIMIT ? Math.max(0, raw - MY_REBATE) : raw;
   return { taxable, tax, allowance: MY_RELIEF_SELF };

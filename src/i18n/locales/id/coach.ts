@@ -95,6 +95,7 @@ const coach = {
       spentLessMonth: 'Belanja turun {pct}% dari bulan sebelumnya',
       cookedMonth: 'Lebih jarang makan di luar daripada bulan sebelumnya',
       noSpend: '{count} hari tanpa jajan',
+      noSpend_one: '{count} hari tanpa jajan',
       spentLess: 'Belanja turun {pct}% dari minggu lalu',
       saved: 'Menabung {amount}',
       debtPaid: 'Membayar utang {amount}',

@@ -15,12 +15,15 @@ class CaptureStore(context: Context) {
     synchronized(LOCK) {
       val edit = prefs.edit().putBoolean(KEY_ENABLED, enabled).putStringSet(KEY_PACKAGES, packages.toSet())
       if (!enabled) edit.remove(KEY_QUEUE)
-      edit.apply()
+      edit.commit()
     }
   }
 
-  fun accepts(pkg: String): Boolean =
-    prefs.getBoolean(KEY_ENABLED, false) && (prefs.getStringSet(KEY_PACKAGES, emptySet())?.contains(pkg) == true)
+  fun accepts(pkg: String): Boolean {
+    synchronized(LOCK) {
+      return prefs.getBoolean(KEY_ENABLED, false) && (prefs.getStringSet(KEY_PACKAGES, emptySet())?.contains(pkg) == true)
+    }
+  }
 
   /** false = notifikasi yang sama (kunci dan teks) sudah ada di antrean, mis. notifikasi diperbarui. */
   fun append(capture: JSONObject): Boolean {

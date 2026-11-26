@@ -21,7 +21,7 @@ class SmartLogListenerService : NotificationListenerService() {
     if (title.isBlank() && text.isBlank()) return
 
     val capture = JSONObject()
-      .put("key", "${sbn.key}|${sbn.postTime}".take(200))
+      .put("key", "${sbn.key.take(180)}|${sbn.postTime}")
       .put("pkg", sbn.packageName)
       .put("title", title.take(200))
       .put("text", text.take(1000))

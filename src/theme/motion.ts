@@ -1,6 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Haptics from 'expo-haptics';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Platform } from 'react-native';
 import { Easing, useAnimatedStyle, useReducedMotion, useSharedValue, withDelay, withSpring, withTiming } from 'react-native-reanimated';
 
@@ -11,17 +11,20 @@ export const easeOut = Easing.bezier(0.2, 0, 0, 1);
 /** Timing/spring yang otomatis instan saat prefers-reduced-motion aktif. */
 export function useMotion() {
   const reduced = useReducedMotion();
-  return {
-    reduced,
-    timing: (to: number, duration: number = motion.base) => {
-      'worklet';
-      return withTiming(to, { duration: reduced ? 0 : duration, easing: easeOut });
-    },
-    spring: (to: number) => {
-      'worklet';
-      return reduced ? withTiming(to, { duration: 0 }) : withSpring(to, motion.spring);
-    },
-  };
+  return useMemo(
+    () => ({
+      reduced,
+      timing: (to: number, duration: number = motion.base) => {
+        'worklet';
+        return withTiming(to, { duration: reduced ? 0 : duration, easing: easeOut });
+      },
+      spring: (to: number) => {
+        'worklet';
+        return reduced ? withTiming(to, { duration: 0 }) : withSpring(to, motion.spring);
+      },
+    }),
+    [reduced],
+  );
 }
 
 /**
@@ -46,15 +49,25 @@ export function usePresence(visible: boolean, from = 0.5) {
  */
 export function useEnter({ delay = 0, scale = 1, x = 0, y = 0 }: { delay?: number; scale?: number; x?: number; y?: number } = {}) {
   const reduced = useReducedMotion();
+  const safeScale = Number.isFinite(scale) ? Math.max(0.5, Math.min(scale, 1.5)) : 1;
+  const clampedDelay = Number.isFinite(delay) ? Math.max(0, Math.min(delay, 400)) : 0;
   const t = useSharedValue(reduced ? 1 : 0);
   useEffect(() => {
-    if (!reduced) t.value = withDelay(delay, withSpring(1, motion.spring));
-    // Hanya saat mount: nilai awal menentukan animasi masuk.
+    if (reduced) {
+      t.value = 1;
+      return;
+    }
+    t.value = withDelay(clampedDelay, withSpring(1, motion.spring));
+    // Hanya saat mount (kecuali reduced motion berubah aktif): nilai awal menentukan animasi masuk.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [reduced]);
   return useAnimatedStyle(() => ({
     opacity: Math.max(0, Math.min(1, t.value)),
-    transform: [{ translateX: (1 - t.value) * x }, { translateY: (1 - t.value) * y }, { scale: scale + (1 - scale) * t.value }],
+    transform: [
+      { translateX: (1 - t.value) * x },
+      { translateY: (1 - t.value) * y },
+      { scale: safeScale + (1 - safeScale) * t.value },
+    ],
   }));
 }
 

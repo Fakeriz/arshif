@@ -75,9 +75,17 @@ export default function SambutScreen() {
   const [phase, setPhase] = useState<Phase>('idle');
   const [googleBusy, setGoogleBusy] = useState(false);
   const phaseRef = useRef<Phase>('idle');
-  phaseRef.current = phase;
   // Ketuk orb + geser bersamaan tidak boleh membuka tur dua kali.
   const going = useRef(false);
+  const pushTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => {
+    phaseRef.current = phase;
+  }, [phase]);
+  useEffect(() => {
+    return () => {
+      if (pushTimer.current) clearTimeout(pushTimer.current);
+    };
+  }, []);
 
   const colW = Math.min(size.w, layout.maxContentWidth);
   const cx = size.w / 2;
@@ -157,7 +165,8 @@ export default function SambutScreen() {
     const push = () => router.push('/kenali');
     if (reduced) return push();
     exit.value = withTiming(1, { duration: 560, easing: Easing.bezier(0.3, 0, 0.1, 1) });
-    setTimeout(push, 320);
+    if (pushTimer.current) clearTimeout(pushTimer.current);
+    pushTimer.current = setTimeout(push, 320);
   }, [reduced, exit, router]);
 
   const toEmail = useCallback(() => {

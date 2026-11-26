@@ -4,6 +4,7 @@ const home: Messages['home'] = {
   profileA11y: 'Profile and settings',
   notifA11y: 'Notifications',
   notifUnreadA11y: 'Notifications, {count} unread',
+  notifUnreadA11y_one: 'Notifications, {count} unread',
   // Beberapa variasi dipisah "|": dipilih satu per hari (features/home/greeting.ts).
   hello: {
     late: 'Still up?|Hi, {name}|Late night, {name}',

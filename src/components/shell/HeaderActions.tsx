@@ -51,7 +51,10 @@ export function HeaderButton({ label, icon, onPress, danger, disabled, selected,
  */
 export function afterSheetClose(fn: () => void): void {
   if (Platform.OS === 'web') fn();
-  else setTimeout(fn, motion.base + 50);
+  else {
+    const timer = setTimeout(fn, motion.base + 50);
+    (timer as unknown as { unref?: () => void })?.unref?.();
+  }
 }
 
 const MENU_WIDTH = 260;

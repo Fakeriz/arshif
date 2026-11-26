@@ -36,6 +36,7 @@ export function PressableScale({
   hapticOnPress,
   scaleTo = motion.pressScale,
   disabled,
+  accessibilityState,
   onPress,
   onPressIn,
   onPressOut,
@@ -76,6 +77,7 @@ export function PressableScale({
         onBlur?.(e);
       }}
       {...rest}
+      accessibilityState={{ disabled: !!disabled, ...accessibilityState }}
     >
       <Animated.View
         style={[
