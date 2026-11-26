@@ -1,0 +1,50 @@
+{
+  "run_id": "arshif-run-1",
+  "repo": "arshif",
+  "target": "/home/ubuntu/arshif-src/repo",
+  "source_ref": "72818060cbb72c5d9e8fe677a0f44e0ee23a26a2",
+  "worktree_dirty": false,
+  "profile": "standard",
+  "scope_paths": [
+    "."
+  ],
+  "budget": null,
+  "execution_policy": "sandboxed-source-and-local-only",
+  "selected_companions": [
+    "WEB-PROTOCOL-AND-AUTH.md",
+    "DATA-ISOLATION-AND-LIFECYCLE.md",
+    "AI-AND-LLM.md",
+    "CLIENT-SIDE.md",
+    "DESKTOP-MOBILE-AND-LOCAL-IPC.md",
+    "PROTOCOLS-RPC-AND-MESSAGING.md",
+    "RESOURCE-EXHAUSTION-AND-AVAILABILITY.md",
+    "CLOUD-AND-DEPLOYMENT.md",
+    "SUPPLY-CHAIN-AND-RELEASE.md"
+  ],
+  "prior_run_paths": [],
+  "shared_file_owners": {
+    "run-metadata.json": "parent",
+    "architecture.md": "parent",
+    "coverage-ledger.json": "parent",
+    "findings.json": "parent",
+    "REPORT.md": "parent",
+    "FINDINGS-DETAIL.md": "parent",
+    "NEEDS-VALIDATION.md": "parent"
+  },
+  "run_status": "complete",
+  "completed_at": "2026-11-26T07:35:29.244Z",
+  "verdict_counts": {
+    "confirmed": 0,
+    "needs_validation": 25,
+    "rejected": 1
+  },
+  "agents_spent": {
+    "recon": 4,
+    "hunters_wave_1": 9,
+    "hunters_wave_2": 2,
+    "critics": 3,
+    "phase3_verifiers": 26,
+    "phase5_verifiers": 28,
+    "total": 72
+  }
+}
