@@ -35,10 +35,12 @@ const budget: Messages['budget'] = {
     save: 'Save split',
   },
   paceExplain: '{used}% of budget used, {elapsed}% of the period gone. Pace compares the two.',
+  paydayDueLine: 'Bills & subscriptions through {date}: {amount}',
   plan: {
     title: "This period's budget",
     fromIncome: 'Not created yet: using your monthly income',
     saved: '{count} categories have a limit',
+    saved_one: '{count} category has a limit',
     lastAvailable: 'The {date} budget can be copied as is, including category limits.',
     firstTime: 'Create a budget to set the total and category limits for this period.',
     copyLast: 'Copy last period',

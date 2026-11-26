@@ -7,7 +7,7 @@ import { categoryLabel, useI18n } from '@/i18n';
 import { usePaywall } from '@/components/shell/Paywall';
 import { HeaderActions } from '@/components/shell/HeaderActions';
 import { ScreenHeader } from '@/components/shell/ScreenHeader';
-import { AppText, Button, Card, CategoryIcon, CurrencyText, Dialog, EmptyState, Group, Icon, Tooltip, useToast } from '@/components/ui';
+import { AppText, Button, Card, CategoryIcon, CurrencyText, Dialog, EmptyState, Group, Icon, Skeleton, Tooltip, useToast } from '@/components/ui';
 import { PlaceMap } from '@/features/places/PlaceField';
 import { invokeFn } from '@/data/remote/functions';
 import { failureOf } from '@/features/capture/CaptureError';
@@ -17,10 +17,11 @@ import { InfoRow } from './InfoRow';
 import { ReimbursementCard } from './ReimbursementCard';
 import { ReceiptCard, ReceiptDetailsCard } from './ReceiptSections';
 import { dayLong } from '@/lib/dates';
-import { currencyMeta, formatMoney } from '@/lib/money';
+import { txFxBasis } from '@/lib/fxBasis';
+import { formatMoney } from '@/lib/money';
 import { useStore } from '@/state/AppStore';
 import { useTheme } from '@/theme/ThemeProvider';
-import { space } from '@/theme/tokens';
+import { radius, space } from '@/theme/tokens';
 import { aiCategories } from '@/constants/categories';
 
 import { FUNCTIONS, ScanResult } from '../../../supabase/functions/_shared/contracts';
@@ -34,7 +35,7 @@ export function TransactionDetail({ id, embedded, onDeleted }: { id: string; emb
   const { t, lang } = useI18n();
   const { colors } = useTheme();
   const { show } = useToast();
-  const { state, dispatch, refreshUsage } = useStore();
+  const { state, dispatch, refreshUsage, reload } = useStore();
   const paywall = usePaywall();
   const [confirm, setConfirm] = useState(false);
   const [rereading, setRereading] = useState(false);
@@ -57,6 +58,33 @@ export function TransactionDetail({ id, embedded, onDeleted }: { id: string; emb
     }
   };
 
+  if (!tx && (state.status === 'idle' || state.status === 'loading')) {
+    const skel = (
+      <>
+        <Skeleton height={120} radius={radius.lg} />
+        <Skeleton height={180} radius={radius.lg} />
+      </>
+    );
+    if (embedded) return skel;
+    return (
+      <>
+        <ScreenHeader title={t('tx.detail.title')} />
+        {skel}
+      </>
+    );
+  }
+
+  if (!tx && state.status === 'error') {
+    const err = <EmptyState kind="error" title={t('tx.errorTitle')} message={t('tx.errorMessage')} actionLabel={t('common.retry')} onAction={reload} />;
+    if (embedded) return err;
+    return (
+      <>
+        <ScreenHeader title={t('tx.detail.title')} />
+        {err}
+      </>
+    );
+  }
+
   if (!tx) {
     const empty = <EmptyState title={t('tx.detail.notFoundTitle')} message={t('tx.detail.notFoundMessage')} actionLabel={t('tx.detail.toList')} onAction={() => router.replace('/transaksi')} />;
     if (embedded) return empty;
@@ -70,11 +98,8 @@ export function TransactionDetail({ id, embedded, onDeleted }: { id: string; emb
 
   const account = state.accounts.find((a) => a.id === tx.accountId);
   const toAccount = state.accounts.find((a) => a.id === tx.toAccountId);
-  const converted = account && account.currency !== tx.currency && tx.accountAmount !== undefined;
+  const fxBasis = txFxBasis(tx, account, toAccount);
   const kind = tx.type === 'income' ? 'income' : tx.type === 'transfer' ? 'balance' : 'expense';
-  // Kurs efektif = yang benar-benar dipakai saat disimpan (kurs pada tanggal transaksi), bukan kurs hari ini.
-  const effectiveRate = (from: number, fromCode: string, to: number, toCode: string) =>
-    (to / 10 ** currencyMeta(toCode).exponent / (from / 10 ** currencyMeta(fromCode).exponent)).toFixed(4);
 
   const actionsEl = (
     <HeaderActions
@@ -112,7 +137,7 @@ export function TransactionDetail({ id, embedded, onDeleted }: { id: string; emb
       </View>
       <Card>
         <InfoRow label={tx.type === 'transfer' ? t('tx.detail.fromAccount') : t('tx.detail.account')} value={account?.name ?? '-'} divider />
-        {toAccount && <InfoRow label={t('tx.detail.toAccount')} value={toAccount.name} divider />}
+        {tx.type === 'transfer' && <InfoRow label={t('tx.detail.toAccount')} value={toAccount?.name ?? '-'} divider />}
         <InfoRow label={t('tx.detail.category')} value={categoryLabel(t, tx.categoryKey)} divider />
         <InfoRow label={t('tx.detail.source')} value={t(`tx.source.${tx.source}`)} divider={!!tx.note} />
         {tx.note && <InfoRow label={t('tx.detail.note')} value={tx.note} />}
@@ -132,7 +157,7 @@ export function TransactionDetail({ id, embedded, onDeleted }: { id: string; emb
           </Card>
         </Group>
       )}
-      {converted && account && tx.accountAmount !== undefined && (
+      {fxBasis && (
         <Card>
           <View style={styles.convHead}>
             <AppText variant="h3">{t('tx.detail.conversion')}</AppText>
@@ -140,9 +165,24 @@ export function TransactionDetail({ id, embedded, onDeleted }: { id: string; emb
               <Icon icon={Info} color={colors.textMuted} size={18} />
             </Tooltip>
           </View>
-          <InfoRow label={t('tx.detail.receiptAmount')} value={formatMoney(tx.amount, tx.currency)} divider />
-          <InfoRow label={t('tx.detail.deductedFrom', { account: account.name })} value={formatMoney(tx.accountAmount, account.currency)} divider />
-          <InfoRow label={t('tx.detail.rate')} value={`1 ${tx.currency} = ${effectiveRate(tx.amount, tx.currency, tx.accountAmount, account.currency)} ${account.currency}`} />
+          <InfoRow
+            label={fxBasis.kind === 'remittance' ? t('tx.detail.remitSent', { account: account?.name ?? '-' }) : t('tx.detail.receiptAmount')}
+            value={formatMoney(fxBasis.fromAmount, fxBasis.fromCurrency)}
+            divider
+          />
+          <InfoRow
+            label={fxBasis.kind === 'remittance' ? t('tx.detail.remitReceived', { account: toAccount?.name ?? '-' }) : t('tx.detail.deductedFrom', { account: account?.name ?? '-' })}
+            value={formatMoney(fxBasis.toAmount, fxBasis.toCurrency)}
+            divider
+          />
+          <InfoRow
+            label={t('tx.detail.rate')}
+            value={`1 ${fxBasis.fromCurrency} = ${fxBasis.effectiveRate} ${fxBasis.toCurrency}`}
+            divider={fxBasis.fxDeltaTo !== null && fxBasis.fxDeltaTo !== 0}
+          />
+          {fxBasis.fxDeltaTo !== null && fxBasis.fxDeltaTo !== 0 && (
+            <InfoRow label={t('tx.detail.fxDelta')} value={formatMoney(fxBasis.fxDeltaTo, fxBasis.toCurrency, 'always')} />
+          )}
         </Card>
       )}
       {((tx.items && tx.items.length > 0) || tx.receipt) && (

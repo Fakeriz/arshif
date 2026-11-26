@@ -10,11 +10,18 @@ import { supabase } from '@/lib/supabase';
  * Tidak ikut: paket/kuota/pesanan (tidak boleh dipulihkan dari file), notifikasi, cache Coach, tautan Smart Log (per HP).
  */
 export const BACKUP_TABLES = [
-  'accounts', 'limit_groups', 'user_rates', 'transactions', 'transaction_items', 'budgets',
-  'goals', 'goal_deposits', 'debts', 'debt_payments', 'bills', 'subscriptions', 'split_bills',
+  'limit_groups', 'accounts', 'smartlog_rules', 'user_rates', 'transactions', 'transaction_items', 'budgets',
+  'goals', 'goal_deposits', 'split_bills', 'debts', 'debt_payments', 'bills', 'subscriptions',
   'invoices', 'assets', 'asset_price_alerts', 'net_worth_snapshots',
 ] as const;
 export type BackupTable = (typeof BACKUP_TABLES)[number];
+
+const TABLE_ORDER: Record<BackupTable, string> = {
+  limit_groups: 'id', accounts: 'id', smartlog_rules: 'id', user_rates: 'code', transactions: 'id', transaction_items: 'id',
+  budgets: 'period_start', goals: 'id', goal_deposits: 'id', split_bills: 'id', debts: 'id',
+  debt_payments: 'id', bills: 'id', subscriptions: 'id', invoices: 'id', assets: 'id',
+  asset_price_alerts: 'id', net_worth_snapshots: 'date',
+};
 
 /** Kolom profil yang dipulihkan: preferensi saja (sama dengan kolom yang boleh diubah aplikasi). */
 const PROFILE_FIELDS = ['display_name', 'main_currency', 'lang', 'theme_mode', 'hide_balance', 'include_assets', 'payday', 'monthly_income', 'split_needs', 'split_wants', 'split_savings', 'notif_prefs', 'categories'] as const;
@@ -34,8 +41,9 @@ type Progress = (done: number, total: number) => void;
 
 async function allRows(table: BackupTable): Promise<Record<string, unknown>[]> {
   const rows: Record<string, unknown>[] = [];
+  const orderCol = TABLE_ORDER[table];
   for (let from = 0; ; from += PAGE) {
-    const { data, error } = await supabase.from(table).select('*').range(from, from + PAGE - 1);
+    const { data, error } = await supabase.from(table).select('*').order(orderCol, { ascending: true }).range(from, from + PAGE - 1);
     if (error) throw error;
     // user_id tidak ikut: saat dipulihkan selalu milik akun yang sedang masuk.
     rows.push(...(data as Record<string, unknown>[]).map(({ user_id: _u, ...r }) => r));
@@ -114,7 +122,12 @@ export async function restoreBackup(userId: string, p: BackupPayload, onProgress
 
   const report: RestoreReport = { restored: 0, skipped: 0, byTable: {}, receipts: moved.size };
   for (const [i, t] of BACKUP_TABLES.entries()) {
-    const rows = (p.tables[t] ?? []).map(({ user_id: _u, ...r }) => (t === 'transactions' ? fixPath(r) : r));
+    const rawRows = (p.tables[t] ?? []).map(({ user_id: _u, ...r }) => (t === 'transactions' ? fixPath(r) : r));
+    // Transaksi pemasukan (tanpa reimbursed_by) dipulihkan lebih dulu sebelum pengeluaran yang menautkannya.
+    const rows =
+      t === 'transactions'
+        ? [...rawRows].sort((a, b) => Number(Boolean(a.reimbursed_by)) - Number(Boolean(b.reimbursed_by)))
+        : rawRows;
     const sum = { restored: 0, skipped: 0 };
     for (let from = 0; from < rows.length; from += CHUNK) {
       const { data, error } = await supabase.rpc('restore_rows', { p_table: t, p_rows: rows.slice(from, from + CHUNK) });

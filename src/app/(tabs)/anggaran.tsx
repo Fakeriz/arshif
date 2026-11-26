@@ -1,3 +1,4 @@
+import { useRouter } from 'expo-router';
 import { SlidersHorizontal } from 'lucide-react-native';
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
@@ -6,7 +7,7 @@ import { DESKTOP_WIDE, GridCell, GridRow } from '@/components/shell/DesktopGrid'
 import { Screen } from '@/components/shell/Screen';
 import { HeaderButton } from '@/components/shell/HeaderActions';
 import { TabHeader } from '@/components/shell/TabHeader';
-import { AppText, Badge, Card, CurrencyText, DonutChart, EmptyState, Skeleton } from '@/components/ui';
+import { AppText, Badge, Card, CurrencyText, DonutChart, EmptyState, PressableScale, Skeleton } from '@/components/ui';
 import { BucketSection } from '@/features/budget/BucketSection';
 import { BudgetPlanCard } from '@/features/budget/BudgetPlan';
 import { MissingRatesBanner } from '@/features/fx/MissingRatesBanner';
@@ -14,12 +15,14 @@ import { PlanningEntries } from '@/features/planning/PlanningEntries';
 import { SplitSheet } from '@/features/budget/SplitSheet';
 import { useI18n } from '@/i18n';
 import { BUCKETS } from '@/lib/budget';
-import { shortDate } from '@/lib/dates';
+import { shortDate, todayYmd } from '@/lib/dates';
 import { formatMoney } from '@/lib/money';
+import { computePaydayProjection } from '@/lib/planning/paydayCycle';
 import { useStore } from '@/state/AppStore';
 import { useDesktop } from '@/hooks/useDesktop';
 import { useLoadState } from '@/state/loadState';
 import { useBudget, useLedger } from '@/state/derived';
+import { usePlanningOptional } from '@/state/planning';
 import { useRetry } from '@/state/useRetry';
 import { useTheme } from '@/theme/ThemeProvider';
 import { radius, space } from '@/theme/tokens';
@@ -27,16 +30,29 @@ import { radius, space } from '@/theme/tokens';
 export default function AnggaranScreen() {
   const demo = useLoadState();
   const retry = useRetry();
+  const router = useRouter();
   const { refreshing } = useStore();
   const { state, dispatch } = useStore();
-  const { hues } = useTheme();
+  const { hues, colors: themeColors } = useTheme();
   const { t, lang } = useI18n();
-  const { mainCurrency, transactions } = useLedger();
+  const { accounts, mainCurrency, transactions } = useLedger();
+  const planCtx = usePlanningOptional();
   const b = useBudget();
   const [sheet, setSheet] = useState(false);
   const desktop = useDesktop();
   const colors = { needs: hues.sky, wants: hues.saffron, savings: hues.jade };
   const subtitle = t('budget.period', { start: shortDate(b.period.start, lang), end: shortDate(b.period.end, lang), days: b.period.daysLeft });
+  const paydayProj = planCtx
+    ? computePaydayProjection({
+        bills: planCtx.bills,
+        subscriptions: planCtx.subscriptions,
+        accounts,
+        transactions,
+        today: todayYmd(),
+        payday: state.payday,
+        mainCurrency,
+      })
+    : null;
 
   if (demo === 'error') {
     return (
@@ -86,6 +102,20 @@ export default function AnggaranScreen() {
             elapsed: Math.round((b.period.elapsedDays / b.period.totalDays) * 100),
           })}
         </AppText>
+      )}
+      {paydayProj && paydayProj.totalItems > 0 && (
+        <PressableScale
+          onPress={() => router.push('/rencana/tagihan')}
+          accessibilityLabel={t('budget.paydayDueLine', { amount: formatMoney(paydayProj.totalDueMain, mainCurrency), date: shortDate(paydayProj.nextPayday, lang) })}
+          style={[styles.paydayRow, { borderTopColor: themeColors.border }]}
+        >
+          <AppText variant="caption" tone="secondary" style={styles.flex} numeric>
+            {t('budget.paydayDueLine', { amount: formatMoney(paydayProj.totalDueMain, mainCurrency), date: shortDate(paydayProj.nextPayday, lang) })}
+          </AppText>
+          {paydayProj.shortfallAccountsCount > 0 && (
+            <Badge tone="negative" label={t('plan.bills.shortfallCount', { count: paydayProj.shortfallAccountsCount })} />
+          )}
+        </PressableScale>
       )}
     </Card>
   );
@@ -178,6 +208,8 @@ const styles = StyleSheet.create({
   safeRow: { flexDirection: 'row', alignItems: 'baseline', gap: space.sm, marginVertical: space.sm },
   note: { marginTop: space.md },
   paceNote: { marginTop: space.xs },
+  paydayRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: space.sm, marginTop: space.md, paddingTop: space.md, borderTopWidth: StyleSheet.hairlineWidth, minHeight: 36 },
+  flex: { flex: 1, minWidth: 0 },
   fill: { flex: 1, justifyContent: 'center' },
   // Desktop: kartu terakhir di kolom mengisi sisa tinggi baris, jadi bawah kartu sejajar.
   grow: { flex: 1 },

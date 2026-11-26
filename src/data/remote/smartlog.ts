@@ -1,5 +1,6 @@
 import type { Transaction } from '@/data/types';
 import type { Capture, Doubt, Parsed } from '@/lib/smartlog/parser';
+import type { SmartLogRule, SmartLogRuleInput } from '@/lib/smartlog/rules';
 import { supabase } from '@/lib/supabase';
 
 import { RemoteError } from './api';
@@ -31,12 +32,28 @@ export type SmartLogLink = { pkg: string; accountId: string };
 /** disabled = automation OFF di server, quota = kuota automation habis (notifikasi tidak diproses). */
 export type IngestResult =
   | { status: 'disabled' | 'quota' }
-  | { status: SmartLogStatus; id: string; reasons: ReviewReason[]; repeat?: boolean };
+  | {
+      status: SmartLogStatus;
+      id: string;
+      reasons: ReviewReason[];
+      repeat?: boolean;
+      tx_type?: 'expense' | 'transfer';
+      category_key?: string;
+      to_account_id?: string | null;
+    };
 
 type ItemRow = {
   id: string; package: string; bank: string; date: string; time: string; type: 'expense' | 'income'; amount: number;
   currency: string; merchant: string; account_id: string | null; status: SmartLogStatus; reasons: ReviewReason[];
   excerpt: string | null; created_at: string;
+};
+
+type RuleRow = {
+  id: string;
+  pattern: string;
+  action: 'categorize' | 'transfer';
+  category_key: string;
+  to_account_id: string | null;
 };
 
 const toItem = (r: ItemRow): SmartLogItem => ({
@@ -45,18 +62,33 @@ const toItem = (r: ItemRow): SmartLogItem => ({
   excerpt: r.excerpt, createdAt: r.created_at,
 });
 
+const toRule = (r: RuleRow): SmartLogRule => ({
+  id: r.id,
+  pattern: r.pattern,
+  action: r.action,
+  categoryKey: r.category_key,
+  toAccountId: r.to_account_id,
+});
+
 function fail(error: { message: string; code?: string } | null): void {
   if (error) throw new RemoteError(error.message, error.code);
 }
 
-export type SmartLogData = { enabled: boolean; links: SmartLogLink[]; review: SmartLogItem[]; recent: SmartLogItem[] };
+export type SmartLogData = {
+  enabled: boolean;
+  links: SmartLogLink[];
+  rules: SmartLogRule[];
+  review: SmartLogItem[];
+  recent: SmartLogItem[];
+};
 
-/** Saklar, tautan, antrean To Review, dan yang auto-apply 7 hari terakhir (untuk Undo/Edit). */
+/** Saklar, tautan, aturan otomatis, antrean To Review, dan yang auto-apply 7 hari terakhir. */
 export async function loadSmartLog(userId: string): Promise<SmartLogData> {
   const since = new Date(Date.now() - 7 * 86_400_000).toISOString();
-  const [profile, links, items] = await Promise.all([
+  const [profile, links, rules, items] = await Promise.all([
     supabase.from('profiles').select('smartlog_enabled').eq('id', userId).single<{ smartlog_enabled: boolean }>(),
     supabase.from('smartlog_links').select('package, account_id').order('created_at').returns<{ package: string; account_id: string }[]>(),
+    supabase.from('smartlog_rules').select('id, pattern, action, category_key, to_account_id').order('created_at', { ascending: false }).returns<RuleRow[]>(),
     supabase
       .from('smartlog_items')
       .select('id, package, bank, date, time, type, amount, currency, merchant, account_id, status, reasons, excerpt, created_at')
@@ -67,14 +99,42 @@ export async function loadSmartLog(userId: string): Promise<SmartLogData> {
   ]);
   fail(profile.error);
   fail(links.error);
+  fail(rules.error);
   fail(items.error);
   const all = (items.data ?? []).map(toItem);
   return {
     enabled: profile.data?.smartlog_enabled ?? false,
     links: (links.data ?? []).map((l) => ({ pkg: l.package, accountId: l.account_id })),
+    rules: (rules.data ?? []).map(toRule),
     review: all.filter((i) => i.status === 'review'),
     recent: all.filter((i) => i.status === 'applied'),
   };
+}
+
+export async function saveRule(input: SmartLogRuleInput): Promise<SmartLogRule> {
+  const cleanPattern = input.pattern.trim();
+  const existing = await supabase
+    .from('smartlog_rules')
+    .select('id, pattern')
+    .returns<Pick<RuleRow, 'id' | 'pattern'>[]>();
+  fail(existing.error);
+  const hit = (existing.data ?? []).find((r) => r.pattern.trim().toLowerCase() === cleanPattern.toLowerCase());
+  const row = {
+    pattern: cleanPattern,
+    action: input.action,
+    category_key: input.action === 'transfer' ? 'savings' : input.categoryKey,
+    to_account_id: input.action === 'transfer' ? input.toAccountId : null,
+  };
+  const q = hit
+    ? supabase.from('smartlog_rules').update(row).eq('id', hit.id).select('id, pattern, action, category_key, to_account_id').single<RuleRow>()
+    : supabase.from('smartlog_rules').insert(row).select('id, pattern, action, category_key, to_account_id').single<RuleRow>();
+  const { data, error } = await q;
+  fail(error);
+  return toRule(data!);
+}
+
+export async function removeRule(id: string): Promise<void> {
+  fail((await supabase.from('smartlog_rules').delete().eq('id', id)).error);
 }
 
 export async function setEnabled(userId: string, enabled: boolean): Promise<void> {
@@ -117,9 +177,21 @@ export async function undo(id: string): Promise<void> {
 }
 
 /** Transaksi yang dibuat server saat auto-apply, untuk ditambahkan ke store tanpa memuat ulang semua data. */
-export function appliedTx(item: Pick<SmartLogItem, 'id' | 'merchant' | 'accountId' | 'date' | 'time' | 'amount' | 'currency'>): Transaction {
+export function appliedTx(
+  item: Pick<SmartLogItem, 'id' | 'type' | 'merchant' | 'accountId' | 'date' | 'time' | 'amount' | 'currency'>,
+  overrides?: { txType?: 'expense' | 'transfer'; categoryKey?: string; toAccountId?: string | null },
+): Transaction {
   return {
-    id: item.id, type: 'expense', merchant: item.merchant, categoryKey: 'other', accountId: item.accountId ?? '', date: item.date,
-    time: item.time, amount: item.amount, currency: item.currency, source: 'smartlog',
+    id: item.id,
+    type: overrides?.txType ?? item.type,
+    merchant: item.merchant,
+    categoryKey: overrides?.categoryKey ?? 'other',
+    accountId: item.accountId ?? '',
+    toAccountId: overrides?.txType === 'transfer' ? (overrides.toAccountId ?? undefined) : undefined,
+    date: item.date,
+    time: item.time,
+    amount: item.amount,
+    currency: item.currency,
+    source: 'smartlog',
   };
 }

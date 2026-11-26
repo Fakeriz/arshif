@@ -35,10 +35,12 @@ const budget: Messages['budget'] = {
     save: 'Simpan peratusan',
   },
   paceExplain: '{used}% belanjawan digunakan, {elapsed}% tempoh berlalu. Kadar dikira daripada perbandingan keduanya.',
+  paydayDueLine: 'Bil & langganan hingga {date}: {amount}',
   plan: {
     title: 'Belanjawan tempoh ini',
     fromIncome: 'Belum dicipta: menggunakan pendapatan bulanan anda',
     saved: '{count} kategori diberi had',
+    saved_one: '{count} kategori diberi had',
     lastAvailable: 'Belanjawan tempoh {date} boleh disalin seadanya, termasuk had kategori.',
     firstTime: 'Cipta belanjawan untuk menetapkan jumlah dan had kategori tempoh ini.',
     copyLast: 'Salin tempoh lalu',

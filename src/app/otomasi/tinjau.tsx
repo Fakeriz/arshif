@@ -8,9 +8,11 @@ import { ScreenHeader } from '@/components/shell/ScreenHeader';
 import { AppText, Button, Card, CurrencyText, EmptyState, Group, Icon, ListItem, Skeleton, useToast } from '@/components/ui';
 import { getBank } from '@/constants/banks';
 import type { SmartLogItem } from '@/data/remote/smartlog';
+import { RuleSheet } from '@/features/smartlog/RuleSheet';
 import { useI18n } from '@/i18n';
 import { dayLabel } from '@/lib/dates';
 import { smartLogApp } from '@/lib/smartlog/apps';
+import type { SmartLogRuleInput } from '@/lib/smartlog/rules';
 import { useStore } from '@/state/AppStore';
 import { draftFromItem, useSmartLog } from '@/state/smartlog';
 import { useTheme } from '@/theme/ThemeProvider';
@@ -19,13 +21,27 @@ import { radius, space } from '@/theme/tokens';
 /** To Review (FR-SLOG-3/4): notifikasi yang meragukan baru dicatat setelah dikonfirmasi. */
 export default function ReviewScreen() {
   const { t } = useI18n();
+  const { show } = useToast();
+  const { state } = useStore();
   const slog = useSmartLog();
-  const { processNow } = slog;
+  const { processNow, saveRule } = slog;
+  const [ruleTarget, setRuleTarget] = useState<SmartLogItem | null>(null);
+  const [ruleKey, setRuleKey] = useState(0);
 
   // Antrean di perangkat dibaca dan dikosongkan saat inbox dibuka (sekali pakai, FR-SLOG-4).
   useEffect(() => {
     void processNow();
   }, [processNow]);
+
+  const handleSaveRule = async (input: SmartLogRuleInput) => {
+    try {
+      await saveRule?.(input);
+      show({ tone: 'success', title: t('slog.rules.saved') });
+    } catch (e) {
+      show({ tone: 'error', title: t('slog.rules.saveFailed') });
+      throw e;
+    }
+  };
 
   return (
     <Screen onRefresh={slog.status === 'ready' ? () => void slog.processNow().then(slog.reload) : undefined}>
@@ -47,24 +63,46 @@ export default function ReviewScreen() {
           ) : (
             <View style={styles.list}>
               {slog.review.map((item) => (
-                <ReviewCard key={item.id} item={item} />
+                <ReviewCard
+                  key={item.id}
+                  item={item}
+                  onCreateRule={
+                    saveRule
+                      ? (target) => {
+                          setRuleKey((k) => k + 1);
+                          setRuleTarget(target);
+                        }
+                      : undefined
+                  }
+                />
               ))}
             </View>
           )}
           {slog.recent.length > 0 && <RecentList items={slog.recent} />}
         </>
       )}
+      {saveRule && (
+        <RuleSheet
+          key={ruleKey}
+          visible={!!ruleTarget}
+          onClose={() => setRuleTarget(null)}
+          accounts={state.accounts}
+          initialPattern={ruleTarget?.merchant ?? ''}
+          initialAction={ruleTarget?.reasons.includes('topup') ? 'transfer' : 'categorize'}
+          onSave={handleSaveRule}
+        />
+      )}
     </Screen>
   );
 }
 
-function ReviewCard({ item }: { item: SmartLogItem }) {
+function ReviewCard({ item, onCreateRule }: { item: SmartLogItem; onCreateRule?: (item: SmartLogItem) => void }) {
   const { t, lang } = useI18n();
   const router = useRouter();
   const { colors } = useTheme();
   const { show } = useToast();
   const { state } = useStore();
-  const { confirm, dismiss } = useSmartLog();
+  const { confirm, dismiss, rules } = useSmartLog();
   const [busy, setBusy] = useState<'confirm' | 'dismiss' | null>(null);
   const account = state.accounts.find((a) => a.id === item.accountId);
   const app = smartLogApp(item.pkg)?.app ?? getBank(item.bank).name;
@@ -72,7 +110,7 @@ function ReviewCard({ item }: { item: SmartLogItem }) {
   const run = async (kind: 'confirm' | 'dismiss') => {
     setBusy(kind);
     try {
-      if (kind === 'confirm') await confirm(item, draftFromItem(item));
+      if (kind === 'confirm') await confirm(item, draftFromItem(item, rules ?? []));
       else await dismiss(item);
       show({ tone: 'success', title: kind === 'confirm' ? t('slog.review.confirmed') : t('slog.review.dismissed') });
     } catch {
@@ -125,6 +163,9 @@ function ReviewCard({ item }: { item: SmartLogItem }) {
           <Button label={t('slog.review.confirm')} size="md" loading={busy === 'confirm'} disabled={!!busy} onPress={() => void run('confirm')} />
         ) : null}
         <Button label={t('slog.review.edit')} variant="secondary" size="md" disabled={!!busy} onPress={() => router.push({ pathname: '/otomasi/catat', params: { id: item.id } })} />
+        {onCreateRule && item.type === 'expense' && (
+          <Button label={t('slog.rules.fromReview')} variant="ghost" size="md" disabled={!!busy} onPress={() => onCreateRule(item)} />
+        )}
         <Button label={t('slog.review.dismiss')} variant="ghost" size="md" loading={busy === 'dismiss'} disabled={!!busy} onPress={() => void run('dismiss')} />
       </View>
       {!account && (
@@ -141,6 +182,21 @@ function RecentList({ items }: { items: SmartLogItem[] }) {
   const router = useRouter();
   const { undo } = useSmartLog();
   const { colors } = useTheme();
+  const { show } = useToast();
+  const [undoing, setUndoing] = useState<string | null>(null);
+
+  const handleUndo = async (id: string) => {
+    if (undoing) return;
+    setUndoing(id);
+    try {
+      await undo(id);
+    } catch {
+      show({ tone: 'error', title: t('slog.review.failed') });
+    } finally {
+      setUndoing(null);
+    }
+  };
+
   return (
     <Group label={t('slog.review.recentTitle')}>
       <Card padding="md">
@@ -149,12 +205,12 @@ function RecentList({ items }: { items: SmartLogItem[] }) {
             <ListItem
               title={item.merchant || getBank(item.bank).name}
               subtitle={`${getBank(item.bank).name} · ${dayLabel(item.date, lang)}, ${item.time.replace(':', '.')}`}
-              trailing={<CurrencyText amount={item.amount} currency={item.currency} kind="expense" variant="bodyStrong" />}
+              trailing={<CurrencyText amount={item.amount} currency={item.currency} kind={item.type === 'income' ? 'income' : 'expense'} variant="bodyStrong" />}
               divider={false}
             />
             <View style={styles.recentActions}>
-              <Button label={t('slog.review.undo')} variant="secondary" size="md" onPress={() => void undo(item.id)} />
-              <Button label={t('slog.toast.edit')} variant="ghost" size="md" onPress={() => router.push({ pathname: '/tambah', params: { id: item.id } })} />
+              <Button label={t('slog.review.undo')} variant="secondary" size="md" loading={undoing === item.id} disabled={undoing !== null} onPress={() => void handleUndo(item.id)} />
+              <Button label={t('slog.toast.edit')} variant="ghost" size="md" disabled={undoing !== null} onPress={() => router.push({ pathname: '/tambah', params: { id: item.id } })} />
             </View>
             {i < items.length - 1 && <View style={[styles.divider, { backgroundColor: colors.border }]} />}
           </View>

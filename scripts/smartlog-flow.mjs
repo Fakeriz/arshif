@@ -127,6 +127,21 @@ await test('gagal jaringan: tangkapan ditahan untuk dicoba ulang', async () => {
   assert.deepEqual(sum.held.map((x) => x.key), [c.key]);
 });
 
+await test('aturan transfer: top up ke dompet sendiri langsung tercatat sebagai transfer, bukan To Review', async () => {
+  const [{ id: gopay }] = await as(U, `insert into public.accounts (bank, name, type, currency, opening_balance) values ('gopay', 'GoPay', 'ewallet', 'IDR', 0) returning id`);
+  await as(U, `insert into public.smartlog_rules (pattern, action, category_key, to_account_id) values ('gopay', 'transfer', 'savings', $1)`, [gopay]);
+  const bcaBefore = await balance();
+  const txBefore = await txCount();
+  const topup = cap('com.bca.mybca.omni.android', 'Transfer m-BCA', 'Pembayaran top up Rp 50.000 ke GOPAY berhasil');
+  const sum = await processCaptures([topup], ingest, NOW);
+  assert.deepEqual([sum.applied.length, sum.review, sum.dropped], [1, 0, 0]);
+  assert.equal(sum.applied[0].txType, 'transfer');
+  assert.equal(sum.applied[0].toAccountId, gopay);
+  assert.equal(await txCount(), txBefore + 1);
+  assert.equal(await balance(), bcaBefore - 50000);
+  assert.equal(Number((await as(null, 'select balance from public.accounts where id = $1', [gopay]))[0].balance), 50000);
+});
+
 await test('automation OFF: tidak ada yang diproses', async () => {
   await as(U, 'update public.profiles set smartlog_enabled = false');
   const sum = await processCaptures([cap('com.bca.mybca.omni.android', 'Transaksi Berhasil', 'Pembayaran QRIS Rp 9.000 di ES TEH berhasil')], ingest, NOW);

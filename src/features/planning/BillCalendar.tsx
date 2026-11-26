@@ -20,7 +20,19 @@ type Entry = { bill: Bill; status: Status };
  * Kalender jatuh tempo sebulan (FR-BILL-4, minggu mulai Senin): tagihan muncul di tanggal jatuhnya. Titik per
  * status + daftar tagihan hari yang dipilih. `filter` mengikuti filter Lunas / Belum lunas di layar Tagihan.
  */
-export function BillCalendar({ bills, today, filter, onPressBill }: { bills: Bill[]; today: string; filter?: 'paid' | 'unpaid'; onPressBill: (b: Bill) => void }) {
+export function BillCalendar({
+  bills,
+  today,
+  filter,
+  paydayDate,
+  onPressBill,
+}: {
+  bills: Bill[];
+  today: string;
+  filter?: 'paid' | 'unpaid';
+  paydayDate?: string;
+  onPressBill: (b: Bill) => void;
+}) {
   const { t, lang } = useI18n();
   const { colors } = useTheme();
   const now = parseYMD(today);
@@ -75,6 +87,11 @@ export function BillCalendar({ bills, today, filter, onPressBill }: { bills: Bil
           const entries = byDay.get(d) ?? [];
           const isToday = d === today;
           const isSel = d === selected;
+          const isPayday = !!paydayDate && d === paydayDate;
+          const dayNames = [
+            ...entries.map((e) => `${e.bill.name} (${statusLabel(e.status)})`),
+            ...(isPayday ? [t('plan.bills.legendPayday')] : []),
+          ];
           return (
             <Pressable
               key={d}
@@ -82,9 +99,16 @@ export function BillCalendar({ bills, today, filter, onPressBill }: { bills: Bil
               onPress={() => setSelected(d)}
               accessibilityRole="button"
               aria-selected={isSel}
-              accessibilityLabel={entries.length ? t('plan.bills.dayLabel', { date: shortDate(d, lang), names: entries.map((e) => `${e.bill.name} (${statusLabel(e.status)})`).join(', ') }) : shortDate(d, lang)}
+              accessibilityLabel={dayNames.length ? t('plan.bills.dayLabel', { date: shortDate(d, lang), names: dayNames.join(', ') }) : shortDate(d, lang)}
             >
-              <View style={[styles.day, isSel && { backgroundColor: colors.accentSoft }, isToday && { borderColor: colors.accent, borderWidth: 1 }]}>
+              <View
+                style={[
+                  styles.day,
+                  isSel && { backgroundColor: colors.accentSoft },
+                  isPayday && { borderColor: colors.accent, borderWidth: 1, borderStyle: 'dashed' },
+                  isToday && { borderColor: colors.accent, borderWidth: 1.5, borderStyle: 'solid' },
+                ]}
+              >
                 <AppText variant="caption" tone={isSel ? 'accent' : 'primary'} numeric>
                   {String(Number(d.slice(8)))}
                 </AppText>
@@ -107,6 +131,14 @@ export function BillCalendar({ bills, today, filter, onPressBill }: { bills: Bil
             </AppText>
           </View>
         ))}
+        {paydayDate && (
+          <View style={styles.legendItem}>
+            <View style={[styles.paydayLegend, { borderColor: colors.accent }]} />
+            <AppText variant="caption" tone="secondary">
+              {t('plan.bills.legendPayday')}
+            </AppText>
+          </View>
+        )}
       </View>
       {selected && picked.length === 0 && (
         <AppText variant="caption" tone="muted" style={styles.none}>
@@ -157,6 +189,7 @@ const styles = StyleSheet.create({
   day: { width: 32, height: 32, borderRadius: radius.full, alignItems: 'center', justifyContent: 'center' },
   dots: { flexDirection: 'row', gap: 2, height: 6, marginTop: 2 },
   dot: { width: 6, height: 6, borderRadius: 3 },
+  paydayLegend: { width: 8, height: 8, borderRadius: 4, borderWidth: 1.5, borderStyle: 'dashed' },
   legend: { flexDirection: 'row', flexWrap: 'wrap', gap: space.md, marginTop: space.sm, justifyContent: 'center' },
   legendItem: { flexDirection: 'row', alignItems: 'center', gap: space.xs },
   picked: { marginTop: space.md, paddingTop: space.sm, borderTopWidth: StyleSheet.hairlineWidth, gap: space.xs },

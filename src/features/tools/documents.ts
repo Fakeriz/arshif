@@ -1,7 +1,7 @@
 import type { Account, Transaction } from '@/data/types';
 import { categoryLabel, type MsgKey, type TFunction } from '@/i18n';
 import type { Lang } from '@/i18n/types';
-import { monthName, shortDate } from '@/lib/dates';
+import { monthName, shortDate, todayYmd } from '@/lib/dates';
 import { tryConvert, usdRatesDate } from '@/lib/fx';
 import { isReimbursable, reimbursementIncomeIds } from '@/lib/transactions';
 import { invoiceTotals, qtyText, type Invoice } from '@/lib/invoice';
@@ -17,7 +17,7 @@ import { bpText, type AnnualReport } from '@/lib/tax';
 type Ctx = { t: TFunction; lang: Lang; owner: string };
 
 const decimal = (lang: Lang): ',' | '.' => (lang === 'id' || lang === 'tr' ? ',' : '.');
-const generated = (c: Ctx) => c.t('tools.pdf.footer', { date: shortDate(new Date().toISOString().slice(0, 10), c.lang) });
+const generated = (c: Ctx) => c.t('tools.pdf.footer', { date: shortDate(todayYmd(), c.lang) });
 
 export function invoiceDocument(inv: Invoice, c: Ctx): string {
   const { t, lang } = c;
@@ -49,11 +49,74 @@ export function invoiceDocument(inv: Invoice, c: Ctx): string {
 
 const lineOf = (i: Invoice['items'][number]) => invoiceTotals([i], 0, 0).subtotal;
 
-/** Laporan pajak tahunan (FR-TAX-3), dengan disclaimer FR-TAX-4. */
-export function annualReportDocument(r: AnnualReport, c: Ctx): string {
+export type InvoiceFiscalRow = {
+  invoice: Invoice;
+  fiscalDate: string;
+  subtotal: number;
+  tax: number;
+  total: number;
+};
+
+export type InvoiceFiscalSummary = {
+  rows: InvoiceFiscalRow[];
+  paidCount: number;
+  unpaidCount: number;
+  paidSubtotal: number;
+  paidTax: number;
+  paidTotal: number;
+  unpaidTotal: number;
+  skipped: number;
+};
+
+/** Ringkasan invoice pada tahun fiskal tertentu dalam mata uang laporan pajak negara terpilih. */
+export function invoiceFiscalSummary(invoices: Invoice[], year: number, targetCurrency: string): InvoiceFiscalSummary {
+  const yearStr = String(year);
+  const candidates = invoices
+    .filter((inv) => {
+      if (inv.kind !== 'invoice') return false;
+      const fiscalDate = inv.status === 'paid' && inv.paidAt ? inv.paidAt.slice(0, 10) : inv.issueDate;
+      return fiscalDate.startsWith(yearStr);
+    })
+    .sort((a, b) => a.issueDate.localeCompare(b.issueDate) || a.number.localeCompare(b.number));
+
+  const rows: InvoiceFiscalRow[] = [];
+  let paidCount = 0;
+  let unpaidCount = 0;
+  let paidSubtotal = 0;
+  let paidTax = 0;
+  let paidTotal = 0;
+  let unpaidTotal = 0;
+  let skipped = 0;
+
+  for (const inv of candidates) {
+    const fiscalDate = inv.status === 'paid' && inv.paidAt ? inv.paidAt.slice(0, 10) : inv.issueDate;
+    const calc = invoiceTotals(inv.items, inv.discount, inv.taxBp);
+    const sub = inv.currency === targetCurrency ? calc.subtotal : tryConvert(calc.subtotal, inv.currency, targetCurrency, inv.issueDate);
+    const tax = inv.currency === targetCurrency ? calc.tax : tryConvert(calc.tax, inv.currency, targetCurrency, inv.issueDate);
+    const tot = inv.currency === targetCurrency ? calc.total : tryConvert(calc.total, inv.currency, targetCurrency, inv.issueDate);
+    if (sub === null || tax === null || tot === null) {
+      skipped += 1;
+      continue;
+    }
+    rows.push({ invoice: inv, fiscalDate, subtotal: sub, tax, total: tot });
+    if (inv.status === 'paid') {
+      paidCount += 1;
+      paidSubtotal += sub;
+      paidTax += tax;
+      paidTotal += tot;
+    } else {
+      unpaidCount += 1;
+      unpaidTotal += tot;
+    }
+  }
+
+  return { rows, paidCount, unpaidCount, paidSubtotal, paidTax, paidTotal, unpaidTotal, skipped };
+}
+
+function annualReportBaseBlocks(r: AnnualReport, c: Ctx): { core: ReportBlock[]; notes: string[]; countryName: string } {
   const { t, lang } = c;
   const money = (v: number) => formatMoney(v, r.currency);
-  const blocks: ReportBlock[] = [
+  const core: ReportBlock[] = [
     {
       kind: 'pairs', heading: t('tools.report.summary'),
       rows: [[t('tools.report.income'), money(r.income)], [t('tools.report.expense'), money(r.expense)], [t('tools.report.net'), money(r.income - r.expense)]],
@@ -78,12 +141,78 @@ export function annualReportDocument(r: AnnualReport, c: Ctx): string {
   ];
   const notes = [t(`tools.report.basis${r.country}` as MsgKey), t('tools.report.fxNote', { date: usdRatesDate() ? shortDate(usdRatesDate()!, lang) : '-' })];
   if (r.skipped > 0) notes.push(t('tools.report.skipped', { count: r.skipped }));
-  blocks.push({ kind: 'pairs', heading: t('tools.report.assumptions'), rows: notes.map((n) => [n, '']) });
+  const countryName = t(`tools.tax.country${r.country === 'ID' ? 'Id' : r.country === 'MY' ? 'My' : 'Tr'}` as MsgKey);
+  return { core, notes, countryName };
+}
+
+/** Laporan pajak tahunan (FR-TAX-3), dengan disclaimer FR-TAX-4. */
+export function annualReportDocument(r: AnnualReport, c: Ctx): string {
+  const { t, lang } = c;
+  const { core, notes, countryName } = annualReportBaseBlocks(r, c);
+  const blocks: ReportBlock[] = [...core, { kind: 'pairs', heading: t('tools.report.assumptions'), rows: notes.map((n) => [n, '']) }];
   return reportHtml({
     lang, owner: c.owner,
     title: t('tools.report.docTitle', { year: r.year }),
-    subtitle: t('tools.report.docSubtitle', { country: t(`tools.tax.country${r.country === 'ID' ? 'Id' : r.country === 'MY' ? 'My' : 'Tr'}` as MsgKey), currency: r.currency }),
+    subtitle: t('tools.report.docSubtitle', { country: countryName, currency: r.currency }),
     blocks, disclaimer: t('tools.tax.disclaimer'), footer: generated(c),
+  });
+}
+
+/** Paket bundel PDF multi-halaman: ringkasan pajak tahunan negara (ID/MY/TR) + daftar invoice & pajak keluaran (PPN/SST/KDV). */
+export function fiscalBundleDocument(r: AnnualReport, invoices: Invoice[], c: Ctx): string {
+  const { t, lang } = c;
+  const money = (v: number) => formatMoney(v, r.currency);
+  const { core, notes, countryName } = annualReportBaseBlocks(r, c);
+  const invSum = invoiceFiscalSummary(invoices, r.year, r.currency);
+  if (invSum.skipped > 0) notes.push(t('tools.report.skippedInvoices', { count: invSum.skipped }));
+
+  const invoiceSummaryBlock: ReportBlock = {
+    kind: 'pairs',
+    heading: t('tools.report.invoiceSummary'),
+    strongLast: true,
+    rows: [
+      [t('tools.report.invoicePaidCount'), String(invSum.paidCount)],
+      [t('tools.report.invoicePaidSubtotal'), money(invSum.paidSubtotal)],
+      [t('tools.report.invoiceOutputTax'), money(invSum.paidTax)],
+      [t('tools.report.invoiceUnpaidTotal'), money(invSum.unpaidTotal)],
+      [t('tools.report.invoicePaidTotal'), money(invSum.paidTotal)],
+    ],
+  };
+
+  const invoiceTableBlock: ReportBlock = {
+    kind: 'table',
+    heading: t('tools.report.invoiceTable', { year: r.year }),
+    columns: [
+      t('tools.report.invoiceColNumber'),
+      t('tools.report.invoiceColDate'),
+      t('tools.report.invoiceColClient'),
+      t('tools.report.invoiceColStatus'),
+      t('tools.report.invoiceColTax'),
+      t('tools.report.invoiceColTotal'),
+    ],
+    numeric: [false, false, false, false, true, true],
+    rows: invSum.rows.map((x) => {
+      const calc = invoiceTotals(x.invoice.items, x.invoice.discount, x.invoice.taxBp);
+      return [
+        x.invoice.number || t('inv.status.draft'),
+        shortDate(x.fiscalDate, lang),
+        x.invoice.clientName,
+        t(`inv.status.${x.invoice.status}` as MsgKey),
+        formatMoney(calc.tax, x.invoice.currency),
+        formatMoney(calc.total, x.invoice.currency),
+      ];
+    }),
+    empty: t('tools.report.invoiceEmpty'),
+  };
+
+  return reportHtml({
+    lang,
+    owner: c.owner,
+    title: t('tools.report.bundleDocTitle', { year: r.year }),
+    subtitle: t('tools.report.docSubtitle', { country: countryName, currency: r.currency }),
+    blocks: [...core, invoiceSummaryBlock, invoiceTableBlock, { kind: 'pairs', heading: t('tools.report.assumptions'), rows: notes.map((n) => [n, '']) }],
+    disclaimer: t('tools.tax.disclaimer'),
+    footer: generated(c),
   });
 }
 

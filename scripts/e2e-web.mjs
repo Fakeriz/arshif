@@ -4,13 +4,22 @@
 import { chromium } from 'playwright';
 import { ids, resetUser, sessionFor, storageKey } from './e2e-live.mjs';
 import { receiptJpeg, statementPdf } from './e2e-fixtures.mjs';
-import http from 'node:http'; import fs from 'node:fs'; import path from 'node:path';
+import http from 'node:http';
+import fs from 'node:fs';
+import path from 'node:path';
+
 const dist = path.resolve(process.argv[2] ?? 'dist');
 const types = { '.html': 'text/html', '.js': 'text/javascript', '.ttf': 'font/ttf', '.png': 'image/png', '.ico': 'image/x-icon', '.json': 'application/json' };
-const server = http.createServer((req, res) => { let f = path.join(dist, decodeURIComponent(req.url.split('?')[0])); if (!fs.existsSync(f) || fs.statSync(f).isDirectory()) f = path.join(dist, 'index.html'); res.writeHead(200, { 'content-type': types[path.extname(f)] ?? 'application/octet-stream' }); fs.createReadStream(f).pipe(res); });
+const server = http.createServer((req, res) => {
+  let f = path.join(dist, decodeURIComponent(req.url.split('?')[0]));
+  if (!fs.existsSync(f) || fs.statSync(f).isDirectory()) f = path.join(dist, 'index.html');
+  res.writeHead(200, { 'content-type': types[path.extname(f)] ?? 'application/octet-stream' });
+  fs.createReadStream(f).pipe(res);
+});
 await new Promise((r) => server.listen(8095, r));
 const b = await chromium.launch();
-const results = []; const errors = [];
+const results = [];
+const errors = [];
 // Tiap langkah mulai dari data contoh yang sama di server (reset = hapus pengguna uji + seed ulang).
 let session = null;
 let lastPage = null;
@@ -33,9 +42,10 @@ const step = async (name, fn, { seed = true, onboarded = true, signedIn = true }
   }
 };
 // Bahasa mengikuti perangkat (I18nProvider.detectLang), jadi locale dipaksa: default id-ID.
-const open = async (url, scheme = 'dark', locale = 'id-ID') => {
+const open = async (url, scheme = 'dark', locale = 'id-ID', { introSeen = true } = {}) => {
   const ctx = await b.newContext({ viewport: { width: 390, height: 844 }, colorScheme: scheme, locale });
   contexts.push(ctx);
+  if (introSeen) await ctx.addInitScript(() => localStorage.setItem('arshif.introSeen', '1'));
   // Sesi login sungguhan disuntikkan ke penyimpanan supabase-js sebelum aplikasi dimuat.
   if (session) await ctx.addInitScript(([k, v]) => localStorage.setItem(k, v), [storageKey(), JSON.stringify(session)]);
   const p = await ctx.newPage();
@@ -43,335 +53,589 @@ const open = async (url, scheme = 'dark', locale = 'id-ID') => {
   p.on('console', (m) => m.type() === 'error' && errors.push(`${url}: ${m.text().slice(0, 160)}`));
   p.on('pageerror', (e) => errors.push(`${url}: ${String(process.env.E2E_STACK ? e.stack : e).slice(0, process.env.E2E_STACK ? 1500 : 160)}`));
   await p.goto(`http://localhost:8095${url}`, { waitUntil: 'networkidle' });
-  await p.evaluate(() => document.fonts.ready); await p.waitForTimeout(1500);
+  await p.evaluate(() => document.fonts.ready);
+  await p.waitForTimeout(1500);
   return p;
 };
-const reloadPage = async (p) => { await p.reload({ waitUntil: 'networkidle' }); await p.waitForTimeout(1500); };
+const reloadPage = async (p) => {
+  await p.reload({ waitUntil: 'networkidle' });
+  await p.waitForTimeout(1500);
+};
 const btn = (p, name) => p.getByRole('button', { name, exact: true }).first();
 const expectText = async (p, t, timeout = 4000) => p.getByText(t, { exact: false }).locator('visible=true').first().waitFor({ timeout });
 const url = (p) => new URL(p.url()).pathname;
 
-await step('Home: nav pill pindah tab Transaksi/Anggaran/Aset/Home, Aset = Segera hadir', async () => {
+await step('Home: nav pill pindah tab Transaksi/Anggaran/Aset/Home', async () => {
   const p = await open('/');
   for (const [tab, path_] of [['Transaksi', '/transaksi'], ['Anggaran', '/anggaran'], ['Aset', '/aset'], ['Home', '/']]) {
-    await p.getByRole('tab', { name: tab, exact: true }).click(); await p.waitForTimeout(300);
+    await p.getByRole('tab', { name: tab, exact: true }).click();
+    await p.waitForTimeout(300);
     if (url(p) !== path_) throw new Error(`${tab} -> ${url(p)}`);
-    if (tab === 'Aset') await expectText(p, 'Segera hadir');
+    if (tab === 'Aset') await expectText(p, 'Total kekayaan bersih');
   }
 });
-await step('Home: Lainnya = seksi Catat (Scan Dokumen, Import PDF, Catat Manual) + Bisnis & alat, Coach membuka layar Coach', async () => {
-  const p = await open('/'); await btn(p, 'Lainnya').click();
-  for (const t of ['Catat', 'Scan Dokumen', 'Import Rekening Koran', 'Catat Manual', 'Bisnis & alat', 'Invoice & Penawaran', 'Konverter kurs, cicilan, estimasi pajak']) await expectText(p, t);
-  await p.getByText('Alat', { exact: true }).locator('visible=true').first().click(); await p.waitForTimeout(500);
+await step('Home: Lainnya = seksi Catat (Import PDF, Catat Manual) + Bisnis & alat, Coach membuka layar Coach', async () => {
+  const p = await open('/');
+  await btn(p, 'Lainnya').click();
+  for (const t of ['Catat', 'Import Rekening Koran', 'Catat Manual', 'Bisnis & alat', 'Invoice & Penawaran', 'Konverter kurs, cicilan, estimasi pajak']) await expectText(p, t);
+  await p.getByText('Alat', { exact: true }).locator('visible=true').first().click();
+  await p.waitForTimeout(500);
   if (url(p) !== '/alat') throw new Error('Alat -> ' + url(p));
-  await p.goBack(); await p.waitForTimeout(500);
-  await p.keyboard.press('Escape'); await p.waitForTimeout(400);
-  await btn(p, 'Coach').click(); await p.waitForTimeout(500);
+  await p.goBack();
+  await p.waitForTimeout(500);
+  await p.keyboard.press('Escape');
+  await p.waitForTimeout(400);
+  await btn(p, 'Coach').click();
+  await p.waitForTimeout(500);
   if (url(p) !== '/coach') throw new Error(url(p));
 });
 await step('Home: tombol + membuka sheet Catat dengan 4 pilihan', async () => {
-  const p = await open('/'); await btn(p, 'Catat transaksi').click();
+  const p = await open('/');
+  await btn(p, 'Catat transaksi').click();
   for (const t of ['Scan Struk', 'Voice Log', 'Import Rekening Koran', 'Catat Manual']) await expectText(p, t);
 });
 await step('Home: sembunyikan saldo menutup nominal, tampilkan lagi memulihkan', async () => {
-  const p = await open('/'); await btn(p, 'Sembunyikan saldo').click();
+  const p = await open('/');
+  await btn(p, 'Sembunyikan saldo').click();
   await p.getByLabel('Saldo disembunyikan').first().waitFor();
-  await btn(p, 'Tampilkan saldo').click(); await p.getByLabel(/^Rp \d/).first().waitFor();
+  await btn(p, 'Tampilkan saldo').click();
+  await p.getByLabel(/^Rp\s/).first().waitFor();
 });
 await step('Home: lonceng membuka notifikasi, ketuk recap menuju Coach', async () => {
-  const p = await open('/'); await p.getByRole('button', { name: 'Notifikasi, 2 belum dibaca' }).click();
-  await p.getByRole('button', { name: /Recap mingguanmu sudah siap.*Belum dibaca/ }).click(); await p.waitForTimeout(500);
+  const p = await open('/');
+  await p.getByRole('button', { name: 'Notifikasi, 2 belum dibaca' }).click();
+  await p.getByRole('button', { name: /Recap mingguanmu sudah siap.*Belum dibaca/ }).click();
+  await p.waitForTimeout(500);
   if (url(p) !== '/coach') throw new Error(url(p));
 });
-// Deck: strip ramping -> ketuk -> FlatList paging; geser = scroll horizontal native.
-const openDeck = async (p) => { await p.getByRole('button', { name: /kartu akun aktif$/ }).click(); await p.waitForTimeout(800); };
-const pageDeck = async (p, pages) => {
-  const card = await p.getByRole('button', { name: /^BCA Tabungan, akhiran 2153/ }).first().boundingBox();
-  await p.evaluate(([y, n]) => {
-    const list = [...document.querySelectorAll('div')].find((d) => /auto|scroll/.test(getComputedStyle(d).overflowX) && d.scrollWidth > d.clientWidth && d.getBoundingClientRect().top <= y && d.getBoundingClientRect().bottom >= y);
-    list.scrollBy({ left: list.clientWidth * n, behavior: 'instant' });
-  }, [card.y + card.height / 2, pages]);
-};
-await step('Home: strip akun membuka deck, ketuk kartu menutup kembali ke strip', async () => {
-  const p = await open('/'); await openDeck(p);
-  await p.getByRole('button', { name: /^BCA Tabungan, akhiran 2153/ }).click(); await p.waitForTimeout(800);
-  await p.getByRole('button', { name: 'BCA Tabungan, kartu akun aktif' }).click({ trial: true });
-});
-await step('Home: kartu batas 4 akun membuka sheet Premium', async () => {
-  const p = await open('/'); await openDeck(p); await pageDeck(p, 4); await p.waitForTimeout(600);
-  // Label tombol yang sama ada di strip tertutup (opacity 0) dan di halaman deck: klik isi kartunya.
-  await p.getByText('Premium untuk menambah akun').locator('visible=true').first().click(); await expectText(p, 'Buka batas dengan Premium');
-  await btn(p, 'Lihat paket Premium').click(); await p.waitForTimeout(600);
-  if (url(p) !== '/premium') throw new Error(url(p));
-  await expectText(p, 'Paket Free dibatasi 4 akun'); await expectText(p, 'Free dan Premium');
-});
-await step('Home: geser kartu akun -> snap ke kartu berikut, titik pindah, akun aktif jadi default Catat manual', async () => {
+await step('Home: tumpukan kartu akun dibuka, pilih Jago via titik -> jadi akun default Catat Manual', async () => {
   const p = await open('/');
-  await openDeck(p); await p.getByLabel('Kartu 1 dari 5').waitFor();
-  await pageDeck(p, 1);
-  await p.getByLabel('Kartu 2 dari 5').waitFor({ timeout: 3000 });
-  await btn(p, 'Catat transaksi').click(); await p.getByText('Catat Manual').first().click();
-  const chip = p.getByRole('checkbox', { name: /^Jago Kantong Utama/ }).first(); await chip.waitFor();
+  await p.getByRole('button', { name: /^BCA Tabungan, akhiran 2153/ }).first().click();
+  await p.getByRole('tablist', { name: 'Pilih kartu' }).waitFor({ timeout: 3000 });
+  await p.getByRole('tab', { name: 'Jago Kantong Utama, Bank Jago' }).click();
+  await p.waitForTimeout(400);
+  await btn(p, 'Catat transaksi').click();
+  await p.getByText('Catat Manual').first().click();
+  const chip = p.getByRole('checkbox', { name: /^Jago Kantong Utama/ }).first();
+  await chip.waitFor();
   const checked = await chip.getAttribute('aria-checked');
   if (checked !== 'true') throw new Error('akun default bukan Jago: ' + checked);
 });
+await step('Akun: batas 4 akun Free membuka sheet Pro -> /premium', async () => {
+  const p = await open('/pengaturan/akun');
+  await btn(p, 'Tambah akun').click();
+  await p.getByLabel('Nama akun').fill('Dompet Ke-5');
+  await p.getByRole('button', { name: 'Tambah akun', exact: true }).last().click();
+  await expectText(p, 'Buka batas dengan Pro');
+  await expectText(p, 'Paket Free dibatasi 4 akun');
+  await btn(p, 'Lihat paket Pro').click();
+  await p.waitForTimeout(600);
+  if (url(p) !== '/premium') throw new Error(url(p));
+  await expectText(p, 'Arshif Pro');
+  await expectText(p, 'Free dan Pro');
+});
 await step('Transaksi: cari "kopi" -> 2 hasil, hapus filter pulih', async () => {
-  const p = await open('/transaksi'); await p.getByLabel('Cari transaksi').fill('kopi'); await p.waitForTimeout(300);
+  const p = await open('/transaksi');
+  await p.getByLabel('Cari transaksi').fill('kopi');
+  await p.waitForTimeout(300);
   await expectText(p, '2 dari 28 transaksi');
-  await p.getByLabel('Cari transaksi').fill('zzzz'); await expectText(p, 'Tidak ada transaksi yang cocok');
-  await btn(p, 'Hapus semua filter').click(); await expectText(p, '28 dari 28 transaksi');
+  await p.getByLabel('Cari transaksi').fill('zzzz');
+  await expectText(p, 'Tidak ada transaksi yang cocok');
+  await btn(p, 'Hapus semua filter').click();
+  await expectText(p, '28 dari 28 transaksi');
 });
 await step('Transaksi: chip Pemasukan + sheet Filter akun', async () => {
-  const p = await open('/transaksi'); await p.getByRole('checkbox', { name: 'Pemasukan' }).click(); await expectText(p, '1 dari 28 transaksi');
-  await p.getByRole('checkbox', { name: 'Semua' }).click(); await p.getByRole('checkbox', { name: 'Filter' }).click();
-  await p.getByRole('checkbox', { name: 'Jago Kantong Utama' }).click(); await btn(p, 'Selesai').click(); await expectText(p, 'dari 28 transaksi');
+  const p = await open('/transaksi');
+  await p.getByRole('checkbox', { name: 'Pemasukan' }).click();
+  await expectText(p, '1 dari 28 transaksi');
+  await p.getByRole('checkbox', { name: 'Semua' }).click();
+  await p.getByRole('checkbox', { name: 'Filter' }).click();
+  await p.getByRole('checkbox', { name: 'Jago Kantong Utama' }).click();
+  await btn(p, 'Selesai').click();
+  await expectText(p, 'dari 28 transaksi');
 });
 await step('Detail: tampil item struk; hapus -> dialog -> transaksi hilang dari daftar', async () => {
-  const p = await open('/transaksi'); await p.getByRole('button', { name: /^Indomaret Kemang Raya, Rp 87\.500/ }).click(); await expectText(p, 'Item belanja'); await expectText(p, 'Indomie Goreng');
-  await btn(p, 'Hapus transaksi').click(); await expectText(p, 'Hapus transaksi ini?'); await btn(p, 'Hapus').click(); await p.waitForTimeout(700);
+  const p = await open('/transaksi');
+  await p.getByRole('button', { name: /^Indomaret Kemang Raya, Rp 87\.500/ }).click();
+  await expectText(p, 'Item belanja');
+  await expectText(p, 'Indomie Goreng');
+  await btn(p, 'Hapus transaksi').click();
+  await expectText(p, 'Hapus transaksi ini?');
+  await btn(p, 'Hapus').click();
+  await p.waitForTimeout(700);
   if (await p.getByText('Indomaret Kemang Raya').count()) throw new Error('masih ada');
   await expectText(p, '27 dari 27 transaksi');
 });
-await step('Detail: transaksi mata uang asing menampilkan konversi + kurs', async () => {
-  const p = await open(`/trx/${ids.t07}`); await expectText(p, 'Konversi mata uang'); await expectText(p, '1 TRY = ');
+await step('Detail: transaksi mata uang asing menampilkan konversi + kurs + selisih', async () => {
+  const p = await open(`/trx/${ids.t07}`);
+  await expectText(p, 'Konversi mata uang');
+  await expectText(p, '1 TRY = ');
 });
 await step('Form manual: kosong -> pesan error per field', async () => {
-  const p = await open('/tambah'); await btn(p, 'Simpan transaksi').click();
+  const p = await open('/tambah');
+  await btn(p, 'Simpan transaksi').click();
   for (const t of ['Isi nominal lebih dari nol.', 'Tulis nama toko atau keterangan.', 'Pilih kategori.']) await expectText(p, t);
 });
 await step('Form manual: simpan pengeluaran -> muncul di daftar paling atas', async () => {
-  const p = await open('/tambah'); await p.getByRole('textbox', { name: /Nominal/ }).fill('45000'); await p.getByLabel('Toko atau keterangan').fill('Es teh Solo');
-  await p.getByRole('checkbox', { name: 'Makan & Minum' }).click(); await btn(p, 'Simpan transaksi').click(); await p.waitForTimeout(700);
+  const p = await open('/tambah');
+  await p.getByRole('textbox', { name: /Nominal/ }).fill('45000');
+  await p.getByLabel('Toko atau keterangan').fill('Es teh Solo');
+  await p.getByRole('checkbox', { name: 'Makan & Minum' }).click();
+  await btn(p, 'Simpan transaksi').click();
+  await p.waitForTimeout(700);
   await expectText(p, 'Transaksi tersimpan');
 });
 await step('Form manual: transfer butuh akun tujuan berbeda', async () => {
-  const p = await open('/tambah'); await p.getByRole('tab', { name: 'Transfer' }).click(); await p.getByRole('textbox', { name: /Nominal/ }).fill('100000'); await btn(p, 'Simpan transaksi').click();
+  const p = await open('/tambah');
+  await p.getByRole('tab', { name: 'Transfer' }).click();
+  await p.getByRole('textbox', { name: /Nominal/ }).fill('100000');
+  await btn(p, 'Simpan transaksi').click();
   await expectText(p, 'Pilih akun tujuan.');
 });
 await step('Anggaran: sheet persentase menolak total != 100, menerima 60/20/20', async () => {
-  const p = await open('/anggaran'); await btn(p, 'Atur').click(); await btn(p, 'Tambah Kebutuhan').click();
-  await expectText(p, 'Total 105%'); if (!(await btn(p, 'Simpan persentase').isDisabled())) throw new Error('tombol tidak disabled');
-  await btn(p, 'Kurangi Keinginan').click(); await btn(p, 'Kurangi Tabungan & Utang').click(); await btn(p, 'Tambah Kebutuhan').click();
-  await expectText(p, 'Total 100%'); await btn(p, 'Simpan persentase').click(); await expectText(p, '60% dari penghasilan');
+  const p = await open('/anggaran');
+  await btn(p, 'Atur').click();
+  await btn(p, 'Tambah Kebutuhan').click();
+  await expectText(p, 'Total 105%');
+  if (!(await btn(p, 'Simpan persentase').isDisabled())) throw new Error('tombol tidak disabled');
+  await btn(p, 'Kurangi Keinginan').click();
+  await btn(p, 'Kurangi Tabungan & Utang').click();
+  await btn(p, 'Tambah Kebutuhan').click();
+  await expectText(p, 'Total 100%');
+  await btn(p, 'Simpan persentase').click();
+  await expectText(p, '60% dari penghasilan');
 });
 await step('Pricing publik tanpa login: harga terkunci, ganti mata uang, tombol masuk', async () => {
-  const p = await open('/harga'); await expectText(p, 'Rp 25.000'); await expectText(p, 'Rp 250.000');
-  await p.getByText('MYR', { exact: true }).click(); await expectText(p, 'RM 6.90'); await expectText(p, 'RM 69.00');
-  await p.getByText('USD', { exact: true }).click(); await expectText(p, '$1.50');
-  await btn(p, 'Masuk untuk mulai').click(); await p.waitForTimeout(500);
+  const p = await open('/harga');
+  await expectText(p, 'Rp 25.000');
+  await expectText(p, 'Rp 250.000');
+  await p.getByText('MYR', { exact: true }).click();
+  await expectText(p, 'RM 6.90');
+  await expectText(p, 'RM 69.00');
+  await p.getByText('USD', { exact: true }).click();
+  await expectText(p, '$1.50');
+  await btn(p, 'Masuk untuk mulai').click();
+  await p.waitForTimeout(500);
   if (url(p) !== '/masuk') throw new Error(url(p));
 }, { signedIn: false });
 await step('Premium web: pilih paket + metode, checkout dibuat (mode test) atau pesan "belum aktif"', async () => {
-  const p = await open('/premium'); await p.getByRole('radio', { name: /^Bulanan/ }).click();
-  await btn(p, 'Bayar Rp 25.000').click(); await p.waitForTimeout(4000);
+  const p = await open('/premium');
+  await p.getByRole('radio', { name: /^Bulanan/ }).click();
+  await btn(p, 'Bayar Rp 25.000').click();
+  await p.waitForTimeout(4000);
   // Tanpa kunci Xendit: pesan jelas, bukan error mentah. Dengan kunci test: diarahkan ke halaman invoice Xendit.
   if (!/xendit\.co/.test(p.url())) await expectText(p, 'belum aktif');
 });
-await step('Pengguna Free tidak bisa memberi diri sendiri Premium (RPC admin ditolak, tombol Admin tidak tampil)', async () => {
-  const p = await open('/pengaturan'); await expectText(p, 'Pengaturan');
+await step('Pengguna Free tidak bisa memberi diri sendiri Pro (RPC admin ditolak, tombol Admin tidak tampil)', async () => {
+  const p = await open('/pengaturan');
+  await expectText(p, 'Pengaturan');
   if (await p.getByRole('button', { name: 'Admin' }).count()) throw new Error('tombol admin tampil');
-  const p2 = await open('/admin'); await expectText(p2, 'Akun ini bukan admin');
+  const p2 = await open('/admin');
+  await expectText(p2, 'Akun ini bukan admin');
   if (await p2.getByText('Pengguna aktif hari ini').count()) throw new Error('dasbor tampil untuk non-admin');
 });
-await step('Coach: Recap minggu lalu, Bulan lalu (Free = ajakan Premium), Tanya Coach (batas) -> Premium', async () => {
-  const p = await open('/coach'); await p.getByRole('tab', { name: 'Recap' }).click();
-  await p.getByRole('tab', { name: 'Minggu lalu' }).click(); await expectText(p, 'Minggu lalu kamu belanja');
-  await p.getByRole('tab', { name: 'Bulan lalu' }).click(); await expectText(p, 'Muncul setiap tanggal 1, khusus Premium');
-  await p.getByRole('tab', { name: 'Tanya Coach' }).click(); await expectText(p, 'Tanya Coach khusus Premium'); await btn(p, 'Lihat Premium').click(); await expectText(p, 'Buka batas dengan Premium');
+await step('Coach: Recap minggu lalu, Bulan lalu (Free = ajakan Pro), Tanya Coach (batas) -> Pro', async () => {
+  const p = await open('/coach');
+  await p.getByRole('tab', { name: 'Recap' }).click();
+  await p.getByRole('tab', { name: 'Minggu lalu' }).click();
+  await expectText(p, 'Minggu lalu kamu belanja');
+  await p.getByRole('tab', { name: 'Bulan lalu' }).click();
+  await expectText(p, 'Muncul setiap tanggal 1, khusus Pro');
+  await p.getByRole('tab', { name: 'Tanya Coach' }).click();
+  await expectText(p, 'Tanya Coach khusus Pro');
+  await btn(p, 'Lihat Pro').click();
+  await expectText(p, 'Buka batas dengan Pro');
 });
-const back = async (p) => { await p.getByRole('button', { name: /^Kembali$/ }).locator('visible=true').first().click(); await p.waitForTimeout(500); };
-const menu = async (p, name) => { await p.getByRole('button', { name }).first().click(); await p.waitForTimeout(500); };
-await step('Pengaturan: menu per kategori, tiap baris membuka layar turunannya', async () => {
+const back = async (p) => {
+  await p.getByRole('button', { name: /^Kembali$/ }).locator('visible=true').first().click();
+  await p.waitForTimeout(500);
+};
+const menu = async (p, name) => {
+  await p.getByRole('button', { name }).first().click();
+  await p.waitForTimeout(500);
+};
+await step('Pengaturan: profil + menu per kategori, tiap baris membuka layar turunannya', async () => {
   const p = await open('/pengaturan');
-  for (const t of ['Akun & paket', 'Preferensi', 'Data & lainnya']) await expectText(p, t);
-  for (const [name, path_, text] of [[/^Paket & pemakaian/, '/pengaturan/paket', 'Pemakaian bulan ini'], [/^Akun & kartu/, '/pengaturan/akun', 'Tambah akun'], [/^Keuangan/, '/pengaturan/keuangan', 'Mata uang utama'], [/^Tampilan/, '/pengaturan/tampilan', 'Warna aksen'], [/^Notifikasi/, '/pengaturan/notifikasi', 'Recap mingguan'], [/^Data & privasi/, '/pengaturan/data', 'Ekspor data'], [/^Automation/, '/otomasi', 'Smart Log']]) {
-    await menu(p, name); if (url(p) !== path_) throw new Error(`${name} -> ${url(p)}`); await expectText(p, text); await back(p);
+  for (const t of ['Akun', 'Preferensi', 'Data & lainnya']) await expectText(p, t);
+  await p.getByRole('button', { name: 'Buka profil Rani Pratiwi' }).click();
+  await p.waitForTimeout(500);
+  if (url(p) !== '/pengaturan/profil') throw new Error('profil -> ' + url(p));
+  await expectText(p, 'Paket');
+  await expectText(p, 'Free');
+  await back(p);
+  for (const [name, path_, text] of [
+    [/^Akun & kartu/, '/pengaturan/akun', 'Tambah akun'],
+    [/^Automation/, '/otomasi', 'Smart Log'],
+    [/^Keuangan/, '/pengaturan/keuangan', 'Mata uang utama'],
+    [/^Kategori/, '/pengaturan/kategori', 'Kategori kamu'],
+    [/^Tampilan/, '/pengaturan/tampilan', 'Tema'],
+    [/^Notifikasi/, '/pengaturan/notifikasi', 'Recap mingguan'],
+    [/^Cadangan/, '/pengaturan/cadangan', 'Buat cadangan'],
+    [/^Data & privasi/, '/pengaturan/data', 'Ekspor data'],
+  ]) {
+    await menu(p, name);
+    if (url(p) !== path_) throw new Error(`${name} -> ${url(p)}`);
+    await expectText(p, text);
+    await back(p);
     if (url(p) !== '/pengaturan') throw new Error('kembali -> ' + url(p));
   }
 });
-await step('Pengaturan: ganti aksen ke Biru, mata uang MYR, toggle notifikasi', async () => {
-  const p = await open('/pengaturan'); await menu(p, /^Tampilan/); await p.getByRole('radio', { name: 'Biru' }).click();
-  if ((await p.getByRole('radio', { name: 'Biru' }).getAttribute('aria-checked')) !== 'true') throw new Error('aksen tidak terpilih');
-  await back(p); await menu(p, /^Keuangan/); await p.getByRole('button', { name: /Mata uang utama/ }).click(); await p.getByRole('button', { name: /^MYR/ }).click(); await expectText(p, 'MYR');
-  await back(p); await p.getByRole('button', { name: /^Keuangan, MYR/ }).waitFor({ timeout: 3000 });
+await step('Pengaturan: ganti tema ke Terang, mata uang MYR, toggle notifikasi', async () => {
+  const p = await open('/pengaturan');
+  await menu(p, /^Tampilan/);
+  await p.getByRole('tab', { name: 'Terang' }).click();
+  if ((await p.getByRole('tab', { name: 'Terang' }).getAttribute('aria-selected')) !== 'true') throw new Error('tema Terang tidak terpilih');
+  await back(p);
+  await menu(p, /^Keuangan/);
+  await p.getByRole('button', { name: /Mata uang utama/ }).click();
+  await p.getByRole('button', { name: /^MYR/ }).click();
+  await expectText(p, 'MYR');
+  await back(p);
+  await p.getByRole('button', { name: /^Keuangan, MYR/ }).waitFor({ timeout: 3000 });
   await menu(p, /^Notifikasi/);
-  const sw = p.getByRole('switch', { name: 'Recap mingguan' }); if ((await sw.getAttribute('aria-checked')) !== 'true') throw new Error('switch awal'); await sw.click(); if ((await sw.getAttribute('aria-checked')) !== 'false') throw new Error('toggle');
-  await back(p); await p.getByRole('button', { name: /^Notifikasi, 3\/4 aktif/ }).waitFor({ timeout: 3000 });
+  const sw = p.getByRole('switch', { name: 'Recap mingguan' });
+  if ((await sw.getAttribute('aria-checked')) !== 'true') throw new Error('switch awal');
+  await sw.click();
+  if ((await sw.getAttribute('aria-checked')) !== 'false') throw new Error('toggle');
+  await back(p);
+  await p.getByRole('button', { name: /^Notifikasi, 3\/4 aktif/ }).waitFor({ timeout: 3000 });
 });
 await step('Pengaturan: Hapus akun menampilkan dialog konfirmasi', async () => {
-  const p = await open('/pengaturan'); await menu(p, /^Data & privasi/); await p.getByRole('button', { name: /^Hapus akun/ }).click(); await expectText(p, 'Hapus akun dan semua data?'); await btn(p, 'Batal').click();
+  const p = await open('/pengaturan');
+  await menu(p, /^Data & privasi/);
+  await p.getByRole('button', { name: /^Hapus akun/ }).click();
+  await expectText(p, 'Hapus akun dan semua data?');
+  await btn(p, 'Batal').click();
 });
 await step('Pengaturan: ganti bahasa ke Türkçe -> seluruh UI ikut, nav dan tanggal', async () => {
-  const p = await open('/pengaturan'); await p.getByRole('button', { name: /^Bahasa/ }).click();
-  await btn(p, 'Türkçe').click(); await expectText(p, 'Ayarlar'); await expectText(p, 'Görünüm');
-  await btn(p, 'Geri').click(); await p.waitForTimeout(400); await p.getByRole('tab', { name: 'Ana Sayfa', exact: true }).waitFor({ timeout: 3000 });
+  const p = await open('/pengaturan');
+  await menu(p, /^Tampilan/);
+  await p.getByRole('button', { name: /^Bahasa,/ }).click();
+  await p.getByText('Türkçe', { exact: true }).click();
+  await expectText(p, 'Görünüm');
+  await btn(p, 'Geri').click();
+  await p.waitForTimeout(400);
+  await expectText(p, 'Ayarlar');
+  await btn(p, 'Geri').click();
+  await p.waitForTimeout(400);
+  await p.getByRole('tab', { name: 'Ana Sayfa', exact: true }).waitFor({ timeout: 3000 });
 });
-await step('Bahasa: sebelum login ikut perangkat (ms/en, lainnya Indonesia); setelah login ikut profil', async () => {
-  const ms = await open('/', 'dark', 'ms-MY'); await expectText(ms, 'Log masuk atau daftar');
-  const en = await open('/', 'dark', 'en-US'); await expectText(en, 'Sign in or sign up');
-  const fr = await open('/', 'dark', 'fr-FR'); await expectText(fr, 'Masuk atau daftar');
-  session = await sessionFor(); // profil tersimpan = Indonesia, walau perangkat berbahasa Inggris
-  const app = await open('/pengaturan', 'dark', 'en-US'); await expectText(app, 'Pengaturan');
-}, { signedIn: false });
 await step('Pengaturan: pilih desain kartu bank -> kartu di Beranda berganti warna dan nama', async () => {
-  // Fase 7: ketuk akun membuka Detail akun; desain kartu dipilih dari baris "Desain kartu".
-  const p = await open('/pengaturan/akun'); await p.getByRole('button', { name: /^GoPay/ }).first().click(); await p.waitForTimeout(500);
+  const p = await open('/pengaturan/akun');
+  await p.getByRole('button', { name: /^GoPay/ }).first().click();
+  await p.waitForTimeout(500);
+  await btn(p, 'Detail akun').click();
+  await p.waitForTimeout(500);
   if (!url(p).startsWith('/akun/')) throw new Error('detail akun -> ' + url(p));
   await p.getByRole('button', { name: /^Desain kartu/ }).first().click();
-  await expectText(p, 'Desain kartu'); await p.getByRole('radio', { name: 'ShopeePay' }).click();
+  await expectText(p, 'Desain kartu');
+  await p.getByRole('radio', { name: 'ShopeePay' }).click();
   if ((await p.getByRole('radio', { name: 'ShopeePay' }).getAttribute('aria-checked')) !== 'true') throw new Error('ShopeePay tidak terpilih');
-  await p.keyboard.press('Escape'); await p.waitForTimeout(400);
-  for (let i = 0; i < 2; i++) {
-    await p.getByRole('button', { name: /^Kembali$/ }).locator('visible=true').first().click(); await p.waitForTimeout(500);
-  }
+  await p.keyboard.press('Escape');
+  await p.waitForTimeout(400);
+  await p.goto('http://localhost:8095/', { waitUntil: 'networkidle' });
   await p.getByLabel(/^ShopeePay E-Wallet/).first().waitFor({ timeout: 3000 });
 });
 await step('Keyboard: Tab menunjukkan ring fokus, Enter mengaktifkan, mouse tidak memunculkan ring', async () => {
   const p = await open('/');
-  await btn(p, 'Sembunyikan saldo').click(); await p.waitForTimeout(200);
+  await btn(p, 'Sembunyikan saldo').click();
+  await p.waitForTimeout(200);
   const mouseRing = await p.evaluate(() => getComputedStyle(document.activeElement).outlineStyle);
   if (mouseRing === 'solid') throw new Error('ring muncul setelah klik mouse');
-  await p.keyboard.press('Tab'); await p.waitForTimeout(200);
+  await p.keyboard.press('Tab');
+  await p.waitForTimeout(200);
   const ring = await p.evaluate(() => getComputedStyle(document.activeElement.firstElementChild ?? document.activeElement).outlineStyle + '|' + getComputedStyle(document.activeElement).outlineStyle);
   if (!ring.includes('solid')) throw new Error('ring fokus tidak terlihat setelah Tab: ' + ring);
-  await p.goto('http://localhost:8095/', { waitUntil: 'networkidle' }); await p.waitForTimeout(500);
-  await p.keyboard.press('Tab'); await p.keyboard.press('Enter'); await p.waitForTimeout(600);
+  await p.goto('http://localhost:8095/', { waitUntil: 'networkidle' });
+  await p.waitForTimeout(500);
+  await p.keyboard.press('Tab');
+  await p.keyboard.press('Enter');
+  await p.waitForTimeout(600);
   if (url(p) !== '/pengaturan') throw new Error('Enter pada tombol profil -> ' + url(p));
 });
 await step('Escape menutup sheet Catat', async () => {
-  const p = await open('/'); await btn(p, 'Catat transaksi').click(); await expectText(p, 'Pilih cara tercepat untukmu');
-  await p.keyboard.press('Escape'); await p.waitForTimeout(500);
+  const p = await open('/');
+  await btn(p, 'Catat transaksi').click();
+  await expectText(p, 'Pilih cara tercepat untukmu');
+  await p.keyboard.press('Escape');
+  await p.waitForTimeout(500);
   if (await p.getByText('Pilih cara tercepat untukmu').locator('visible=true').count()) throw new Error('sheet masih terbuka');
 });
-await step('Tanpa sesi: aplikasi membuka layar masuk, bukan layar kosong', async () => {
-  const p = await open('/'); if (url(p) !== '/masuk') throw new Error(url(p)); await expectText(p, 'Masuk atau daftar');
-  await p.getByLabel('Email').fill('bukan-email'); await btn(p, 'Kirim kode').click(); await expectText(p, 'Format email belum benar');
+await step('Tanpa sesi: pengunjung pertama membuka Sambut -> Masuk; setelah perkenalan langsung Masuk', async () => {
+  const p0 = await open('/', 'dark', 'id-ID', { introSeen: false });
+  if (url(p0) !== '/sambut') throw new Error('awal -> ' + url(p0));
+  await expectText(p0, 'Asisten keuangan yang bikin uangmu tertata');
+  await btn(p0, 'Lanjut dengan email').click();
+  await p0.waitForTimeout(500);
+  if (url(p0) !== '/masuk') throw new Error('sambut -> ' + url(p0));
+
+  const p = await open('/');
+  if (url(p) !== '/masuk') throw new Error(url(p));
+  await expectText(p, 'Masuk atau daftar');
+  await p.getByLabel('Email').fill('bukan-email');
+  await btn(p, 'Kirim kode').click();
+  await expectText(p, 'Format email belum benar');
 }, { signedIn: false });
 await step('Setup 3 langkah pengguna baru -> akun pertama tersimpan di server -> Beranda', async () => {
-  const p = await open('/'); if (url(p) !== '/setup') throw new Error(url(p));
-  await expectText(p, 'Mata uang utama'); await btn(p, 'Lanjut').click();
-  await btn(p, 'Lanjut').click(); await expectText(p, 'Isi nama akun.');
-  await p.getByLabel('Nama akun').fill('BCA Gaji'); await btn(p, 'Lanjut').click();
-  await btn(p, 'Mulai pakai Arshif').click(); await expectText(p, 'Isi penghasilan bulanan');
-  await p.getByRole('textbox', { name: /Penghasilan bulanan/ }).fill('9000000'); await btn(p, 'Mulai pakai Arshif').click();
+  const p = await open('/');
+  if (url(p) !== '/setup') throw new Error(url(p));
+  await expectText(p, 'Mata uang utama');
+  await btn(p, 'Lanjut').click();
+  await btn(p, 'Lanjut').click();
+  await expectText(p, 'Isi nama akun.');
+  await p.getByLabel('Nama akun').fill('BCA Gaji');
+  await btn(p, 'Lanjut').click();
+  await btn(p, 'Mulai pakai Arshif').click();
+  await expectText(p, 'Isi penghasilan bulanan');
+  await p.getByRole('textbox', { name: /Penghasilan bulanan/ }).fill('9000000');
+  await btn(p, 'Mulai pakai Arshif').click();
   await p.getByLabel(/^BCA Tabungan|^BCA /).first().waitFor({ timeout: 8000 });
-  await reloadPage(p); if (url(p) !== '/') throw new Error('setelah muat ulang: ' + url(p));
+  await p.waitForTimeout(900);
+  await p.goto('http://localhost:8095/', { waitUntil: 'networkidle' });
+  await reloadPage(p);
+  if (url(p) !== '/') throw new Error('setelah muat ulang: ' + url(p));
 }, { seed: false, onboarded: false });
 await step('Pengguna baru: bahasa perangkat (Melayu) dipakai di setup dan tersimpan di profil', async () => {
-  const p = await open('/', 'dark', 'ms-MY'); await expectText(p, 'Langkah 1 daripada 3');
-  await p.waitForTimeout(1500); await reloadPage(p); await expectText(p, 'Langkah 1 daripada 3');
+  const p = await open('/', 'dark', 'ms-MY');
+  await expectText(p, 'Langkah 1 daripada 3');
+  await p.waitForTimeout(1500);
+  await reloadPage(p);
+  await expectText(p, 'Langkah 1 daripada 3');
 }, { seed: false, onboarded: false });
 await step('Simpan manual bertahan setelah muat ulang (tersimpan di Supabase)', async () => {
-  const p = await open('/tambah'); await p.getByRole('textbox', { name: /Nominal/ }).fill('45000'); await p.getByLabel('Toko atau keterangan').fill('Es teh Solo');
-  await p.getByRole('checkbox', { name: 'Makan & Minum' }).click(); await btn(p, 'Simpan transaksi').click(); await expectText(p, 'Transaksi tersimpan');
-  await p.waitForTimeout(1500); await p.goto('http://localhost:8095/transaksi', { waitUntil: 'networkidle' }); await p.waitForTimeout(1500);
-  await expectText(p, 'Es teh Solo'); await expectText(p, '29 dari 29 transaksi');
+  const p = await open('/tambah');
+  await p.getByRole('textbox', { name: /Nominal/ }).fill('45000');
+  await p.getByLabel('Toko atau keterangan').fill('Es teh Solo');
+  await p.getByRole('checkbox', { name: 'Makan & Minum' }).click();
+  await btn(p, 'Simpan transaksi').click();
+  await expectText(p, 'Transaksi tersimpan');
+  await p.waitForTimeout(1500);
+  await p.goto('http://localhost:8095/transaksi', { waitUntil: 'networkidle' });
+  await p.waitForTimeout(1500);
+  await expectText(p, 'Es teh Solo');
+  await expectText(p, '29 dari 29 transaksi');
 });
-await step('Preferensi bertahan setelah muat ulang: aksen, bahasa, desain kartu', async () => {
-  const p = await open('/pengaturan'); await menu(p, /^Tampilan/); await p.getByRole('radio', { name: 'Biru' }).click(); await back(p);
-  await menu(p, /^Akun & kartu/); await p.getByRole('button', { name: /^GoPay/ }).first().click(); await p.waitForTimeout(500);
-  await p.getByRole('button', { name: /^Desain kartu/ }).first().click(); await p.getByRole('radio', { name: 'ShopeePay' }).click(); await p.keyboard.press('Escape');
-  await p.waitForTimeout(400); await back(p); await back(p);
-  await p.getByRole('button', { name: /^Bahasa/ }).click(); await btn(p, 'English').click(); await expectText(p, 'Settings');
-  await p.waitForTimeout(1500); await reloadPage(p);
+await step('Preferensi bertahan setelah muat ulang: tema, bahasa, desain kartu', async () => {
+  const p = await open('/pengaturan');
+  await menu(p, /^Tampilan/);
+  await p.getByRole('tab', { name: 'Terang' }).click();
+  await p.getByRole('button', { name: /^Bahasa,/ }).click();
+  await p.getByText('English', { exact: true }).click();
+  await expectText(p, 'Appearance');
+  await btn(p, 'Back').click();
+  await p.waitForTimeout(400);
+  await expectText(p, 'Settings');
+  await menu(p, /^Accounts & cards/);
+  await p.getByRole('button', { name: /^GoPay/ }).first().click();
+  await p.waitForTimeout(400);
+  await btn(p, 'Account details').click();
+  await p.waitForTimeout(400);
+  await p.getByRole('button', { name: /^Card design/ }).first().click();
+  await p.getByRole('radio', { name: 'ShopeePay' }).click();
+  await p.keyboard.press('Escape');
+  await p.waitForTimeout(1500);
+  await p.goto('http://localhost:8095/pengaturan', { waitUntil: 'networkidle' });
+  await p.waitForTimeout(1500);
   await expectText(p, 'Settings');
   await menu(p, /^Appearance/);
-  if ((await p.getByRole('radio', { name: 'Blue' }).getAttribute('aria-checked')) !== 'true') throw new Error('aksen tidak tersimpan');
-  await p.getByRole('button', { name: /^Back$/ }).locator('visible=true').first().click(); await p.waitForTimeout(500);
-  await menu(p, /^Accounts & cards/); await expectText(p, 'ShopeePay');
+  if ((await p.getByRole('tab', { name: 'Light' }).getAttribute('aria-selected')) !== 'true') throw new Error('tema Terang tidak tersimpan');
+  await btn(p, 'Back').click();
+  await p.waitForTimeout(500);
+  await menu(p, /^Accounts & cards/);
+  await expectText(p, 'ShopeePay');
 });
 await step('Fase 7: Tanggal gajian 1-28 + pratinjau periode; Kurs saya terbuka', async () => {
-  const p = await open('/pengaturan/keuangan'); await p.getByRole('button', { name: /^Tanggal gajian/ }).click();
-  await expectText(p, 'Pilih 1 sampai 28'); await p.getByRole('checkbox', { name: '10', exact: true }).first().click(); await expectText(p, 'Periode sekarang');
-  await p.keyboard.press('Escape'); await p.waitForTimeout(400); await expectText(p, 'Tgl 10');
-  await p.getByRole('button', { name: /^Kurs saya/ }).click(); await p.waitForTimeout(500);
-  if (url(p) !== '/kurs-saya') throw new Error(url(p)); await expectText(p, 'Kurs tersimpan');
+  const p = await open('/pengaturan/keuangan');
+  await p.getByRole('button', { name: /^Tanggal gajian/ }).click();
+  await expectText(p, 'Pilih 1 sampai 28');
+  await p.getByRole('checkbox', { name: '10', exact: true }).first().click();
+  await expectText(p, 'Periode sekarang');
+  await p.keyboard.press('Escape');
+  await p.waitForTimeout(400);
+  await expectText(p, 'Tgl 10');
+  await p.getByRole('button', { name: /^Kurs saya/ }).click();
+  await p.waitForTimeout(500);
+  if (url(p) !== '/kurs-saya') throw new Error(url(p));
+  await expectText(p, 'Kurs tersimpan');
 });
 await step('Fase 7: Anggaran periode ini, buat dengan batas kategori -> tersimpan setelah muat ulang', async () => {
-  const p = await open('/anggaran'); await expectText(p, 'Anggaran periode ini');
-  await btn(p, 'Buat anggaran').click(); await expectText(p, 'Batas per kategori');
+  const p = await open('/anggaran');
+  await expectText(p, 'Anggaran periode ini');
+  await btn(p, 'Buat anggaran').click();
+  await expectText(p, 'Batas per kategori');
   await p.getByRole('textbox', { name: /Total anggaran/ }).fill('12000000');
   await p.getByRole('textbox', { name: /^Makan & Minum/ }).fill('1500000');
-  await btn(p, 'Simpan anggaran').click(); await expectText(p, 'Anggaran tersimpan');
-  await p.waitForTimeout(1500); await reloadPage(p); await expectText(p, '1 kategori diberi batas');
+  await btn(p, 'Simpan anggaran').click();
+  await expectText(p, 'Anggaran tersimpan');
+  await p.waitForTimeout(1500);
+  await reloadPage(p);
+  await expectText(p, '1 kategori diberi batas');
 });
 await step('Fase 7: Tagihan tampilan Daftar/Kalender', async () => {
-  const p = await open('/rencana/tagihan'); await p.waitForTimeout(500);
+  const p = await open('/rencana/tagihan');
+  await p.waitForTimeout(500);
   const cal = p.getByRole('tab', { name: 'Kalender' });
-  if (await cal.count()) { await cal.click(); await p.getByRole('button', { name: 'Bulan berikutnya' }).first().waitFor({ timeout: 3000 }); }
-  else await expectText(p, 'Belum ada tagihan');
+  if (await cal.count()) {
+    await cal.click();
+    await p.getByRole('button', { name: 'Bulan berikutnya' }).first().waitFor({ timeout: 3000 });
+  } else await expectText(p, 'Belum ada tagihan');
+});
+await step('Fitur baru: Konverter (/alat/kurs) menampilkan kartu Kurs efektif & remitansi', async () => {
+  const p = await open('/alat/kurs');
+  await expectText(p, 'Kurs efektif & remitansi');
+  await expectText(p, 'transaksi lintas mata uang');
+});
+await step('Fitur baru: Smart Log Rules (/otomasi) menyimpan aturan transfer akun sendiri & bertahan setelah muat ulang', async () => {
+  const p = await open('/otomasi');
+  await expectText(p, 'Aturan otomatis');
+  await p.getByLabel('Tambah aturan').click();
+  await p.getByLabel('Kata kunci merchant / notifikasi').fill('gopay topup');
+  await p.getByText('Transfer akun sendiri', { exact: true }).click();
+  await p.getByLabel('Simpan aturan').click();
+  await expectText(p, 'gopay topup');
+  await p.waitForTimeout(1200);
+  await reloadPage(p);
+  await expectText(p, 'gopay topup');
+});
+await step('Fitur baru: Proyeksi tagihan sebelum gajian (/rencana/tagihan & /anggaran)', async () => {
+  const p = await open('/rencana/tagihan');
+  await btn(p, 'Tambah tagihan').click();
+  await p.getByLabel('Nama').fill('Internet Rumah');
+  await p.getByRole('textbox', { name: /Nominal/ }).fill('350000');
+  await btn(p, 'Simpan').click();
+  await expectText(p, 'Proyeksi sebelum gajian');
+  await p.getByRole('tab', { name: 'Kalender' }).click();
+  await expectText(p, 'Gajian');
+  await p.goto('http://localhost:8095/anggaran', { waitUntil: 'networkidle' });
+  await p.waitForTimeout(1000);
+  await expectText(p, 'Tagihan & langganan s.d.');
 });
 await step('Scan struk LIVE: pilih foto -> Gemini membaca -> review -> simpan', async () => {
-  const p = await open('/scan'); const chooser = p.waitForEvent('filechooser'); await btn(p, 'Pilih dari galeri').click();
+  const p = await open('/scan');
+  const chooser = p.waitForEvent('filechooser');
+  await btn(p, 'Pilih dari galeri').click();
   await (await chooser).setFiles({ name: 'struk.jpg', mimeType: 'image/jpeg', buffer: await receiptJpeg() });
-  await expectText(p, 'Cek hasil scan', 30000); await expectText(p, 'INDOMIE GORENG');
+  await expectText(p, 'Cek hasil scan', 30000);
+  await expectText(p, 'INDOMIE GORENG');
   if ((await p.getByRole('textbox', { name: /Total belanja/ }).inputValue()) !== '87.500') throw new Error('total salah');
-  await btn(p, 'Simpan transaksi').click(); await expectText(p, 'Struk tersimpan');
+  await btn(p, 'Simpan transaksi').click();
+  await expectText(p, 'Struk tersimpan');
 });
-await step('Import PDF LIVE: pilih PDF -> Gemini membaca baris -> duplikat tidak dicentang -> import', async () => {
-  const p = await open('/import'); const chooser = p.waitForEvent('filechooser'); await btn(p, 'Pilih berkas PDF').click();
+await step('Import PDF LIVE: pilih PDF -> Gemini membaca baris + rekonsiliasi saldo -> import', async () => {
+  const p = await open('/import');
+  const chooser = p.waitForEvent('filechooser');
+  await btn(p, 'Pilih berkas PDF').click();
   await (await chooser).setFiles({ name: 'rekening.pdf', mimeType: 'application/pdf', buffer: await statementPdf() });
-  await btn(p, 'Baca rekening koran').click(); await expectText(p, 'Cek hasil import', 45000);
-  await expectText(p, 'Kemungkinan duplikat'); await p.getByRole('button', { name: /^Import \d+ transaksi/ }).click(); await expectText(p, 'transaksi diimpor');
+  await btn(p, 'Baca rekening koran').click();
+  await expectText(p, 'Cek hasil import', 45000);
+  await expectText(p, 'Rekonsiliasi saldo akhir');
+  await expectText(p, 'Kemungkinan duplikat');
+  await p.getByRole('button', { name: /^Import \d+ transaksi/ }).click();
+  await expectText(p, 'transaksi diimpor');
 });
-// ---------------------------------------------------------------- Fase 8: admin web
+// ---------------------------------------------------------------- Fase 8: admin web + Fitur Pro
 const ADMIN_EMAIL = process.env.E2E_ADMIN_EMAIL ?? 'hafizhxcv@gmail.com';
-const asAdmin = async (path_) => { session = await sessionFor(ADMIN_EMAIL); return open(path_); };
-const openUser = async (p, email) => {
-  await p.getByLabel('Cari email, nama, atau ID').fill(email); await p.waitForTimeout(1200);
-  await p.getByRole('button', { name: email }).first().click(); await expectText(p, 'Kuota periode ini', 8000);
+const asAdmin = async (path_) => {
+  session = await sessionFor(ADMIN_EMAIL);
+  return open(path_);
 };
-const confirmDialog = async (p, name) => { await p.getByRole('dialog').getByRole('button', { name, exact: true }).click(); };
+const openUser = async (p, email) => {
+  await p.getByLabel('Cari email, nama, atau ID').fill(email);
+  await p.waitForTimeout(1200);
+  await p.getByRole('button', { name: email }).first().click();
+  await expectText(p, 'Kuota periode ini', 8000);
+};
+const confirmDialog = async (p, name) => {
+  await p.getByRole('dialog').getByRole('button', { name, exact: true }).click();
+};
 await step('Admin: tanpa login -> ajakan masuk -> /masuk', async () => {
-  const p = await open('/admin'); await expectText(p, 'Masuk untuk membuka panel admin');
-  await btn(p, 'Masuk dengan email').click(); await p.waitForTimeout(500);
+  const p = await open('/admin');
+  await expectText(p, 'Masuk untuk membuka panel admin');
+  await btn(p, 'Masuk dengan email').click();
+  await p.waitForTimeout(500);
   if (url(p) !== '/masuk') throw new Error(url(p));
 }, { signedIn: false });
-await step('Admin: dasbor angka nyata (DAU, total, Premium, AI hari ini, pendapatan)', async () => {
+await step('Admin: dasbor angka nyata (DAU, total, Pro, AI hari ini, pendapatan)', async () => {
   const p = await asAdmin('/admin');
-  for (const t of ['Pengguna aktif hari ini', 'Aktif 7 hari terakhir', 'Total pengguna', 'Pengguna Premium', 'Pemakaian AI hari ini', 'Estimasi pendapatan bulan ini']) await expectText(p, t, 8000);
+  for (const t of ['Pengguna aktif hari ini', 'Aktif 7 hari terakhir', 'Total pengguna', 'Pengguna Pro', 'Pemakaian AI hari ini', 'Estimasi pendapatan bulan ini']) await expectText(p, t, 8000);
 });
-await step('Admin: cari pengguna uji -> detail paket + kuota -> grant 7 hari -> cabut', async () => {
-  const p = await asAdmin('/admin?bagian=pengguna'); await openUser(p, 'e2e@arshif.test');
+await step('Admin: cari pengguna uji -> detail paket + kuota -> grant 7 hari + Ekspor Pajak Pro -> cabut', async () => {
+  const userSession = session;
+  const p = await asAdmin('/admin?bagian=pengguna');
+  await openUser(p, 'e2e@arshif.test');
   await expectText(p, 'Scan struk');
-  await p.getByLabel('Jumlah hari').fill('7'); await btn(p, 'Beri Premium 7 hari').click();
-  await expectText(p, 'Premium aktif sampai', 15000);
-  await btn(p, 'Cabut grant manual').click(); await confirmDialog(p, 'Cabut grant manual');
-  await expectText(p, 'Grant manual dicabut. Paket sekarang Free.', 15000);
+  await p.getByLabel('Jumlah hari').fill('7');
+  await btn(p, 'Beri Pro 7 hari').click();
+  await expectText(p, 'Pro aktif sampai', 15000);
+
+  session = userSession;
+  const exp = await open('/alat/ekspor');
+  await expectText(exp, 'Paket pajak & invoice tahunan', 8000);
+
+  session = await sessionFor(ADMIN_EMAIL);
+  const pRevoke = await open('/admin?bagian=pengguna');
+  await openUser(pRevoke, 'e2e@arshif.test');
+  await btn(pRevoke, 'Cabut grant manual').click();
+  await confirmDialog(pRevoke, 'Cabut grant manual');
+  await expectText(pRevoke, 'Grant manual dicabut. Paket sekarang Free.', 15000);
 });
 await step('Admin: tangguhkan pengguna uji -> aplikasinya menampilkan layar ditangguhkan -> pulihkan', async () => {
   const userSession = session;
-  const p = await asAdmin('/admin?bagian=pengguna'); await openUser(p, 'e2e@arshif.test');
-  await btn(p, 'Tangguhkan akun').click(); await confirmDialog(p, 'Tangguhkan akun'); await expectText(p, 'Akun ditangguhkan.', 15000);
-  session = userSession; const u = await open('/'); await expectText(u, 'Akun ditangguhkan'); await expectText(u, 'Keluar');
-  await btn(p, 'Pulihkan akun').click(); await expectText(p, 'Akun dipulihkan.', 15000);
+  const p = await asAdmin('/admin?bagian=pengguna');
+  await openUser(p, 'e2e@arshif.test');
+  await btn(p, 'Tangguhkan akun').click();
+  await confirmDialog(p, 'Tangguhkan akun');
+  await expectText(p, 'Akun ditangguhkan.', 15000);
+  session = userSession;
+  const u = await open('/');
+  await expectText(u, 'Akun ditangguhkan');
+  await expectText(u, 'Keluar');
+  await btn(p, 'Pulihkan akun').click();
+  await expectText(p, 'Akun dipulihkan.', 15000);
 });
 await step('Admin: log AI per jenis + rasio gagal + latensi', async () => {
-  const p = await asAdmin('/admin?bagian=ai'); await btn(p, '90 hari').click().catch(() => p.getByText('90 hari').click());
+  const p = await asAdmin('/admin?bagian=ai');
+  await btn(p, '90 hari').click().catch(() => p.getByText('90 hari').click());
   for (const t of ['Scan struk (OCR)', 'Voice Log', 'Import PDF', 'Kegagalan terakhir']) await expectText(p, t, 8000);
-  await expectText(p, 'Rasio gagal'); await expectText(p, 'Latensi rata-rata');
+  await expectText(p, 'Rasio gagal');
+  await expectText(p, 'Latensi rata-rata');
 });
 await step('Admin: pesanan web kosong dengan penjelasan kunci belum diisi', async () => {
-  const p = await asAdmin('/admin?bagian=pesanan'); await expectText(p, 'Kunci Xendit dan Paddle belum diisi', 8000);
+  const p = await asAdmin('/admin?bagian=pesanan');
+  await expectText(p, 'Kunci Xendit dan Paddle belum diisi', 8000);
 });
 await step('Admin: kurs -> status terakhir -> sinkron manual memperbarui status', async () => {
-  const p = await asAdmin('/admin?bagian=kurs'); await expectText(p, 'Sinkronisasi terakhir', 8000);
-  await btn(p, 'Sinkronkan sekarang').click(); await expectText(p, 'Sinkron selesai', 30000);
-  await expectText(p, 'baru saja'); await expectText(p, 'Manual');
+  const p = await asAdmin('/admin?bagian=kurs');
+  await expectText(p, 'Sinkronisasi terakhir', 8000);
+  await btn(p, 'Sinkronkan sekarang').click();
+  await expectText(p, 'Sinkron selesai', 30000);
+  await expectText(p, 'baru saja');
+  await expectText(p, 'Manual');
 });
 await step('Admin: broadcast ke satu email -> notifikasi sampai di lonceng pengguna uji', async () => {
-  const userSession = session; const title = `Uji broadcast ${Date.now() % 100000}`;
+  const userSession = session;
+  const title = `Uji broadcast ${Date.now() % 100000}`;
   const p = await asAdmin('/admin?bagian=broadcast');
   await p.getByText('Satu email', { exact: true }).click();
-  await p.getByLabel('Email penerima').fill('e2e@arshif.test'); await expectText(p, '1 penerima', 8000);
-  await p.getByLabel('Judul').fill(title); await p.getByLabel('Isi').fill('Pesan uji dari panel admin.');
-  await btn(p, 'Kirim ke 1 penerima').click(); await confirmDialog(p, 'Kirim ke 1 penerima'); await expectText(p, 'Terkirim ke 1 penerima', 10000);
-  session = userSession; const u = await open('/'); await u.getByRole('button', { name: /^Notifikasi/ }).first().click();
-  await expectText(u, title, 8000); await expectText(u, 'Pesan uji dari panel admin.');
+  await p.getByLabel('Email penerima').fill('e2e@arshif.test');
+  await expectText(p, '1 penerima', 8000);
+  await p.getByLabel('Judul').fill(title);
+  await p.getByLabel('Isi').fill('Pesan uji dari panel admin.');
+  await btn(p, 'Kirim ke 1 penerima').click();
+  await confirmDialog(p, 'Kirim ke 1 penerima');
+  await expectText(p, 'Terkirim ke 1 penerima', 10000);
+  session = userSession;
+  const u = await open('/');
+  await u.getByRole('button', { name: /^Notifikasi/ }).first().click();
+  await expectText(u, title, 8000);
+  await expectText(u, 'Pesan uji dari panel admin.');
 });
 await step('Premium web USD (Paddle): checkout sampai pesan "belum aktif", bukan error mentah', async () => {
-  const p = await open('/premium'); await p.getByText('USD', { exact: true }).first().click();
-  await p.getByRole('radio', { name: /^Bulanan/ }).click(); await p.getByRole('button', { name: /^Bayar \$1.50/ }).click(); await p.waitForTimeout(4000);
+  const p = await open('/premium');
+  await p.getByText('USD', { exact: true }).first().click();
+  await p.getByRole('radio', { name: /^Bulanan/ }).click();
+  await p.getByRole('button', { name: /^Bayar \$1.50/ }).click();
+  await p.waitForTimeout(4000);
   await expectText(p, 'belum aktif');
 });
 // Diharapkan: checkout-create menjawab 503 not_configured selama kunci Xendit/Paddle belum diisi (langkah
@@ -379,7 +643,9 @@ await step('Premium web USD (Paddle): checkout sampai pesan "belum aktif", bukan
 const EXPECTED = [/^\/premium: Failed to load resource: the server responded with a status of 503/];
 const unexpected = errors.filter((e) => !EXPECTED.some((re) => re.test(e)));
 const expected = errors.length - unexpected.length;
-console.log(results.join('\n')); console.log('\nERROR CONSOLE:', unexpected.length ? [...new Set(unexpected)].join('\n') : 'tidak ada');
+console.log(results.join('\n'));
+console.log('\nERROR CONSOLE:', unexpected.length ? [...new Set(unexpected)].join('\n') : 'tidak ada');
 if (expected) console.log(`(diabaikan: ${expected} error 503 checkout not_configured yang diharapkan)`);
-await b.close(); server.close();
+await b.close();
+server.close();
 if (results.some((r) => r.startsWith('FAIL')) || unexpected.length) process.exit(1);

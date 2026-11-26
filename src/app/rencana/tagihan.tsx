@@ -8,11 +8,14 @@ import { BillCalendar } from '@/features/planning/BillCalendar';
 import { BillSheet, dueLabel } from '@/features/planning/BillSheet';
 import { BillForm } from '@/features/planning/forms';
 import { AddButton, PlanScreen } from '@/features/planning/kit';
+import { PaydayProjectionCard } from '@/features/planning/PaydayProjectionCard';
 import { useDesktop } from '@/hooks/useDesktop';
 import { useI18n } from '@/i18n';
 import { diffDays, shortDate, todayYmd } from '@/lib/dates';
 import { formatMoney } from '@/lib/money';
 import { BILL_GROUPS, billGroup, type BillGroup } from '@/lib/planning/bills';
+import { computePaydayProjection } from '@/lib/planning/paydayCycle';
+import { useStore } from '@/state/AppStore';
 import { useLimits } from '@/state/limits';
 import { usePlanning } from '@/state/planning';
 import { space } from '@/theme/tokens';
@@ -22,7 +25,8 @@ type View_ = 'list' | 'calendar';
 
 export default function BillsScreen() {
   const { t, lang } = useI18n();
-  const { bills } = usePlanning();
+  const { state } = useStore();
+  const { bills, subscriptions } = usePlanning();
   const limits = useLimits();
   const [filter, setFilter] = useState<Filter>('unpaid');
   const [view, setView] = useState<View_>('list');
@@ -31,6 +35,16 @@ export default function BillsScreen() {
   const today = todayYmd();
   const open = bills.find((b) => b.id === openId) ?? null;
   const desktop = useDesktop();
+  const accountById = new Map(state.accounts.map((a) => [a.id, a]));
+  const projection = computePaydayProjection({
+    bills,
+    subscriptions,
+    accounts: state.accounts,
+    transactions: state.transactions,
+    today,
+    payday: state.payday,
+    mainCurrency: state.mainCurrency,
+  });
 
   const grouped = new Map<BillGroup, Bill[]>();
   for (const b of bills) {
@@ -51,7 +65,7 @@ export default function BillsScreen() {
       ]}
     />
   );
-  const calendar = <BillCalendar bills={bills} today={today} filter={filter} onPressBill={(b) => setOpenId(b.id)} />;
+  const calendar = <BillCalendar bills={bills} today={today} filter={filter} paydayDate={projection.nextPayday} onPressBill={(b) => setOpenId(b.id)} />;
   const billList =
     groups.length === 0 ? (
       <EmptyState compact title={filter === 'unpaid' ? t('plan.bills.emptyUnpaid') : t('plan.bills.emptyPaid')} />
@@ -62,16 +76,17 @@ export default function BillsScreen() {
             <ListCard>
               {grouped.get(g)!.map((b, i, list) => {
                 const days = diffDays(b.dueDate, today);
+                const accName = b.accountId ? accountById.get(b.accountId)?.name : undefined;
+                const dueSub =
+                  g === 'paid'
+                    ? t('plan.bills.nextDue', { date: shortDate(b.dueDate, lang) })
+                    : `${days < 0 ? t('plan.bills.dueIn', { date: shortDate(b.dueDate, lang) }) : dueLabel(t, lang, days, b.dueDate)} · ${t(`plan.bills.freq.${b.frequency}`)}`;
                 return (
                   <ListItem
                     key={b.id}
                     leading={<CategoryIcon category={b.categoryKey} size={40} />}
                     title={b.name}
-                    subtitle={
-                      g === 'paid'
-                        ? t('plan.bills.nextDue', { date: shortDate(b.dueDate, lang) })
-                        : `${days < 0 ? t('plan.bills.dueIn', { date: shortDate(b.dueDate, lang) }) : dueLabel(t, lang, days, b.dueDate)} · ${t(`plan.bills.freq.${b.frequency}`)}`
-                    }
+                    subtitle={accName ? `${dueSub} · ${accName}` : dueSub}
                     trailing={
                       <View style={styles.trailing}>
                         <AppText variant="bodyStrong" numeric>
@@ -106,6 +121,7 @@ export default function BillsScreen() {
             <GridRow style={styles.top}>
               <GridCell span={7}>
                 {filterTabs}
+                {filter === 'unpaid' && <PaydayProjectionCard projection={projection} mainCurrency={state.mainCurrency} />}
                 {billList}
               </GridCell>
               <GridCell span={5} order={1}>
@@ -114,6 +130,8 @@ export default function BillsScreen() {
             </GridRow>
           ) : (
             <>
+              {filterTabs}
+              {filter === 'unpaid' && <PaydayProjectionCard projection={projection} mainCurrency={state.mainCurrency} />}
               <Tabs
                 accessibilityLabel={t('plan.bills.viewLabel')}
                 value={view}
@@ -123,7 +141,6 @@ export default function BillsScreen() {
                   { key: 'calendar', label: t('plan.bills.view.calendar') },
                 ]}
               />
-              {filterTabs}
               {view === 'calendar' ? calendar : billList}
             </>
           )}

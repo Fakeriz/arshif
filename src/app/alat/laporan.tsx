@@ -2,14 +2,15 @@ import { FileDown } from 'lucide-react-native';
 import { useMemo, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
-import { AppText, Button, Card, Chip, EmptyState, Group, Tabs } from '@/components/ui';
-import { annualReportDocument } from '@/features/tools/documents';
+import { AppText, Button, Card, Chip, EmptyState, Group, Tabs, Toggle } from '@/components/ui';
+import { annualReportDocument, fiscalBundleDocument, invoiceFiscalSummary } from '@/features/tools/documents';
 import { GatedBody, ResultRow, TaxDisclaimer, ToolScreen, useFeatureGate, usePdfExportGate, usePdfShare } from '@/features/tools/kit';
 import { categoryLabel, useI18n, type MsgKey } from '@/i18n';
 import { monthName } from '@/lib/dates';
 import { formatMoney } from '@/lib/money';
 import { annualReport, defaultTaxCountry, ptkpCode, type PtkpStatus, type TaxCountry } from '@/lib/tax';
 import { useStore } from '@/state/AppStore';
+import { useInvoicesOptional } from '@/state/invoices';
 import { useTheme } from '@/theme/ThemeProvider';
 import { space } from '@/theme/tokens';
 
@@ -30,22 +31,30 @@ function Report() {
   const { t, lang } = useI18n();
   const { colors } = useTheme();
   const { state } = useStore();
+  const invCtx = useInvoicesOptional();
   const thisYear = new Date().getFullYear();
   const [year, setYear] = useState(thisYear);
   const [country, setCountry] = useState<TaxCountry>(() => defaultTaxCountry(state.mainCurrency, lang));
   const [married, setMarried] = useState(false);
   const [dependents, setDependents] = useState<PtkpStatus['dependents']>(0);
+  const [includeInvoices, setIncludeInvoices] = useState(true);
   const status: PtkpStatus = { married, dependents };
   const r = useMemo(() => annualReport(state.transactions, year, country, { married, dependents }), [state.transactions, year, country, married, dependents]);
+  const invSum = useMemo(() => invoiceFiscalSummary(invCtx?.invoices ?? [], year, r.currency), [invCtx?.invoices, year, r.currency]);
+  const hasInvoices = invSum.rows.length > 0;
   const money = (v: number) => formatMoney(v, r.currency);
   const pdf = usePdfShare();
   const exportGate = usePdfExportGate();
   const countryKey = country === 'ID' ? 'Id' : country === 'MY' ? 'My' : 'Tr';
-  const empty = r.income === 0 && r.expense === 0;
+  const empty = r.income === 0 && r.expense === 0 && !hasInvoices;
 
   const exportPdf = async () => {
     if (!(await exportGate())) return;
-    await pdf.run(() => annualReportDocument(r, { t, lang, owner: state.displayName ?? '' }), `Arshif-pajak-${year}-${country}`);
+    if (includeInvoices && hasInvoices) {
+      await pdf.run(() => fiscalBundleDocument(r, invCtx?.invoices ?? [], { t, lang, owner: state.displayName ?? '' }), `Arshif-pajak-invoice-${year}-${country}`);
+    } else {
+      await pdf.run(() => annualReportDocument(r, { t, lang, owner: state.displayName ?? '' }), `Arshif-pajak-${year}-${country}`);
+    }
   };
 
   return (
@@ -129,12 +138,44 @@ function Report() {
               )}
             </Card>
           </Group>
-          {r.skipped > 0 && (
+          {hasInvoices && (
+            <Group label={t('tools.report.invoiceSummary')}>
+              <Card padding="lg">
+                <ResultRow label={t('tools.report.invoicePaidCount')} value={String(invSum.paidCount)} />
+                <ResultRow label={t('tools.report.invoicePaidSubtotal')} value={money(invSum.paidSubtotal)} />
+                <ResultRow label={t('tools.report.invoiceOutputTax')} value={money(invSum.paidTax)} />
+                <ResultRow label={t('tools.report.invoiceUnpaidTotal')} value={money(invSum.unpaidTotal)} />
+                <ResultRow label={t('tools.report.invoicePaidTotal')} value={money(invSum.paidTotal)} strong />
+                <View style={[styles.toggleRow, { borderTopColor: colors.border }]}>
+                  <AppText variant="body" style={styles.flex}>
+                    {t('tools.report.includeInvoices')}
+                  </AppText>
+                  <Toggle value={includeInvoices} onChange={setIncludeInvoices} accessibilityLabel={t('tools.report.includeInvoices')} />
+                </View>
+              </Card>
+            </Group>
+          )}
+          {(r.skipped > 0 || invSum.skipped > 0) && (
             <AppText variant="caption" tone="warning">
-              {t('tools.report.skipped', { count: r.skipped })}
+              {r.skipped > 0
+                ? t('tools.report.skipped', { count: r.skipped })
+                : t('tools.report.skippedInvoices', { count: invSum.skipped })}
             </AppText>
           )}
-          <Button label={pdf.busy ? t('tools.pdf.making') : t('tools.report.exportPdf')} icon={FileDown} fullWidth loading={pdf.busy} disabled={pdf.busy} onPress={() => void exportPdf()} />
+          <Button
+            label={
+              pdf.busy
+                ? t('tools.pdf.making')
+                : includeInvoices && hasInvoices
+                  ? t('tools.report.exportBundlePdf')
+                  : t('tools.report.exportPdf')
+            }
+            icon={FileDown}
+            fullWidth
+            loading={pdf.busy}
+            disabled={pdf.busy}
+            onPress={() => void exportPdf()}
+          />
         </>
       )}
       <TaxDisclaimer />
@@ -147,4 +188,6 @@ const styles = StyleSheet.create({
   lines: { marginTop: space.md },
   gapTop: { marginTop: space.sm },
   month: { paddingVertical: space.sm, gap: space.xxs },
+  toggleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: space.md, marginTop: space.md, paddingTop: space.md, borderTopWidth: StyleSheet.hairlineWidth },
+  flex: { flex: 1, minWidth: 0 },
 });

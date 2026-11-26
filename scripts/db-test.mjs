@@ -974,6 +974,7 @@ await test('harga aset: asset_price_keys mengembalikan SEMUA kunci unik (lebih d
 });
 
 await test('hapus pengguna: semua data ikut terhapus (cascade)', async () => {
+  await as(A, `insert into public.smartlog_rules (pattern, action, category_key) values ('kopi cascade', 'categorize', 'food')`);
   const kept = await sys(`select id from public.orders where user_id = $1`, [A]);
   if (kept.length === 0) throw new Error('prasyarat: A punya pesanan');
   await sys(`delete from auth.users where id = $1`, [A]);
@@ -985,7 +986,7 @@ await test('hapus pengguna: semua data ikut terhapus (cascade)', async () => {
     'pesanan disimpan tanpa pemilik',
   );
   for (const id of [A, E]) for (const t of ['budgets', 'limit_groups', 'user_rates']) eq((await sys(`select count(*)::int as n from public.${t} where user_id = $1`, [id]))[0].n, 0, t);
-  for (const t of ['profiles', 'accounts', 'transactions', 'transaction_items', 'notifications', 'usage_counters', 'smartlog_links', 'smartlog_items', 'invoices', 'invoice_counters', 'assets', 'net_worth_snapshots']) {
+  for (const t of ['profiles', 'accounts', 'transactions', 'transaction_items', 'notifications', 'usage_counters', 'smartlog_links', 'smartlog_items', 'smartlog_rules', 'invoices', 'invoice_counters', 'assets', 'net_worth_snapshots']) {
     const col = t === 'profiles' ? 'id' : 'user_id';
     eq((await sys(`select count(*)::int as n from public.${t} where ${col} = $1`, [A]))[0].n, 0, t);
   }
@@ -1031,6 +1032,187 @@ await test('restore tetap tunduk pada kuota paket Free (akun ke-5 dilewati)', as
   const rows = Array.from({ length: 4 }, (_, i) => ({ id: `33333333-3333-4333-8333-33333333333${i}`, bank: 'bca', name: `Akun ${i}`, type: 'tabungan', currency: 'IDR' }));
   const r = await restore(RC, 'accounts', rows);
   eq(r, { restored: 3, skipped: 1 });
+});
+
+// ---------------------------------------------------------------- regresi audit & perbaikan bug (20261126000030)
+const RE = '00000000-0000-4000-8000-0000000000e1';
+const RF = '00000000-0000-4000-8000-0000000000f1';
+await sys(`insert into auth.users (id, email) values ('${RE}', 're@example.com'), ('${RF}', 'rf@example.com')`);
+
+await test('debt_payments_apply: tolak lintas pengguna, lunas saat penuh, aktif lagi saat hapus', async () => {
+  const [{ id: debtId }] = await as(
+    RE,
+    `insert into public.debts (kind, counterparty, principal, currency)
+     values ('debt', 'Bank RE', 100000, 'IDR') returning id`,
+  );
+  // Pengguna lain ditolak oleh RLS, dan trigger juga menolak spoofing user_id lintas pemilik.
+  await rejects(
+    as(RF, `insert into public.debt_payments (debt_id, amount, date) values ($1, 10000, '2026-11-26')`, [debtId]),
+    /row-level security|debt_not_owned/,
+  );
+  await rejects(
+    sys(`insert into public.debt_payments (debt_id, user_id, amount, date) values ($1, $2, 10000, '2026-11-26')`, [debtId, RF]),
+    /debt_not_owned/,
+  );
+
+  // Bayar sebagian -> saldo berkurang, status tetap active.
+  await as(RE, `insert into public.debt_payments (debt_id, amount, date) values ($1, 60000, '2026-11-26')`, [debtId]);
+  eq((await as(RE, `select balance::int as b, status from public.debts where id = $1`, [debtId]))[0], { b: 40000, status: 'active' });
+
+  // Melebihi sisa saldo ditolak.
+  await rejects(
+    as(RE, `insert into public.debt_payments (debt_id, amount, date) values ($1, 50000, '2026-11-26')`, [debtId]),
+    /payment_exceeds_balance/,
+  );
+
+  // Pelunasan penuh -> balance 0 dan status paid; bayar lagi ditolak.
+  const [{ id: fullPayId }] = await as(
+    RE,
+    `insert into public.debt_payments (debt_id, amount, date) values ($1, 40000, '2026-11-26') returning id`,
+    [debtId],
+  );
+  eq((await as(RE, `select balance::int as b, status from public.debts where id = $1`, [debtId]))[0], { b: 0, status: 'paid' });
+  await rejects(
+    as(RE, `insert into public.debt_payments (debt_id, amount, date) values ($1, 1, '2026-11-26')`, [debtId]),
+    /debt_closed/,
+  );
+
+  // Klien tidak diizinkan menghapus langsung; saat baris pembayaran terhapus (cascade/admin), saldo & status kembali active.
+  await rejects(as(RE, `delete from public.debt_payments where id = $1`, [fullPayId]), /permission denied/);
+  await sys(`delete from public.debt_payments where id = $1`, [fullPayId]);
+  eq((await as(RE, `select balance::int as b, status from public.debts where id = $1`, [debtId]))[0], { b: 40000, status: 'active' });
+});
+
+await test('profiles_notif_prefs_check: tolak non-objek, nilai non-boolean, dan payload > 1024 byte', async () => {
+  await rejects(as(RE, `update public.profiles set notif_prefs = '"bad"'::jsonb where id = auth.uid()`), /profiles_notif_prefs_check/);
+  await rejects(as(RE, `update public.profiles set notif_prefs = '{"debt_due":"yes"}'::jsonb where id = auth.uid()`), /profiles_notif_prefs_check/);
+  await rejects(
+    as(RE, `update public.profiles set notif_prefs = jsonb_build_object('bill_due', true, 'pad', repeat('x', 1100)) where id = auth.uid()`),
+    /profiles_notif_prefs_check/,
+  );
+  await as(RE, `update public.profiles set notif_prefs = '{"bill_due":false,"price_alert":true}'::jsonb where id = auth.uid()`);
+  const [{ prefs }] = await as(RE, `select notif_prefs as prefs from public.profiles where id = auth.uid()`);
+  eq(prefs, { bill_due: false, price_alert: true });
+});
+
+await test('restore_rows: UUID tidak valid dilewati (skipped: 1) & saldo akun tetap akurat', async () => {
+  const accRE = '44444444-4444-4444-8444-4444444444e1';
+  const txRE1 = '55555555-5555-4555-8555-5555555555e1';
+  const txRE2 = '55555555-5555-4555-8555-5555555555e2';
+
+  const accRes = await restore(RE, 'accounts', [
+    { id: accRE, bank: 'bca', name: 'Kas RE', type: 'tabungan', currency: 'IDR', opening_balance: 500000 },
+  ]);
+  eq(accRes, { restored: 1, skipped: 0 }, 'restore akun RE');
+
+  const badUuid = await restore(RE, 'accounts', [
+    { id: 'bukan-uuid', bank: 'bca', name: 'Rusak', type: 'tabungan', currency: 'IDR' },
+  ]);
+  eq(badUuid, { restored: 0, skipped: 1 }, 'uuid rusak dilewati');
+
+  const txRes = await restore(RE, 'transactions', [
+    { id: txRE1, type: 'expense', merchant: 'Kopi', category_key: 'food', account_id: accRE, date: '2026-11-20', time: '09:00', amount: 25000, currency: 'IDR' },
+    { id: txRE2, type: 'income', merchant: 'Refund', category_key: 'other', account_id: accRE, date: '2026-11-21', time: '10:00', amount: 100000, currency: 'IDR' },
+  ]);
+  eq(txRes, { restored: 2, skipped: 0 }, 'restore transaksi RE');
+  eq((await sys(`select balance::int as b from public.accounts where id = $1`, [accRE]))[0].b, 575000, 'saldo terhitung dari opening + tx');
+});
+
+await test('akun ditangguhkan diblokir pada bill_mark_paid & smartlog_ingest, serta paket premium kedaluwarsa turun ke Free', async () => {
+  const accRE = '44444444-4444-4444-8444-4444444444e1';
+  const [{ id: billId }] = await as(
+    RE,
+    `insert into public.bills (name, amount, currency, frequency, due_date, anchor_day, account_id)
+     values ('Listrik', 150000, 'IDR', 'monthly', '2026-11-25', 25, $1) returning id`,
+    [accRE],
+  );
+  const [{ id: txId }] = await as(
+    RE,
+    `insert into public.transactions (type, merchant, category_key, account_id, date, time, amount, currency)
+     values ('expense', 'PLN', 'bills', $1, '2026-11-25', '10:00', 150000, 'IDR') returning id`,
+    [accRE],
+  );
+
+  await sys(`update public.profiles set suspended_at = now(), smartlog_enabled = true where id = $1`, [RE]);
+  await rejects(as(RE, `select * from public.bill_mark_paid($1, $2)`, [billId, txId]), /account_suspended/);
+  const [{ res }] = await as(
+    RE,
+    `select public.smartlog_ingest('cap-re-1', 'com.bca', 'bca', now(), '2026-11-25', '10:00', 'expense', 50000, 'IDR', 'Kopi', 'excerpt', 'fp-re-1', '{}') as res`,
+  );
+  eq(res.status, 'disabled', 'smartlog ditangguhkan');
+
+  await sys(`update public.profiles set plan = 'premium', premium_until = now() - interval '1 day', suspended_at = null where id = $1`, [RF]);
+  const [{ freeLimit }] = await sys(`select monthly_limit::int as "freeLimit" from public.plan_limits where plan = 'free' and key = 'accounts'`);
+  const [{ rfLimit }] = await as(RF, `select monthly_limit::int as "rfLimit" from public.my_usage() where key = 'accounts'`);
+  eq(rfLimit, freeLimit, 'premium kedaluwarsa memakai batas Free');
+});
+
+await test('smartlog_rules: RLS lintas akun, kategorisasi otomatis, dan aturan transfer hapus keraguan topup', async () => {
+  const R1 = '00000000-0000-4000-8000-0000000000e2';
+  const R2 = '00000000-0000-4000-8000-0000000000f2';
+  await sys(`insert into auth.users (id, email) values ('${R1}', 'r1@example.com'), ('${R2}', 'r2@example.com')`);
+  const [{ id: accBank }] = await as(R1, `insert into public.accounts (bank, name, type, currency, opening_balance) values ('bca', 'BCA R1', 'tabungan', 'IDR', 1000000) returning id`);
+  const [{ id: accWallet }] = await as(R1, `insert into public.accounts (bank, name, type, currency, opening_balance) values ('gopay', 'GoPay R1', 'ewallet', 'IDR', 0) returning id`);
+  const [{ id: accOther }] = await as(R2, `insert into public.accounts (bank, name, type, currency, opening_balance) values ('mandiri', 'Mandiri R2', 'tabungan', 'IDR', 0) returning id`);
+
+  await as(R1, `update public.profiles set smartlog_enabled = true where id = auth.uid()`);
+  await as(R1, `insert into public.smartlog_links (package, account_id) values ('com.bca', $1)`, [accBank]);
+
+  // Tidak boleh membuat aturan transfer ke akun milik pengguna lain.
+  await rejects(
+    as(R1, `insert into public.smartlog_rules (pattern, action, category_key, to_account_id) values ('Kirim Luar', 'transfer', 'savings', $1)`, [accOther]),
+    /account_not_owned/,
+  );
+
+  // Aturan kategori + isolasi RLS untuk pengguna lain.
+  const [{ id: catRuleId }] = await as(
+    R1,
+    `insert into public.smartlog_rules (pattern, action, category_key) values ('kopi kenangan', 'categorize', 'food') returning id`,
+  );
+  eq((await as(R2, `select id from public.smartlog_rules where id = $1`, [catRuleId])).length, 0, 'RLS tolak baca rule user lain');
+
+  const [{ res: catRes }] = await as(
+    R1,
+    `select public.smartlog_ingest('cap-rule-1', 'com.bca', 'bca', now(), '2026-11-26', '09:00', 'expense', 50000, 'IDR', 'KOPI KENANGAN', 'Bayar QRIS KOPI KENANGAN Rp 50.000', 'fp-rule-1', '{}') as res`,
+  );
+  eq(catRes.status, 'applied', 'rule kategori auto-apply');
+  eq(catRes.category_key, 'food', 'kategori dari rule diterapkan');
+  eq((await as(R1, `select category_key from public.transactions where id = $1`, [catRes.id]))[0].category_key, 'food');
+
+  // Aturan transfer ke dompet sendiri: menghapus keraguan topup dan memperbarui saldo kedua akun.
+  await as(
+    R1,
+    `insert into public.smartlog_rules (pattern, action, category_key, to_account_id) values ('gopay topup', 'transfer', 'savings', $1)`,
+    [accWallet],
+  );
+  const [{ res: trfRes }] = await as(
+    R1,
+    `select public.smartlog_ingest('cap-rule-2', 'com.bca', 'bca', now(), '2026-11-26', '10:00', 'expense', 150000, 'IDR', 'GOPAY TOPUP', 'Top up GoPay Rp 150.000 berhasil', 'fp-rule-2', array['topup']) as res`,
+  );
+  eq(trfRes.status, 'applied', 'rule transfer hapus keraguan topup');
+  eq(trfRes.tx_type, 'transfer', 'tx_type menjadi transfer');
+  eq(trfRes.to_account_id, accWallet, 'tujuan transfer sesuai rule');
+  eq((await as(R1, `select type, to_account_id from public.transactions where id = $1`, [trfRes.id]))[0], { type: 'transfer', to_account_id: accWallet });
+  eq((await sys(`select balance::int as b from public.accounts where id = $1`, [accBank]))[0].b, 800000, 'saldo bank berkurang 50rb + 150rb');
+  eq((await sys(`select balance::int as b from public.accounts where id = $1`, [accWallet]))[0].b, 150000, 'saldo dompet tujuan bertambah 150rb');
+
+  // Pemulihan cadangan (restore_rows) untuk smartlog_rules harus idempoten dan menolak akun tujuan pengguna lain.
+  const R3 = '00000000-0000-4000-8000-0000000000e3';
+  const accR3 = '66666666-6666-4666-8666-6666666666e3';
+  await sys(`insert into auth.users (id, email) values ('${R3}', 'r3@example.com')`);
+  eq(await restore(R3, 'accounts', [{ id: accR3, bank: 'gopay', name: 'GoPay R3', type: 'ewallet', currency: 'IDR' }]), { restored: 1, skipped: 0 });
+  const ruleRows = [
+    { id: '77777777-7777-4777-8777-7777777777e1', pattern: 'indomaret', action: 'categorize', category_key: 'groceries', to_account_id: null },
+    { id: '77777777-7777-4777-8777-7777777777e2', pattern: 'gopay topup', action: 'transfer', category_key: 'savings', to_account_id: accR3 },
+  ];
+  eq(await restore(R3, 'smartlog_rules', ruleRows), { restored: 2, skipped: 0 }, 'restore smartlog_rules');
+  eq(await restore(R3, 'smartlog_rules', ruleRows), { restored: 2, skipped: 0 }, 'restore smartlog_rules idempoten');
+  eq((await sys(`select count(*)::int as n from public.smartlog_rules where user_id = $1`, [R3]))[0].n, 2, 'jumlah rule R3 tetap 2');
+  eq(
+    await restore(R3, 'smartlog_rules', [{ id: '77777777-7777-4777-8777-7777777777e3', pattern: 'curang', action: 'transfer', category_key: 'savings', to_account_id: accOther }]),
+    { restored: 0, skipped: 1 },
+    'restore rule dengan akun tujuan milik orang lain dilewati',
+  );
 });
 
 console.log(results.join('\n'));

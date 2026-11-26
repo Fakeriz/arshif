@@ -33,10 +33,12 @@ const budget = {
     save: 'Simpan persentase',
   },
   paceExplain: 'Terpakai {used}% anggaran, waktu berjalan {elapsed}%. Laju dihitung dari perbandingan keduanya.',
+  paydayDueLine: 'Tagihan & langganan s.d. {date}: {amount}',
   plan: {
     title: 'Anggaran periode ini',
     fromIncome: 'Belum dibuat: memakai penghasilan bulananmu',
     saved: '{count} kategori diberi batas',
+    saved_one: '{count} kategori diberi batas',
     lastAvailable: 'Anggaran periode {date} bisa disalin apa adanya, termasuk batas per kategori.',
     firstTime: 'Buat anggaran untuk mengatur total dan batas per kategori periode ini.',
     copyLast: 'Salin periode lalu',

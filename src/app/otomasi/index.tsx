@@ -1,14 +1,16 @@
 import { useRouter } from 'expo-router';
-import { BellRing, Inbox, TriangleAlert } from 'lucide-react-native';
+import { BellRing, Inbox, Plus, Trash2, TriangleAlert } from 'lucide-react-native';
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import { Screen } from '@/components/shell/Screen';
 import { ScreenHeader } from '@/components/shell/ScreenHeader';
-import { AppText, BottomSheet, Button, Card, Chip, Dialog, EmptyState, Group, Icon, ListCard, ListItem, MenuGroup, Skeleton, Toggle, useToast } from '@/components/ui';
+import { AppText, BottomSheet, Button, Card, Chip, Dialog, EmptyState, Group, Icon, ListCard, ListItem, MenuGroup, PressableScale, Skeleton, Toggle, useToast } from '@/components/ui';
 import { getBank } from '@/constants/banks';
-import { useT } from '@/i18n';
+import { RuleSheet } from '@/features/smartlog/RuleSheet';
+import { categoryLabel, useT } from '@/i18n';
 import { SMARTLOG_APPS, type SmartLogApp } from '@/lib/smartlog/apps';
+import type { SmartLogRuleInput } from '@/lib/smartlog/rules';
 import { QUOTAS } from '@/lib/quota';
 import { useStore } from '@/state/AppStore';
 import { useSmartLog } from '@/state/smartlog';
@@ -25,6 +27,10 @@ export default function AutomationScreen() {
   const slog = useSmartLog();
   const [permDialog, setPermDialog] = useState(false);
   const [linking, setLinking] = useState<SmartLogApp | null>(null);
+  const [ruleOpen, setRuleOpen] = useState(false);
+  const [ruleKey, setRuleKey] = useState(0);
+  const rules = slog.rules ?? [];
+  const accountName = new Map(state.accounts.map((a) => [a.id, a.name]));
 
   const limit = QUOTAS[state.plan].automation;
   const used = state.usage.automation;
@@ -168,6 +174,55 @@ export default function AutomationScreen() {
               </ListCard>
             )}
           </Group>
+
+          {slog.saveRule && (
+            <Group label={t('slog.rules.title')}>
+              <AppText variant="caption" tone="secondary" style={styles.gapSm}>
+                {t('slog.rules.sub')}
+              </AppText>
+              {rules.length > 0 && (
+                <ListCard>
+                  {rules.map((r, i) => (
+                    <ListItem
+                      key={r.id}
+                      title={r.pattern}
+                      subtitle={
+                        r.action === 'transfer'
+                          ? t('slog.rules.transferTo', { account: accountName.get(r.toAccountId ?? '') ?? t('tx.detail.deleteAccountFallback') })
+                          : t('slog.rules.categorizeAs', { category: categoryLabel(t, r.categoryKey) })
+                      }
+                      trailing={
+                        <PressableScale
+                          accessibilityRole="button"
+                          accessibilityLabel={t('slog.rules.delete', { pattern: r.pattern })}
+                          onPress={() =>
+                            void slog.removeRule?.(r.id).catch(() => {
+                              show({ tone: 'error', title: t('slog.rules.deleteFailed') });
+                            })
+                          }
+                          hitSlop={8}
+                          style={styles.removeRule}
+                        >
+                          <Icon icon={Trash2} color={colors.textMuted} size={18} />
+                        </PressableScale>
+                      }
+                      divider={i < rules.length - 1}
+                    />
+                  ))}
+                </ListCard>
+              )}
+              <Button
+                label={t('slog.rules.add')}
+                icon={Plus}
+                variant="secondary"
+                size="md"
+                onPress={() => {
+                  setRuleKey((k) => k + 1);
+                  setRuleOpen(true);
+                }}
+              />
+            </Group>
+          )}
         </>
       )}
 
@@ -196,6 +251,24 @@ export default function AutomationScreen() {
         )}
       </BottomSheet>
 
+      {slog.saveRule && (
+        <RuleSheet
+          key={ruleKey}
+          visible={ruleOpen}
+          onClose={() => setRuleOpen(false)}
+          accounts={state.accounts}
+          onSave={async (input: SmartLogRuleInput) => {
+            try {
+              await slog.saveRule?.(input);
+              show({ tone: 'success', title: t('slog.rules.saved') });
+            } catch (e) {
+              show({ tone: 'error', title: t('slog.rules.saveFailed') });
+              throw e;
+            }
+          }}
+        />
+      )}
+
       <Dialog
         visible={permDialog}
         tone="info"
@@ -223,4 +296,5 @@ const styles = StyleSheet.create({
   blockSm: { marginTop: space.sm },
   note: { marginTop: space.lg, padding: space.md, borderRadius: radius.md, borderWidth: StyleSheet.hairlineWidth, gap: space.xxs },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: space.sm },
+  removeRule: { padding: space.xs },
 });

@@ -12,7 +12,12 @@ const num01 = (v: unknown): number => {
   const n = typeof v === 'number' ? v : Number(v);
   return Number.isFinite(n) ? Math.min(1, Math.max(0, n)) : 0;
 };
-const ymd = (v: unknown): string | null => (/^\d{4}-\d{2}-\d{2}$/.test(str(v)) ? str(v) : null);
+const ymd = (v: unknown): string | null => {
+  const s = str(v);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(s)) return null;
+  const d = new Date(`${s}T00:00:00Z`);
+  return !Number.isNaN(d.getTime()) && d.toISOString().slice(0, 10) === s ? s : null;
+};
 /** Jam "HH:MM" dari "9:05", "14.32", "14:32:05"; jam/menit di luar rentang = null. */
 const hhmm = (v: unknown): string | null => {
   const m = /^(\d{1,2})[:.](\d{2})(?:[:.]\d{2})?$/.exec(str(v).trim());
@@ -53,7 +58,7 @@ export function normalizeScan(raw: unknown, fallbackCurrency = 'IDR', custom: re
       continue;
     }
     const qtyN = Number(str(it.qty) || '1');
-    const qty = Number.isFinite(qtyN) && qtyN > 0 ? Math.round(qtyN * 1000) / 1000 : 1;
+    const qty = Number.isFinite(qtyN) && qtyN > 0 && qtyN < 10_000_000 ? Math.round(qtyN * 1000) / 1000 : 1;
     const unit = nonNegativeMinor(str(it.unitPrice), currency) ?? Math.round(signed / qty);
     items.push({ name, qty, unitPrice: unit, total: signed, discount: 0, taxRate: rate(it.taxRate) });
   }
@@ -162,7 +167,17 @@ export function normalizeStatement(raw: unknown, fallbackCurrency: string, custo
     .filter((x): x is NonNullable<typeof x> => x !== null)
     .slice(0, 1000);
   const pages = Number.isInteger(r.pages) && (r.pages as number) >= 0 ? (r.pages as number) : 0;
-  return ImportResult.parse({ rows, pages });
+  const rawClosing =
+    r.closingBalance === null || r.closingBalance === undefined || str(r.closingBalance).trim() === ''
+      ? null
+      : decimalToMinor(str(r.closingBalance), statementCurrency);
+  const maxRowDate = rows.reduce<string | null>((max, x) => (max === null || x.date > max ? x.date : max), null);
+  const rawClosingDate = ymd(r.closingDate) ?? (rawClosing !== null ? maxRowDate : null);
+  return ImportResult.parse({
+    rows,
+    pages,
+    ...(rawClosing !== null ? { closingBalance: rawClosing, closingDate: rawClosingDate, closingCurrency: statementCurrency } : {}),
+  });
 }
 
 /** Narasi Coach: tepat 3 aksi, tanpa em dash, panjang dibatasi. null = keluaran tidak layak. */
@@ -198,8 +213,8 @@ function cleanAnswer(s: string): string {
     .trim();
 }
 
-/** Desimal target mengikuti besaran harga: Rp 5.200 -> bulat, $342,37 -> 2 desimal, koin murah -> 6 desimal. */
-const priceDecimals = (live: number) => (live >= 1000 ? 0 : live >= 1 ? 2 : 6);
+/** Desimal target mengikuti besaran harga: Rp 5.200 -> bulat, $342,37 -> 2 desimal, koin murah -> 6..10 desimal. */
+const priceDecimals = (live: number) => (live >= 1000 ? 0 : live >= 1 ? 2 : live >= 1e-4 ? 6 : 10);
 
 /**
  * Jawaban harga wajar yang aman ditampilkan. Kisaran wajib masuk akal terhadap harga live (0,5x sampai 2x); di luar itu

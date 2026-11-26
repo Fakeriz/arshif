@@ -35,10 +35,12 @@ const budget: Messages['budget'] = {
     save: 'Oranları kaydet',
   },
   paceExplain: 'Bütçenin %{used} kadarı kullanıldı, dönemin %{elapsed} kadarı geçti. Hız bu ikisinin karşılaştırmasıdır.',
+  paydayDueLine: '{date} tarihine kadar fatura ve abonelikler: {amount}',
   plan: {
     title: 'Bu dönemin bütçesi',
     fromIncome: 'Henüz oluşturulmadı: aylık gelirin kullanılıyor',
     saved: '{count} kategoriye limit verildi',
+    saved_one: '{count} kategoriye limit verildi',
     lastAvailable: '{date} bütçesi kategori limitleri dahil olduğu gibi kopyalanabilir.',
     firstTime: 'Bu dönemin toplamını ve kategori limitlerini belirlemek için bütçe oluştur.',
     copyLast: 'Geçen dönemi kopyala',

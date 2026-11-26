@@ -3,12 +3,13 @@ import { useRef, useState } from 'react';
 
 import { Screen } from '@/components/shell/Screen';
 import { ScreenHeader } from '@/components/shell/ScreenHeader';
-import { EmptyState, useToast } from '@/components/ui';
+import { EmptyState, Skeleton, useToast } from '@/components/ui';
 import { clearHandoff, peekHandoff } from '@/features/capture/handoff';
 import { ImportReview } from '@/features/capture/ImportReview';
 import { useT } from '@/i18n';
 import { useStore } from '@/state/AppStore';
 import { useLedger } from '@/state/derived';
+import { radius } from '@/theme/tokens';
 
 export default function ImportReviewScreen() {
   const router = useRouter();
@@ -16,24 +17,38 @@ export default function ImportReviewScreen() {
   const navigation = useNavigation();
   const t = useT();
   const { show } = useToast();
-  const { dispatch } = useStore();
+  const { state, dispatch } = useStore();
   const { accounts, transactions } = useLedger();
   // Ketukan ganda sebelum navigasi selesai: tiap ketukan membuat id baru, jadi yang kedua diabaikan.
   const saved = useRef(false);
   const [data] = useState(() => peekHandoff('import'));
   const account = data ? accounts.find((a) => a.id === data.accountId) : undefined;
+  const loadingAccount = !!data && !account && (state.status === 'idle' || state.status === 'loading');
 
   let body;
   if (!data) {
     body = <EmptyState title={t('capture.importReview.missingTitle')} message={t('capture.importReview.missingMessage')} actionLabel={t('capture.import.pickFile')} onAction={() => router.replace('/import')} />;
+  } else if (loadingAccount) {
+    body = <Skeleton height={240} radius={radius.lg} />;
   } else if (!account) {
-    body = <EmptyState title={t('capture.importReview.noAccountTitle')} message={t('capture.importReview.noAccountMessage')} />;
+    body = (
+      <EmptyState
+        title={t('capture.importReview.noAccountTitle')}
+        message={t('capture.importReview.noAccountMessage')}
+        actionLabel={t('capture.import.repick')}
+        onAction={() => {
+          clearHandoff('import');
+          router.replace('/import');
+        }}
+      />
+    );
   } else {
     body = (
       <ImportReview
         result={data.result}
         accountId={account.id}
         accountName={account.name}
+        account={account}
         existing={transactions}
         onImport={(txs) => {
           if (saved.current) return;

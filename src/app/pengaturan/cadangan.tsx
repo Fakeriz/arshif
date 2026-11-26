@@ -34,6 +34,7 @@ import { useStore } from '@/state/AppStore';
 import { useAssets } from '@/state/assets';
 import { useInvoices } from '@/state/invoices';
 import { usePlanning } from '@/state/planning';
+import { useSmartLogOptional } from '@/state/smartlog';
 import { space } from '@/theme/tokens';
 
 type Progress = { done: number; total: number } | null;
@@ -68,6 +69,7 @@ function Cadangan() {
   const planning = usePlanning();
   const invoices = useInvoices();
   const assets = useAssets();
+  const smartlog = useSmartLogOptional();
   const drive = useDrive();
 
   const [schedule, setSchedule] = useState<BackupSchedule | null>(null);
@@ -166,7 +168,7 @@ function Cadangan() {
     try {
       const r = await restorePayload(userId, payload, (done, total) => setRestoring({ done, total }));
       setReport(r);
-      await Promise.all([reload(), planning.reload(), invoices.reload(), assets.reload()]);
+      await Promise.all([reload(), planning.reload(), invoices.reload(), assets.reload(), smartlog?.reload()]);
     } catch {
       show({ tone: 'error', title: t('settings.backup.errRestore') });
     } finally {

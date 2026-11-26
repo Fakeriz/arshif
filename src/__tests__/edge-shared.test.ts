@@ -158,6 +158,45 @@ describe('normalizeStatement', () => {
     const r = normalizeStatement({ pages: 1, currency: 'IDR', rows: [row('14:32:05'), row('9.05'), row(), row('99:99')] }, 'IDR');
     expect(r.rows.map((x) => x.time)).toEqual(['14:32', '09:05', null, null]);
   });
+
+  it('membaca closingBalance positif/negatif dan closingDate bila tersedia', () => {
+    const pos = normalizeStatement(
+      {
+        pages: 1,
+        currency: 'IDR',
+        closingBalance: '12158300',
+        closingDate: '2026-11-02',
+        rows: [{ date: '2026-11-02', description: 'BUNGA TABUNGAN', type: 'income', amount: '8300', currency: 'IDR', categoryKey: 'bank' }],
+      },
+      'IDR',
+    );
+    expect(pos.closingBalance).toBe(12_158_300);
+    expect(pos.closingDate).toBe('2026-11-02');
+    expect(pos.closingCurrency).toBe('IDR');
+
+    const cc = normalizeStatement(
+      {
+        pages: 1,
+        currency: 'MYR',
+        closingBalance: '-2500.50',
+        rows: [{ date: '2026-11-03', description: 'GRAB', type: 'expense', amount: '25.50', currency: 'MYR', categoryKey: 'transport' }],
+      },
+      'MYR',
+    );
+    expect(cc.closingBalance).toBe(-250_050);
+    expect(cc.closingDate).toBe('2026-11-03');
+
+    const none = normalizeStatement(
+      {
+        pages: 1,
+        currency: 'IDR',
+        closingBalance: 'bukan-angka',
+        rows: [{ date: '2026-11-03', description: 'KOPI', type: 'expense', amount: '25000', currency: 'IDR', categoryKey: 'hangout' }],
+      },
+      'IDR',
+    );
+    expect(none.closingBalance).toBeUndefined();
+  });
 });
 
 describe('normalizeCoach', () => {

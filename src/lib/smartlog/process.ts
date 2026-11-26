@@ -4,9 +4,32 @@ import { parseNotification, type Capture, type Parsed } from './parser';
 import { todayYmd } from '../dates';
 
 type IngestStatus = 'disabled' | 'quota' | 'review' | 'applied' | 'confirmed' | 'dismissed' | 'undone';
-export type Ingest = (c: Capture, p: Parsed, date: string, time: string) => Promise<{ status: IngestStatus; id?: string; repeat?: boolean }>;
+export type Ingest = (
+  c: Capture,
+  p: Parsed,
+  date: string,
+  time: string,
+) => Promise<{
+  status: IngestStatus;
+  id?: string;
+  repeat?: boolean;
+  tx_type?: 'expense' | 'transfer';
+  category_key?: string;
+  to_account_id?: string | null;
+}>;
 
-export type AppliedEntry = { id: string; bank: string; merchant: string; amount: number; currency: string; date: string; time: string };
+export type AppliedEntry = {
+  id: string;
+  bank: string;
+  merchant: string;
+  amount: number;
+  currency: string;
+  date: string;
+  time: string;
+  txType?: 'expense' | 'transfer';
+  categoryKey?: string;
+  toAccountId?: string | null;
+};
 
 export type ProcessSummary = {
   applied: AppliedEntry[];
@@ -56,7 +79,18 @@ export async function processCaptures(captures: Capture[], ingest: Ingest, now =
     }
     if (res.repeat) continue;
     if (res.status === 'applied' && res.id) {
-      out.applied.push({ id: res.id, bank: parsed.bank, merchant: parsed.merchant, amount: parsed.amount, currency: parsed.currency, date, time });
+      out.applied.push({
+        id: res.id,
+        bank: parsed.bank,
+        merchant: parsed.merchant,
+        amount: parsed.amount,
+        currency: parsed.currency,
+        date,
+        time,
+        txType: res.tx_type,
+        categoryKey: res.category_key,
+        toAccountId: res.to_account_id,
+      });
     } else if (res.status === 'review') {
       out.review++;
     }

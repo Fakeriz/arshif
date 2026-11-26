@@ -11,6 +11,7 @@ import { useT } from '@/i18n';
 import { formatMoney } from '@/lib/money';
 import { processCaptures, type ProcessSummary } from '@/lib/smartlog/process';
 import type { Capture } from '@/lib/smartlog/parser';
+import { matchSmartLogRule, type SmartLogRule, type SmartLogRuleInput } from '@/lib/smartlog/rules';
 
 import { SmartLogNative } from '../../modules/smart-log';
 import { useStore } from './AppStore';
@@ -25,6 +26,7 @@ export type SmartLogValue = {
   enabled: boolean;
   permission: boolean;
   links: api.SmartLogLink[];
+  rules?: SmartLogRule[];
   review: api.SmartLogItem[];
   recent: api.SmartLogItem[];
   /** Tangkapan yang ditahan di perangkat (kuota habis atau gagal terkirim). */
@@ -33,6 +35,8 @@ export type SmartLogValue = {
   setEnabled: (value: boolean) => Promise<void>;
   openPermission: () => void;
   setLink: (pkg: string, accountId: string | null) => Promise<void>;
+  saveRule?: (input: SmartLogRuleInput) => Promise<void>;
+  removeRule?: (id: string) => Promise<void>;
   /** Kuras antrean perangkat lalu proses. Dipanggil saat aplikasi aktif, saat notifikasi masuk, dan saat To Review dibuka. */
   processNow: () => Promise<void>;
   confirm: (item: api.SmartLogItem, tx: Transaction) => Promise<void>;
@@ -40,14 +44,14 @@ export type SmartLogValue = {
   undo: (id: string) => Promise<void>;
 };
 
-const HELD_KEY = 'arshif.smartlog.held';
+const heldKey = (userId: string) => `arshif.smartlog.held.${userId}`;
 /** Diekspor untuk tes layar; aplikasi memakai <SmartLogProvider>. */
 export const SmartLogContext = createContext<SmartLogValue | null>(null);
 const Ctx = SmartLogContext;
 
-async function readHeld(): Promise<Capture[]> {
+async function readHeld(userId: string): Promise<Capture[]> {
   try {
-    const raw = await AsyncStorage.getItem(HELD_KEY);
+    const raw = await AsyncStorage.getItem(heldKey(userId));
     const list = raw ? (JSON.parse(raw) as unknown) : [];
     return Array.isArray(list) ? (list as Capture[]) : [];
   } catch {
@@ -56,9 +60,9 @@ async function readHeld(): Promise<Capture[]> {
 }
 
 /** Simpan tangkapan yang ditahan di perangkat. false = gagal (mis. penyimpanan penuh), untuk ditampilkan ke pengguna. */
-async function saveHeld(list: Capture[]): Promise<boolean> {
+async function saveHeld(userId: string, list: Capture[]): Promise<boolean> {
   try {
-    await AsyncStorage.setItem(HELD_KEY, JSON.stringify(list));
+    await AsyncStorage.setItem(heldKey(userId), JSON.stringify(list));
     return true;
   } catch {
     return false;
@@ -76,10 +80,34 @@ function drainNative(): Capture[] {
 }
 
 /** Transaksi dari baris To Review, dengan id yang sama supaya konfirmasi ganda tidak membuat dua transaksi. */
-export function draftFromItem(item: api.SmartLogItem): Transaction {
+export function draftFromItem(item: api.SmartLogItem, rules: SmartLogRule[] = []): Transaction {
+  const matched = item.type === 'expense' ? matchSmartLogRule(rules, item.merchant, item.excerpt) : null;
+  if (matched?.action === 'transfer' && matched.toAccountId && matched.toAccountId !== item.accountId) {
+    return {
+      id: item.id,
+      type: 'transfer',
+      merchant: item.merchant || getBank(item.bank).name,
+      categoryKey: 'savings',
+      accountId: item.accountId ?? '',
+      toAccountId: matched.toAccountId,
+      date: item.date,
+      time: item.time,
+      amount: item.amount,
+      currency: item.currency,
+      source: 'smartlog',
+    };
+  }
   return {
-    id: item.id, type: item.type, merchant: item.merchant || getBank(item.bank).name, categoryKey: 'other', accountId: item.accountId ?? '',
-    date: item.date, time: item.time, amount: item.amount, currency: item.currency, source: 'smartlog',
+    id: item.id,
+    type: item.type,
+    merchant: item.merchant || getBank(item.bank).name,
+    categoryKey: matched?.action === 'categorize' ? matched.categoryKey : 'other',
+    accountId: item.accountId ?? '',
+    date: item.date,
+    time: item.time,
+    amount: item.amount,
+    currency: item.currency,
+    source: 'smartlog',
   };
 }
 
@@ -96,29 +124,38 @@ function SmartLogInner({ children }: { children: ReactNode }) {
   const { show } = useToast();
   const supported = !!SmartLogNative;
   const [loadStatus, setStatus] = useState<Exclude<SmartLogStatus, 'idle'>>('loading');
-  const [data, setData] = useState<api.SmartLogData>({ enabled: false, links: [], review: [], recent: [] });
+  const [data, setData] = useState<api.SmartLogData>({ enabled: false, links: [], rules: [], review: [], recent: [] });
   const [permission, setPermission] = useState(() => SmartLogNative?.hasPermission() ?? false);
   const [held, setHeld] = useState(0);
   const busy = useRef(false);
+  const alive = useRef(true);
   const dataRef = useRef(data);
   const txIds = useRef(new Set<string>());
+  useEffect(() => {
+    alive.current = true;
+    return () => {
+      alive.current = false;
+    };
+  }, []);
   useEffect(() => {
     dataRef.current = data;
   }, [data]);
   useEffect(() => {
     txIds.current = new Set(state.transactions.map((x) => x.id));
   }, [state.transactions]);
-  const active = !!userId && state.status === 'ready' && state.onboarded;
+  const active = !!userId && state.status === 'ready' && state.onboarded && !state.suspended;
   const status: SmartLogStatus = active ? loadStatus : 'idle';
 
   const load = useCallback(async () => {
     if (!userId) return;
     try {
-      setData(await api.loadSmartLog(userId));
-      setHeld((await readHeld()).length);
+      const [next, nextHeld] = await Promise.all([api.loadSmartLog(userId), readHeld(userId)]);
+      if (!alive.current) return;
+      setData(next);
+      setHeld(nextHeld.length);
       setStatus('ready');
     } catch {
-      setStatus((s) => (s === 'ready' ? s : 'error'));
+      if (alive.current) setStatus((s) => (s === 'ready' ? s : 'error'));
     }
   }, [userId]);
 
@@ -132,13 +169,13 @@ function SmartLogInner({ children }: { children: ReactNode }) {
     await load();
   }, [load]);
 
-  // Keluar: berhenti menangkap dan buang antrean supaya tidak terbawa ke akun lain di HP yang sama.
+  // Keluar atau ditangguhkan: berhenti menangkap dan buang antrean supaya tidak terbawa ke akun lain di HP yang sama.
   useEffect(() => {
-    if (sessionReady && !session) {
+    if ((sessionReady && !session) || state.suspended) {
       SmartLogNative?.configure(false, []);
-      AsyncStorage.removeItem(HELD_KEY).catch(() => undefined);
+      if (userId) AsyncStorage.removeItem(heldKey(userId)).catch(() => undefined);
     }
-  }, [sessionReady, session]);
+  }, [sessionReady, session, state.suspended, userId]);
 
   // Listener native hanya menyimpan notifikasi dari aplikasi yang ditautkan, dan hanya saat Smart Log ON.
   // Dipanggil setelah data server dimuat: configure(false) mengosongkan antrean, jangan dipicu nilai awal.
@@ -194,27 +231,31 @@ function SmartLogInner({ children }: { children: ReactNode }) {
   );
 
   const processNow = useCallback(async () => {
-    if (!active || busy.current || !dataRef.current.enabled) return;
+    if (!active || !userId || busy.current || !dataRef.current.enabled) return;
     busy.current = true;
+    const owner = userId;
     try {
       const fresh = drainNative();
-      const previous = await readHeld();
-      if (!fresh.length && !previous.length) return;
+      const previous = await readHeld(owner);
+      if (!alive.current || (!fresh.length && !previous.length)) return;
       const seen = new Set<string>();
       const captures = [...previous, ...fresh].filter((c) => (seen.has(c.key) ? false : (seen.add(c.key), true)));
-      // Antrean native sudah kosong: simpan dulu sebelum mengirim, supaya tangkapan tidak hilang bila aplikasi
-      // ditutup/dimatikan di tengah pengiriman. Kiriman ulang aman: server menandainya `repeat`.
-      // Bila penyimpanan awal gagal, tetap kirim dari memori; yang tersisa wajib tersimpan, kalau tidak beri tahu pengguna.
-      await saveHeld(captures);
+      await saveHeld(owner, captures);
       const sum = await processCaptures(captures, api.ingest);
-      if (!(await saveHeld(sum.held))) show({ tone: 'error', title: t('slog.toast.saveFailed') });
+      if (!alive.current) return;
+      if (!(await saveHeld(owner, sum.held)) && alive.current) show({ tone: 'error', title: t('slog.toast.saveFailed') });
+      if (!alive.current) return;
       setHeld(sum.held.length);
       if (sum.applied.length || sum.review) {
-        const next = await api.loadSmartLog(userId!);
+        const next = await api.loadSmartLog(owner);
+        if (!alive.current) return;
         setData(next);
         for (const a of sum.applied) {
           const item = next.recent.find((r) => r.id === a.id);
-          if (item && !txIds.current.has(item.id)) applyLocal({ type: 'tx/add', tx: api.appliedTx(item) });
+          if (item && !txIds.current.has(item.id)) {
+            const tx = api.appliedTx(item, a);
+            applyLocal({ type: 'tx/add', tx: tx.merchant ? tx : { ...tx, merchant: getBank(item.bank).name } });
+          }
         }
       }
       refreshUsage();
@@ -286,6 +327,26 @@ function SmartLogInner({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  const saveRule = useCallback(async (input: SmartLogRuleInput) => {
+    const saved = await api.saveRule(input);
+    const key = saved.pattern.trim().toLowerCase();
+    setData((d) => ({
+      ...d,
+      rules: [saved, ...d.rules.filter((r) => r.id !== saved.id && r.pattern.trim().toLowerCase() !== key)],
+    }));
+  }, []);
+
+  const removeRule = useCallback(async (id: string) => {
+    const before = dataRef.current.rules;
+    setData((d) => ({ ...d, rules: d.rules.filter((r) => r.id !== id) }));
+    try {
+      await api.removeRule(id);
+    } catch (e) {
+      setData((d) => ({ ...d, rules: before }));
+      throw e;
+    }
+  }, []);
+
   const confirm = useCallback(
     async (item: api.SmartLogItem, tx: Transaction) => {
       // Percobaan ulang setelah transaksi tersimpan tapi konfirmasi gagal: jangan simpan transaksinya lagi.
@@ -305,10 +366,10 @@ function SmartLogInner({ children }: { children: ReactNode }) {
 
   const value = useMemo<SmartLogValue>(
     () => ({
-      supported, status, enabled: data.enabled, permission, links: data.links, review: data.review, recent: data.recent, held,
-      reload, setEnabled, openPermission, setLink, processNow, confirm, dismiss, undo,
+      supported, status, enabled: data.enabled, permission, links: data.links, rules: data.rules, review: data.review, recent: data.recent, held,
+      reload, setEnabled, openPermission, setLink, saveRule, removeRule, processNow, confirm, dismiss, undo,
     }),
-    [supported, status, data, permission, held, reload, setEnabled, openPermission, setLink, processNow, confirm, dismiss, undo],
+    [supported, status, data, permission, held, reload, setEnabled, openPermission, setLink, saveRule, removeRule, processNow, confirm, dismiss, undo],
   );
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }
@@ -317,4 +378,8 @@ export function useSmartLog(): SmartLogValue {
   const v = useContext(Ctx);
   if (!v) throw new Error('useSmartLog harus dipakai di dalam <SmartLogProvider>');
   return v;
+}
+
+export function useSmartLogOptional(): SmartLogValue | null {
+  return useContext(Ctx);
 }

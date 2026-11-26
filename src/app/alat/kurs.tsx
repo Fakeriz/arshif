@@ -1,13 +1,15 @@
+import { useRouter } from 'expo-router';
 import { ArrowUpDown, ChevronDown } from 'lucide-react-native';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import { CurrencySheet } from '@/components/shell/CurrencySheet';
-import { AmountField, AppText, Card, EmptyState, Icon, PressableScale } from '@/components/ui';
+import { AmountField, AppText, Badge, Card, EmptyState, Group, Icon, ListCard, ListItem, PressableScale } from '@/components/ui';
 import { ToolScreen } from '@/features/tools/kit';
 import { currencyName, useI18n } from '@/i18n';
 import { shortDate } from '@/lib/dates';
 import { convert, crossRate, hasRate, usdRatesDate } from '@/lib/fx';
+import { summarizeFxBasis } from '@/lib/fxBasis';
 import { formatMoney } from '@/lib/money';
 import { useStore } from '@/state/AppStore';
 import { useTheme } from '@/theme/ThemeProvider';
@@ -26,12 +28,17 @@ function rateText(rate: string, decimal: string): string {
 /** Konverter mata uang (FR-TAX-1). Kurs harian Frankfurter/ECB yang sama dengan saldo aplikasi. */
 export default function Converter() {
   const { t, lang } = useI18n();
+  const router = useRouter();
   const { colors } = useTheme();
   const { state, reload } = useStore();
   const [from, setFrom] = useState(state.mainCurrency === 'USD' ? 'IDR' : 'USD');
   const [to, setTo] = useState(state.mainCurrency === 'USD' ? 'MYR' : state.mainCurrency);
   const [amount, setAmount] = useState<number | null>(null);
   const [picking, setPicking] = useState<'from' | 'to' | null>(null);
+  const fxSummary = useMemo(
+    () => summarizeFxBasis(state.transactions, state.accounts, state.mainCurrency),
+    [state.transactions, state.accounts, state.mainCurrency],
+  );
   const date = usdRatesDate();
   const ready = date !== null && hasRate(from) && hasRate(to);
   const decimal = lang === 'id' || lang === 'tr' ? ',' : '.';
@@ -83,6 +90,40 @@ export default function Converter() {
       <AppText variant="caption" tone="muted">
         {t('tools.fx.source')}
       </AppText>
+      {fxSummary.totalCount > 0 && (
+        <Group label={t('tools.fx.basisTitle')}>
+          <Card padding="lg">
+            <View style={styles.basisHead}>
+              <View style={styles.flex}>
+                <AppText variant="caption" tone="secondary">
+                  {t('tools.fx.basisSummary', { count: fxSummary.totalCount, remit: fxSummary.remittanceCount })}
+                </AppText>
+                <AppText variant="h2" numeric>
+                  {formatMoney(fxSummary.totalVolumeMain, state.mainCurrency)}
+                </AppText>
+              </View>
+              <Badge
+                label={t('tools.fx.basisDelta', { amount: formatMoney(fxSummary.netDeltaMain, state.mainCurrency, 'always') })}
+                tone={fxSummary.netDeltaMain > 0 ? 'positive' : fxSummary.netDeltaMain < 0 ? 'negative' : 'neutral'}
+              />
+            </View>
+          </Card>
+          <ListCard>
+            {fxSummary.recent.map(({ tx, basis }, i) => (
+              <ListItem
+                key={tx.id}
+                title={tx.merchant}
+                subtitle={`1 ${basis.fromCurrency} = ${basis.effectiveRate} ${basis.toCurrency} · ${shortDate(tx.date, lang)}`}
+                trailing={formatMoney(basis.toAmount, basis.toCurrency)}
+                trailingCaption={basis.fxDeltaTo !== null && basis.fxDeltaTo !== 0 ? formatMoney(basis.fxDeltaTo, basis.toCurrency, 'always') : undefined}
+                chevron
+                divider={i < fxSummary.recent.length - 1}
+                onPress={() => router.push(`/trx/${tx.id}`)}
+              />
+            ))}
+          </ListCard>
+        </Group>
+      )}
       <CurrencySheet
         visible={picking !== null}
         value={picking === 'from' ? from : to}
@@ -124,6 +165,7 @@ const styles = StyleSheet.create({
   block: { gap: space.md },
   currency: { flexDirection: 'row', alignItems: 'center', gap: space.sm, minHeight: 48 },
   flex: { flex: 1, minWidth: 0 },
+  basisHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: space.md, flexWrap: 'wrap' },
   swapRow: { flexDirection: 'row', alignItems: 'center', gap: space.md, marginVertical: space.lg },
   rule: { flex: 1, height: StyleSheet.hairlineWidth },
   swap: { width: 44, height: 44, borderRadius: radius.full, alignItems: 'center', justifyContent: 'center', borderWidth: layout.hairline },

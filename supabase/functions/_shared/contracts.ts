@@ -23,8 +23,14 @@ export const CustomCategoryInput = z.object({ key: z.string().regex(/^u_[a-z]{4,
 export type CustomCategoryInput = z.infer<typeof CustomCategoryInput>;
 const CustomCategories = z.array(CustomCategoryInput).max(40).default([]);
 
+const isRealYmd = (v: string): boolean => {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(v)) return false;
+  const d = new Date(`${v}T00:00:00Z`);
+  return !Number.isNaN(d.getTime()) && d.toISOString().slice(0, 10) === v;
+};
+
 const Currency = z.string().regex(/^[A-Z]{3}$/);
-const Ymd = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
+const Ymd = z.string().refine(isRealYmd, 'invalid_ymd');
 const Minor = z.number().int().nonnegative();
 const Uuid = z.string().uuid();
 /** Path storage milik pengguna: "<user_id>/<nama berkas>". Kepemilikan dicek ulang di server. */
@@ -85,9 +91,9 @@ export const ScanResult = z.object({
 export type ScanResult = z.infer<typeof ScanResult>;
 
 // ------------------------------------------------------------------ voice-log (FR-VOICE-1..4)
-export const VoiceAccount = z.object({ id: Uuid, name: z.string(), bank: z.string(), currency: Currency });
+export const VoiceAccount = z.object({ id: Uuid, name: z.string().max(80), bank: z.string().max(40), currency: Currency });
 export const VoiceRequest = z.object({
-  audio: z.string().min(16).max(2_800_000), // base64, rekaman maks 60 detik
+  audio: z.string().min(16).max(2_800_000).regex(/^[A-Za-z0-9+/]+={0,2}$/), // base64, rekaman maks 60 detik
   mimeType: z.enum(['audio/mp4', 'audio/m4a', 'audio/aac', 'audio/webm', 'audio/ogg', 'audio/wav', 'audio/mpeg']),
   lang: Lang,
   today: Ymd,
@@ -148,7 +154,16 @@ export const StatementRow = z.object({
   /** Jam transaksi bila dicetak di rekening koran; null = tidak ada. Default untuk server lama. */
   time: z.string().regex(/^\d{2}:\d{2}$/).nullable().default(null),
 });
-export const ImportResult = z.object({ rows: z.array(StatementRow).max(1000), pages: z.number().int().nonnegative() });
+export const ImportResult = z.object({
+  rows: z.array(StatementRow).max(1000),
+  pages: z.number().int().nonnegative(),
+  /** Saldo akhir tercetak di rekening koran (bisa negatif untuk kartu kredit/cerukan); null bila tidak ada. */
+  closingBalance: z.number().int().min(-9_000_000_000_000_000).max(9_000_000_000_000_000).nullable().optional(),
+  /** Tanggal akhir periode rekening koran (YYYY-MM-DD); null bila tidak ada. */
+  closingDate: Ymd.nullable().optional(),
+  /** Mata uang saldo akhir dari dokumen. */
+  closingCurrency: Currency.nullable().optional(),
+});
 export type ImportResult = z.infer<typeof ImportResult>;
 
 // ------------------------------------------------------------------ coach (FR-COACH-2/4): hanya ringkasan angka

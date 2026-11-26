@@ -139,7 +139,7 @@ export const VOICE_SCHEMA: GeminiSchema = {
 };
 
 export function voicePrompt(ctx: { today: string; timezone: string; defaultCurrency: string; accounts: { id: string; name: string; bank: string; currency: string }[]; categories?: CustomCategoryInput[] }): string {
-  const list = ctx.accounts.map((a) => `- id=${a.id} name="${a.name}" bank=${a.bank} currency=${a.currency}`).join('\n') || '- (none)';
+  const list = ctx.accounts.map((a) => `- id=${a.id} name=${JSON.stringify(a.name)} bank=${JSON.stringify(a.bank)} currency=${a.currency}`).join('\n') || '- (none)';
   return `Transcribe the audio, then extract every money transaction the speaker mentions. The speaker may use Indonesian, Malay, Turkish or English, possibly mixed.
 Today is ${ctx.today} in time zone ${ctx.timezone}. Convert relative dates to YYYY-MM-DD: "kemarin"/"semalam"/"dün"/"yesterday" = the day before today; "minggu lalu"/"minggu lepas"/"geçen hafta"/"last week" = 7 days before today. Default date is today.
 Normalize informal numbers: "goceng" = 5000, "ceban" = 10000, "gopek" = 500, "50k"/"50rb"/"50 ribu" = 50000, "sejuta" = 1000000, "lima puluh ribu" = 50000, "elli lira" = 50 TRY, "seratus ringgit" = 100 MYR. ${AMOUNT}
@@ -158,6 +158,8 @@ export const STATEMENT_SCHEMA: GeminiSchema = {
   properties: {
     pages: { type: 'INTEGER' },
     currency: S('ISO 4217 code of the currency this statement is in, read from the document'),
+    closingBalance: S(`${AMOUNT} Ending/closing balance printed on the statement (or the running balance of the chronological last row). Prefix with "-" when negative/overdrawn. Null when no balance is printed.`, true),
+    closingDate: S('Statement period end date as YYYY-MM-DD (or the date of the closing balance), or null', true),
     rows: {
       type: 'ARRAY',
       items: {
@@ -184,7 +186,8 @@ export function statementPrompt(accountCurrency: string, custom: CustomCategoryI
 - amount: positive. ${AMOUNT}
 - currency: read it from the statement itself: currency column/header ("Mata Uang", "Currency", "Para Birimi"), amount symbols (Rp, IDR, RM, MYR, TL, TRY, $), or the bank's country (BCA, Mandiri, BRI, BNI, Jago, GoPay, OVO, DANA -> IDR; Maybank, CIMB, Public Bank, RHB, Touch 'n Go -> MYR; Ziraat, Garanti, İş Bankası, Akbank, Yapı Kredi -> TRY). Every row uses the statement currency unless the row itself shows another one. Only when the document gives no clue at all, use ${accountCurrency}.
 - time: HH:MM 24h when the row prints a time (e.g. "14:32:05" -> "14:32"), else null. Never invent a time.
-- Skip opening/closing balance, totals and summary lines.
+- Skip opening/closing balance, totals and summary lines in rows.
+- closingBalance: ending/closing balance printed in the statement summary or the chronological last row's running balance column ("Saldo Akhir", "Saldo", "Ending Balance", "Closing Balance", "Dönem Sonu Bakiyesi", "Bakiye"), as a plain decimal string (prefix "-" if negative), or null when no balance is printed. closingDate: statement period end date as YYYY-MM-DD, or null.
 - date as YYYY-MM-DD; infer the year from the statement period when rows show only day and month.
 - ${CATEGORY_GUIDE}${customGuide(custom)}
 - pages: number of pages in the PDF.`;

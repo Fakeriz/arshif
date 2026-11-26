@@ -1,14 +1,16 @@
 import { FileDown } from 'lucide-react-native';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
-import { AppText, Button, Card, Chip, DateField } from '@/components/ui';
-import { historyDocument, monthlyReportDocument, monthlySummary } from '@/features/tools/documents';
+import { AppText, Button, Card, Chip, DateField, Tabs } from '@/components/ui';
+import { fiscalBundleDocument, historyDocument, invoiceFiscalSummary, monthlyReportDocument, monthlySummary } from '@/features/tools/documents';
 import { GatedBody, ToolScreen, useFeatureGate, usePdfShare } from '@/features/tools/kit';
 import { useI18n } from '@/i18n';
 import { isYmd, monthName, todayYmd } from '@/lib/dates';
 import { formatMoney } from '@/lib/money';
+import { annualReport, defaultTaxCountry, type TaxCountry } from '@/lib/tax';
 import { useStore } from '@/state/AppStore';
+import { useInvoicesOptional } from '@/state/invoices';
 import { useTheme } from '@/theme/ThemeProvider';
 import { space } from '@/theme/tokens';
 
@@ -38,18 +40,32 @@ function Exports() {
   const { t, lang } = useI18n();
   const { colors } = useTheme();
   const { state } = useStore();
+  const invCtx = useInvoicesOptional();
   const months = recentMonths(6);
+  const thisYear = new Date().getFullYear();
   const [month, setMonth] = useState(months[0]);
   const today = todayYmd();
   const [from, setFrom] = useState(`${today.slice(0, 8)}01`);
   const [to, setTo] = useState(today);
+  const [fiscalYear, setFiscalYear] = useState(thisYear);
+  const [fiscalCountry, setFiscalCountry] = useState<TaxCountry>(() => defaultTaxCountry(state.mainCurrency, lang));
   const monthly = usePdfShare();
   const history = usePdfShare();
+  const fiscal = usePdfShare();
   const ctx = { t, lang, owner: state.displayName ?? '' };
   const main = state.mainCurrency;
   const s = monthlySummary(state.transactions, month, main);
   const rangeOk = isYmd(from) && isYmd(to) && from <= to;
   const inRange = rangeOk ? state.transactions.filter((x) => x.date >= from && x.date <= to).length : 0;
+  const fiscalReport = useMemo(
+    () => annualReport(state.transactions, fiscalYear, fiscalCountry, { married: false, dependents: 0 }),
+    [state.transactions, fiscalYear, fiscalCountry],
+  );
+  const fiscalInvoices = useMemo(() => invoiceFiscalSummary(invCtx?.invoices ?? [], fiscalYear, fiscalReport.currency), [invCtx?.invoices, fiscalYear, fiscalReport.currency]);
+  const fiscalTxCount = useMemo(
+    () => state.transactions.filter((x) => x.date.startsWith(String(fiscalYear)) && x.type !== 'transfer').length,
+    [state.transactions, fiscalYear],
+  );
   const label = (m: string) => `${monthName(Number(m.slice(5, 7)), lang)} ${m.slice(0, 4)}`;
 
   return (
@@ -103,6 +119,48 @@ function Exports() {
             loading={history.busy}
             disabled={history.busy || !rangeOk}
             onPress={() => void history.run(() => historyDocument(state.transactions, state.accounts, from, to, ctx), `Arshif-riwayat-${from}-${to}`)}
+          />
+        </View>
+      </Card>
+
+      <Card padding="lg">
+        <View style={styles.block}>
+          <AppText variant="h3" accessibilityRole="header">
+            {t('tools.export.fiscalTitle')}
+          </AppText>
+          <AppText variant="caption" tone="secondary">
+            {t('tools.export.fiscalHint')}
+          </AppText>
+          <View style={styles.chips} accessibilityLabel={t('tools.report.year')}>
+            {[thisYear, thisYear - 1].map((y) => (
+              <Chip key={y} label={String(y)} selected={fiscalYear === y} onPress={() => setFiscalYear(y)} />
+            ))}
+          </View>
+          <Tabs
+            accessibilityLabel={t('tools.tax.country')}
+            value={fiscalCountry}
+            onChange={setFiscalCountry}
+            items={[
+              { key: 'ID', label: t('tools.tax.countryId') },
+              { key: 'MY', label: t('tools.tax.countryMy') },
+              { key: 'TR', label: t('tools.tax.countryTr') },
+            ]}
+          />
+          <AppText variant="body" tone="secondary" numeric>
+            {t('tools.export.fiscalPreview', { txCount: fiscalTxCount, invCount: fiscalInvoices.rows.length })}
+          </AppText>
+          <Button
+            label={fiscal.busy ? t('tools.pdf.making') : t('tools.export.fiscalCta', { year: fiscalYear })}
+            icon={FileDown}
+            fullWidth
+            loading={fiscal.busy}
+            disabled={fiscal.busy}
+            onPress={() =>
+              void fiscal.run(
+                () => fiscalBundleDocument(fiscalReport, invCtx?.invoices ?? [], ctx),
+                `Arshif-fiskal-${fiscalYear}-${fiscalCountry}`,
+              )
+            }
           />
         </View>
       </Card>

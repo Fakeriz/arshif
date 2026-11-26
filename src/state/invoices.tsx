@@ -31,30 +31,38 @@ const upsert = (list: Invoice[], item: Invoice): Invoice[] => (list.some((x) => 
  * ditegakkan server; layar hanya menampilkan hasilnya. `preset` = data tetap tanpa server (test).
  */
 export function InvoicesProvider({ children, preset }: { children: ReactNode; preset?: Invoice[] }) {
-  const { state: app, userId, commitTx, refreshUsage, reload: reloadApp } = useStore();
+  const { state: app, userId, dispatch: appDispatch, commitTx, refreshUsage, reload: reloadApp } = useStore();
   const [status, setStatus] = useState<InvoicesStatus>(preset ? 'ready' : 'idle');
   const [invoices, setInvoices] = useState<Invoice[]>(preset ?? []);
   const paying = useRef(new Set<string>());
+  const reloadSeq = useRef(0);
+  const prevUserRef = useRef<string | null>(userId);
 
   const reload = useCallback(async () => {
     if (!userId) return;
+    const seq = ++reloadSeq.current;
     setStatus((s) => (s === 'ready' ? 'ready' : 'loading'));
     try {
-      setInvoices(await api.loadInvoices());
-      setStatus('ready');
+      const next = await api.loadInvoices();
+      if (seq === reloadSeq.current) {
+        setInvoices(next);
+        setStatus('ready');
+      }
     } catch {
-      setStatus((s) => (s === 'ready' ? 'ready' : 'error'));
+      if (seq === reloadSeq.current) setStatus((s) => (s === 'ready' ? 'ready' : 'error'));
     }
   }, [userId]);
 
   useEffect(() => {
     if (preset) return;
-    if (!userId) {
+    if (prevUserRef.current !== userId) {
+      prevUserRef.current = userId;
+      reloadSeq.current += 1;
+      paying.current.clear();
       setInvoices([]);
       setStatus('idle');
-      return;
     }
-    if (app.status === 'ready' && app.onboarded) void reload();
+    if (userId && app.status === 'ready' && app.onboarded) void reload();
   }, [userId, app.status, app.onboarded, reload, preset]);
 
   const markPaid = useCallback(
@@ -65,7 +73,12 @@ export function InvoicesProvider({ children, preset }: { children: ReactNode; pr
       paying.current.add(inv.id);
       try {
         // id transaksi = id invoice: percobaan ulang tidak membuat transaksi kedua (server juga menolak id ganda).
-        if (!app.transactions.some((t) => t.id === inv.id)) {
+        const existing = app.transactions.find((t) => t.id === inv.id);
+        if (existing) {
+          if (existing.accountId !== p.accountId || existing.date !== p.date || existing.amount !== inv.total || existing.currency !== inv.currency) {
+            appDispatch({ type: 'tx/update', tx: { ...existing, accountId: p.accountId, date: p.date, amount: inv.total, currency: inv.currency } });
+          }
+        } else {
           try {
             await commitTx({
               id: inv.id, type: 'income', merchant: inv.clientName, categoryKey: 'freelance', accountId: p.accountId, date: p.date,
@@ -83,7 +96,7 @@ export function InvoicesProvider({ children, preset }: { children: ReactNode; pr
         paying.current.delete(inv.id);
       }
     },
-    [commitTx, reloadApp, app.transactions],
+    [commitTx, appDispatch, reloadApp, app.transactions],
   );
 
   const value = useMemo<InvoicesValue>(
@@ -126,4 +139,8 @@ export function useInvoices(): InvoicesValue {
   const ctx = useContext(Ctx);
   if (!ctx) throw new Error('useInvoices harus dipakai di dalam <InvoicesProvider>');
   return ctx;
+}
+
+export function useInvoicesOptional(): InvoicesValue | null {
+  return useContext(Ctx);
 }
