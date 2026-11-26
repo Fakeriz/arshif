@@ -1,0 +1,59 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Check secret hygiene
+        run: |
+          if git ls-files | grep -qE '(^|/)\.env(\.|$)'; then
+            echo "Tracked .env file detected in git!"
+            exit 1
+          fi
+          if git grep -nE '(sk_live_[A-Za-z0-9]{16,}|xnd_production_[A-Za-z0-9]{16,}|pdl_live_[A-Za-z0-9_]{16,}|AIzaSy[0-9A-Za-z_-]{20,})' -- ':!.github/workflows/ci.yml'; then
+            echo "Potential live credential detected in tracked files!"
+            exit 1
+          fi
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Typecheck app
+        run: npm run typecheck
+
+      - name: Typecheck Supabase Edge Functions
+        run: npm run typecheck:functions
+
+      - name: Run Jest unit and integration suite
+        run: npm test -- --ci
+
+      - name: Run PostgreSQL PGlite migration and RLS tests
+        run: npm run test:db
+
+      - name: Run SmartLog parser flow tests
+        run: npm run test:smartlog
+
+      - name: Build Expo web bundle
+        run: npm run export:web
+
+      - name: Audit production dependencies
+        run: npm audit --omit=dev --audit-level=high

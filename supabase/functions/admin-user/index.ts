@@ -9,57 +9,61 @@ import { adminGrant } from '../_shared/admin-grant.ts';
 import { AdminUserRequest } from '../_shared/contracts.ts';
 import { refundOrder, revenueCatReady, syncPlan } from '../_shared/entitlement.ts';
 import { HttpError, json, readJson, serve } from '../_shared/http.ts';
+import { logEvent } from '../_shared/logger.ts';
 
 const BAN_FOREVER = '876000h';
 
-serve(async (req) => {
-  const admin = await requireUser(req);
-  const db = adminClient();
-  const { data: isAdmin, error: adminErr } = await db.from('admin_users').select('user_id').eq('user_id', admin.id).maybeSingle();
-  if (adminErr) throw new HttpError('server', 500);
-  if (!isAdmin) throw new HttpError('forbidden', 403);
+serve(
+  async (req, ctx) => {
+    const admin = await requireUser(req);
+    const db = adminClient();
+    const { data: isAdmin, error: adminErr } = await db.from('admin_users').select('user_id').eq('user_id', admin.id).maybeSingle();
+    if (adminErr) throw new HttpError('server', 500);
+    if (!isAdmin) throw new HttpError('forbidden', 403);
 
-  const input = AdminUserRequest.safeParse(await readJson(req));
-  if (!input.success) throw new HttpError('bad_request', 400);
-  const { action, userId } = input.data;
-  const { data: target, error: targetErr } = await db.from('profiles').select('id').eq('id', userId).maybeSingle();
-  if (targetErr) throw new HttpError('server', 500);
-  if (!target) throw new HttpError('not_found', 404);
+    const input = AdminUserRequest.safeParse(await readJson(req));
+    if (!input.success) throw new HttpError('bad_request', 400);
+    const { action, userId } = input.data;
+    const { data: target, error: targetErr } = await db.from('profiles').select('id').eq('id', userId).maybeSingle();
+    if (targetErr) throw new HttpError('server', 500);
+    if (!target) throw new HttpError('not_found', 404);
 
-  let grantQueued = false;
-  if (action === 'grant') grantQueued = (await adminGrant(db, admin.id, userId, input.data.days)).queued;
+    let grantQueued = false;
+    if (action === 'grant') grantQueued = (await adminGrant(db, admin.id, userId, input.data.days)).queued;
 
-  if (action === 'revoke') {
-    const { data: active, error } = await db
-      .from('orders')
-      .select('id')
-      .eq('user_id', userId)
-      .eq('provider', 'manual')
-      .eq('status', 'paid')
-      .gt('granted_until', new Date().toISOString());
-    if (error) throw new HttpError('server', 500);
-    for (const o of active ?? []) await refundOrder(db, o.id);
-    await syncPlan(db, userId);
-  }
-
-  if (action === 'suspend' || action === 'unsuspend') {
-    if (action === 'suspend') {
-      if (userId === admin.id) throw new HttpError('bad_request', 400, { message: 'cannot_suspend_self' });
-      const { data: targetAdmin, error: targetAdminErr } = await db.from('admin_users').select('user_id').eq('user_id', userId).maybeSingle();
-      if (targetAdminErr) throw new HttpError('server', 500);
-      if (targetAdmin) throw new HttpError('forbidden', 403, { message: 'target_is_admin' });
+    if (action === 'revoke') {
+      const { data: active, error } = await db
+        .from('orders')
+        .select('id')
+        .eq('user_id', userId)
+        .eq('provider', 'manual')
+        .eq('status', 'paid')
+        .gt('granted_until', new Date().toISOString());
+      if (error) throw new HttpError('server', 500);
+      for (const o of active ?? []) await refundOrder(db, o.id);
+      await syncPlan(db, userId);
     }
-    const { error: authError } = await db.auth.admin.updateUserById(userId, { ban_duration: action === 'suspend' ? BAN_FOREVER : 'none' });
-    if (authError) throw new HttpError('server', 500, { message: 'auth_ban_failed' });
-    const { error } = await db.from('profiles').update({ suspended_at: action === 'suspend' ? new Date().toISOString() : null }).eq('id', userId);
-    if (error) throw new HttpError('server', 500);
-    if (action === 'suspend') {
-      const { error: revokeErr } = await db.rpc('revoke_user_sessions', { p_user: userId });
-      if (revokeErr) console.error('revoke_user_sessions_failed', userId, revokeErr.code);
-    }
-  }
 
-  const { data: p, error: readErr } = await db.from('profiles').select('plan, premium_until, suspended_at').eq('id', userId).single();
-  if (readErr) throw new HttpError('server', 500);
-  return json({ plan: p?.plan ?? 'free', premiumUntil: p?.premium_until ?? null, suspendedAt: p?.suspended_at ?? null, revenueCat: revenueCatReady(), grantQueued });
-});
+    if (action === 'suspend' || action === 'unsuspend') {
+      if (action === 'suspend') {
+        if (userId === admin.id) throw new HttpError('bad_request', 400, { message: 'cannot_suspend_self' });
+        const { data: targetAdmin, error: targetAdminErr } = await db.from('admin_users').select('user_id').eq('user_id', userId).maybeSingle();
+        if (targetAdminErr) throw new HttpError('server', 500);
+        if (targetAdmin) throw new HttpError('forbidden', 403, { message: 'target_is_admin' });
+      }
+      const { error: authError } = await db.auth.admin.updateUserById(userId, { ban_duration: action === 'suspend' ? BAN_FOREVER : 'none' });
+      if (authError) throw new HttpError('server', 500, { message: 'auth_ban_failed' });
+      const { error } = await db.from('profiles').update({ suspended_at: action === 'suspend' ? new Date().toISOString() : null }).eq('id', userId);
+      if (error) throw new HttpError('server', 500);
+      if (action === 'suspend') {
+        const { error: revokeErr } = await db.rpc('revoke_user_sessions', { p_user: userId });
+        if (revokeErr) logEvent('error', 'revoke_user_sessions_failed', { userId, requestId: ctx.requestId, code: revokeErr.code });
+      }
+    }
+
+    const { data: p, error: readErr } = await db.from('profiles').select('plan, premium_until, suspended_at').eq('id', userId).single();
+    if (readErr) throw new HttpError('server', 500);
+    return json({ plan: p?.plan ?? 'free', premiumUntil: p?.premium_until ?? null, suspendedAt: p?.suspended_at ?? null, revenueCat: revenueCatReady(), grantQueued });
+  },
+  { service: 'admin-user' },
+);

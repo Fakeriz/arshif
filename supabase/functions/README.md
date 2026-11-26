@@ -9,16 +9,17 @@
 | `fx-sync` | pg_cron (`x-cron-secret`) atau admin (token, `admin_users`) | - | Frankfurter/ECB, backfill 365 hari bila riwayat < 30 hari; tiap percobaan dicatat di `fx_sync_runs` |
 | `asset-prices-sync` | pg_cron tiap jam (`x-cron-secret`) atau admin | - | harga aset live per kunci netral (`IDX:BBCA`, `US:AAPL`, `CRYPTO:BTC`, `GOLD:XAU`) ke `asset_prices`; satu kode gagal tidak menggagalkan yang lain; tiap percobaan dicatat di `asset_price_runs`. Penyedia: TradingView lewat `@mathieuc/tradingview` (library komunitas, bukan API resmi), tanpa akun |
 | `places` | klien | 30/menit, 300/hari per pengguna (`place_lookup_start`) | Google Places API (New) cari teks/terdekat + Maps Static API; secret `GOOGLE_MAPS_API_KEY`, tanpa itu 503 `not_configured` |
+| `health` | publik / uptime monitor | - | `?check=live` cek proses lokal tanpa query DB; `?check=ready` cek env inti + koneksi DB (timeout 2 detik, `503` jika degraded) |
 | `delete-account` | klien | - | hapus storage + pengguna Auth (cascade) |
-| `checkout-create` | klien | maks 5 pesanan/10 menit | harga dari tabel `prices`; IDR/MYR -> Xendit Invoice, USD -> transaksi Paddle |
+| `checkout-create` | klien | maks 5 pesanan/10 menit | harga dari tabel `prices`; IDR/MYR -> Xendit Invoice, USD -> transaksi Paddle; mendukung header `Idempotency-Key` |
 | `xendit-webhook` | Xendit (`x-callback-token`) | - | invoice PAID/SETTLED/EXPIRED, `refund.succeeded`; idempoten |
 | `paddle-webhook` | Paddle (`Paddle-Signature`, HMAC) | - | transaction.completed/paid/payment_failed, refund (adjustment); idempoten |
 | `revenuecat-webhook` | RevenueCat (`Authorization`) | - | siapa pun yang berubah -> `syncPlan` dari REST API; idempoten |
 | `entitlement-sync` | klien (6/menit) atau pg_cron | - | cocokkan paket dengan RevenueCat (tanpa kunci: dengan pesanan lunas); cron: Premium kedaluwarsa + grant gagal |
 | `admin-user` | klien, hanya `admin_users` | - | grant Premium manual (pesanan `manual`), cabut grant manual, tangguhkan/pulihkan akun (ban Auth + `profiles.suspended_at`) |
 
-Aturan bersama (`_shared/guard.ts`): rate limit 10 permintaan AI/menit/pengguna, kuota diambil atomik
-sebelum AI dipanggil dan dikembalikan bila gagal, setiap percobaan dicatat di `ai_jobs`.
+Aturan bersama (`_shared/guard.ts` dan `_shared/http.ts`): rate limit 10 permintaan AI/menit/pengguna (`Retry-After` otomatis pada `429`/`409`), kuota diambil atomik
+sebelum AI dipanggil dan dikembalikan bila gagal, setiap percobaan dicatat di `ai_jobs`, dan setiap respons membawa `X-Request-ID` + header `Cache-Control: private, no-store` dengan log JSON satu baris yang meredaksi PII/secret.
 
 `verify_jwt = false` untuk semua function (kunci format baru tidak didukung verifikasi bawaan);
 token diverifikasi di kode lewat `requireUser` (`auth.getUser`).

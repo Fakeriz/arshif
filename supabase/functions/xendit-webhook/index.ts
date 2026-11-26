@@ -13,7 +13,8 @@ import { exponentOf } from '../_shared/money.ts';
 type InvoiceCallback = { id: string; external_id: string; status: string; amount: number; currency: string };
 type RefundCallback = { event: string; data: { id: string; invoice_id?: string | null; amount?: number | null } };
 
-serve(async (req) => {
+serve(
+  async (req) => {
   // Secret belum diisi: 503 not_configured (bukan 500), penyedia mengirim ulang setelah dikonfigurasi.
   if (!configured('XENDIT_CALLBACK_TOKEN')) throw new HttpError('not_configured', 503);
   if (!verifyStaticToken(req.headers.get('x-callback-token'), XENDIT_CALLBACK_TOKEN())) throw new HttpError('unauthorized', 401);
@@ -65,4 +66,6 @@ serve(async (req) => {
     if (updated?.status === 'paid') await grantOrder(db, updated);
     return json({ ok: true });
   });
-});
+  },
+  { service: 'xendit-webhook' },
+);

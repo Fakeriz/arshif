@@ -20,8 +20,11 @@ export function useSyncPlan(): () => Promise<SyncResponse> {
   }, [dispatch, refreshUsage]);
 }
 
-export function createCheckout(input: { period: 'monthly' | 'yearly'; currency: 'IDR' | 'MYR' | 'USD'; method: string }): Promise<CheckoutResponse> {
-  return invokeFn(FUNCTIONS.checkout, input, CheckoutResponse);
+export function createCheckout(
+  input: { period: 'monthly' | 'yearly'; currency: 'IDR' | 'MYR' | 'USD'; method: string },
+  idempotencyKey?: string,
+): Promise<CheckoutResponse> {
+  return invokeFn(FUNCTIONS.checkout, input, CheckoutResponse, idempotencyKey ? { idempotencyKey } : undefined);
 }
 
 /** Pembeli RevenueCat mengikuti sesi: login = identitas pengguna Supabase, logout = anonim lagi. */

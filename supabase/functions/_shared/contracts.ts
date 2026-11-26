@@ -39,7 +39,7 @@ const StoragePath = z.string().regex(/^[0-9a-f-]{36}\/[A-Za-z0-9._-]{1,80}$/);
 /** Kode error yang dipahami klien. HTTP status dipilih server, klien membaca `error`. */
 export const ErrorCode = z.enum([
   'unauthorized', 'bad_request', 'rate_limited', 'quota', 'unreadable', 'encrypted_pdf', 'too_large', 'ai_failed', 'not_found', 'server',
-  'forbidden', 'not_configured', 'provider_error',
+  'forbidden', 'not_configured', 'provider_error', 'conflict',
 ]);
 export type ErrorCode = z.infer<typeof ErrorCode>;
 export const ErrorBody = z.object({ error: ErrorCode, quotaKey: z.string().optional(), message: z.string().optional() });
@@ -313,6 +313,18 @@ export const SymbolHit = z.object({ code: z.string().regex(/^[A-Z0-9.]{1,15}$/),
 export const SymbolSearchResponse = z.object({ results: z.array(SymbolHit).max(10) });
 export type SymbolHit = z.infer<typeof SymbolHit>;
 
+// ------------------------------------------------------------------ health (/health?check=live|ready)
+export const HealthResponse = z.object({
+  ok: z.boolean(),
+  status: z.enum(['live', 'ready', 'degraded']),
+  service: z.string(),
+  db: z.enum(['ok', 'error', 'timeout']).optional(),
+  env: z.enum(['ok', 'missing']).optional(),
+  minClientVersion: z.string().optional(),
+  ts: z.string(),
+});
+export type HealthResponse = z.infer<typeof HealthResponse>;
+
 /** Nama function = path di /functions/v1/<nama>. */
 export const FUNCTIONS = {
   scan: 'scan-receipt',
@@ -328,4 +340,5 @@ export const FUNCTIONS = {
   places: 'places',
   symbolSearch: 'symbol-search',
   coachPrice: 'coach-price',
+  health: 'health',
 } as const;

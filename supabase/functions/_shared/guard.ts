@@ -30,7 +30,7 @@ export async function runAiJob<T>(
   const startedAt = Date.now();
   const { data: jobId, error: startError } = await db.rpc('ai_job_start', { p_user: userId, p_kind: kind, p_limit: RATE_LIMIT_PER_MIN });
   if (startError) throw new HttpError('server', 500);
-  if (!jobId) throw new HttpError('rate_limited', 429);
+  if (!jobId) throw new HttpError('rate_limited', 429, { retryAfterSec: 60 });
 
   // Waktu kuota diambil: pengembalian masuk ke periode ini walau pekerjaan selesai setelah pergantian bulan/hari.
   const consumedAt = new Date().toISOString();

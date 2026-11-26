@@ -11,18 +11,21 @@ import { HttpError, json, readJson, serve } from '../_shared/http.ts';
 import { normalizeAsk } from '../_shared/normalize.ts';
 import { ASK_SCHEMA, askPrompt, askView } from '../_shared/prompts.ts';
 
-serve(async (req) => {
-  const user = await requireUser(req);
-  const input = AskRequest.safeParse(await readJson(req));
-  if (!input.success) throw new HttpError('bad_request', 400);
-  const { lang, question, history, context } = input.data;
-  const db = adminClient();
+serve(
+  async (req) => {
+    const user = await requireUser(req);
+    const input = AskRequest.safeParse(await readJson(req));
+    if (!input.success) throw new HttpError('bad_request', 400);
+    const { lang, question, history, context } = input.data;
+    const db = adminClient();
 
-  const result = await runAiJob(db, user.id, 'coach', 'coachAsk', async () => {
-    const raw = await generateJson(askPrompt(lang, { question, history, context: askView(context) }), ASK_SCHEMA);
-    const answer = normalizeAsk(raw);
-    if (!answer) throw new HttpError('ai_failed', 502);
-    return answer;
-  });
-  return json(result);
-});
+    const result = await runAiJob(db, user.id, 'coach', 'coachAsk', async () => {
+      const raw = await generateJson(askPrompt(lang, { question, history, context: askView(context) }), ASK_SCHEMA);
+      const answer = normalizeAsk(raw);
+      if (!answer) throw new HttpError('ai_failed', 502);
+      return answer;
+    });
+    return json(result);
+  },
+  { service: 'coach-ask' },
+);

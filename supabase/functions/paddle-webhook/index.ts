@@ -25,7 +25,8 @@ type PaddleEvent = {
   };
 };
 
-serve(async (req) => {
+serve(
+  async (req) => {
   // Secret belum diisi: 503 not_configured (bukan 500), penyedia mengirim ulang setelah dikonfigurasi.
   if (!configured('PADDLE_WEBHOOK_SECRET')) throw new HttpError('not_configured', 503);
   const raw = await req.text();
@@ -82,4 +83,6 @@ serve(async (req) => {
     }
     return json({ ok: true });
   });
-});
+  },
+  { service: 'paddle-webhook' },
+);

@@ -53,6 +53,29 @@ export const PADDLE_API_BASE = (): string =>
 
 /** URL web aplikasi untuk kembali dari halaman bayar Xendit, mis. https://app.arshif.id */
 export const APP_URL = (): string => required('APP_URL').replace(/\/+$/, '');
+export const MIN_CLIENT_VERSION = (): string => Deno.env.get('MIN_CLIENT_VERSION') || '1.0.0';
+
+/** Memeriksa variabel inti Edge Runtime tanpa mengembalikan nilai secret. */
+export function validateCoreEnv(): { ok: boolean; missing: string[] } {
+  const missing: string[] = [];
+  const url = Deno.env.get('SUPABASE_URL') ?? '';
+  if (!/^https?:\/\/.+/.test(url)) missing.push('SUPABASE_URL');
+
+  let hasAdminKey = false;
+  const rawKeys = Deno.env.get('SUPABASE_SECRET_KEYS');
+  if (rawKeys) {
+    try {
+      const k = (JSON.parse(rawKeys) as Record<string, unknown>).default;
+      if (typeof k === 'string' && k.length > 0) hasAdminKey = true;
+    } catch {
+      // jatuh ke SUPABASE_SERVICE_ROLE_KEY
+    }
+  }
+  if (!hasAdminKey && !Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')) {
+    missing.push('SUPABASE_SECRET_KEYS');
+  }
+  return { ok: missing.length === 0, missing };
+}
 
 /** true bila semua secret yang dibutuhkan sudah diset (untuk pesan "belum dikonfigurasi", bukan 500). */
 export function configured(...names: string[]): boolean {

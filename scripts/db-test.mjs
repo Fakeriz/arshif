@@ -1215,6 +1215,88 @@ await test('smartlog_rules: RLS lintas akun, kategorisasi otomatis, dan aturan t
   );
 });
 
+await test('idempotency_keys: akses klien diblokir, state machine & stale lease bekerja atomik', async () => {
+  const S1 = '00000000-0000-4000-8000-0000000000f5';
+  await sys(`insert into auth.users (id, email) values ('${S1}', 's1@example.com')`);
+  await rejects(as(S1, 'select * from public.idempotency_keys'), /permission denied/);
+  await rejects(as(S1, `select * from public.idempotency_begin($1, 'checkout-create', 'idem-client-1', '1234567890abcdef')`, [S1]), /permission denied/);
+
+  const scope = 'checkout-create';
+  const key = 'idem-checkout-test-1';
+  const hashA = 'aaaa1111bbbb2222cccc3333dddd4444';
+  const hashB = 'ffff9999eeee8888dddd7777cccc6666';
+
+  const first = (await sys(`select state, status_code, response_body, lease_id from public.idempotency_begin($1, $2, $3, $4, 60)`, [S1, scope, key, hashA]))[0];
+  eq(
+    { state: first.state, status_code: first.status_code, response_body: first.response_body },
+    { state: 'acquired', status_code: null, response_body: null },
+    'begin pertama acquired',
+  );
+  ok(first.lease_id, 'lease_id pertama terisi');
+
+  eq(
+    (await sys(`select state, status_code, response_body from public.idempotency_begin($1, $2, $3, $4, 60)`, [S1, scope, key, hashA]))[0],
+    { state: 'in_progress', status_code: null, response_body: null },
+    'request paralel saat in_progress ditahan',
+  );
+  eq(
+    (await sys(`select state from public.idempotency_begin($1, $2, $3, $4, 60)`, [S1, scope, key, hashB]))[0].state,
+    'payload_mismatch',
+    'payload berbeda ditolak',
+  );
+
+  // Lease kedaluwarsa (> 60 detik) diambil alih dengan fencing token (lease_id) baru.
+  await sys(`update public.idempotency_keys set updated_at = now() - interval '90 seconds' where user_id = $1 and scope = $2 and key = $3`, [S1, scope, key]);
+  const second = (await sys(`select state, lease_id from public.idempotency_begin($1, $2, $3, $4, 60)`, [S1, scope, key, hashA]))[0];
+  eq(second.state, 'acquired', 'stale lease diambil alih');
+  ok(second.lease_id && second.lease_id !== first.lease_id, 'fencing lease_id berubah saat takeover');
+
+  // Worker zombie lama (first.lease_id) tidak boleh menghapus atau menimpa lease milik worker baru (second.lease_id).
+  await sys(`select public.idempotency_release($1, $2, $3, $4::uuid)`, [S1, scope, key, first.lease_id]);
+  await sys(`select public.idempotency_complete($1, $2, $3, $4::uuid, 200, '{"zombie":true}'::jsonb)`, [S1, scope, key, first.lease_id]);
+  eq((await sys(`select status from public.idempotency_keys where user_id = $1 and scope = $2 and key = $3`, [S1, scope, key]))[0].status, 'in_progress', 'zombie worker ditolak fencing token');
+
+  const cachedBody = { orderId: '11111111-1111-4111-8111-111111111111', provider: 'xendit', checkoutUrl: 'https://pay.test/1', transactionId: null };
+  await sys(`select public.idempotency_complete($1, $2, $3, $4::uuid, 200, $5::jsonb)`, [S1, scope, key, second.lease_id, JSON.stringify(cachedBody)]);
+  eq(
+    (await sys(`select state, status_code, response_body from public.idempotency_begin($1, $2, $3, $4, 60)`, [S1, scope, key, hashA]))[0],
+    { state: 'completed', status_code: 200, response_body: cachedBody },
+    'completed memutar ulang response tepat',
+  );
+
+  // Release hanya menghapus in_progress dengan lease yang cocok, bukan completed.
+  await sys(`select public.idempotency_release($1, $2, $3, $4::uuid)`, [S1, scope, key, second.lease_id]);
+  eq((await sys(`select status from public.idempotency_keys where user_id = $1 and scope = $2 and key = $3`, [S1, scope, key]))[0].status, 'completed');
+
+  const keyFail = 'idem-checkout-test-2';
+  const failBegin = (await sys(`select lease_id from public.idempotency_begin($1, $2, $3, $4, 60)`, [S1, scope, keyFail, hashA]))[0];
+  await sys(`select public.idempotency_release($1, $2, $3, $4::uuid)`, [S1, scope, keyFail, failBegin.lease_id]);
+  eq(
+    (await sys(`select state from public.idempotency_begin($1, $2, $3, $4, 60)`, [S1, scope, keyFail, hashA]))[0].state,
+    'acquired',
+    'key bisa dipakai ulang setelah release',
+  );
+  await sys(`delete from public.idempotency_keys where user_id = $1`, [S1]);
+});
+
+await test('deterministic lock ordering pada transfer dua arah menjaga saldo tepat tanpa error lock_timeout', async () => {
+  const S1 = '00000000-0000-4000-8000-0000000000f5';
+  const [{ id: accS1 }] = await as(S1, `insert into public.accounts (bank, name, type, currency, opening_balance) values ('bca', 'BCA S1', 'tabungan', 'IDR', 500000) returning id`);
+  const [{ id: accS2 }] = await as(S1, `insert into public.accounts (bank, name, type, currency, opening_balance) values ('jago', 'Jago S1', 'tabungan', 'IDR', 100000) returning id`);
+  const [b0, j0] = [await balance(accS1), await balance(accS2)];
+  await as(
+    S1,
+    `insert into public.transactions (type, merchant, category_key, account_id, to_account_id, date, amount, currency, note)
+     values
+       ('transfer', 'Arah AB', 'savings', $1::uuid, $2::uuid, '2026-11-26', 75000, 'IDR', 'lock-order-test'),
+       ('transfer', 'Arah BA', 'savings', $2::uuid, $1::uuid, '2026-11-26', 25000, 'IDR', 'lock-order-test')`,
+    [accS1, accS2],
+  );
+  eq([await balance(accS1), await balance(accS2)], [b0 - 50000, j0 + 50000], 'saldo transfer dua arah');
+  await as(S1, `delete from public.transactions where note = 'lock-order-test'`);
+  eq([await balance(accS1), await balance(accS2)], [b0, j0], 'saldo kembali setelah hapus');
+});
+
 console.log(results.join('\n'));
 console.log(`\n${results.length - failed}/${results.length} lolos`);
 process.exit(failed ? 1 : 0);

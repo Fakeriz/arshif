@@ -1,7 +1,7 @@
 import { Crown, RotateCcw } from 'lucide-react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Platform, StyleSheet, View } from 'react-native';
 
 import { Screen } from '@/components/shell/Screen';
@@ -21,6 +21,7 @@ import { checkoutCurrencyFor, monthsFree, PRICES, type CheckoutCurrency } from '
 import { buyPackage, loadStorePackages, restorePurchases, storeAvailable, type StorePackages } from '@/lib/purchases';
 import { useStore } from '@/state/AppStore';
 import { createCheckout, useSyncPlan } from '@/state/billing';
+import { newId } from '@/lib/uuid';
 import { useTheme } from '@/theme/ThemeProvider';
 import { space } from '@/theme/tokens';
 
@@ -57,6 +58,7 @@ export default function PremiumScreen() {
   const [storeError, setStoreError] = useState(false);
   const [busy, setBusy] = useState<'buy' | 'restore' | 'pay' | null>(null);
   const [payError, setPayError] = useState<string | null>(null);
+  const idempotencyRef = useRef<{ sig: string; key: string } | null>(null);
 
   useEffect(() => {
     if (!storeOn) return;
@@ -113,7 +115,12 @@ export default function PremiumScreen() {
     setBusy('pay');
     setPayError(null);
     try {
-      const r = await createCheckout({ period, currency, method });
+      const sig = `${period}:${currency}:${method}`;
+      if (idempotencyRef.current?.sig !== sig) {
+        idempotencyRef.current = { sig, key: newId() };
+      }
+      const r = await createCheckout({ period, currency, method }, idempotencyRef.current.key);
+      idempotencyRef.current = null;
       const statusPath = `/premium/order/${r.orderId}`;
       if (r.provider === 'xendit' && r.checkoutUrl) {
         if (Platform.OS === 'web') {
@@ -194,7 +201,16 @@ export default function PremiumScreen() {
       {webOn && (
         <View style={styles.section}>
           {premium && <AppText variant="h3">{t('billing.premium.extend')}</AppText>}
-          <PeriodPicker label={t('billing.premium.choosePlan')} options={webOptions} value={period} onChange={setPeriod} />
+          <PeriodPicker
+            label={t('billing.premium.choosePlan')}
+            options={webOptions}
+            value={period}
+            onChange={(nextPeriod) => {
+              setPeriod(nextPeriod);
+              idempotencyRef.current = null;
+              setPayError(null);
+            }}
+          />
           <View style={styles.block}>
             <AppText variant="caption" tone="secondary">
               {t('billing.premium.currency')}
@@ -208,6 +224,7 @@ export default function PremiumScreen() {
                   onPress={() => {
                     setCurrency(c);
                     setMethod(METHODS_BY_CURRENCY[c]![0]!);
+                    idempotencyRef.current = null;
                     setPayError(null);
                   }}
                 />
@@ -220,7 +237,16 @@ export default function PremiumScreen() {
             </AppText>
             <View style={styles.chips} accessibilityRole="radiogroup" accessibilityLabel={t('billing.premium.method')}>
               {METHODS_BY_CURRENCY[currency]!.map((m) => (
-                <Chip key={m} label={t(`billing.premium.methods.${m as 'qris'}`)} selected={m === method} onPress={() => setMethod(m)} />
+                <Chip
+                  key={m}
+                  label={t(`billing.premium.methods.${m as 'qris'}`)}
+                  selected={m === method}
+                  onPress={() => {
+                    setMethod(m);
+                    idempotencyRef.current = null;
+                    setPayError(null);
+                  }}
+                />
               ))}
             </View>
           </View>

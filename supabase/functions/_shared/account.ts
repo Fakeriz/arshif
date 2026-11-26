@@ -2,6 +2,7 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 
 import { revokeGrants } from './entitlement.ts';
 import { HttpError } from './http.ts';
+import { logEvent } from './logger.ts';
 
 type StorageItem = { id?: string | null; name: string };
 
@@ -50,7 +51,7 @@ export async function deleteAccount(db: SupabaseClient, userId: string): Promise
   try {
     await revokeGrants(userId);
   } catch (e) {
-    console.error('delete_account_revoke_grants', userId, e instanceof Error ? e.message : String(e));
+    logEvent('error', 'delete_account_revoke_grants', { userId, error: e instanceof Error ? e.message : String(e) });
     filesPending = true;
   }
 
@@ -61,7 +62,7 @@ export async function deleteAccount(db: SupabaseClient, userId: string): Promise
       if (res.incomplete) filesPending = true;
     } catch (e) {
       // Lanjutkan bucket berikutnya agar kegagalan satu bucket tidak menghentikan pembersihan lainnya.
-      console.error('delete_account_files_pending', bucket, userId, e instanceof Error ? e.message : String(e));
+      logEvent('error', 'delete_account_files_pending', { bucket, userId, error: e instanceof Error ? e.message : String(e) });
       filesPending = true;
     }
   }

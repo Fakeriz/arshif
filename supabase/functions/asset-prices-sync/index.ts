@@ -13,71 +13,78 @@ import { adminClient, requireUser } from '../_shared/auth.ts';
 import { safeEqual } from '../_shared/billing.ts';
 import { configured, CRON_SECRET } from '../_shared/env.ts';
 import { HttpError, json, serve } from '../_shared/http.ts';
+import { logEvent } from '../_shared/logger.ts';
 
 
 /** Sumber utama per pasar. Ganti di sini untuk berpindah sumber harga (kunci netral tidak berubah). */
 const PRIMARIES = [coinGeckoProvider, yahooUsProvider, yahooIdxProvider, goldProvider];
 
-serve(async (req) => {
-  const db = adminClient();
-  let trigger: 'cron' | 'admin' = 'cron';
-  const cron = req.headers.get('x-cron-secret');
-  if (cron !== null) {
-    if (!configured('CRON_SECRET')) throw new HttpError('not_configured', 503);
-    if (!safeEqual(cron, CRON_SECRET())) throw new HttpError('unauthorized', 401);
-  } else {
-    const user = await requireUser(req);
-    const { data: isAdmin } = await db.from('admin_users').select('user_id').eq('user_id', user.id).maybeSingle();
-    if (!isAdmin) throw new HttpError('forbidden', 403);
-    trigger = 'admin';
-  }
-  const log = (run: { ok: boolean; source: string; symbols?: number; updated?: number; failed?: string[]; error?: string; duration_ms?: number }) =>
-    db.from('asset_price_runs').insert({ trigger, ...run }).then(({ error }) => error && console.error('asset log gagal', error.message));
-  /** Satu baris per penyedia supaya kegagalan satu sumber terlihat terpisah. */
-  const logRuns = (runs: ProviderRun[]) =>
-    Promise.all(
-      runs.map((r) =>
-        log({
-          ok: !r.error && r.failed.length === 0,
-          source: r.source,
-          symbols: r.symbols,
-          updated: r.updated,
-          failed: r.failed.slice(0, 200),
-          error: r.error,
-          duration_ms: r.durationMs,
-        }),
-      ),
-    );
+serve(
+  async (req, ctx) => {
+    const db = adminClient();
+    let trigger: 'cron' | 'admin' = 'cron';
+    const cron = req.headers.get('x-cron-secret');
+    if (cron !== null) {
+      if (!configured('CRON_SECRET')) throw new HttpError('not_configured', 503);
+      if (!safeEqual(cron, CRON_SECRET())) throw new HttpError('unauthorized', 401);
+    } else {
+      const user = await requireUser(req);
+      const { data: isAdmin } = await db.from('admin_users').select('user_id').eq('user_id', user.id).maybeSingle();
+      if (!isAdmin) throw new HttpError('forbidden', 403);
+      trigger = 'admin';
+    }
+    const log = (run: { ok: boolean; source: string; symbols?: number; updated?: number; failed?: string[]; error?: string; duration_ms?: number }) =>
+      db
+        .from('asset_price_runs')
+        .insert({ trigger, ...run })
+        .then(({ error }) => error && logEvent('error', 'asset_log_failed', { requestId: ctx.requestId, error: error.message }));
+    /** Satu baris per penyedia supaya kegagalan satu sumber terlihat terpisah. */
+    const logRuns = (runs: ProviderRun[]) =>
+      Promise.all(
+        runs.map((r) =>
+          log({
+            ok: !r.error && r.failed.length === 0,
+            source: r.source,
+            symbols: r.symbols,
+            updated: r.updated,
+            failed: r.failed.slice(0, 200),
+            error: r.error,
+            duration_ms: r.durationMs,
+          }),
+        ),
+      );
 
-  // Satu array dari database: SELECT biasa terpotong di max_rows (1000) dan kunci setelahnya tidak pernah diperbarui.
-  const { data: keyList, error: keyError } = await db.rpc('asset_price_keys');
-  if (keyError) throw new HttpError('server', 500);
-  const keys = (keyList as string[] | null) ?? [];
+    // Satu array dari database: SELECT biasa terpotong di max_rows (1000) dan kunci setelahnya tidak pernah diperbarui.
+    const { data: keyList, error: keyError } = await db.rpc('asset_price_keys');
+    if (keyError) throw new HttpError('server', 500);
+    const keys = (keyList as string[] | null) ?? [];
 
-  const runs: ProviderRun[] = [];
-  const provider = chainProvider(PRIMARIES, tradingViewProvider, runs);
-  const started = Date.now();
-  let result;
-  try {
-    result = await syncInBatches(keys, provider, new Date(), async (rows) => {
-      const { error } = await db.from('asset_prices').upsert(rows);
-      if (error) throw new Error(`asset_prices_${error.code}`);
-      // Riwayat harian (Fase 5, penggerak Weekly Replay): satu baris per kode per hari UTC, harga terakhir menimpa.
-      // Gagal di sini tidak menggagalkan sync harga; Replay hanya kehilangan satu titik.
-      const { error: histError } = await db.from('asset_price_history').upsert(historyRows(rows));
-      if (histError) console.error('asset_price_history', histError.code);
+    const runs: ProviderRun[] = [];
+    const provider = chainProvider(PRIMARIES, tradingViewProvider, runs);
+    const started = Date.now();
+    let result;
+    try {
+      result = await syncInBatches(keys, provider, new Date(), async (rows) => {
+        const { error } = await db.from('asset_prices').upsert(rows);
+        if (error) throw new Error(`asset_prices_${error.code}`);
+        // Riwayat harian (Fase 5, penggerak Weekly Replay): satu baris per kode per hari UTC, harga terakhir menimpa.
+        // Gagal di sini tidak menggagalkan sync harga; Replay hanya kehilangan satu titik.
+        const { error: histError } = await db.from('asset_price_history').upsert(historyRows(rows));
+        if (histError) logEvent('error', 'asset_price_history_failed', { requestId: ctx.requestId, code: histError.code });
+      });
+    } catch (e) {
+      await logRuns(runs);
+      await log({ ok: false, source: 'save', symbols: keys.length, error: e instanceof Error ? e.message : String(e), duration_ms: Date.now() - started });
+      throw new HttpError('server', 500);
+    }
+    if (runs.length === 0) await log({ ok: true, source: 'none', symbols: 0, duration_ms: Date.now() - started });
+    else await logRuns(runs);
+    return json({
+      symbols: keys.length,
+      updated: result.updated,
+      failed: result.failed,
+      providers: runs.map((r) => ({ source: r.source, symbols: r.symbols, updated: r.updated, error: r.error ?? null, ms: r.durationMs })),
     });
-  } catch (e) {
-    await logRuns(runs);
-    await log({ ok: false, source: 'save', symbols: keys.length, error: e instanceof Error ? e.message : String(e), duration_ms: Date.now() - started });
-    throw new HttpError('server', 500);
-  }
-  if (runs.length === 0) await log({ ok: true, source: 'none', symbols: 0, duration_ms: Date.now() - started });
-  else await logRuns(runs);
-  return json({
-    symbols: keys.length,
-    updated: result.updated,
-    failed: result.failed,
-    providers: runs.map((r) => ({ source: r.source, symbols: r.symbols, updated: r.updated, error: r.error ?? null, ms: r.durationMs })),
-  });
-});
+  },
+  { service: 'asset-prices-sync' },
+);

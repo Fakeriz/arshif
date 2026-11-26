@@ -5,6 +5,7 @@ import fs from 'node:fs';
 
 const res = await fetch('https://scanner.tradingview.com/indonesia/scan', {
   method: 'POST',
+  signal: AbortSignal.timeout(15_000),
   headers: { 'content-type': 'application/json' },
   body: JSON.stringify({
     columns: ['name', 'description', 'type', 'subtype'],

@@ -3,6 +3,7 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import { nextStatus, type BillingPeriod, type OrderStatus } from './billing.ts';
 import { configured } from './env.ts';
 import { json } from './http.ts';
+import { logEvent } from './logger.ts';
 import * as rc from './revenuecat.ts';
 
 export type OrderRow = {
@@ -150,7 +151,7 @@ export async function grantOrder(db: SupabaseClient, order: OrderRow): Promise<s
   } catch (e) {
     const message = (e instanceof Error ? e.message : String(e)).slice(0, 200);
     await db.from('orders').update({ grant_error: message, updated_at: new Date().toISOString() }).eq('id', order.id).eq('status', 'paid');
-    console.error('grant_failed', order.id, message);
+    logEvent('error', 'grant_failed', { orderId: order.id, error: message });
     return null;
   }
 }
@@ -210,6 +211,6 @@ export async function handleEventOnce(db: SupabaseClient, provider: Provider, ev
   const { error: doneError } = await db.rpc('webhook_done', { p_provider: provider, p_event: id });
   // Tidak dilempar: pekerjaan sudah berhasil; klaim yang tidak ditandai selesai kedaluwarsa dalam 5 menit dan
   // kiriman ulang diproses lagi tanpa efek ganda (transisi pesanan dan grant idempoten).
-  if (doneError) console.error('webhook_done_failed', provider, id, doneError.code);
+  if (doneError) logEvent('error', 'webhook_done_failed', { provider, eventId: id, code: doneError.code });
   return res;
 }

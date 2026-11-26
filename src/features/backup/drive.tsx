@@ -35,12 +35,20 @@ export class DriveError extends Error {
   }
 }
 
-async function call(url: string, token: string, init: RequestInit = {}): Promise<Response> {
+async function call(url: string, token: string, init: RequestInit = {}, timeoutMs = 30_000): Promise<Response> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
   let res: Response;
   try {
-    res = await fetch(url, { ...init, headers: { ...(init.headers as Record<string, string>), Authorization: `Bearer ${token}` } });
+    res = await fetch(url, {
+      ...init,
+      signal: init.signal ?? controller.signal,
+      headers: { ...(init.headers as Record<string, string>), Authorization: `Bearer ${token}` },
+    });
   } catch {
     throw new DriveError('network');
+  } finally {
+    clearTimeout(timer);
   }
   if (res.status === 401) throw new DriveError('auth');
   if (res.status === 403) throw new DriveError('quota');
@@ -57,7 +65,7 @@ async function upload(token: string, name: string, bytes: Uint8Array): Promise<D
   });
   const session = start.headers.get('Location');
   if (!session) throw new DriveError('network');
-  const done = await call(session, token, { method: 'PUT', headers: { 'Content-Type': BACKUP_MIME }, body: bytes as unknown as BodyInit });
+  const done = await call(session, token, { method: 'PUT', headers: { 'Content-Type': BACKUP_MIME }, body: bytes as unknown as BodyInit }, 120_000);
   const f = (await done.json().catch(() => ({}))) as { id?: string };
   return { id: f.id ?? '', name, createdTime: new Date().toISOString(), size: bytes.length };
 }
@@ -76,7 +84,7 @@ async function about(token: string): Promise<string | null> {
 }
 
 async function download(token: string, id: string): Promise<Uint8Array> {
-  const res = await call(`${API}/${encodeURIComponent(id)}?alt=media`, token);
+  const res = await call(`${API}/${encodeURIComponent(id)}?alt=media`, token, {}, 120_000);
   return new Uint8Array(await res.arrayBuffer());
 }
 

@@ -66,10 +66,16 @@ export async function collectBackup(userId: string, withReceipts: boolean, onPro
     const paths = [...new Set((tables.transactions ?? []).map((r) => r.receipt_path).filter((p): p is string => typeof p === 'string' && p.length > 0))];
     for (const [i, path] of paths.entries()) {
       // Struk yang hilang di storage dilewati: cadangan tetap jadi, transaksinya tetap ada.
+      let timer: ReturnType<typeof setTimeout> | undefined;
       try {
-        receipts[path] = toBase64(await (await fetch(await receiptUrl(path))).arrayBuffer());
+        const controller = new AbortController();
+        timer = setTimeout(() => controller.abort(), 15_000);
+        const res = await fetch(await receiptUrl(path), { signal: controller.signal });
+        if (res.ok) receipts[path] = toBase64(await res.arrayBuffer());
       } catch {
         /* lewati */
+      } finally {
+        if (timer !== undefined) clearTimeout(timer);
       }
       onProgress?.(i + 1, paths.length);
     }
