@@ -82,7 +82,7 @@ Permukaan tambahan dari Talmo: `surfaceAlt` (`#EDEDED` / `#1C1C1C`, track segmen
   - Terang: `#D4D4D4 → #A3A3A3 → #737373 → #404040 → #171717`
 - **`chartArea`**: grafik garis, isian tipis di bawah garis abu (`#A3A3A3` gelap, `#737373` terang agar garis tetap 3:1 di kartu kertas), tanpa titik data kecuali disentuh.
 - Batang memakai radius atas `radius.bar` (6), jarak antar batang ≈ 25% lebar batang.
-- **`categoryHues`** kini skala abu (monokrom): kategori dibedakan ikon + label, irisan donut bersebelahan berselang terang/gelap. Kartu bank tetap memakai warna bank (identitas yang dikenali pengguna).
+- **`categoryHues`** kini skala abu (monokrom): kategori dibedakan ikon + label, irisan donut bersebelahan berselang terang/gelap. Kartu bank tetap memakai warna bank (identitas yang dikenali pengguna). Aset pasar yang dilacak (`AssetIcon`) menampilkan logo emiten, koin, atau komoditas yang dikenali dengan fallback monogram Monokrom atau ikon Lucide saat offline atau tidak tersedia.
 
 ---
 

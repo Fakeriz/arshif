@@ -1,45 +1,28 @@
-# Logo pihak ketiga: idn-finlogos
+# Logo pihak ketiga di Arshif
 
-Artwork kartu (`src/components/ui/CardArt.tsx`, layar "Pilih Tampilan Kartu") memakai logo SVG dari paket npm
-[`idn-finlogos`](https://github.com/hafidznoor/idn-finlogos) versi **2.5.0** (dipasang dengan versi exact).
+Dokumen ini mencatat bagaimana Arshif menampilkan identitas visual kartu rekening dan ikon aset yang dilacak pengguna.
 
-## Lisensi
+## 1. Kartu rekening (`BankCard`)
 
-| Bagian | Lisensi |
-|---|---|
-| Aset logo SVG (`dist/icons/`) | **CC BY-NC 4.0**: https://creativecommons.org/licenses/by-nc/4.0/ (kurasi: Hafidz Noor Fauzi) |
-| Kode pembungkus paket (JS/TS, skrip) | MIT |
-| Logo itu sendiri | Merek dagang milik masing-masing bank, e-wallet, penyedia paylater, dan jaringan kartu |
+Kartu rekening (`src/components/ui/BankCard.tsx`) memakai warna identitas bank dan teks tanpa logo bank pihak ketiga. Paket `idn-finlogos` sudah dihapus dari proyek pada commit `418565f`.
 
-Kewajiban CC BY-NC 4.0 dan cara Arshif memenuhinya:
+## 2. Ikon aset (`AssetIcon`)
 
-- **Atribusi + tautan lisensi:** teks "Logo: idn-finlogos oleh Hafidz Noor Fauzi, lisensi CC BY-NC 4.0" di akhir daftar
-  layar "Pilih Tampilan Kartu" (ketuk untuk membuka teks lisensi), komentar di `src/lib/finlogos.ts`, dan dokumen ini.
-- **Tandai perubahan:** bentuk logo tidak diubah; logo hanya diskalakan dan dipasang langsung di atas warna kartu
-  (latar SVG memang transparan, putih hanya ada di `clipPath` yang tidak digambar). **Warna diubah bila perlu
-  kontras** (`fitLogo` di `src/lib/finlogos.ts`):
-  - Logo bank/penyedia: bila ada warna logo dengan kontras < 3:1 terhadap kartu, semua warna logo diganti tinta
-    kartu (putih di kartu gelap), dan bagian putih di dalam logo diganti warna kartu supaya potongannya tetap terbaca.
-    Di kartu terang yang kontrasnya cukup, warna asli dipakai. Karena warna kartu = warna merek bank, semua logo
-    bank di katalog saat ini tampil satu warna.
-  - Logo jaringan: warna asli. Hanya logo satu warna yang gagal kontras (Visa, American Express di kartu biru/merah)
-    diganti tinta kartu. Mastercard, JCB, GPN, UnionPay tidak pernah diwarnai ulang (versi satu warna membuat
-    bentuknya yang bertumpuk menyatu).
-- **NonCommercial:** aset tidak boleh dipakai untuk tujuan komersial. NOTICE paket juga menyebut pemakaian di produk
-  komersial butuh izin pemilik merek masing-masing. Arshif punya paket berbayar (Premium); keputusan memakai paket ini
-  diambil pemilik produk (Ahmad, 2026-11-08). Izin merek/lisensi komersial perlu diselesaikan sebelum rilis publik.
+Ikon aset pada Tab Aset, detail aset, pemilih simbol (`SymbolPicker`), formulir aset, dan ringkasan portofolio (`RecapTab`) dikelola lewat `src/components/ui/AssetIcon.tsx`, `src/lib/assetIcons.ts`, dan snapshot slug `src/data/assetLogos.ts` (dibuat manual lewat `scripts/gen-asset-logos.mjs`).
 
-## Logo yang dipakai (slug diperiksa terhadap `dist/manifest.json`)
+Pencarian logo menggunakan rantai sumber publik bertingkat:
 
-- **Bank & e-wallet (ID):** bca, mandiri, bri, bni, bsi, cimb-niaga, permata, jago, jenius, blu-bca, seabank,
-  gopay, ovo, dana, shopee-pay
-- **Paylater:** akulaku, kredivo, indodana; logo produk gopaylater (GoPay Later) dan akulaku-paylater (Akulaku PayLater)
-- **Jaringan kartu:** visa, mastercard, jcb, gpn, american-express, union-pay
+| Jenis aset | Urutan sumber logo | Fallback offline / gagal |
+|---|---|---|
+| Saham Indonesia (`stock_id` / IDX) | 1) TradingView badge 96px (`s3-symbol-logo.tradingview.com/<slug>--96.png` dari snapshot `IDX_LOGO_SLUGS`), 2) FinancialModelingPrep (`<CODE>.JK.png`) | Monogram Monokrom (SVG) |
+| Saham & ETF AS (`stock_us` / US) | 1) TradingView badge 96px (`US_LOGO_SLUGS`), 2) FinancialModelingPrep (`<CODE>.png` dan varian `<CODE>` bertanda `-` untuk kelas saham seperti `BRK.B`), 3) jsDelivr `nvstly/icons` | Monogram Monokrom (SVG) |
+| Kripto (`crypto`) | 1) TradingView (`crypto/XTVC<CODE>--96.png`), 2) CDN statis CoinGecko untuk 18 koin didukung (`COINGECKO_ICON_URLS`), 3) jsDelivr CC0 `spothq/cryptocurrency-icons` | Monogram Monokrom (SVG) |
+| Emas (`gold`) & komoditas (`other`) | TradingView badge 96px (`metal/gold`, `metal/silver`, `metal/platinum`, `metal/palladium`, `metal/copper`, `crude-oil`, `natural-gas`, `gasoline`, `coal`, `coffee`, `wheat`, `corn`, `sugar`, `cocoa`, `cotton`) | Ikon semantik Lucide |
+| Properti, kendaraan, aset manual lain, baris neraca | Tidak memanggil gambar remote | Ikon semantik Lucide sesuai sub-jenis |
 
-## Tidak ada di paket: memakai teks
+## 3. Atribusi dan merek dagang
 
-- **Bank Malaysia:** Maybank, CIMB, Public Bank, RHB, Touch 'n Go. Catatan: paket punya slug `maybank` (Maybank
-  Indonesia, kategori bank Indonesia). Sesuai keputusan, bank Malaysia tetap memakai teks.
-- **Bank Turki:** Ziraat, İş Bankası, Akbank, Garanti BBVA, Yapı Kredi
-- **Jaringan kartu:** troy (Turki)
-- **Tunai:** tidak memakai logo.
+- Semua logo emiten saham, ETF, jaringan aset kripto, dan komoditas adalah merek dagang milik masing-masing penerbit atau pemilik haknya.
+- Logo ditampilkan semata-mata untuk identifikasi nominatif kepemilikan yang dicatat pengguna di dalam Arshif, bukan bentuk afiliasi atau dukungan resmi.
+- Koleksi fallback kripto `spothq/cryptocurrency-icons` berlisensi CC0 1.0 Universal (domain publik).
+- Bila sumber gambar remote tidak tersedia atau perangkat sedang offline, `AssetIcon` selalu jatuh dengan aman ke monogram Monokrom atau ikon Lucide tanpa memblokir antarmuka.

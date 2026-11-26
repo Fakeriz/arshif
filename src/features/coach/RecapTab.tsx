@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import { usePaywall } from '@/components/shell/Paywall';
-import { AppText, Card, CategoryIcon, CurrencyText, EmptyState, formatPct, GlassView, Icon, MiniBars, PressableScale, ProBadge, RollingNumber, Tabs, TrendBadge } from '@/components/ui';
+import { AppText, AssetIcon, Card, CategoryIcon, CurrencyText, EmptyState, formatPct, GlassView, Icon, MiniBars, PressableScale, ProBadge, RollingNumber, Tabs, TrendBadge } from '@/components/ui';
 import type { Transaction } from '@/data/types';
 import { categoryLabel, useI18n } from '@/i18n';
 import { CALENDARS } from '@/i18n/calendar';
@@ -142,6 +142,7 @@ function PortfolioCard({ currency }: { currency: string }) {
   if (!gain && !moves) return null;
   // "Naik karena X": aset yang bergerak searah total, terbesar dulu (bukan aset yang turun saat total naik).
   const top = moves?.movers.find((m) => Math.sign(m.delta) === Math.sign(moves.total));
+  const topAsset = top ? assets.find((a) => a.id === top.assetId) : undefined;
   return (
     <Card>
       <View style={styles.portfolio}>
@@ -151,13 +152,16 @@ function PortfolioCard({ currency }: { currency: string }) {
         {gain && <CurrencyText amount={gain.value} currency={currency} kind="balance" variant="h2" hidden={state.hideBalance} />}
         {gain && !state.hideBalance && <TrendBadge value={gain.pct} suffix={t('assets.detail.vsBuy')} />}
         {moves && top && !state.hideBalance && moves.total !== 0 && (
-          <AppText variant="body">
-            {t(moves.total > 0 ? 'coach.replay.moversUp' : 'coach.replay.moversDown', {
-              amount: formatMoney(Math.abs(moves.total), currency),
-              label: top.label,
-              pct: `${top.pct < 0 ? '-' : '+'}${formatPct(t, lang, Math.abs(top.pct))}`,
-            })}
-          </AppText>
+          <View style={styles.moverRow}>
+            {topAsset && <AssetIcon asset={topAsset} size={32} />}
+            <AppText variant="body" style={styles.flex}>
+              {t(moves.total > 0 ? 'coach.replay.moversUp' : 'coach.replay.moversDown', {
+                amount: formatMoney(Math.abs(moves.total), currency),
+                label: top.label,
+                pct: `${top.pct < 0 ? '-' : '+'}${formatPct(t, lang, Math.abs(top.pct))}`,
+              })}
+            </AppText>
+          </View>
         )}
       </View>
     </Card>
@@ -322,6 +326,7 @@ const styles = StyleSheet.create({
   badge: { width: 40, height: 40, borderRadius: iconBox[40].radius, alignItems: 'center', justifyContent: 'center' },
   pair: { flexDirection: 'row', gap: space.md },
   portfolio: { gap: space.xs, alignItems: 'flex-start' },
+  moverRow: { flexDirection: 'row', alignItems: 'center', gap: space.sm, alignSelf: 'stretch' },
   half: { flex: 1, gap: space.xs },
   statRow: { flexDirection: 'row', alignItems: 'center', gap: space.lg, marginBottom: space.sm },
   stat: { alignItems: 'center', minWidth: 88 },

@@ -2,7 +2,7 @@ import { Search } from 'lucide-react-native';
 import { useEffect, useRef, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
-import { AppText, Button, Input, ListItem } from '@/components/ui';
+import { AppText, AssetIcon, Button, Input, ListItem } from '@/components/ui';
 import { searchSymbolsRemote } from '@/data/remote/symbols';
 import { useT } from '@/i18n';
 import { SYMBOL_RE } from '@/lib/assets';
@@ -68,6 +68,7 @@ export function SymbolPicker({ type, value, onPick, onClear, showError }: {
       <View style={styles.field}>
         <AppText variant="bodyStrong">{t('assets.form.symbol')}</AppText>
         <View style={[styles.panel, styles.selected, { backgroundColor: colors.surfaceSunken }]}>
+          <AssetIcon symbolOption={value} size={40} />
           <View style={styles.flex}>
             <AppText variant="bodyStrong" numberOfLines={2}>
               {value.name}
@@ -126,6 +127,7 @@ export function SymbolPicker({ type, value, onPick, onClear, showError }: {
           {results.map((o, i) => (
             <ListItem
               key={o.code}
+              leading={<AssetIcon symbolOption={o} size={40} />}
               title={o.name}
               subtitle={`${o.code} · ${marketLabel}`}
               subtitleLines={1}

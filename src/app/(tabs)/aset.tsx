@@ -7,7 +7,7 @@ import { DESKTOP_WIDE, GridCell, GridRow } from '@/components/shell/DesktopGrid'
 import { Screen } from '@/components/shell/Screen';
 import { HeaderMenu } from '@/components/shell/HeaderActions';
 import { TabHeader } from '@/components/shell/TabHeader';
-import { AppText, BalanceText, Card, CurrencyText, EmptyState, Group, Icon, ListCard, ListItem, Skeleton, StatTile, Toggle, TrendBadge } from '@/components/ui';
+import { AppText, AssetIcon, BalanceText, Card, CurrencyText, EmptyState, Group, Icon, ListCard, ListItem, Skeleton, StatTile, Toggle, TrendBadge } from '@/components/ui';
 import { AssetForm } from '@/features/assets/AssetForm';
 import { NetWorthChart } from '@/features/assets/NetWorthChart';
 import { priceLabel, quantityLabel } from '@/features/assets/view';
@@ -135,6 +135,7 @@ export default function AsetScreen() {
     >
       <ListCard>
         <ListItem
+          leading={<AssetIcon kind="cash" />}
           title={t('assets.cash')}
           subtitle={t('assets.cashMeta', { count: cashCount })}
           trailing={<CurrencyText amount={nw.cash} currency={currency} kind="balance" hidden={state.hideBalance} />}
@@ -142,6 +143,7 @@ export default function AsetScreen() {
         />
         {nw.receivables > 0 && (
           <ListItem
+            leading={<AssetIcon kind="receivables" />}
             title={t('assets.receivables')}
             trailing={<CurrencyText amount={nw.receivables} currency={currency} kind="balance" hidden={state.hideBalance} />}
             onPress={() => router.push('/rencana/utang')}
@@ -156,6 +158,7 @@ export default function AsetScreen() {
           return (
             <ListItem
               key={a.id}
+              leading={<AssetIcon asset={a} />}
               title={a.name}
               subtitle={[qty, priceLabel(a, v, t, lang, now)].filter(Boolean).join(' · ')}
               subtitleLines={2}
@@ -186,6 +189,7 @@ export default function AsetScreen() {
           <>
             {hasCredit && (
               <ListItem
+                leading={<AssetIcon kind="credit" />}
                 title={t('assets.credit')}
                 trailing={<CurrencyText amount={nw.credit} currency={currency} kind="balance" hidden={state.hideBalance} />}
                 divider={activeDebts.length > 0}
@@ -193,6 +197,7 @@ export default function AsetScreen() {
             )}
             {activeDebts.length > 0 && (
               <ListItem
+                leading={<AssetIcon kind="debts" />}
                 title={t('assets.debts')}
                 subtitle={t('assets.debtsMeta', { count: activeDebts.length })}
                 trailing={<CurrencyText amount={nw.debts} currency={currency} kind="balance" hidden={state.hideBalance} />}

@@ -6,7 +6,7 @@ import { StyleSheet, View } from 'react-native';
 import { Screen } from '@/components/shell/Screen';
 import { HeaderActions } from '@/components/shell/HeaderActions';
 import { ScreenHeader } from '@/components/shell/ScreenHeader';
-import { AppText, Badge, Button, Card, CurrencyText, Dialog, EmptyState, Skeleton, TrendBadge, useToast } from '@/components/ui';
+import { AppText, AssetIcon, Badge, Button, Card, CurrencyText, Dialog, EmptyState, Skeleton, TrendBadge, useToast } from '@/components/ui';
 import { AssetForm } from '@/features/assets/AssetForm';
 import { FairPriceCard } from '@/features/assets/FairPriceCard';
 import { PriceAlertCard } from '@/features/assets/PriceAlertCard';
@@ -103,6 +103,7 @@ export default function AssetDetail() {
         }
       />
       <InkCard style={[styles.hero, styles.heroCard]}>
+        <AssetIcon asset={asset} size={48} />
         <AppText variant="caption" tone="secondary">
           {t(`assets.type.${asset.type}`)}
           {asset.symbol && asset.type !== 'gold' ? ` · ${asset.symbol}` : ''}

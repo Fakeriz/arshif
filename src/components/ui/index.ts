@@ -1,6 +1,7 @@
 export { AmountField } from './AmountField';
 export { AmountInput } from './AmountInput';
 export { AppText } from './AppText';
+export { AssetIcon, type AssetIconProps } from './AssetIcon';
 export { Badge, ProBadge } from './Badge';
 export { BalanceText } from './BalanceText';
 export { BankCard } from './BankCard';

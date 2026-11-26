@@ -1,6 +1,7 @@
 import { useState } from 'react';
+import { StyleSheet, View } from 'react-native';
 
-import { AmountField, AppText, DateField, Input, useToast } from '@/components/ui';
+import { AmountField, AppText, AssetIcon, DateField, Input, useToast } from '@/components/ui';
 import type { Asset, AssetType } from '@/data/assets';
 import type { AssetInput } from '@/data/remote/assets';
 import { ChoiceRow, FormSheet, useSaveError } from '@/features/planning/kit';
@@ -11,6 +12,7 @@ import { knownName, type SymbolMarket, type SymbolOption } from '@/lib/symbols';
 import { useStore } from '@/state/AppStore';
 import { useAssets } from '@/state/assets';
 import { isYmd } from '@/lib/dates';
+import { space } from '@/theme/tokens';
 
 import { SymbolPicker, type PickerType } from './SymbolPicker';
 
@@ -102,7 +104,18 @@ export function AssetForm({ visible, onClose, asset }: { visible: boolean; onClo
       onSubmit={() => void submit()}
     >
       {asset ? (
-        <AppText variant="bodyStrong">{t(`assets.type.${type}`)}</AppText>
+        <View style={styles.editHeader}>
+          <AssetIcon
+            asset={{
+              type,
+              symbol: type === 'gold' ? GOLD_SYMBOL : picked?.code ?? asset.symbol,
+              name: name || asset.name,
+              notes,
+            }}
+            size={32}
+          />
+          <AppText variant="bodyStrong">{t(`assets.type.${type}`)}</AppText>
+        </View>
       ) : (
         <ChoiceRow label={t('assets.form.type')} options={ASSET_TYPES.map((k) => ({ key: k, label: t(`assets.type.${k}`) }))} value={type} onChange={pickType} />
       )}
@@ -152,3 +165,7 @@ export function AssetForm({ visible, onClose, asset }: { visible: boolean; onClo
     </FormSheet>
   );
 }
+
+const styles = StyleSheet.create({
+  editHeader: { flexDirection: 'row', alignItems: 'center', gap: space.sm },
+});
