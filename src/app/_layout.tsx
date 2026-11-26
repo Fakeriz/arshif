@@ -11,10 +11,11 @@ import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import * as SystemUI from 'expo-system-ui';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import { useEffect, useRef } from 'react';
-import { Platform, StyleSheet } from 'react-native';
+import { useCallback, useEffect, useState } from 'react';
+import { StyleSheet, View } from 'react-native';
 import Animated, { FadeIn } from 'react-native-reanimated';
 
+import { ArshifSplash } from '@/components/shell/ArshifSplash';
 import { DesktopNav } from '@/components/shell/DesktopNav';
 import { PaywallProvider } from '@/components/shell/Paywall';
 import { ScanSourceProvider } from '@/components/shell/ScanSourceSheet';
@@ -119,21 +120,24 @@ function Routes() {
   const introSeen = useIntroSeen();
   const signedIn = !!session;
   const booting = !ready || (!signedIn && introSeen === null) || (signedIn && (state.status === 'idle' || state.status === 'loading'));
-  const splashHidden = useRef(false);
+  const [splashDone, setSplashDone] = useState(false);
   const desktop = useDesktop();
   const path = usePathname();
 
-  useEffect(() => {
-    if (booting) return;
-    splashHidden.current = true;
-    SplashScreen.hideAsync().catch(() => undefined);
-  }, [booting]);
+  const fatalBoot = signedIn && (state.status === 'error' || state.suspended);
+  const showSplash = !splashDone && !fatalBoot;
 
-  // Native pertama kali: splash masih tampil. Web (tanpa splash) dan muat data setelah verifikasi OTP
-  // (splash sudah tertutup) memakai layar muat, bukan layar kosong.
-  if (booting) return Platform.OS === 'web' || splashHidden.current ? <BootScreen /> : null;
-  if (signedIn && state.status === 'error') return <BootScreen onRetry={reload} />;
-  if (signedIn && state.suspended) return <SuspendedScreen />;
+  const hideNativeSplash = useCallback(() => {
+    SplashScreen.hideAsync().catch(() => undefined);
+  }, []);
+
+  const handleSplashFinish = useCallback(() => {
+    setSplashDone(true);
+  }, []);
+
+  useEffect(() => {
+    if (fatalBoot) hideNativeSplash();
+  }, [fatalBoot, hideNativeSplash]);
 
   const onboarded = signedIn && state.onboarded;
   const showDesktopNav = desktop && onboarded && path !== '/admin' && !path.startsWith('/admin/') && path !== '/scan';
@@ -141,9 +145,24 @@ function Routes() {
   const afterLogin = onboarded ? (readReturnTo() ?? '/') : '/setup';
   // Pengguna baru mendarat di Sambut; yang sudah melihat perkenalan langsung ke Masuk.
   const signedOutHome = introSeen ? '/masuk' : '/sambut';
-  // Pudar masuk dari layar muat/splash ke aplikasi (mis. setelah verifikasi OTP) agar tidak memotong keras.
-  return (
-    <Animated.View style={[styles.fill, { backgroundColor: colors.bg }]} entering={FadeIn.duration(motion.base)}>
+
+  // Saat cold-start (!splashDone), ArshifSplash menjadi layar pembuka (native maupun web) dan
+  // Stack langsung dipasang di bawahnya begitu booting selesai agar larut mulus tanpa double fade.
+  const content = booting ? (
+    splashDone ? (
+      <BootScreen />
+    ) : (
+      <View style={[styles.fill, { backgroundColor: colors.bg }]} />
+    )
+  ) : signedIn && state.status === 'error' ? (
+    <BootScreen onRetry={reload} />
+  ) : signedIn && state.suspended ? (
+    <SuspendedScreen />
+  ) : (
+    <Animated.View
+      style={[styles.fill, { backgroundColor: colors.bg }]}
+      entering={splashDone ? FadeIn.duration(motion.base) : undefined}
+    >
       {/* Web layar lebar: satu nav atas untuk semua layar aplikasi (tab dan stack), seperti Talmo. */}
       {showDesktopNav && <DesktopNav />}
       <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.bg }, animation: 'slide_from_right' }}>
@@ -217,6 +236,15 @@ function Routes() {
         </Stack.Protected>
       </Stack>
     </Animated.View>
+  );
+
+  return (
+    <View style={[styles.fill, { backgroundColor: colors.bg }]}>
+      {content}
+      {showSplash && (
+        <ArshifSplash booting={booting} onReady={hideNativeSplash} onFinish={handleSplashFinish} />
+      )}
+    </View>
   );
 }
 

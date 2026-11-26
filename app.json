@@ -10,11 +10,13 @@
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "app.arshif",
-      "infoPlist": {}
+      "infoPlist": {
+        "CADisableMinimumFrameDurationOnPhone": true
+      }
     },
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#0D0C0A",
+        "backgroundColor": "#0D0D0D",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
         "backgroundImage": "./assets/images/android-icon-background.png",
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
@@ -46,12 +48,13 @@
       [
         "expo-splash-screen",
         {
-          "backgroundColor": "#F4F1EA",
-          "image": "./assets/images/splash-icon.png",
-          "imageWidth": 76,
+          "backgroundColor": "#E5E5E2",
+          "image": "./assets/images/splash-icon-light.png",
+          "imageWidth": 236,
           "dark": {
-            "backgroundColor": "#0D0C0A",
-            "image": "./assets/images/splash-icon.png"
+            "backgroundColor": "#0D0D0D",
+            "image": "./assets/images/splash-icon.png",
+            "imageWidth": 236
           }
         }
       ],
@@ -74,7 +77,7 @@
       "typedRoutes": true,
       "reactCompiler": true
     },
-    "backgroundColor": "#0D0C0A",
+    "backgroundColor": "#0D0D0D",
     "extra": {
       "eas": {
         "projectId": "cb2a9ff2-2ae6-40f2-87cd-cd6b4707116d"
