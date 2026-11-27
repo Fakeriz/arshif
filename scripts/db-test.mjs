@@ -1297,6 +1297,21 @@ await test('deterministic lock ordering pada transfer dua arah menjaga saldo tep
   eq([await balance(accS1), await balance(accS2)], [b0, j0], 'saldo kembali setelah hapus');
 });
 
+await test('admin: admin_ops_overview ditolak untuk bukan admin dan mengembalikan ringkasan operasional lengkap', async () => {
+  await rejects(as(G, 'select public.admin_ops_overview()'), /not_admin/);
+  const ADM2 = '00000000-0000-4000-8000-0000000000fa';
+  await sys(`insert into auth.users (id, email) values ('${ADM2}', 'adm2@example.com')`);
+  await sys(`insert into public.admin_users (user_id) values ('${ADM2}')`);
+  await sys(`insert into public.asset_price_runs (trigger, ok, source, symbols, updated, failed, duration_ms) values ('admin', true, 'yahoo-idx', 12, 11, array['IDX:TEST'], 340)`);
+  const [{ admin_ops_overview: o }] = await as(ADM2, 'select public.admin_ops_overview()');
+  eq(o.dau_30.length, 30, 'dau_30 berisi 30 hari');
+  eq(typeof o.onboarded_users, 'number', 'onboarded_users bertipe angka');
+  ok(Array.isArray(o.asset_runs) && o.asset_runs.some((r) => r.source === 'yahoo-idx' && r.failed_count === 1 && r.duration_ms === 340), 'asset_runs memuat log terbaru');
+  ok(Array.isArray(o.recent_broadcasts) && o.recent_broadcasts.some((b) => b.title === 'Halo' && b.message === 'Uji broadcast'), 'recent_broadcasts memuat broadcast sebelumnya');
+  ok(o.currencies && typeof o.currencies === 'object' && Object.keys(o.currencies).length > 0, 'currencies terisi');
+  ok(o.langs && typeof o.langs === 'object' && Object.keys(o.langs).length > 0, 'langs terisi');
+});
+
 await test('Paket 3: alert rearm base_price sama, hapus alert saat ganti symbol/value_override, notif_prefs price_alert, dan hard cap 200', async () => {
   const PA = '00000000-0000-4000-8000-0000000000a9';
   await sys(`insert into auth.users (id, email) values ('${PA}', 'pa@example.com')`);
