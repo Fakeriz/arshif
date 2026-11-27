@@ -8,7 +8,7 @@ import { adminClient, requireUser } from '../_shared/auth.ts';
 import { PriceAskRequest } from '../_shared/contracts.ts';
 import { runAiJob } from '../_shared/guard.ts';
 import { HttpError, json, readJson, serve } from '../_shared/http.ts';
-import { normalizePrice } from '../_shared/normalize.ts';
+import { normalizePrice, reconcileLiveAsset } from '../_shared/normalize.ts';
 import { PRICE_SCHEMA, pricePrompt } from '../_shared/prompts.ts';
 
 serve(
@@ -26,8 +26,7 @@ serve(
       .eq('symbol', `${asset.market}:${asset.symbol}`)
       .maybeSingle();
     if (priceErr) throw new HttpError('server', 500);
-    const serverLive = priceRow && priceRow.currency === asset.currency && Number(priceRow.price) > 0 ? Number(priceRow.price) : asset.livePrice;
-    const effectiveAsset = { ...asset, livePrice: serverLive };
+    const effectiveAsset = reconcileLiveAsset(asset, priceRow);
 
     const result = await runAiJob(db, user.id, 'coach', 'coachAsk', async () => {
       const answer = normalizePrice(await generateJson(pricePrompt(lang, effectiveAsset), PRICE_SCHEMA), effectiveAsset.livePrice, effectiveAsset.currency);

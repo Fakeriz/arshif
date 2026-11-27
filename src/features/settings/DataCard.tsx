@@ -8,6 +8,7 @@ import { invokeFn } from '@/data/remote/functions';
 import { useT } from '@/i18n';
 import { supabase } from '@/lib/supabase';
 import { useStore } from '@/state/AppStore';
+import { useAssetsOptional } from '@/state/assets';
 import { clearUserLocalData } from '@/state/sessionCleanup';
 
 import { buildExport, saveExport, type ExportFormat } from './exportData';
@@ -18,6 +19,7 @@ const Deleted = z.object({ deleted: z.literal(true) });
 export function DataCard() {
   const { show } = useToast();
   const { state } = useStore();
+  const assetsCtx = useAssetsOptional();
   const t = useT();
   const [exportOpen, setExportOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
@@ -26,7 +28,7 @@ export function DataCard() {
   const doExport = async (format: ExportFormat) => {
     setExportOpen(false);
     try {
-      await saveExport(format, buildExport(format, state.accounts, state.transactions));
+      await saveExport(format, buildExport(format, state.accounts, state.transactions, assetsCtx?.assets ?? []));
       show({ tone: 'success', title: t('settings.data.exportDone', { format }) });
     } catch {
       show({ tone: 'error', title: t('settings.data.exportFailed') });

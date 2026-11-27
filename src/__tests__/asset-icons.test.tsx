@@ -26,6 +26,7 @@ import { AssetIcon } from '@/components/ui';
 import { IDX_LOGO_SLUGS, US_LOGO_SLUGS } from '@/data/assetLogos';
 import {
   COINGECKO_ICON_URLS,
+  containPlateColor,
   resolveAssetVisual,
   resolveBalanceRowVisual,
   resolveSymbolVisual,
@@ -251,5 +252,13 @@ describe('<AssetIcon />', () => {
       fireEvent(screen.getByTestId('asset-logo-image', { includeHiddenElements: true }), 'load');
     });
     expect(JSON.stringify(rendered.toJSON())).not.toContain('"BBCA"');
+  });
+
+  it('containPlateColor memakai alas gelap #18181B untuk logo FMP & nvstly dan #F4F4F2 untuk CoinGecko/spothq', () => {
+    expect(containPlateColor('https://financialmodelingprep.com/image-stock/AAPL.png')).toBe('#18181B');
+    expect(containPlateColor('https://financialmodelingprep.com/image-stock/BBCA.JK.png')).toBe('#18181B');
+    expect(containPlateColor('https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/AAPL.png')).toBe('#18181B');
+    expect(containPlateColor(COINGECKO_ICON_URLS.BTC)).toBe('#F4F4F2');
+    expect(containPlateColor('https://cdn.jsdelivr.net/gh/spothq/cryptocurrency-icons@master/128/color/btc.png')).toBe('#F4F4F2');
   });
 });

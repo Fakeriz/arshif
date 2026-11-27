@@ -13,7 +13,7 @@ import { AccountPicker } from '@/features/transactions/pickers';
 import { useT } from '@/i18n';
 import { formatMoney } from '@/lib/money';
 import { newId } from '@/lib/uuid';
-import { useActiveAccountId } from '@/state/AppStore';
+import { useActiveAccountId, useStore } from '@/state/AppStore';
 import { useLedger } from '@/state/derived';
 import { usePlanning, type PayInput } from '@/state/planning';
 import { radius, space } from '@/theme/tokens';
@@ -53,15 +53,22 @@ export function AddButton({ label, limited, reason, onPress }: { label: string; 
   );
 }
 
-/** Error simpan: batas paket = paywall dengan alasannya, selain itu toast. */
+/** Error simpan: batas paket = paywall dengan alasannya, batas keras 200 aset = toast, selain itu toast gagal simpan. */
 export function useSaveError() {
   const t = useT();
+  const { state } = useStore();
   const { show } = useToast();
   const paywall = usePaywall();
   return (e: unknown, reason: string, onLimit?: () => void) => {
-    if (e instanceof QuotaError) {
-      onLimit?.();
-      paywall(reason);
+    if (e instanceof Error && /limit_assets_max/.test(e.message)) {
+      show({ tone: 'error', title: t('assets.maxLimitReached') });
+    } else if (e instanceof QuotaError) {
+      if (state.plan === 'premium') {
+        show({ tone: 'error', title: t('assets.maxLimitReached') });
+      } else {
+        onLimit?.();
+        paywall(reason);
+      }
     } else {
       show({ tone: 'error', title: t('plan.common.saveFailed') });
     }

@@ -638,6 +638,28 @@ await step('Premium web USD (Paddle): checkout sampai pesan "belum aktif", bukan
   await p.waitForTimeout(4000);
   await expectText(p, 'belum aktif');
 });
+await step('Aset: tambah saham BBCA 100 lembar -> detail menampilkan Grafik harga iframe TradingView tanpa SecurityError', async () => {
+  const errStart = errors.length;
+  const p = await open('/aset');
+  await btn(p, 'Tambah aset').click();
+  await p.getByLabel('Kode').fill('BBCA');
+  await p.getByRole('button', { name: /kode BBCA, IDX/ }).first().click();
+  await p.getByLabel('Jumlah (lembar)').fill('100');
+  await btn(p, 'Simpan').click();
+  await expectText(p, 'Bank Central Asia', 8000);
+  await p.getByRole('button', { name: /Bank Central Asia/ }).first().click();
+  await p.waitForTimeout(600);
+  if (!url(p).startsWith('/aset/')) throw new Error('detail aset -> ' + url(p));
+  await expectText(p, 'Grafik harga', 8000);
+  const iframe = p.locator('iframe').first();
+  await iframe.waitFor({ timeout: 8000 });
+  const src = await iframe.getAttribute('src');
+  if (!src || !src.startsWith('https://www.tradingview-widget.com/embed-widget/symbol-overview/')) {
+    throw new Error('src iframe salah: ' + src);
+  }
+  const secErr = errors.slice(errStart).find((e) => /SecurityError/i.test(e));
+  if (secErr) throw new Error('SecurityError di grafik: ' + secErr);
+});
 // Diharapkan: checkout-create menjawab 503 not_configured selama kunci Xendit/Paddle belum diisi (langkah
 // "Premium web" memeriksa pesannya). Browser mencatatnya sebagai error resource; error lain tetap membuat gagal.
 const EXPECTED = [/^\/premium: Failed to load resource: the server responded with a status of 503/];

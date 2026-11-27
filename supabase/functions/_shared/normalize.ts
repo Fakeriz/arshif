@@ -3,7 +3,7 @@
  * lalu validasi dengan zod. Murni: tanpa API Deno, diuji jest (src/__tests__/edge-shared.test.ts).
  * Keluaran AI tidak dipercaya: field yang tidak valid dibuang atau diganti nilai aman, bukan diteruskan.
  */
-import { CATEGORY_KEYS, ImportResult, ScanResult, VoiceResult, type CoachResult } from './contracts.ts';
+import { CATEGORY_KEYS, ImportResult, ScanResult, VoiceResult, type CoachResult, type PriceAskRequest } from './contracts.ts';
 import { cleanText, decimalToMinor, nonNegativeMinor, normalizeCurrency, positiveMinor } from './money.ts';
 
 type Raw = Record<string, unknown>;
@@ -239,4 +239,21 @@ export function normalizePrice(raw: unknown, live: number, currency: string):
   if (reasons.length === 0) return null;
   const verdict = live < low ? 'cheap' : live > high ? 'expensive' : 'fair';
   return { verdict, targetLow: low, targetHigh: high, livePrice: live, currency, reasons };
+}
+
+/**
+ * Rekonsiliasi harga live dari server (`asset_prices`) terhadap input klien, serta hitung ulang `changePct`
+ * ketika harga server berbeda dan harga beli tersedia.
+ */
+export function reconcileLiveAsset(
+  asset: PriceAskRequest['asset'],
+  priceRow: { price: unknown; currency: unknown } | null,
+): PriceAskRequest['asset'] {
+  const serverLive = priceRow && priceRow.currency === asset.currency && Number(priceRow.price) > 0 ? Number(priceRow.price) : asset.livePrice;
+  let changePct = asset.changePct;
+  if (serverLive !== asset.livePrice && asset.buyPrice !== null && asset.buyPrice > 0) {
+    const rawPct = Math.round(((serverLive - asset.buyPrice) / asset.buyPrice) * 1000) / 10;
+    changePct = Number.isFinite(rawPct) ? Math.max(-100, Math.min(100000, rawPct)) : asset.changePct;
+  }
+  return { ...asset, livePrice: serverLive, changePct };
 }

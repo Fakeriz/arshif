@@ -1,5 +1,5 @@
 import { useRouter } from 'expo-router';
-import { CreditCard, TriangleAlert, Wallet } from 'lucide-react-native';
+import { Clock, CreditCard, TriangleAlert, Wallet } from 'lucide-react-native';
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
@@ -15,7 +15,7 @@ import { MissingRatesBanner } from '@/features/fx/MissingRatesBanner';
 import { AddButton } from '@/features/planning/kit';
 import { useDesktop } from '@/hooks/useDesktop';
 import { useI18n } from '@/i18n';
-import { changeSince, livePricesDown, snapshotTrend, valueAsset } from '@/lib/assets';
+import { changeSince, gainOf, isLiveType, livePricesDown, snapshotTrend, valuationIn, valueAsset } from '@/lib/assets';
 import { pctChange } from '@/lib/chart';
 import { isCreditType } from '@/lib/credit';
 import { shortDate, todayYmd } from '@/lib/dates';
@@ -34,10 +34,10 @@ export default function AsetScreen() {
   const { t, lang } = useI18n();
   const router = useRouter();
   const { colors } = useTheme();
-  const { state, dispatch } = useStore();
+  const { state, dispatch, reload: storeReload, refreshing: storeRefreshing } = useStore();
   const limits = useLimits();
   const planning = usePlanning();
-  const { assets, prices, snapshots, status, reload } = useAssets();
+  const { assets, prices, snapshots, status, refreshing: assetsRefreshing, pendingPriceKeys, reload } = useAssets();
   const nw = useNetWorth();
   useNetWorthSnapshot(nw);
   const [form, setForm] = useState(false);
@@ -59,6 +59,7 @@ export default function AsetScreen() {
   const desktop = useDesktop();
 
   const refresh = () => {
+    void storeReload();
     void reload();
     void planning.reload();
   };
@@ -107,25 +108,43 @@ export default function AsetScreen() {
     <Card style={desktop ? styles.fill : undefined}>
       <View style={[styles.cardBody, desktop && styles.fill]}>
         <AppText variant="h3">{t('assets.chartTitle')}</AppText>
-        <NetWorthChart snapshots={snapshots} currency={currency} fill={desktop} />
+        <NetWorthChart snapshots={snapshots} currency={currency} fill={desktop} hidden={state.hideBalance} />
       </View>
     </Card>
   );
+  const liveActive = assets.filter((a) => isLiveType(a.type) && a.valueOverride === undefined);
+  const allPendingNew =
+    liveActive.length > 0 &&
+    liveActive.every((a) => Boolean(a.priceKey && pendingPriceKeys.includes(a.priceKey) && !prices[a.priceKey]));
   const banners = (
     <>
       <MissingRatesBanner />
-      {livePricesDown(assets, prices, now) && (
-        <Card accessibilityLabel={t('assets.pricesDownTitle')}>
+      {allPendingNew ? (
+        <Card accessibilityLabel={t('assets.pricesPendingTitle')}>
           <View style={styles.banner}>
-            <Icon icon={TriangleAlert} color={colors.warning} />
+            <Icon icon={Clock} color={colors.info} />
             <View style={styles.flex}>
-              <AppText variant="bodyStrong">{t('assets.pricesDownTitle')}</AppText>
+              <AppText variant="bodyStrong">{t('assets.pricesPendingTitle')}</AppText>
               <AppText variant="caption" tone="secondary">
-                {t('assets.pricesDownMessage')}
+                {t('assets.pricesPendingMessage')}
               </AppText>
             </View>
           </View>
         </Card>
+      ) : (
+        livePricesDown(assets, prices, now) && (
+          <Card accessibilityLabel={t('assets.pricesDownTitle')}>
+            <View style={styles.banner}>
+              <Icon icon={TriangleAlert} color={colors.warning} />
+              <View style={styles.flex}>
+                <AppText variant="bodyStrong">{t('assets.pricesDownTitle')}</AppText>
+                <AppText variant="caption" tone="secondary">
+                  {t('assets.pricesDownMessage')}
+                </AppText>
+              </View>
+            </View>
+          </Card>
+        )
       )}
     </>
   );
@@ -139,6 +158,8 @@ export default function AsetScreen() {
           title={t('assets.cash')}
           subtitle={t('assets.cashMeta', { count: cashCount })}
           trailing={<CurrencyText amount={nw.cash} currency={currency} kind="balance" hidden={state.hideBalance} />}
+          onPress={() => router.push('/pengaturan/akun')}
+          chevron
           divider={assets.length > 0 || nw.receivables > 0}
         />
         {nw.receivables > 0 && (
@@ -153,8 +174,21 @@ export default function AsetScreen() {
         )}
         {assets.map((a, i) => {
           const v = valueAsset(a, prices, now);
-          const main = v.value === null ? null : tryConvert(v.value, v.currency, currency);
+          const main = valuationIn(v, currency);
           const qty = quantityLabel(a, t, lang);
+          const gain = gainOf(a, v);
+          const gainMain = gain ? tryConvert(gain.amount, a.currency, currency) : null;
+          const trailing =
+            main === null ? undefined : gainMain !== null && !state.hideBalance ? (
+              <View style={styles.assetTrailing}>
+                <CurrencyText amount={main} currency={currency} kind="balance" hidden={state.hideBalance} />
+                <AppText variant="caption" tone={gainMain > 0 ? 'positive' : gainMain < 0 ? 'negative' : 'muted'} numeric>
+                  {formatMoney(gainMain, currency, 'always')}
+                </AppText>
+              </View>
+            ) : (
+              <CurrencyText amount={main} currency={currency} kind="balance" hidden={state.hideBalance} />
+            );
           return (
             <ListItem
               key={a.id}
@@ -162,7 +196,7 @@ export default function AsetScreen() {
               title={a.name}
               subtitle={[qty, priceLabel(a, v, t, lang, now)].filter(Boolean).join(' · ')}
               subtitleLines={2}
-              trailing={main === null ? undefined : <CurrencyText amount={main} currency={currency} kind="balance" hidden={state.hideBalance} />}
+              trailing={trailing}
               onPress={() => router.push(`/aset/${a.id}`)}
               chevron
               divider={i < assets.length - 1}
@@ -192,6 +226,8 @@ export default function AsetScreen() {
                 leading={<AssetIcon kind="credit" />}
                 title={t('assets.credit')}
                 trailing={<CurrencyText amount={nw.credit} currency={currency} kind="balance" hidden={state.hideBalance} />}
+                onPress={() => router.push('/pengaturan/akun')}
+                chevron
                 divider={activeDebts.length > 0}
               />
             )}
@@ -212,13 +248,18 @@ export default function AsetScreen() {
   );
 
   return (
-    <Screen tabs maxWidth={desktop ? DESKTOP_WIDE : undefined} onRefresh={status === 'ready' ? refresh : undefined}>
+    <Screen
+      tabs
+      maxWidth={desktop ? DESKTOP_WIDE : undefined}
+      onRefresh={status === 'ready' ? refresh : undefined}
+      refreshing={storeRefreshing || assetsRefreshing}
+    >
       <TabHeader
         title={t('shell.assets.title')}
         subtitle={t('shell.assets.subtitle')}
         right={
           // Tambah aset + pengaturan tampilan aset (menu titik tiga), bukan di tengah layar.
-          <>
+          <View style={styles.headerRight}>
             {status === 'ready' && <AddButton label={t('assets.add')} limited={limits.assets} reason={t('assets.limitReason')} onPress={openForm} />}
             <HeaderMenu>
               {() => (
@@ -230,7 +271,7 @@ export default function AsetScreen() {
                 />
               )}
             </HeaderMenu>
-          </>
+          </View>
         }
       />
       {status === 'error' ? (
@@ -284,6 +325,7 @@ export default function AsetScreen() {
 
 const styles = StyleSheet.create({
   skeleton: { gap: space.lg },
+  headerRight: { flexDirection: 'row', alignItems: 'center', gap: space.xs },
   hero: { alignItems: 'center', gap: space.xs, borderRadius: radius.card, padding: layout.cardPadding, paddingVertical: space.xl },
   cardBody: { gap: space.md },
   banner: { flexDirection: 'row', gap: space.md, alignItems: 'flex-start' },
@@ -293,4 +335,5 @@ const styles = StyleSheet.create({
   tiles: { flexDirection: 'row', flexWrap: 'wrap', gap: space.md },
   top: { alignItems: 'flex-start' },
   fill: { flex: 1 },
+  assetTrailing: { alignItems: 'flex-end', gap: 2 },
 });

@@ -18,7 +18,7 @@ export type SourcedProvider = PriceProvider & { handles(key: string): boolean };
 export type PriceRow = { symbol: string; price: number; currency: string; source: string; fetched_at: string; quoted_at: string | null };
 export type SyncResult = { rows: PriceRow[]; failed: string[]; error?: string };
 
-export const PRICE_KEY_RE = /^(IDX|US|CRYPTO|GOLD):[A-Z0-9.]{1,15}$/;
+export const PRICE_KEY_RE = /^(IDX|US|CRYPTO|GOLD):(?=.{1,15}$)[A-Z0-9]+(\.[A-Z0-9]+)*$/;
 
 /** Stablecoin dolar disimpan sebagai USD (kolom currency = kode ISO 3 huruf). */
 function isoCurrency(code: string): string | null {

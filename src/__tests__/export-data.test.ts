@@ -1,3 +1,4 @@
+import type { Asset } from '@/data/assets';
 import type { Account, Transaction } from '@/data/types';
 import { buildExport, csvCell } from '@/features/settings/exportData';
 
@@ -30,5 +31,18 @@ describe('export CSV (audit 13)', () => {
     expect(head).toBe('date,time,type,merchant,category,account,to_account,amount,currency,source,note');
     expect(bad).toBe("2026-11-07,10:00,expense,'=1+1,food,BCA,,45000,IDR,smartlog,'@evil");
     expect(ok).toBe('2026-11-07,10:00,expense,Warung,food,BCA,,45000,IDR,smartlog,');
+  });
+
+  it('buildExport JSON menyertakan daftar assets dengan buyPrice & valueOverride terformat desimal', () => {
+    const assets: Asset[] = [
+      { id: 'as1', type: 'stock_us', symbol: 'AAPL', name: 'Apple', quantity: 2, buyPrice: 19550, currency: 'USD', priceKey: 'US:AAPL', createdAt: '2026-11-01T00:00:00Z' },
+      { id: 'as2', type: 'property', name: 'Rumah', currency: 'IDR', valueOverride: 900_000_000, createdAt: '2026-11-01T00:00:00Z' },
+    ];
+    const parsed = JSON.parse(buildExport('JSON', [acc], [tx('Warung')], assets));
+    expect(parsed.assets).toHaveLength(2);
+    expect(parsed.assets[0]).toMatchObject({ id: 'as1', symbol: 'AAPL', buyPrice: '195.50' });
+    expect(parsed.assets[0].valueOverride).toBeUndefined();
+    expect(parsed.assets[1]).toMatchObject({ id: 'as2', name: 'Rumah', valueOverride: '900000000' });
+    expect(parsed.assets[1].buyPrice).toBeUndefined();
   });
 });

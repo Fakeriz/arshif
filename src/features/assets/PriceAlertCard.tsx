@@ -6,8 +6,7 @@ import { AppText, Button, Card, Icon, Input, useToast } from '@/components/ui';
 import type { Asset } from '@/data/assets';
 import { useI18n } from '@/i18n';
 import { isoDateTimeLabel } from '@/lib/dates';
-import { toMinor } from '@/lib/assets';
-import { formatMoney } from '@/lib/money';
+import { formatUnitPrice } from '@/lib/money';
 import { useAssets } from '@/state/assets';
 import { useTheme } from '@/theme/ThemeProvider';
 import { space } from '@/theme/tokens';
@@ -34,7 +33,7 @@ export function PriceAlertCard({ asset }: { asset: Asset }) {
   const [text, setText] = useState(alert ? String(alert.pct).replace('.', lang === 'id' || lang === 'tr' ? ',' : '.') : '5');
   const [tried, setTried] = useState(false);
   const [busy, setBusy] = useState(false);
-  if (!asset.priceKey || !prices[asset.priceKey]) return null;
+  if (asset.valueOverride !== undefined || !asset.priceKey || !prices[asset.priceKey]) return null;
 
   const pct = parsePct(text);
   const fmtPct = (n: number) => `${String(n).replace('.', lang === 'id' || lang === 'tr' ? ',' : '.')}%`;
@@ -55,7 +54,7 @@ export function PriceAlertCard({ asset }: { asset: Asset }) {
     void run(() => saveAlert(asset.id, pct), t('assets.alert.saved'));
   };
 
-  const base = alert ? formatMoney(toMinor(alert.basePrice, alert.currency), alert.currency) + (asset.type === 'gold' ? ` ${t('assets.alert.perOunce')}` : '') : '';
+  const base = alert ? formatUnitPrice(alert.basePrice, alert.currency) + (asset.type === 'gold' ? ` ${t('assets.alert.perOunce')}` : '') : '';
   return (
     <Card>
       <View style={styles.body}>

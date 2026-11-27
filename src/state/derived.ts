@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 
 import { addDays, todayYmd } from '@/lib/dates';
 import { missingRates, tryConvert } from '@/lib/fx';
+import { valueAsset } from '@/lib/assets';
 import {
   averageBudget, budgetFor, bucketLimits, budgetPeriod, pace, previousBudgets, safeToSpend, spendByBucket, spendByCategory,
 } from '@/lib/budget';
@@ -13,6 +14,7 @@ import { accountBalance } from '@/lib/transactions';
 import type { Transaction } from '@/data/types';
 
 import { usedCodes, useStore, type AccountWithBalance } from './AppStore';
+import { useAssetsOptional } from './assets';
 import { usePlanningOptional } from './planning';
 
 type Ledger = { accounts: AccountWithBalance[]; transactions: Transaction[]; mainCurrency: string };
@@ -35,11 +37,33 @@ export function useLedger(): Ledger {
 /** Kode mata uang yang dipakai tapi belum punya kurs harian maupun "Kurs saya" (FR-FX-4). */
 export function useMissingRates(): string[] {
   const { state } = useStore();
-  return useMemo(
-    () => missingRates(usedCodes(state.accounts, state.transactions, state.mainCurrency, state.limitGroups.map((g) => g.currency))),
+  const assetsCtx = useAssetsOptional();
+  const planningCtx = usePlanningOptional();
+  return useMemo(() => {
+    const extra = state.limitGroups.map((g) => g.currency);
+    const prices = assetsCtx?.prices ?? {};
+    for (const a of assetsCtx?.assets ?? []) {
+      if (a.valueOverride !== undefined || (a.buyPrice !== undefined && a.buyPrice > 0)) extra.push(a.currency);
+      const v = valueAsset(a, prices, 0);
+      if (v.value !== null) extra.push(v.currency);
+    }
+    for (const d of planningCtx?.debts ?? []) {
+      if (d.status === 'active') extra.push(d.currency);
+    }
+    return missingRates(usedCodes(state.accounts, state.transactions, state.mainCurrency, extra));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [state.accounts, state.transactions, state.mainCurrency, state.limitGroups, state.ratesDate, state.ratesVersion, state.userRates],
-  );
+  }, [
+    state.accounts,
+    state.transactions,
+    state.mainCurrency,
+    state.limitGroups,
+    state.ratesDate,
+    state.ratesVersion,
+    state.userRates,
+    assetsCtx?.assets,
+    assetsCtx?.prices,
+    planningCtx?.debts,
+  ]);
 }
 
 /** Utilisasi limit per kartu (grup gabungan bila ada, FR-ACC-6). */

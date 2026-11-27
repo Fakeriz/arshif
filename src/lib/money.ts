@@ -79,6 +79,37 @@ export function formatMoney(minor: number, code: string, sign: SignMode = 'auto'
   return sign === 'always' ? `+${body}` : body;
 }
 
+/**
+ * Format harga per unit (satuan utama, boleh di bawah 1 sen seperti SHIB/DOGE).
+ * Nominal >= 1 (atau >= 100 / bulat untuk mata uang tanpa desimal) memakai formatMoney biasa;
+ * nominal sub-unit menjaga hingga 4 angka signifikan setelah nol di belakang koma (maksimal 10 desimal).
+ */
+export function formatUnitPrice(major: number, code: string, sign: SignMode = 'auto'): string {
+  if (!Number.isFinite(major)) return formatMoney(0, code, 'never');
+  const m = currencyMeta(code);
+  const abs = Math.abs(major);
+  if (abs === 0 || (m.exponent > 0 && abs >= 1) || (m.exponent === 0 && (abs >= 100 || Number.isInteger(abs)))) {
+    const scale = Math.pow(10, m.exponent);
+    const clamped = Math.max(-9_000_000_000_000_000, Math.min(9_000_000_000_000_000, major * scale));
+    const minor = Math.round(Number(clamped.toFixed(6)));
+    return formatMoney(minor, code, sign);
+  }
+  const leadingZeros = abs < 1 ? Math.max(0, -Math.floor(Math.log10(abs)) - 1) : 0;
+  const decimals = abs < 1 ? Math.min(10, Math.max(m.exponent, leadingZeros + 4)) : 2;
+  const factor = Math.pow(10, decimals);
+  const rounded = Math.round(Number((abs * factor).toFixed(6))) / factor;
+  const [intRaw, fracRaw = ''] = rounded.toFixed(decimals).split('.');
+  let frac = fracRaw.replace(/0+$/, '');
+  if (frac.length < m.exponent) frac = frac.padEnd(m.exponent, '0');
+  const grouped = groupDigits(intRaw || '0', m.group);
+  const num = frac ? `${grouped}${m.decimal}${frac}` : grouped;
+  const body = `${m.symbol}${m.spaceAfterSymbol ? ' ' : ''}${num}`;
+  const isZero = intRaw === '0' && /^0*$/.test(frac);
+  if (sign === 'never' || isZero) return body;
+  if (major < 0) return `${MINUS}${body}`;
+  return sign === 'always' ? `+${body}` : body;
+}
+
 export type MoneyParts = {
   sign: string;
   symbol: string;

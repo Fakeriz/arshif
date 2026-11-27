@@ -79,6 +79,10 @@ serve(
     }
     if (runs.length === 0) await log({ ok: true, source: 'none', symbols: 0, duration_ms: Date.now() - started });
     else await logRuns(runs);
+    if (result.updated > 0) {
+      const { error: alertErr } = await db.rpc('price_alerts');
+      if (alertErr) logEvent('error', 'price_alerts_failed', { requestId: ctx.requestId, error: alertErr.message });
+    }
     return json({
       symbols: keys.length,
       updated: result.updated,

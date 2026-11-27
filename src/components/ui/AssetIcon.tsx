@@ -5,6 +5,7 @@ import Svg, { Text as SvgText } from 'react-native-svg';
 
 import type { Asset } from '@/data/assets';
 import {
+  containPlateColor,
   resolveAssetVisual,
   resolveBalanceRowVisual,
   resolveSymbolVisual,
@@ -62,7 +63,7 @@ function RemoteLogo({
         <View
           style={[
             StyleSheet.absoluteFill,
-            current.kind === 'contain' && loaded && { backgroundColor: '#F4F4F2', padding: pad },
+            current.kind === 'contain' && loaded && { backgroundColor: containPlateColor(current.url), padding: pad },
             !loaded && styles.hidden,
           ]}
         >

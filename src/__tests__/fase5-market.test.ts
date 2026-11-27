@@ -1,6 +1,6 @@
 import { PriceAskRequest } from '../../supabase/functions/_shared/contracts';
 import { historyRows } from '../../supabase/functions/_shared/asset-sync';
-import { normalizePrice } from '../../supabase/functions/_shared/normalize';
+import { normalizePrice, reconcileLiveAsset } from '../../supabase/functions/_shared/normalize';
 import { pricePrompt } from '../../supabase/functions/_shared/prompts';
 import type { Asset, AssetPrice, PricePoint } from '@/data/assets';
 import { parsePct } from '@/features/assets/PriceAlertCard';
@@ -94,4 +94,27 @@ describe('penggerak portofolio 7 hari (Weekly Replay)', () => {
 
 it('ambang alert: 0,1 sampai 50, koma atau titik', () => {
   expect(['0,1', '5', '2.5', '50', '0', '0,05', '51', 'abc', ''].map(parsePct)).toEqual([0.1, 5, 2.5, 50, null, null, null, null, null]);
+});
+
+describe('Paket 3: reconcileLiveAsset & manual override pada priceAskInput', () => {
+  it('reconcileLiveAsset menghitung ulang changePct saat harga live server berbeda dari klien', () => {
+    const client = { market: 'IDX' as const, symbol: 'BBCA', currency: 'IDR', livePrice: 5200, buyPrice: 5000, changePct: 4 };
+    expect(reconcileLiveAsset(client, { price: 5500, currency: 'IDR' })).toEqual({
+      ...client,
+      livePrice: 5500,
+      changePct: 10,
+    });
+    // Harga sama -> changePct tetap
+    expect(reconcileLiveAsset(client, { price: 5200, currency: 'IDR' })).toEqual(client);
+    // Mata uang beda atau harga server tidak valid -> pakai input klien
+    expect(reconcileLiveAsset(client, { price: 5500, currency: 'USD' })).toEqual(client);
+    expect(reconcileLiveAsset(client, null)).toEqual(client);
+    // Tanpa buyPrice -> livePrice diperbarui, changePct tetap null
+    const noBuy = { ...client, buyPrice: null, changePct: null };
+    expect(reconcileLiveAsset(noBuy, { price: 5500, currency: 'IDR' })).toEqual({ ...noBuy, livePrice: 5500, changePct: null });
+  });
+
+  it('priceAskInput mengembalikan null untuk aset dengan valueOverride', () => {
+    expect(priceAskInput({ ...bbca, valueOverride: 500_000 }, prices, NOW)).toBeNull();
+  });
 });

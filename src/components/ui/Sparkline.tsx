@@ -4,7 +4,7 @@ import Animated, { useAnimatedProps, useSharedValue, withDelay } from 'react-nat
 import Svg, { Circle, Defs, LinearGradient, Path, Stop } from 'react-native-svg';
 
 import { useI18n } from '@/i18n';
-import { areaUnder, linePoints, polylineLength, smoothPath } from '@/lib/chart';
+import { areaUnder, linePoints, pctChange, polylineLength, smoothPath } from '@/lib/chart';
 import { useMotion } from '@/theme/motion';
 import { useTheme } from '@/theme/ThemeProvider';
 import { chartArea, motion } from '@/theme/tokens';
@@ -50,8 +50,10 @@ export function Sparkline({
 
   const first = values[0] ?? 0;
   const last = values[values.length - 1] ?? 0;
+  const delta = pctChange(first, last);
+  const isFlat = last === first || (delta !== null && Math.abs(delta) < 0.0005);
   const resolved: Exclude<SparklineTone, 'auto'> =
-    tone !== 'auto' ? tone : last === first ? 'neutral' : (last > first) !== !!invert ? 'positive' : 'negative';
+    tone !== 'auto' ? tone : isFlat ? 'neutral' : (last > first) !== !!invert ? 'positive' : 'negative';
   const stroke = {
     neutral: chartArea[scheme].line,
     positive: colors.positive,
@@ -61,7 +63,10 @@ export function Sparkline({
 
   // Ruang tepi agar garis dan titik akhir tidak terpotong.
   const inset = endDot ? 4 : strokeWidth;
-  const pts = linePoints(values, width - inset * 2, height, inset).map((p) => ({ x: p.x + inset, y: p.y }));
+  const minVal = values.length > 0 ? Math.min(...values) : 0;
+  const maxVal = values.length > 0 ? Math.max(...values) : 0;
+  const minSpan = Math.max(Math.abs(first), Math.abs(last)) >= 100 ? Math.abs((minVal + maxVal) / 2) * 0.01 : 0;
+  const pts = linePoints(values, width - inset * 2, height, inset, minSpan).map((p) => ({ x: p.x + inset, y: p.y }));
   const line = smoothPath(pts);
   // Kurva sedikit lebih panjang dari poligonnya; lebihkan agar ujung garis tidak terpotong saat animasi.
   const length = polylineLength(pts) * 1.15 + 4;

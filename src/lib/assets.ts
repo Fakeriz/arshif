@@ -4,7 +4,7 @@ import type { Account } from '@/data/types';
 import { pctChange } from '@/lib/chart';
 import { isCreditType } from '@/lib/credit';
 import { addDays } from '@/lib/dates';
-import { tryConvert } from '@/lib/fx';
+import { tryConvert, tryConvertMajor } from '@/lib/fx';
 import type { Lang } from '@/i18n/types';
 import { currencyMeta } from '@/lib/money';
 
@@ -13,8 +13,8 @@ export const MANUAL_TYPES: readonly AssetType[] = ['property', 'vehicle', 'other
 export const ASSET_TYPES: readonly AssetType[] = [...LIVE_TYPES, ...MANUAL_TYPES];
 export const isLiveType = (t: AssetType): boolean => LIVE_TYPES.includes(t);
 
-/** Sama dengan check `assets.symbol` di migrasi 16. */
-export const SYMBOL_RE = /^[A-Z0-9.]{1,15}$/;
+/** Sama dengan check `assets.symbol` di server (tidak boleh titik di awal/akhir atau titik ganda). */
+export const SYMBOL_RE = /^(?=.{1,15}$)[A-Z0-9]+(\.[A-Z0-9]+)*$/;
 export const GOLD_SYMBOL = 'XAU';
 /** Harga emas dikutip per troy ounce; jumlah emas dicatat dalam gram. */
 export const TROY_OUNCE_GRAMS = 31.1034768;
@@ -62,6 +62,8 @@ export type ValueSource = 'manual' | 'live' | 'buy' | 'none';
 export type Valuation = {
   /** Nilai total dalam `currency` (minor units), null bila belum bisa dihitung. */
   value: number | null;
+  /** Nilai total dalam satuan utama sebelum pembulatan ke minor units (untuk mencegah kuantisasi pra-FX). */
+  majorValue?: number;
   currency: string;
   source: ValueSource;
   /** Harga per unit (satuan utama, mata uang `currency`). Emas: per gram. */
@@ -82,8 +84,10 @@ export function valueAsset(a: Asset, prices: Record<string, AssetPrice>, now: nu
   if (price && a.quantity !== undefined) {
     const currency = quoteCurrency(price.currency);
     const unitPrice = a.type === 'gold' ? price.price / TROY_OUNCE_GRAMS : price.price;
+    const majorValue = a.quantity * unitPrice;
     return {
-      value: toMinor(a.quantity * unitPrice, currency),
+      value: toMinor(majorValue, currency),
+      majorValue,
       currency,
       source: 'live',
       unitPrice,
@@ -92,16 +96,23 @@ export function valueAsset(a: Asset, prices: Record<string, AssetPrice>, now: nu
       stale: now - Date.parse(price.fetchedAt) > STALE_MS,
     };
   }
-  if (a.buyPrice !== undefined && a.quantity !== undefined) {
+  if (a.buyPrice !== undefined && a.buyPrice > 0 && a.quantity !== undefined) {
     return { value: roundMinor(a.quantity * a.buyPrice), currency: a.currency, source: 'buy' };
   }
   return { value: null, currency: a.currency, source: 'none' };
 }
 
+/** Konversi hasil valuasi ke `targetCurrency` (minor units), menjaga presisi pra-FX bila `majorValue` tersedia. */
+export function valuationIn(v: Valuation, targetCurrency: string): number | null {
+  if (v.value === null) return null;
+  if (v.majorValue !== undefined) return tryConvertMajor(v.majorValue, v.currency, targetCurrency);
+  return tryConvert(v.value, v.currency, targetCurrency);
+}
+
 /** Untung/rugi terhadap harga beli, dalam mata uang aset. null bila harga beli atau nilai tidak ada. */
 export function gainOf(a: Asset, v: Valuation): { amount: number; pct: number | null } | null {
-  if (a.buyPrice === undefined || a.quantity === undefined || v.value === null || v.source === 'buy') return null;
-  const value = tryConvert(v.value, v.currency, a.currency);
+  if (a.buyPrice === undefined || a.buyPrice <= 0 || a.quantity === undefined || v.value === null || v.source === 'buy') return null;
+  const value = valuationIn(v, a.currency);
   if (value === null) return null;
   const cost = roundMinor(a.quantity * a.buyPrice);
   return { amount: value - cost, pct: cost > 0 ? (value - cost) / cost : null };
@@ -116,8 +127,8 @@ export function portfolioGain(assets: Asset[], prices: Record<string, AssetPrice
   let cost = 0;
   for (const a of assets) {
     const v = valueAsset(a, prices, now);
-    if (v.source !== 'live' || v.value === null || a.buyPrice === undefined || a.quantity === undefined) continue;
-    const cur = tryConvert(v.value, v.currency, main);
+    if (v.source !== 'live' || v.value === null || a.buyPrice === undefined || a.buyPrice <= 0 || a.quantity === undefined) continue;
+    const cur = valuationIn(v, main);
     const basis = tryConvert(roundMinor(a.quantity * a.buyPrice), a.currency, main);
     if (cur === null || basis === null) continue;
     value += cur;
@@ -151,7 +162,7 @@ export function portfolioMovers(
     if (!then || then.currency !== p.currency || then.price <= 0) continue;
     const perUnit = (price: number) => (a.type === 'gold' ? price / TROY_OUNCE_GRAMS : price);
     const currency = quoteCurrency(p.currency);
-    const delta = tryConvert(toMinor(a.quantity * (perUnit(p.price) - perUnit(then.price)), currency), currency, main);
+    const delta = tryConvertMajor(a.quantity * (perUnit(p.price) - perUnit(then.price)), currency, main);
     if (delta === null) continue;
     total += delta;
     movers.push({ assetId: a.id, label: a.type === 'gold' || !a.symbol ? a.name : a.symbol, pct: (p.price - then.price) / then.price, delta });
@@ -168,6 +179,7 @@ const MARKET_OF: Partial<Record<AssetType, 'IDX' | 'US' | 'CRYPTO' | 'GOLD'>> = 
  * Harga beli hanya dikirim bila satuan dan mata uangnya sama dengan kutipan (emas dicatat per gram, kutipan per ons).
  */
 export function priceAskInput(a: Asset, prices: Record<string, AssetPrice>, now: number) {
+  if (a.valueOverride !== undefined) return null;
   const market = MARKET_OF[a.type];
   const p = a.priceKey ? prices[a.priceKey] : undefined;
   if (!market || !a.symbol || !p || !Number.isFinite(p.price) || p.price <= 0 || p.price > 1e12) return null;
@@ -246,8 +258,12 @@ export function computeNetWorth({ accounts, assets, prices, debts, main, now }: 
       unvalued++;
       continue;
     }
-    const v = conv(val.value, val.currency);
-    if (v !== null) assetSum += v;
+    const v = valuationIn(val, main);
+    if (v === null) {
+      unconverted++;
+      continue;
+    }
+    assetSum += v;
   }
   for (const d of debts) {
     if (d.status !== 'active') continue;
@@ -273,10 +289,24 @@ export function computeNetWorth({ accounts, assets, prices, debts, main, now }: 
   };
 }
 
-/** Snapshot dalam `days` hari terakhir (tanpa hari ini), terlama dulu. */
+/** Konversi snapshot ke `currency` memakai kurs saat ini (FR-FX-4); null bila kurs belum tersedia. */
+export function convertSnapshot(s: NetWorthSnapshot, currency: string): NetWorthSnapshot | null {
+  if (s.currency === currency) return s;
+  const total = tryConvert(s.total, s.currency, currency);
+  const assetsTotal = tryConvert(s.assetsTotal, s.currency, currency);
+  const liabilitiesTotal = tryConvert(s.liabilitiesTotal, s.currency, currency);
+  if (total === null || assetsTotal === null || liabilitiesTotal === null) return null;
+  return { ...s, total, assetsTotal, liabilitiesTotal, currency };
+}
+
+/** Snapshot dalam `days` hari terakhir (tanpa hari ini), dikonversi ke `currency`, terlama dulu. */
 function recentSnapshots(snapshots: NetWorthSnapshot[], today: string, currency: string, days: number): NetWorthSnapshot[] {
   const from = addDays(today, -days);
-  return snapshots.filter((s) => s.date >= from && s.date < today && s.currency === currency).sort((a, b) => a.date.localeCompare(b.date));
+  return snapshots
+    .filter((s) => s.date >= from && s.date < today)
+    .map((s) => convertSnapshot(s, currency))
+    .filter((s): s is NetWorthSnapshot => s !== null)
+    .sort((a, b) => a.date.localeCompare(b.date));
 }
 
 /** Selisih kekayaan bersih hari ini terhadap snapshot tertua dalam `days` hari terakhir (tanpa hari ini). */
@@ -317,12 +347,26 @@ export function unitOf(type: AssetType): UnitKey {
   return 'units';
 }
 
-/** "0,5" / "0.5" / "1.250" (lembar) -> angka. Maksimal 10 desimal, sama dengan numeric(28, 10). null = tidak valid. */
-export function parseQuantity(text: string): number | null {
+/** "0,5" / "0.5" / "10.000" (lembar di id/tr) / "1.000.000" -> angka. Maksimal 10 desimal dan <= 1e15. null = tidak valid. */
+export function parseQuantity(text: string, lang?: Lang): number | null {
+  const cleanLang = typeof lang === 'string' ? lang : undefined;
   const s = text.trim().replace(/\s/g, '');
-  if (!/^\d+([.,]\d{1,10})?$/.test(s)) return null;
-  const n = Number(s.replace(',', '.'));
-  return Number.isFinite(n) && n > 0 ? n : null;
+  let normalized: string;
+  if (/^\d{1,3}(\.\d{3}){2,}(,\d{1,10})?$/.test(s) || /^\d{1,3}(\.\d{3})+,\d{1,10}$/.test(s)) {
+    normalized = s.replace(/\./g, '').replace(',', '.');
+  } else if (/^\d{1,3}(,\d{3}){2,}(\.\d{1,10})?$/.test(s) || /^\d{1,3}(,\d{3})+\.\d{1,10}$/.test(s)) {
+    normalized = s.replace(/,/g, '');
+  } else if ((cleanLang === 'id' || cleanLang === 'tr') && /^[1-9]\d{0,2}\.\d{3}$/.test(s)) {
+    normalized = s.replace('.', '');
+  } else if ((cleanLang === 'en' || cleanLang === 'ms') && /^[1-9]\d{0,2},\d{3}$/.test(s)) {
+    normalized = s.replace(',', '');
+  } else if (/^\d+([.,]\d{1,10})?$/.test(s)) {
+    normalized = s.replace(',', '.');
+  } else {
+    return null;
+  }
+  const n = Number(normalized);
+  return Number.isFinite(n) && n > 0 && n <= 1e15 ? n : null;
 }
 
 /** Jumlah unit untuk tampilan: pemisah desimal mengikuti bahasa, tanpa nol di belakang. */

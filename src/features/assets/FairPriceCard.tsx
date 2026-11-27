@@ -8,8 +8,8 @@ import { AppText, Badge, Button, Card, Icon, ProBadge } from '@/components/ui';
 import type { Asset } from '@/data/assets';
 import { FnError, invokeFn } from '@/data/remote/functions';
 import { useI18n } from '@/i18n';
-import { priceAskInput, toMinor } from '@/lib/assets';
-import { formatMoney } from '@/lib/money';
+import { priceAskInput } from '@/lib/assets';
+import { formatUnitPrice } from '@/lib/money';
 import { remaining } from '@/lib/quota';
 import { useStore } from '@/state/AppStore';
 import { useAssets } from '@/state/assets';
@@ -32,12 +32,13 @@ export function FairPriceCard({ asset }: { asset: Asset }) {
   const [result, setResult] = useState<Result | null>(null);
   const [busy, setBusy] = useState(false);
   const [failure, setFailure] = useState<Failure | null>(null);
+  if (asset.valueOverride !== undefined) return null;
   const input = priceAskInput(asset, prices, Date.now());
   if (!input) return null;
 
   const locked = state.plan !== 'premium';
   const left = remaining(state.plan, 'coachAsk', state.usage.coachAsk) ?? 0;
-  const money = (n: number) => formatMoney(toMinor(n, input.currency), input.currency);
+  const money = (n: number) => formatUnitPrice(n, input.currency);
   const unit = asset.type === 'gold' ? ` ${t('assets.alert.perOunce')}` : '';
 
   const ask = async () => {

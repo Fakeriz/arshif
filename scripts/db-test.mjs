@@ -1297,6 +1297,81 @@ await test('deterministic lock ordering pada transfer dua arah menjaga saldo tep
   eq([await balance(accS1), await balance(accS2)], [b0, j0], 'saldo kembali setelah hapus');
 });
 
+await test('Paket 3: alert rearm base_price sama, hapus alert saat ganti symbol/value_override, notif_prefs price_alert, dan hard cap 200', async () => {
+  const PA = '00000000-0000-4000-8000-0000000000a9';
+  await sys(`insert into auth.users (id, email) values ('${PA}', 'pa@example.com')`);
+  await sys(`update public.profiles set plan = 'premium', premium_until = now() + interval '30 days' where id = $1`, [PA]);
+  await sys(
+    `insert into public.asset_prices (symbol, price, currency, source)
+     values ('IDX:BBCA', 5200, 'IDR', 'uji'), ('IDX:BBRI', 4500, 'IDR', 'uji')
+     on conflict (symbol) do update set price = excluded.price, currency = excluded.currency`,
+  );
+
+  // 1. Rearming pada base_price yang sama persis (5200 -> 5206 -> trigger -> 5200 -> rearm -> 5206 -> trigger) mengirim KEDUA notifikasi.
+  const [{ id: a1 }] = await as(
+    PA,
+    `insert into public.assets (type, symbol, name, quantity, currency)
+     values ('stock_id', 'BBCA', 'BCA PA', 100, 'IDR') returning id`,
+  );
+  const [al0] = await as(PA, `insert into public.asset_price_alerts (asset_id, pct) values ($1, 0.1) returning rearm_seq, base_price::float as base`, [a1]);
+  eq([al0.rearm_seq, al0.base], [0, 5200], 'arm awal rearm_seq = 0');
+
+  await sys(`update public.asset_prices set price = 5206 where symbol = 'IDX:BBCA'`);
+  eq((await sys(`select public.price_alerts() n`))[0].n, 1, 'trigger pertama');
+  eq((await as(PA, `select count(*)::int n from public.notifications where type = 'price_alert'`))[0].n, 1, 'notif pertama terkirim');
+
+  await sys(`update public.asset_prices set price = 5200 where symbol = 'IDX:BBCA'`);
+  const [al1] = await as(PA, `update public.asset_price_alerts set pct = 0.1 where asset_id = $1 returning rearm_seq, base_price::float as base, triggered_at`, [a1]);
+  eq([al1.rearm_seq, al1.base, al1.triggered_at], [1, 5200, null], 'rearm menaikkan rearm_seq meski base_price sama');
+
+  await sys(`update public.asset_prices set price = 5206 where symbol = 'IDX:BBCA'`);
+  eq((await sys(`select public.price_alerts() n`))[0].n, 1, 'trigger kedua pada base_price sama');
+  eq((await as(PA, `select count(*)::int n from public.notifications where type = 'price_alert'`))[0].n, 2, 'kedua notifikasi terkirim tanpa dedupe drop');
+
+  // 2. notif_prefs price_alert = false menahan price_alerts().
+  await sys(`update public.asset_prices set price = 5200 where symbol = 'IDX:BBCA'`);
+  await as(PA, `update public.asset_price_alerts set pct = 0.1 where asset_id = $1`, [a1]);
+  await as(PA, `update public.profiles set notif_prefs = '{"price_alert":false}'::jsonb where id = auth.uid()`);
+  await sys(`update public.asset_prices set price = 5300 where symbol = 'IDX:BBCA'`);
+  eq((await sys(`select public.price_alerts() n`))[0].n, 0, 'notif_prefs price_alert=false menekan alert');
+  eq((await as(PA, `select count(*)::int n from public.notifications where type = 'price_alert'`))[0].n, 2, 'tidak ada notif tambahan saat dimatikan');
+  await as(PA, `update public.profiles set notif_prefs = '{"price_alert":true}'::jsonb where id = auth.uid()`);
+
+  // 3. Mengubah symbol atau mengisi value_override otomatis menghapus alert; insert alert pada aset manual override ditolak.
+  await as(PA, `update public.assets set symbol = 'BBRI' where id = $1`, [a1]);
+  eq((await sys(`select count(*)::int n from public.asset_price_alerts where asset_id = $1`, [a1]))[0].n, 0, 'ganti symbol menghapus alert basi');
+
+  await as(PA, `insert into public.asset_price_alerts (asset_id, pct) values ($1, 5)`, [a1]);
+  await as(PA, `update public.assets set value_override = 500000 where id = $1`, [a1]);
+  eq((await sys(`select count(*)::int n from public.asset_price_alerts where asset_id = $1`, [a1]))[0].n, 0, 'isi value_override menghapus alert');
+  await rejects(as(PA, `insert into public.asset_price_alerts (asset_id, pct) values ($1, 5)`, [a1]), /alert_manual_override/);
+
+  // 4. Constraint symbol pada asset_price_history menolak format titik ganda/tepi.
+  await rejects(
+    sys(`insert into public.asset_price_history (symbol, day, price, currency) values ('IDX:.BBCA', '2026-11-27', 5000, 'IDR')`),
+    /asset_price_history_symbol_check/,
+  );
+
+  // 5. Hard cap 200 aset pada pengguna Premium melempar limit_assets_max (bukan quota_assets).
+  await db.exec(`set session_replication_role = replica`);
+  try {
+    await sys(
+      `insert into public.assets (user_id, type, name, currency, value_override)
+       select $1::uuid, 'other', 'Aset Cap ' || g, 'IDR', 1000 from generate_series(1, 198) g`,
+      [PA],
+    );
+  } finally {
+    await db.exec(`set session_replication_role = origin`);
+  }
+  // Total saat ini 199 (a1 + 198): aset ke-200 masih lolos, ke-201 ditolak dengan limit_assets_max.
+  await as(PA, `insert into public.assets (type, name, currency, value_override) values ('other', 'Aset ke-200', 'IDR', 1000)`);
+  await rejects(
+    as(PA, `insert into public.assets (type, name, currency, value_override) values ('other', 'Aset ke-201', 'IDR', 1000)`),
+    /limit_assets_max/,
+  );
+  await sys(`update public.asset_prices set price = 5200 where symbol = 'IDX:BBCA'`);
+});
+
 console.log(results.join('\n'));
 console.log(`\n${results.length - failed}/${results.length} lolos`);
 process.exit(failed ? 1 : 0);

@@ -1,4 +1,5 @@
 import type { LucideIcon } from 'lucide-react-native';
+import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import { formatMoney } from '@/lib/money';
@@ -50,6 +51,7 @@ export function StatTile({
   onPress,
 }: StatTileProps) {
   const { colors } = useTheme();
+  const [footWidth, setFootWidth] = useState(0);
   const wide = layout === 'wide';
   const hasSeries = !!series && series.length > 1;
 
@@ -81,13 +83,13 @@ export function StatTile({
         </View>
 
         <CurrencyText amount={amount} currency={currency} variant={wide ? 'amountHero' : 'h2'} hidden={hidden} countUp style={!wide && fitStyle(formatMoney(amount, currency))} />
-        <View style={[styles.foot, wide && styles.footWide]}>
+        <View style={[styles.foot, wide && styles.footWide]} onLayout={(e) => setFootWidth(e.nativeEvent.layout.width)}>
           {change !== null && <TrendBadge value={change} invert={invert} suffix={changeSuffix} size={wide ? 'md' : 'sm'} />}
           {hasSeries && !hidden && (
             <Sparkline
               values={series}
               invert={invert}
-              width={wide ? 112 : 140}
+              width={wide ? 112 : footWidth > 0 ? Math.floor(footWidth) : 120}
               height={wide ? 40 : 36}
               formatValue={(v) => formatMoney(v, currency)}
             />

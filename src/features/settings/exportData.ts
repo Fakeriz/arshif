@@ -2,6 +2,7 @@ import { File, Paths } from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
 import { Platform } from 'react-native';
 
+import type { Asset } from '@/data/assets';
 import type { Account, Transaction } from '@/data/types';
 import { todayYmd } from '@/lib/dates';
 import { currencyMeta } from '@/lib/money';
@@ -27,8 +28,8 @@ export function csvCell(v: string): string {
   return /[",\n\r]/.test(safe) ? `"${safe.replace(/"/g, '""')}"` : safe;
 }
 
-/** Ekspor data (FR-SET-3): semua akun + transaksi milik pengguna yang sedang dimuat. */
-export function buildExport(format: ExportFormat, accounts: Account[], transactions: Transaction[]): string {
+/** Ekspor data (FR-SET-3): semua akun + transaksi + aset milik pengguna yang sedang dimuat. */
+export function buildExport(format: ExportFormat, accounts: Account[], transactions: Transaction[], assets: Asset[] = []): string {
   const accName = new Map(accounts.map((a) => [a.id, a.name]));
   if (format === 'JSON') {
     return JSON.stringify(
@@ -39,6 +40,11 @@ export function buildExport(format: ExportFormat, accounts: Account[], transacti
           ...t,
           amount: decimal(t.amount, t.currency),
           items: t.items?.map((i) => ({ ...i, unitPrice: decimal(i.unitPrice, t.currency), total: decimal(i.total, t.currency) })),
+        })),
+        assets: assets.map((a) => ({
+          ...a,
+          buyPrice: a.buyPrice !== undefined ? decimal(a.buyPrice, a.currency) : undefined,
+          valueOverride: a.valueOverride !== undefined ? decimal(a.valueOverride, a.currency) : undefined,
         })),
       },
       null,

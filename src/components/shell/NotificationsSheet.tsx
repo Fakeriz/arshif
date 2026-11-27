@@ -7,8 +7,7 @@ import type { NotificationType } from '@/data/types';
 import { useI18n, type TFunction } from '@/i18n';
 import type { Lang } from '@/i18n/types';
 import { dayLabel, shortDate } from '@/lib/dates';
-import { toMinor } from '@/lib/assets';
-import { formatMoney } from '@/lib/money';
+import { formatMoney, formatUnitPrice } from '@/lib/money';
 import { useStore } from '@/state/AppStore';
 import { useTheme } from '@/theme/ThemeProvider';
 import { iconBox, radius, space } from '@/theme/tokens';
@@ -33,7 +32,7 @@ function displayVars(vars: Record<string, string | number> | undefined, lang: La
   // Alert harga: harga dalam satuan utama (bukan minor) + mata uang kutipan, persen dalam angka persen (0,1 = 0,1%).
   const cur = vars.priceCurrency;
   if (typeof cur === 'string') {
-    for (const k of ['price', 'base'] as const) if (typeof vars[k] === 'number') out[k] = formatMoney(toMinor(vars[k], cur), cur);
+    for (const k of ['price', 'base'] as const) if (typeof vars[k] === 'number') out[k] = formatUnitPrice(vars[k], cur);
     if (typeof vars.change === 'number') {
       out.changeAbs = formatPct(t, lang, Math.abs(vars.change) / 100);
       out.change = `${vars.change < 0 ? '-' : '+'}${out.changeAbs}`;

@@ -87,18 +87,57 @@ export function niceCeil(max: number): number {
 
 /**
  * Titik grafik garis: nilai pertama di kiri, terakhir di kanan, dengan ruang `pad` di atas dan bawah.
- * Nilai yang sama semua digambar di tengah (garis datar).
+ * Nilai yang sama semua digambar di tengah (garis datar). `minSpan` mencegah perubahan kecil tampil seperti jurang.
  */
-export function linePoints(values: number[], width: number, height: number, pad = 8): { x: number; y: number }[] {
+export function linePoints(values: number[], width: number, height: number, pad = 8, minSpan = 0): Point[] {
   if (values.length === 0 || width <= 0 || height <= 0) return [];
   const min = Math.min(...values);
   const max = Math.max(...values);
   const span = max - min;
+  const effectiveSpan = Math.max(span, minSpan);
   const inner = Math.max(0, height - pad * 2);
+  const mid = (min + max) / 2;
+  const lo = span < minSpan ? mid - effectiveSpan / 2 : min;
   const step = values.length > 1 ? width / (values.length - 1) : 0;
   return values.map((v, i) => ({
     x: values.length > 1 ? i * step : width / 2,
-    y: span === 0 ? height / 2 : pad + inner - ((v - min) / span) * inner,
+    y: effectiveSpan === 0 ? height / 2 : pad + inner - ((v - lo) / effectiveSpan) * inner,
+  }));
+}
+
+/**
+ * Titik grafik garis proporsional terhadap jarak waktu (`dayMs`).
+ * Sumbu Y memakai `minSpan` yang sama seperti `linePoints`.
+ */
+export function datedLinePoints(
+  items: { dayMs: number; value: number }[],
+  width: number,
+  height: number,
+  padX = 4,
+  padY = 8,
+  minSpan = 0,
+): Point[] {
+  if (items.length === 0 || width <= 0 || height <= 0) return [];
+  const values = items.map((it) => it.value);
+  const min = Math.min(...values);
+  const max = Math.max(...values);
+  const span = max - min;
+  const effectiveSpan = Math.max(span, minSpan);
+  const innerY = Math.max(0, height - padY * 2);
+  const mid = (min + max) / 2;
+  const lo = span < minSpan ? mid - effectiveSpan / 2 : min;
+  const firstMs = items[0]!.dayMs;
+  const lastMs = items[items.length - 1]!.dayMs;
+  const timeSpan = lastMs - firstMs;
+  const innerW = Math.max(0, width - padX * 2);
+  return items.map((item, i) => ({
+    x:
+      items.length === 1
+        ? width / 2
+        : timeSpan <= 0
+          ? padX + (i / (items.length - 1)) * innerW
+          : padX + ((item.dayMs - firstMs) / timeSpan) * innerW,
+    y: effectiveSpan === 0 ? height / 2 : padY + innerY - ((item.value - lo) / effectiveSpan) * innerY,
   }));
 }
 

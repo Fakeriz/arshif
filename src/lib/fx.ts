@@ -1,4 +1,4 @@
-import { convertMinor, rateToScaled } from './money';
+import { convertMinor, currencyMeta, rateToScaled } from './money';
 
 /** Kurs contoh per 1 USD: hanya untuk test dan Lembar Desain. Aplikasi memakai tabel live (setUsdRates). */
 export const SAMPLE_USD_RATES: Record<string, string> = {
@@ -166,6 +166,33 @@ export function convertOn(minor: number, from: string, to: string, date: string)
 export function tryConvert(minor: number, from: string, to: string, date: string | null = null): number | null {
   try {
     return date ? convertOn(minor, from, to, date) : convert(minor, from, to);
+  } catch {
+    return null;
+  }
+}
+
+const MAJOR_SCALE = BigInt(10_000_000_000);
+
+/**
+ * Konversi nominal major (float hingga 10 desimal) langsung ke minor units mata uang tujuan tanpa pembulatan
+ * pra-FX ke sen mata uang asal. Pembulatan half-away-from-zero menggunakan BigInt agar bebas galat float.
+ */
+export function tryConvertMajor(major: number, from: string, to: string, date: string | null = null): number | null {
+  if (!Number.isFinite(major)) return null;
+  const abs = Math.abs(major);
+  if (abs > 9_000_000_000_000_000) return null;
+  try {
+    const rate = from === to ? '1' : crossRate(from, to, undefined, date);
+    const toExp = currencyMeta(to).exponent;
+    const [intPart, fracPart = ''] = abs.toFixed(10).split('.');
+    const majorScaled = BigInt(intPart) * MAJOR_SCALE + BigInt(fracPart.padEnd(10, '0'));
+    const numerator = majorScaled * rateToScaled(rate) * BigInt(10) ** BigInt(toExp);
+    const denominator = MAJOR_SCALE * SCALE;
+    let result = numerator / denominator;
+    if ((numerator % denominator) * BigInt(2) >= denominator) result += BigInt(1);
+    const out = Number(result);
+    if (!Number.isSafeInteger(out)) return null;
+    return major < 0 && out !== 0 ? -out : out;
   } catch {
     return null;
   }

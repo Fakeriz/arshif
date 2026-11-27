@@ -14,9 +14,9 @@ import { PriceChart } from '@/features/assets/PriceChart';
 import { priceLabel, quantityLabel } from '@/features/assets/view';
 import { InfoRow } from '@/features/transactions/InfoRow';
 import { useI18n } from '@/i18n';
-import { chartSymbol, gainOf, isLiveType, toMinor, unitOf, valueAsset } from '@/lib/assets';
+import { chartSymbol, gainOf, isLiveType, unitOf, valuationIn, valueAsset } from '@/lib/assets';
 import { shortDate } from '@/lib/dates';
-import { formatMoney } from '@/lib/money';
+import { formatMoney, formatUnitPrice } from '@/lib/money';
 import { useStore } from '@/state/AppStore';
 import { useAssets } from '@/state/assets';
 import { InkCard } from '@/theme/ThemeProvider';
@@ -29,8 +29,8 @@ export default function AssetDetail() {
   const router = useRouter();
   const { t, lang } = useI18n();
   const { show } = useToast();
-  const { state } = useStore();
-  const { assets, prices, status, reload, removeAsset } = useAssets();
+  const { state, reload: reloadStore, refreshing: storeRefreshing } = useStore();
+  const { assets, prices, status, refreshing: assetsRefreshing, reload, removeAsset } = useAssets();
   const [edit, setEdit] = useState(false);
   const [editKey, setEditKey] = useState(0);
   const [confirm, setConfirm] = useState(false);
@@ -71,6 +71,16 @@ export default function AssetDetail() {
 
   const now = Date.now();
   const v = valueAsset(asset, prices, now);
+  const mainVal = valuationIn(v, state.mainCurrency);
+  const heroAmount = mainVal ?? v.value;
+  const heroCurrency = mainVal !== null ? state.mainCurrency : v.currency;
+  const showQuoteCompanion = v.value !== null && mainVal !== null && v.currency !== state.mainCurrency && !state.hideBalance;
+  const quoteCompanion =
+    v.value === null
+      ? ''
+      : v.value === 0 && v.majorValue && v.majorValue > 0
+        ? formatUnitPrice(v.majorValue, v.currency)
+        : formatMoney(v.value, v.currency);
   // Untung/rugi hanya dari harga live (termasuk harga terakhir yang diketahui), tidak pernah dari harga beli itu sendiri.
   const gain = gainOf(asset, v);
   // Aset live yang semua penyedianya gagal (basi) atau belum pernah dapat harga: jelaskan dan tawarkan nilai manual.
@@ -78,19 +88,26 @@ export default function AssetDetail() {
   const chart = chartSymbol(asset);
   const unit = t(`assets.unit.${unitOf(asset.type)}`);
   const qty = quantityLabel(asset, t, lang);
+  const mask = (s: string) => (state.hideBalance ? '••••' : s);
   const rows: { label: string; value: string }[] = [];
-  if (qty) rows.push({ label: t('assets.detail.quantity'), value: qty });
-  if (asset.buyPrice !== undefined) rows.push({ label: t('assets.detail.buyPrice'), value: t('assets.detail.perUnit', { price: formatMoney(asset.buyPrice, asset.currency), unit }) });
+  if (qty) rows.push({ label: t('assets.detail.quantity'), value: mask(qty) });
+  if (asset.buyPrice !== undefined) rows.push({ label: t('assets.detail.buyPrice'), value: mask(t('assets.detail.perUnit', { price: formatMoney(asset.buyPrice, asset.currency), unit })) });
   if (v.source === 'live' && v.unitPrice !== undefined) {
-    rows.push({ label: t('assets.detail.currentPrice'), value: t('assets.detail.perUnit', { price: formatMoney(toMinor(v.unitPrice, v.currency), v.currency), unit }) });
+    rows.push({ label: t('assets.detail.currentPrice'), value: mask(t('assets.detail.perUnit', { price: formatUnitPrice(v.unitPrice, v.currency), unit })) });
     rows.push({ label: t('assets.detail.priceCurrency'), value: v.currency });
   }
-  if (gain) rows.push({ label: t('assets.detail.gain'), value: formatMoney(gain.amount, asset.currency, 'always') });
+  if (gain) rows.push({ label: t('assets.detail.gain'), value: mask(formatMoney(gain.amount, asset.currency, 'always')) });
   if (asset.buyDate) rows.push({ label: t('assets.detail.buyDate'), value: shortDate(asset.buyDate, lang) });
   if (asset.notes) rows.push({ label: t('assets.detail.notes'), value: asset.notes });
 
   return (
-    <Screen>
+    <Screen
+      onRefresh={() => {
+        void reloadStore();
+        void reload();
+      }}
+      refreshing={storeRefreshing || assetsRefreshing}
+    >
       <ScreenHeader
         title={asset.name}
         right={
@@ -108,10 +125,17 @@ export default function AssetDetail() {
           {t(`assets.type.${asset.type}`)}
           {asset.symbol && asset.type !== 'gold' ? ` · ${asset.symbol}` : ''}
         </AppText>
-        {v.value === null ? (
+        {v.value === null || heroAmount === null ? (
           <AppText variant="h2">{t('assets.priceNone')}</AppText>
         ) : (
-          <CurrencyText amount={v.value} currency={v.currency} kind="balance" variant="amountHero" hidden={state.hideBalance} />
+          <>
+            <CurrencyText amount={heroAmount} currency={heroCurrency} kind="balance" variant="amountHero" hidden={state.hideBalance} />
+            {showQuoteCompanion && (
+              <AppText variant="caption" tone="secondary" numeric>
+                {quoteCompanion}
+              </AppText>
+            )}
+          </>
         )}
         {gain?.pct != null && !state.hideBalance && <TrendBadge value={gain.pct} suffix={t('assets.detail.vsBuy')} />}
         {v.stale && <Badge label={t('assets.lastPrice')} icon={History} tone="warning" />}
@@ -140,8 +164,8 @@ export default function AssetDetail() {
           </View>
         </Card>
       )}
-      {isLiveType(asset.type) && <PriceAlertCard asset={asset} />}
-      {isLiveType(asset.type) && <FairPriceCard asset={asset} />}
+      {isLiveType(asset.type) && <PriceAlertCard key={`alert:${asset.priceKey ?? asset.id}`} asset={asset} />}
+      {isLiveType(asset.type) && <FairPriceCard key={`fair:${asset.priceKey ?? asset.id}`} asset={asset} />}
       {rows.length > 0 && (
         <Card padding="md">
           {rows.map((r, i) => (

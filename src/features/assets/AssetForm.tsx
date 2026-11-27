@@ -54,7 +54,7 @@ export function AssetForm({ visible, onClose, asset }: { visible: boolean; onClo
 
   const live = isLiveType(type);
   const unit = t(`assets.unit.${unitOf(type)}`);
-  const quantity = qtyText.trim() === '' ? null : parseQuantity(qtyText);
+  const quantity = qtyText.trim() === '' ? null : parseQuantity(qtyText, lang);
   const qtyBad = live ? quantity === null : qtyText.trim() !== '' && quantity === null;
   const symbolBad = live && type !== 'gold' && (!picked || !SYMBOL_RE.test(picked.code));
   const valueBad = !live && (value === null || value < 0);
@@ -75,7 +75,7 @@ export function AssetForm({ visible, onClose, asset }: { visible: boolean; onClo
       symbol: live ? (type === 'gold' ? GOLD_SYMBOL : picked!.code) : undefined,
       name: name.trim(),
       quantity: quantity ?? undefined,
-      buyPrice: live ? (buyPrice ?? undefined) : undefined,
+      buyPrice: live && buyPrice && buyPrice > 0 ? buyPrice : undefined,
       currency,
       buyDate: live && buyDate ? buyDate : undefined,
       valueOverride: value ?? undefined,

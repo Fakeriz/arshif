@@ -265,6 +265,11 @@ export function resolveSymbolVisual(option: SymbolOption): AssetVisualSpec {
   });
 }
 
+/** Warna alas logo transparan (`contain`): FMP & nvstly kerap memuat siluet putih untuk latar gelap. */
+export function containPlateColor(url: string): string {
+  return url.startsWith(FMP_LOGO_BASE) || url.startsWith(NVSTLY_LOGO_BASE) ? '#18181B' : '#F4F4F2';
+}
+
 /** Tentukan visual untuk baris ringkasan neraca pada tab Aset. */
 export function resolveBalanceRowVisual(kind: BalanceRowKind): AssetVisualSpec {
   return { urls: [], icon: BALANCE_ROW_ICONS[kind] };
