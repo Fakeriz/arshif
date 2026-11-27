@@ -1,6 +1,14 @@
 import { gcm } from '@noble/ciphers/aes';
 import { getRandomBytes } from 'expo-crypto';
 
+import {
+  rustFormatRecoveryKey,
+  rustOpenBackup,
+  rustParseRecoveryKey,
+  rustReadBackupHeaderBounds,
+  rustSealBackup,
+} from '../rust';
+
 /**
  * File cadangan Arshif (.arshif): "ARSHIFBK" | versi (1 byte) | panjang header (uint32 BE) | header JSON | nonce (12) | AES-256-GCM.
  * Header berisi tanggal dan opsi saja (tanpa data keuangan) dan ikut diautentikasi sebagai AAD: diubah = file ditolak.
@@ -23,12 +31,17 @@ export function newBackupKey(): Uint8Array {
 
 export function encryptBackup(key: Uint8Array, header: BackupHeader, plaintext: Uint8Array): Uint8Array {
   const head = new TextEncoder().encode(JSON.stringify(header));
+  const nonce = getRandomBytes(NONCE);
+  const rustOut = rustSealBackup(key, head, nonce, plaintext);
+  if (rustOut !== null) {
+    if (rustOut.ok) return rustOut.data;
+    throw new BackupError(rustOut.code);
+  }
   const prefix = new Uint8Array(MAGIC.length + 1 + 4 + head.length);
   prefix.set(MAGIC, 0);
   prefix[MAGIC.length] = VERSION;
   new DataView(prefix.buffer).setUint32(MAGIC.length + 1, head.length);
   prefix.set(head, MAGIC.length + 5);
-  const nonce = getRandomBytes(NONCE);
   const sealed = gcm(key, nonce, prefix).encrypt(plaintext);
   const out = new Uint8Array(prefix.length + NONCE + sealed.length);
   out.set(prefix, 0);
@@ -39,6 +52,17 @@ export function encryptBackup(key: Uint8Array, header: BackupHeader, plaintext: 
 
 /** Header tanpa kunci (untuk menampilkan tanggal cadangan sebelum pengguna memasukkan kunci). */
 export function readBackupHeader(file: Uint8Array): BackupHeader {
+  const rustBounds = rustReadBackupHeaderBounds(file);
+  if (rustBounds !== null) {
+    if (!rustBounds.ok) throw new BackupError(rustBounds.code);
+    try {
+      return JSON.parse(
+        new TextDecoder().decode(file.subarray(rustBounds.offset, rustBounds.offset + rustBounds.length)),
+      ) as BackupHeader;
+    } catch {
+      throw new BackupError('corrupt');
+    }
+  }
   if (file.length < MAGIC.length + 5 || MAGIC.some((b, i) => file[i] !== b)) throw new BackupError('not_backup');
   if (file[MAGIC.length] !== VERSION) throw new BackupError('version');
   const len = new DataView(file.buffer, file.byteOffset).getUint32(MAGIC.length + 1);
@@ -52,6 +76,11 @@ export function readBackupHeader(file: Uint8Array): BackupHeader {
 
 export function decryptBackup(key: Uint8Array, file: Uint8Array): { header: BackupHeader; plaintext: Uint8Array } {
   const header = readBackupHeader(file);
+  const rustOut = rustOpenBackup(key, file);
+  if (rustOut !== null) {
+    if (rustOut.ok) return { header, plaintext: rustOut.plaintext };
+    throw new BackupError(rustOut.code);
+  }
   const len = new DataView(file.buffer, file.byteOffset).getUint32(MAGIC.length + 1);
   const end = MAGIC.length + 5 + len;
   try {
@@ -68,6 +97,8 @@ const ALPHABET = '0123456789ABCDEFGHJKMNPQRSTVWXYZ';
 
 /** Kunci 32 byte -> 52 karakter dalam 13 grup 4 huruf ("A1B2-C3D4-..."). */
 export function formatRecoveryKey(key: Uint8Array): string {
+  const rustOut = rustFormatRecoveryKey(key);
+  if (rustOut !== null) return rustOut;
   let bits = 0;
   let value = 0;
   let out = '';
@@ -85,6 +116,8 @@ export function formatRecoveryKey(key: Uint8Array): string {
 
 /** Kebalikan formatRecoveryKey; huruf kecil, spasi, tanda hubung, O/I/L yang tertukar diterima. null = bukan kunci yang sah. */
 export function parseRecoveryKey(input: string): Uint8Array | null {
+  const rustRes = rustParseRecoveryKey(input);
+  if (rustRes.handled) return rustRes.value;
   const clean = input.toUpperCase().replace(/[\s-]/g, '').replace(/O/g, '0').replace(/[IL]/g, '1');
   if (clean.length !== 52) return null;
   const out = new Uint8Array(32);

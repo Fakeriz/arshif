@@ -75,7 +75,9 @@
     "typecheck:functions": "tsc -p supabase/functions",
     "test:db": "node scripts/db-test.mjs",
     "test:live": "node scripts/live-smoke.mjs",
-    "test:smartlog": "node --disable-warning=ExperimentalWarning scripts/smartlog-flow.mjs"
+    "test:smartlog": "node --disable-warning=ExperimentalWarning scripts/smartlog-flow.mjs",
+    "build:rust": "node scripts/build-rust.mjs",
+    "test:rust": "cargo test --manifest-path rust/arshif-core/Cargo.toml"
   },
   "private": true,
   "jest": {

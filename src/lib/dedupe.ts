@@ -1,6 +1,7 @@
 import type { Transaction } from '@/data/types';
 
 import { diffDays } from './dates';
+import { rustSimilarity } from './rust';
 
 const words = (s: string): Set<string> =>
   new Set(
@@ -16,6 +17,8 @@ const words = (s: string): Set<string> =>
 
 /** Kemiripan deskripsi 0–1 (irisan kata dibagi gabungan kata). */
 export function similarity(a: string, b: string): number {
+  const rustScore = rustSimilarity(a, b);
+  if (rustScore !== null) return rustScore;
   const wa = words(a);
   const wb = words(b);
   if (wa.size === 0 || wb.size === 0) return 0;

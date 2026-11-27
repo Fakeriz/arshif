@@ -45,6 +45,7 @@ example
 # build output
 dist-android/
 dist-ios/
+/rust/arshif-core/target/
 
 # secrets
 .env

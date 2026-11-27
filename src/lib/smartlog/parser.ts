@@ -1,4 +1,5 @@
 import { currencyMeta } from '@/lib/money';
+import { rustCyrb53Hash, rustParseSmartlogAmount } from '@/lib/rust';
 
 import { smartLogApp } from './apps';
 
@@ -64,6 +65,8 @@ type Money = { index: number; amount: number; currency: string };
  */
 export function parseAmount(raw: string, currency: string): number | null {
   const exp = currencyMeta(currency).exponent;
+  const rustRes = rustParseSmartlogAmount(raw, exp);
+  if (rustRes.handled) return rustRes.value;
   let int = raw;
   let frac = '';
   const lastDot = raw.lastIndexOf('.');
@@ -150,6 +153,8 @@ function findMerchant(text: string, afterIndex: number): string {
 
 /** Hash cyrb53: cukup untuk sidik duplikat (bukan keamanan), sama di semua platform. */
 function hash(str: string): string {
+  const rustHash = rustCyrb53Hash(str);
+  if (rustHash !== null) return rustHash;
   let h1 = 0xdeadbeef;
   let h2 = 0x41c6ce57;
   for (let i = 0; i < str.length; i++) {

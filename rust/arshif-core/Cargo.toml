@@ -1,0 +1,22 @@
+[package]
+name = "arshif-core"
+version = "0.1.0"
+edition = "2021"
+description = "Hybrid Rust core for Arshif: backup AES-256-GCM crypto, 128-bit/256-bit fixed-point FX/money math, Unicode Jaccard deduplication, and SmartLog parsing"
+license = "UNLICENSED"
+publish = false
+
+[lib]
+name = "arshif_core"
+crate-type = ["cdylib", "staticlib", "rlib"]
+
+[dependencies]
+aes-gcm = { version = "0.10", default-features = false, features = ["aes", "alloc"] }
+unicode-normalization = { version = "0.1", default-features = false }
+
+[profile.release]
+opt-level = "z"
+lto = true
+codegen-units = 1
+panic = "abort"
+strip = "symbols"

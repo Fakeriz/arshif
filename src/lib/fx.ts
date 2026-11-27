@@ -1,4 +1,5 @@
 import { convertMinor, currencyMeta, rateToScaled } from './money';
+import { rustConvertMajorFixed10, rustCrossRate } from './rust';
 
 /** Kurs contoh per 1 USD: hanya untuk test dan Lembar Desain. Aplikasi memakai tabel live (setUsdRates). */
 export const SAMPLE_USD_RATES: Record<string, string> = {
@@ -145,6 +146,9 @@ export function crossRate(from: string, to: string, table?: Record<string, strin
   const t = table ? (to === 'USD' ? '1' : table[to]) : perUsd(to, date);
   if (!f) throw new MissingRateError(from);
   if (!t) throw new MissingRateError(to);
+  const rustRes = rustCrossRate(f, t);
+  if (rustRes.status === 'ok') return rustRes.value;
+  if (rustRes.status === 'zero_denominator') throw new MissingRateError(from);
   const fScaled = rateToScaled(f);
   if (fScaled === BigInt(0)) throw new MissingRateError(from);
   return fromScaled((rateToScaled(t) * SCALE) / fScaled);
@@ -184,7 +188,11 @@ export function tryConvertMajor(major: number, from: string, to: string, date: s
   try {
     const rate = from === to ? '1' : crossRate(from, to, undefined, date);
     const toExp = currencyMeta(to).exponent;
-    const [intPart, fracPart = ''] = abs.toFixed(10).split('.');
+    const fixed10 = abs.toFixed(10);
+    const rustRes = rustConvertMajorFixed10(fixed10, major < 0, toExp, rate);
+    if (rustRes.status === 'ok') return rustRes.value;
+    if (rustRes.status === 'out_of_range') return null;
+    const [intPart, fracPart = ''] = fixed10.split('.');
     const majorScaled = BigInt(intPart) * MAJOR_SCALE + BigInt(fracPart.padEnd(10, '0'));
     const numerator = majorScaled * rateToScaled(rate) * BigInt(10) ** BigInt(toExp);
     const denominator = MAJOR_SCALE * SCALE;

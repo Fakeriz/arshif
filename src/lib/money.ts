@@ -1,3 +1,5 @@
+import { rustConvertMinor, rustParseAmountInput, rustRateToScaled } from './rust';
+
 /**
  * Helper uang Arshif. Nominal SELALU integer unit terkecil (minor units) — tidak pernah float.
  * Format deterministik per mata uang (tidak bergantung ICU perangkat):
@@ -173,6 +175,8 @@ export function formatCompact(minor: number, code: string): string {
  */
 export function parseAmountInput(text: string, code: string): number | null {
   const m = currencyMeta(code);
+  const rustRes = rustParseAmountInput(text, m.exponent);
+  if (rustRes.handled) return rustRes.value;
   const cleaned = text.replace(/[^\d.,]/g, '');
   if (!/\d/.test(cleaned)) return null;
   let intDigits = cleaned;
@@ -215,6 +219,9 @@ const RATE_SCALE = BigInt(1_000_000_000_000);
 
 /** Ubah string desimal kurs ("15873.4521") ke BigInt berskala 1e12 tanpa float. */
 export function rateToScaled(rate: string): bigint {
+  const rustRes = rustRateToScaled(rate);
+  if (rustRes.status === 'ok') return rustRes.value;
+  if (rustRes.status === 'invalid') throw new Error(`Kurs tidak valid: ${rate}`);
   const match = /^(\d+)(?:\.(\d{1,12}))?\d*$/.exec(rate.trim());
   if (!match) throw new Error(`Kurs tidak valid: ${rate}`);
   const frac = (match[2] ?? '').padEnd(12, '0');
@@ -233,6 +240,11 @@ export function convertMinor(minor: number, from: string, to: string, rate: stri
   assertMinor(minor);
   const fromExp = currencyMeta(from).exponent;
   const toExp = currencyMeta(to).exponent;
+  const rustRes = rustConvertMinor(minor, fromExp, toExp, rate);
+  if (rustRes.status === 'ok') return rustRes.value;
+  if (rustRes.status === 'invalid_rate') throw new Error(`Kurs tidak valid: ${rate}`);
+  if (rustRes.status === 'out_of_range') throw new Error('Hasil konversi di luar batas aman');
+  if (rustRes.status === 'unsafe_minor') throw new Error(`Nominal harus integer minor units, dapat: ${minor}`);
   const negative = minor < 0;
   const numerator = BigInt(Math.abs(minor)) * rateToScaled(rate) * pow10(toExp);
   const denominator = pow10(fromExp) * RATE_SCALE;
@@ -240,7 +252,7 @@ export function convertMinor(minor: number, from: string, to: string, rate: stri
   if ((numerator % denominator) * BigInt(2) >= denominator) result += BigInt(1);
   const out = Number(result);
   if (!Number.isSafeInteger(out)) throw new Error('Hasil konversi di luar batas aman');
-  return negative ? -out : out;
+  return negative && out !== 0 ? -out : out;
 }
 
 function assertMinor(minor: number): void {

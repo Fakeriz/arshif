@@ -1,6 +1,7 @@
 import type { Account, Transaction } from '@/data/types';
 import { todayYmd } from '@/lib/dates';
 import { tryConvert } from '@/lib/fx';
+import { rustReconcileBalances } from '@/lib/rust';
 import { accountBalance } from '@/lib/transactions';
 
 import type { ImportResult } from '../../supabase/functions/_shared/contracts';
@@ -49,16 +50,36 @@ export function reconcileStatement(
   const existingAsOf = existing.filter((tx) => tx.date <= asOfDate);
   const baseBalance = accountBalance(account, existingAsOf);
 
+  const deltas: number[] = [];
   let selectedDelta = 0;
+  let allIntegerDeltas = Number.isInteger(baseBalance);
   for (const r of selectedRows) {
     if (r.date > asOfDate) continue;
     const amt = r.currency === account.currency ? r.amount : tryConvert(r.amount, r.currency, account.currency);
     if (amt === null || !Number.isFinite(amt)) return null;
-    selectedDelta += r.type === 'income' ? amt : -amt;
+    const signed = r.type === 'income' ? amt : -amt;
+    deltas.push(signed);
+    selectedDelta += signed;
+    if (!Number.isInteger(signed)) allIntegerDeltas = false;
+  }
+
+  const closingBalance = Math.trunc(result.closingBalance);
+  if (allIntegerDeltas) {
+    const rustRes = rustReconcileBalances(baseBalance, closingBalance, deltas);
+    if (rustRes.handled) {
+      if (rustRes.value === null) return null;
+      return {
+        closingBalance,
+        projectedBalance: rustRes.value.projectedBalance,
+        difference: rustRes.value.difference,
+        currency: account.currency,
+        asOfDate,
+        matched: rustRes.value.difference === 0,
+      };
+    }
   }
 
   const projectedBalance = Math.trunc(baseBalance + selectedDelta);
-  const closingBalance = Math.trunc(result.closingBalance);
   const difference = closingBalance - projectedBalance;
   if (!Number.isSafeInteger(projectedBalance) || !Number.isSafeInteger(difference)) return null;
 
