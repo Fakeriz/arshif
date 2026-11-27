@@ -14,7 +14,7 @@ export function tvCandidates(key: string): string[] {
     case 'US':
       return [code];
     case 'CRYPTO':
-      return [`BINANCE:${code}USDT`];
+      return code === 'TON' ? ['KRAKEN:TONUSDT', 'BINANCE:TONUSDT'] : [`BINANCE:${code}USDT`];
     case 'GOLD':
       return code === 'XAU' ? ['OANDA:XAUUSD', 'TVC:GOLD'] : [];
     default:

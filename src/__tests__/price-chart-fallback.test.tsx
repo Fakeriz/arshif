@@ -34,10 +34,12 @@ const prices: Record<string, AssetPrice> = { 'IDX:BBCA': { symbol: 'IDX:BBCA', p
 
 it('route detail aset bisa dimuat walau modul WebView native tidak ada (Expo Go)', () => {
   // require di dalam tes: kalau PriceChart masih mengimpor react-native-webview secara statis, baris ini melempar.
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
   expect(() => require('@/app/aset/[id]')).not.toThrow();
 });
 
 it('tanpa modul WebView: kartu cadangan, tombol membuka chart TradingView di browser, angka harga tetap tampil', async () => {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
   const AssetDetail = require('@/app/aset/[id]').default as () => React.JSX.Element;
   mockParams = { id: 'bbca' };
   await act(async () => {
@@ -69,4 +71,58 @@ it('tanpa modul WebView: kartu cadangan, tombol membuka chart TradingView di bro
     fireEvent.press(screen.getByLabelText('Lihat chart di browser'));
   });
   expect(WebBrowser.openBrowserAsync).toHaveBeenCalledWith('https://www.tradingview.com/chart/?symbol=IDX%3ABBCA');
+});
+
+it('tanpa modul WebView (Expo Go) namun data pasar tersedia: tetap merender grafik SVG live dan pemilih rentang', async () => {
+  const realFetch = globalThis.fetch;
+  globalThis.fetch = jest.fn(async () => ({
+    ok: true,
+    json: async () => ({
+      chart: {
+        result: [
+          {
+            meta: { currency: 'IDR', exchangeName: 'JKT' },
+            timestamp: [1760000000, 1761000000, 1762000000],
+            indicators: { quote: [{ close: [4850, 5050, 5200] }] },
+          },
+        ],
+      },
+    }),
+  })) as unknown as typeof fetch;
+
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const AssetDetail = require('@/app/aset/[id]').default as () => React.JSX.Element;
+    mockParams = { id: 'bbca' };
+    await act(async () => {
+      render(
+        <SafeAreaProvider initialMetrics={{ frame: { x: 0, y: 0, width: 390, height: 844 }, insets: { top: 0, left: 0, right: 0, bottom: 0 } }}>
+          <I18nProvider initialLang="id">
+            <ThemeProvider initialMode="dark">
+              <ToastProvider>
+                <AppStoreProvider preset={sampleState()}>
+                  <PlanningProvider preset={{ goals: [], deposits: [], bills: [], debts: [], payments: [], subscriptions: [], splits: [] }}>
+                    <AssetsProvider preset={{ assets: [bbca], prices, snapshots: [] }}>
+                      <PaywallProvider>
+                        <AssetDetail />
+                      </PaywallProvider>
+                    </AssetsProvider>
+                  </PlanningProvider>
+                </AppStoreProvider>
+              </ToastProvider>
+            </ThemeProvider>
+          </I18nProvider>
+        </SafeAreaProvider>,
+      );
+    });
+    const fallback = screen.getByTestId('fallback-price-chart');
+    await act(async () => {
+      fireEvent(fallback, 'layout', { nativeEvent: { layout: { width: 320, height: 180 } } });
+    });
+    expect(screen.getByText('Rp 4.850 - Rp 5.200')).toBeTruthy();
+    expect(screen.getByLabelText('1B')).toBeTruthy();
+    expect(screen.getByLabelText('Lihat chart di browser')).toBeTruthy();
+  } finally {
+    globalThis.fetch = realFetch;
+  }
 });

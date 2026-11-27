@@ -15,6 +15,23 @@ export const WIDGET_PREFLIGHT_URL = 'https://s3.tradingview.com/external-embeddi
 export type ChartRange = '1M' | '3M' | '12M' | '60M' | 'ALL';
 export const CHART_RANGES: readonly ChartRange[] = ['1M', '3M', '12M', '60M', 'ALL'];
 
+export type ChartDisplayMode = 'tv' | 'builtin';
+
+let preferredMode: ChartDisplayMode = 'tv';
+
+/** Mode tampilan grafik pilihan pengguna selama sesi aktif ('tv' bawaan, atau 'builtin' bila jaringan memblokir widget). */
+export function getPreferredChartMode(): ChartDisplayMode {
+  return preferredMode;
+}
+
+export function setPreferredChartMode(next: ChartDisplayMode): void {
+  preferredMode = next;
+}
+
+export function resetPreferredChartMode(): void {
+  preferredMode = 'tv';
+}
+
 // Rentang sisi kiri WAJIB huruf kecil ("1m", "3m", "12m", "60m", "all"), jika tidak TradingView mengosongkan `btns = []`.
 // Resolusi harian/mingguan/bulanan dipilih agar kompatibel dengan IDX (tidak mendukung intraday gratis).
 export const DATE_RANGES = ['1m|1D', '3m|1D', '12m|1D', '60m|1W', 'all|1M'] as const;
@@ -62,14 +79,18 @@ export function chartConfig(symbol: string, theme: ChartTheme, lang: Lang, range
   };
 }
 
+/** URL preflight ke origin iframe widget langsung (www.tradingview-widget.com), sama dengan target iframe web. */
+export function chartPreflightUrl(lang: Lang): string {
+  return `https://www.tradingview-widget.com/embed-widget/symbol-overview/?locale=${QUERY_LOCALES[lang]}`;
+}
+
 /**
  * URL iframe langsung untuk web (`www.tradingview-widget.com`). Menghindari `srcDoc` + sandbox tanpa `allow-same-origin`
  * yang memicu SecurityError saat widget membaca `document.cookie`, sekaligus tetap terisolasi cross-origin dari sesi Arshif.
  */
 export function chartWidgetUrl(symbol: string, theme: ChartTheme, lang: Lang, range: ChartRange = '3M'): string {
-  const queryLocale = QUERY_LOCALES[lang];
   const hash = encodeURIComponent(JSON.stringify(chartConfig(symbol, theme, lang, range)));
-  return `https://www.tradingview-widget.com/embed-widget/symbol-overview/?locale=${queryLocale}#${hash}`;
+  return `${chartPreflightUrl(lang)}#${hash}`;
 }
 
 /**
@@ -78,12 +99,13 @@ export function chartWidgetUrl(symbol: string, theme: ChartTheme, lang: Lang, ra
  */
 export function chartHtml(symbol: string, theme: ChartTheme, lang: Lang, range: ChartRange = '3M'): string {
   const config = chartConfig(symbol, theme, lang, range);
+  const preflight = chartPreflightUrl(lang);
   // "<" di-escape supaya isi JSON tidak bisa menutup tag <script> (simbol sudah dibatasi SYMBOL_RE, ini lapisan kedua).
   const json = JSON.stringify(config).replace(/</g, '\\u003c');
   return `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<style>html,body{margin:0;height:100%;background:${theme.background}}.tradingview-widget-container,.tradingview-widget-container__widget{height:100%;width:100%}</style>
+<style>html,body{margin:0;padding:0;height:100%;overflow:hidden;background:${theme.background}}.tradingview-widget-container,.tradingview-widget-container__widget{height:100%;width:100%}iframe{display:block;border:0}</style>
+<script>var tvSent=false,tvLoaded=false;function tvFail(){if(tvSent)return;tvSent=true;var m='${CHART_ERROR_MESSAGE}';if(window.ReactNativeWebView){window.ReactNativeWebView.postMessage(m)}else{parent.postMessage(m,'*')}}if(typeof fetch==='function'){fetch('${preflight}',{mode:'no-cors',cache:'no-store'}).catch(tvFail)}if(typeof MutationObserver==='function'){new MutationObserver(function(){var f=document.querySelector('iframe');if(f&&!f.__tv){f.__tv=true;f.addEventListener('load',function(){tvLoaded=true});f.addEventListener('error',tvFail)}}).observe(document.documentElement,{childList:true,subtree:true})}setTimeout(function(){if(!tvLoaded)tvFail()},10000);</script>
 </head><body><div class="tradingview-widget-container"><div class="tradingview-widget-container__widget"></div>
-<script>function tvFail(){var m='${CHART_ERROR_MESSAGE}';if(window.ReactNativeWebView){window.ReactNativeWebView.postMessage(m)}else{parent.postMessage(m,'*')}}</script>
 <script type="text/javascript" src="${WIDGET_PREFLIGHT_URL}" async onerror="tvFail()">${json}</script>
 </div></body></html>`;
 }

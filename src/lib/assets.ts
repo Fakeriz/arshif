@@ -33,15 +33,21 @@ export function priceKeyOf(type: AssetType, symbol: string | undefined): string 
   return prefix && symbol ? `${prefix}:${symbol}` : undefined;
 }
 
+const CRYPTO_TV_EXCHANGE: Partial<Record<string, string>> = { TON: 'KRAKEN' };
+
 /**
  * Simbol grafik TradingView (Live Market v2 §4): IDX:<KODE>, ticker US apa adanya (TradingView memilih bursa utama),
- * kripto BINANCE:<KODE>USDT, emas OANDA:XAUUSD. Stablecoin tidak punya grafik bermakna. Hanya tampilan, bukan harga.
+ * kripto BINANCE:<KODE>USDT (TON memakai KRAKEN:TONUSDT karena pasangan Binance tidak tersedia di TradingView),
+ * emas OANDA:XAUUSD. Stablecoin tidak punya grafik bermakna. Hanya tampilan, bukan harga.
  */
 export function chartSymbol(a: Pick<Asset, 'type' | 'symbol'>): string | null {
   if (!a.symbol) return null;
   if (a.type === 'stock_id') return `IDX:${a.symbol}`;
   if (a.type === 'stock_us') return a.symbol;
-  if (a.type === 'crypto') return a.symbol === 'USDT' || a.symbol === 'USDC' ? null : `BINANCE:${a.symbol}USDT`;
+  if (a.type === 'crypto') {
+    if (a.symbol === 'USDT' || a.symbol === 'USDC') return null;
+    return `${CRYPTO_TV_EXCHANGE[a.symbol] ?? 'BINANCE'}:${a.symbol}USDT`;
+  }
   if (a.type === 'gold') return 'OANDA:XAUUSD';
   return null;
 }

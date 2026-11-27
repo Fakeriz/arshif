@@ -313,6 +313,26 @@ export const SymbolHit = z.object({ code: z.string().regex(/^[A-Z0-9.]{1,15}$/),
 export const SymbolSearchResponse = z.object({ results: z.array(SymbolHit).max(10) });
 export type SymbolHit = z.infer<typeof SymbolHit>;
 
+// ------------------------------------------------------------------ asset-chart (deret historis cadangan grafik aset)
+export const AssetChartRange = z.enum(['1M', '3M', '12M', '60M', 'ALL']);
+export type AssetChartRange = z.infer<typeof AssetChartRange>;
+export const AssetChartMarket = z.enum(['IDX', 'US', 'CRYPTO', 'GOLD']);
+export type AssetChartMarket = z.infer<typeof AssetChartMarket>;
+export const AssetChartRequest = z.object({
+  market: AssetChartMarket,
+  code: z.string().regex(/^(?=.{1,15}$)[A-Z0-9]+(\.[A-Z0-9]+)*$/),
+  range: AssetChartRange,
+});
+export const AssetChartPoint = z.object({
+  dayMs: z.number().finite().positive(),
+  value: z.number().finite().positive().max(1e15),
+});
+export const AssetChartResponse = z.object({
+  currency: Currency,
+  points: z.array(AssetChartPoint).min(2).max(400),
+});
+export type AssetChartResponse = z.infer<typeof AssetChartResponse>;
+
 // ------------------------------------------------------------------ health (/health?check=live|ready)
 export const HealthResponse = z.object({
   ok: z.boolean(),
@@ -339,6 +359,7 @@ export const FUNCTIONS = {
   adminUser: 'admin-user',
   places: 'places',
   symbolSearch: 'symbol-search',
+  assetChart: 'asset-chart',
   coachPrice: 'coach-price',
   health: 'health',
 } as const;
