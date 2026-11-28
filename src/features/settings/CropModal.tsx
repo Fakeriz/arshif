@@ -6,11 +6,12 @@ import Svg, { Path } from 'react-native-svg';
 
 import { AppText, Button, Slider } from '@/components/ui';
 import { useT } from '@/i18n';
+import { CARD_RATIO } from '@/lib/cardFace';
 import { clampOffset, cropRect, displayScale, ZOOM_MAX, type Rect, type Size } from '@/lib/crop';
 import { useTheme } from '@/theme/ThemeProvider';
 import { layout, space } from '@/theme/tokens';
 
-export type CropShape = 'circle' | 'wide';
+export type CropShape = 'circle' | 'wide' | 'card';
 
 const MARGIN = 32;
 
@@ -29,7 +30,12 @@ export function CropModal({ image, shape, onCancel, onConfirm }: { image: { uri:
   const { colors } = useTheme();
   const { width: screenW } = useWindowDimensions();
   const areaW = Math.min(screenW, layout.maxContentWidth) - MARGIN;
-  const frame: Size = shape === 'circle' ? { w: Math.min(areaW - 48, 320), h: Math.min(areaW - 48, 320) } : { w: areaW, h: Math.round(areaW / 2) };
+  const frame: Size =
+    shape === 'circle'
+      ? { w: Math.min(areaW - 48, 320), h: Math.min(areaW - 48, 320) }
+      : shape === 'card'
+        ? { w: areaW, h: Math.round(areaW / CARD_RATIO) }
+        : { w: areaW, h: Math.round(areaW / 2) };
   const areaH = frame.h + (shape === 'circle' ? 48 : 120);
   const [view, setView] = useState({ zoom: 1, tx: 0, ty: 0 });
   // Handler gestur membaca keadaan lewat ref (bukan closure render lama); ref hanya ditulis di handler/efek.
@@ -69,17 +75,20 @@ export function CropModal({ image, shape, onCancel, onConfirm }: { image: { uri:
   const fx = (areaW - frame.w) / 2;
   const fy = (areaH - frame.h) / 2;
   const r = frame.w / 2;
+  const cr = Math.round(frame.w * 0.05);
   const hole =
     shape === 'circle'
       ? `M${fx},${fy + r} a${r},${r} 0 1,0 ${frame.w},0 a${r},${r} 0 1,0 ${-frame.w},0 Z`
-      : `M${fx},${fy} h${frame.w} v${frame.h} h${-frame.w} Z`;
+      : shape === 'card'
+        ? `M${fx + cr},${fy} h${frame.w - 2 * cr} a${cr},${cr} 0 0,1 ${cr},${cr} v${frame.h - 2 * cr} a${cr},${cr} 0 0,1 ${-cr},${cr} h${-(frame.w - 2 * cr)} a${cr},${cr} 0 0,1 ${-cr},${-cr} v${-(frame.h - 2 * cr)} a${cr},${cr} 0 0,1 ${cr},${-cr} Z`
+        : `M${fx},${fy} h${frame.w} v${frame.h} h${-frame.w} Z`;
 
   return (
     <Modal visible animationType="slide" onRequestClose={onCancel} statusBarTranslucent>
       <SafeAreaView style={[styles.root, { backgroundColor: colors.bg }]}>
         <View style={styles.head}>
           <AppText variant="h2" accessibilityRole="header">
-            {shape === 'circle' ? t('settings.profile.cropPhoto') : t('settings.profile.cropCover')}
+            {shape === 'circle' ? t('settings.profile.cropPhoto') : shape === 'card' ? t('acct.pattern.cropTitle') : t('settings.profile.cropCover')}
           </AppText>
           <AppText variant="caption" tone="secondary" style={styles.center}>
             {t('settings.profile.cropHint')}

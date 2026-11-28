@@ -1387,6 +1387,43 @@ await test('Paket 3: alert rearm base_price sama, hapus alert saat ganti symbol/
   await sys(`update public.asset_prices set price = 5200 where symbol = 'IDX:BBCA'`);
 });
 
+await test('emoney & card_style: jenis emoney, saldo, kredit dibersihkan, finish material, dan kepemilikan foto kartu', async () => {
+  const EM = '00000000-0000-4000-8000-0000000000e9';
+  await sys(`insert into auth.users (id, email) values ('${EM}', 'em@example.com')`);
+  // Akun e-money (Flazz & Mandiri) dengan credit_limit/annual_fee -> dibersihkan menjadi null oleh accounts_check_credit.
+  const [flazz] = await as(
+    EM,
+    `insert into public.accounts (bank, name, type, currency, opening_balance, credit_limit, annual_fee)
+     values ('flazz', 'Flazz', 'emoney', 'IDR', 250000, 1000000, 100000)
+     returning id, balance, credit_limit, annual_fee`,
+  );
+  eq([Number(flazz.balance), flazz.credit_limit, flazz.annual_fee], [250000, null, null], 'flazz emoney awal & credit dibersihkan');
+
+  const [mandiriEm] = await as(
+    EM,
+    `insert into public.accounts (bank, name, type, currency, opening_balance)
+     values ('mandiri', 'Mandiri', 'emoney', 'IDR', 100000) returning id, balance`,
+  );
+  eq(Number(mandiriEm.balance), 100000, 'mandiri emoney');
+
+  await as(EM, `insert into public.transactions (type, merchant, category_key, account_id, date, amount, currency) values ('expense', 'Tol Dalam Kota', 'transport', $1, '2026-11-28', 11000, 'IDR')`, [flazz.id]);
+  eq(await balance(flazz.id), 239000, 'saldo flazz berkurang setelah transaksi tol');
+
+  // card_style valid: motif baru, material finish, dan foto kartu milik sendiri.
+  for (const style of ['kawung', 'obsidian:guilloche', 'titanium:rings', `photo:${EM}/card1.jpg`]) {
+    await as(EM, `update public.accounts set card_style = $1 where id = $2`, [style, flazz.id]);
+    eq((await as(EM, `select card_style from public.accounts where id = $1`, [flazz.id]))[0].card_style, style, `card_style ${style}`);
+  }
+
+  // Foto milik pengguna lain ditolak trigger kepemilikan.
+  await rejects(as(EM, `update public.accounts set card_style = $1 where id = $2`, [`photo:${B}/card1.jpg`, flazz.id]), /card_photo_not_owned/);
+
+  // Format tidak valid / path traversal ditolak (trigger kepemilikan atau check constraint).
+  await rejects(as(EM, `update public.accounts set card_style = 'photo:../evil.jpg' where id = $1`, [flazz.id]), /card_photo_not_owned|accounts_card_style_check/);
+  await rejects(as(EM, `update public.accounts set card_style = $1 where id = $2`, [`photo:${EM}/../evil.jpg`, flazz.id]), /accounts_card_style_check/);
+  await rejects(as(EM, `update public.accounts set card_style = 'bad:style:here' where id = $1`, [flazz.id]), /accounts_card_style_check/);
+});
+
 console.log(results.join('\n'));
 console.log(`\n${results.length - failed}/${results.length} lolos`);
 process.exit(failed ? 1 : 0);

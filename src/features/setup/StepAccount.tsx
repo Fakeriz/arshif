@@ -10,12 +10,12 @@ import { space } from '@/theme/tokens';
 import { BankGrid } from './BankGrid';
 import type { SetupDraft } from './draft';
 
-const TYPES: AccountType[] = ['tabungan', 'cash', 'ewallet', 'kartu_kredit', 'paylater'];
+const TYPES: AccountType[] = ['tabungan', 'cash', 'ewallet', 'emoney', 'kartu_kredit', 'paylater'];
 
-type Props = { value: SetupDraft['account']; mainCurrency: string; nameError: boolean; onChange: (next: SetupDraft['account']) => void };
+type Props = { value: SetupDraft['account']; mainCurrency: string; nameError: boolean; previewUri?: string | null; onChange: (next: SetupDraft['account']) => void };
 
 /** Akun pertama: nama, jenis, desain kartu bank, mata uang, saldo sekarang. */
-export function StepAccount({ value, mainCurrency, nameError, onChange }: Props) {
+export function StepAccount({ value, mainCurrency, nameError, previewUri, onChange }: Props) {
   const t = useT();
   const set = (patch: Partial<SetupDraft['account']>) => onChange({ ...value, ...patch });
   const currencies = [...new Set([mainCurrency, ...PINNED_CURRENCIES])];
@@ -23,7 +23,7 @@ export function StepAccount({ value, mainCurrency, nameError, onChange }: Props)
   return (
     <>
       <View style={styles.preview}>
-        <BankCard bank={value.bank} accountType={t(`domain.accountType.${value.type}`)} type={value.type} cardStyle={value.cardStyle} balance={credit ? -(value.opening ?? 0) : (value.opening ?? 0)} currency={value.currency} />
+        <BankCard bank={value.bank} accountType={t(`domain.accountType.${value.type}`)} type={value.type} cardStyle={value.cardStyle} previewUri={previewUri} balance={credit ? -(value.opening ?? 0) : (value.opening ?? 0)} currency={value.currency} />
       </View>
       <Card>
         <View style={styles.block}>

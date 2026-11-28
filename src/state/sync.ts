@@ -1,5 +1,7 @@
 import * as api from '@/data/remote/api';
+import { discardPrivate } from '@/data/remote/upload';
 import type { Transaction } from '@/data/types';
+import { cardPhotoFile } from '@/lib/cardFace';
 import { convert, MissingRateError, withUserRates } from '@/lib/fx';
 
 import { keepReimbursement, type Action, type AppState } from './reducer';
@@ -87,9 +89,13 @@ export async function syncAction(action: Action, state: AppState, userId: string
     case 'account/setBank':
       await api.updateAccountBank(action.id, action.bank);
       return [];
-    case 'account/setCardStyle':
+    case 'account/setCardStyle': {
+      const prev = cardPhotoFile(state.accounts.find((a) => a.id === action.id)?.cardStyle);
+      const next = cardPhotoFile(action.cardStyle);
       await api.updateAccountCardStyle(action.id, action.cardStyle);
+      if (prev && prev !== next) await discardPrivate('avatars', prev);
       return [];
+    }
     case 'account/setCardDetails':
       await api.updateAccountCardDetails(action.id, action.patch);
       return [];

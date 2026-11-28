@@ -4,17 +4,20 @@ import { StyleSheet, useWindowDimensions, View } from 'react-native';
 
 import { Screen } from '@/components/shell/Screen';
 import { GridCell, GridRow } from '@/components/shell/DesktopGrid';
+import { afterSheetClose } from '@/components/shell/HeaderActions';
 import { ScreenHeader } from '@/components/shell/ScreenHeader';
 import { AppText, Badge, BankCard, Button, Card, EmptyState, ListCard, ListItem, ProgressBar, Skeleton, useToast } from '@/components/ui';
-import { CardDetailsCard, PatternSheet } from '@/features/accounts/CardFaceSettings';
-import { patternFor } from '@/lib/cardFace';
+import { CardDetailsCard, cardStyleSummary, PatternSheet } from '@/features/accounts/CardFaceSettings';
 import { AnnualFeeSheet, CreditLimitSheet } from '@/features/accounts/sheets';
 import { UtilizationBlock } from '@/features/accounts/UtilizationBlock';
+import { CameraDeniedError, cropCardImage, pickImage, saveAccountCardPhoto } from '@/features/settings/avatar';
 import { BankPickerSheet } from '@/features/settings/BankPickerSheet';
+import { CropModal } from '@/features/settings/CropModal';
 import { useDesktop } from '@/hooks/useDesktop';
 import { bankName, useI18n } from '@/i18n';
 import { CALENDARS } from '@/i18n/calendar';
 import { feeStatus, isCreditType, markFeePaid, unmarkFeePaid } from '@/lib/credit';
+import type { Rect, Size } from '@/lib/crop';
 import { parseYMD, shortDate, todayYmd } from '@/lib/dates';
 import { formatMoney } from '@/lib/money';
 import type { Account, AnnualFee } from '@/data/types';
@@ -33,10 +36,13 @@ export default function AccountDetail() {
   const { t, lang } = useI18n();
   const load = useLoadState();
   const retry = useRetry();
-  const { state, dispatch } = useStore();
+  const { state, dispatch, userId, applyLocal } = useStore();
   const { accounts, transactions } = useLedger();
   const utilization = useCreditUtilization();
   const [sheet, setSheet] = useState<Sheet>(null);
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  const [photoBusy, setPhotoBusy] = useState(false);
+  const [cropping, setCropping] = useState<({ uri: string } & Size) | null>(null);
   const { show } = useToast();
   const { width: windowW } = useWindowDimensions();
   const desktop = useDesktop();
@@ -72,6 +78,51 @@ export default function AccountDetail() {
   const patch = (p: Partial<Pick<Account, 'creditLimit' | 'limitGroupId' | 'annualFee'>>) =>
     dispatch({ type: 'account/credit', id: account.id, patch: { creditLimit: account.creditLimit, limitGroupId: account.limitGroupId, annualFee: account.annualFee, ...p } });
 
+  const photoFailed = () => show({ tone: 'error', title: t('acct.pattern.photoFailed'), message: t('settings.profile.tryAgain') });
+
+  const startPickPhoto = () => {
+    setSheet(null);
+    afterSheetClose(() => {
+      if (!userId) return;
+      void pickImage('library')
+        .then((picked) => {
+          if (picked) setCropping(picked);
+        })
+        .catch((e) => {
+          if (e instanceof CameraDeniedError) {
+            show({ tone: 'warning', title: t('settings.profile.cameraDenied'), message: t('settings.profile.cameraDeniedMessage') });
+          } else {
+            photoFailed();
+          }
+        });
+    });
+  };
+
+  const uploadCardPhoto = async (source: string, rect: Rect) => {
+    setCropping(null);
+    if (!userId) return;
+    setPhotoBusy(true);
+    let uri: string;
+    try {
+      uri = await cropCardImage(source, rect);
+    } catch {
+      setPhotoBusy(false);
+      photoFailed();
+      return;
+    }
+    setPhotoPreview(uri);
+    try {
+      const nextStyle = await saveAccountCardPhoto(userId, account.id, uri, account.cardStyle);
+      applyLocal({ type: 'account/setCardStyle', id: account.id, cardStyle: nextStyle });
+      show({ tone: 'success', title: t('acct.pattern.saved') });
+    } catch {
+      photoFailed();
+    } finally {
+      setPhotoPreview(null);
+      setPhotoBusy(false);
+    }
+  };
+
   const cardSide = (
     <>
       <View style={styles.preview}>
@@ -86,6 +137,7 @@ export default function AccountDetail() {
           currency={account.currency}
           hidden={state.hideBalance}
           cardStyle={account.cardStyle}
+          previewUri={photoPreview}
           width={Math.min(windowW, layout.maxContentWidth) - space.lg * 2}
         />
       </View>
@@ -94,7 +146,7 @@ export default function AccountDetail() {
         <ListItem title={t('acct.detail.type')} trailing={t(`domain.accountType.${account.type}`)} divider />
         <ListItem title={t('acct.detail.currency')} trailing={account.currency} divider />
         <ListItem title={t('acct.detail.design')} subtitle={bankName(t, account.bank)} chevron divider onPress={() => setSheet('bank')} />
-        <ListItem title={t('acct.pattern.row')} subtitle={t(`acct.pattern.${patternFor(account.type, account.cardStyle)}`)} chevron onPress={() => setSheet('style')} />
+        <ListItem title={t('acct.pattern.row')} subtitle={cardStyleSummary(t, account.type, account.cardStyle, Boolean(photoPreview))} chevron onPress={() => setSheet('style')} />
       </ListCard>
     </>
   );
@@ -171,13 +223,29 @@ export default function AccountDetail() {
         currency={account.currency}
         balance={account.balance}
         current={account.cardStyle}
+        previewUri={photoPreview}
+        busy={photoBusy}
         onClose={() => setSheet(null)}
+        onPickPhoto={startPickPhoto}
+        onRemovePhoto={() => {
+          dispatch({ type: 'account/setCardStyle', id: account.id, cardStyle: null });
+          setSheet(null);
+          show({ tone: 'success', title: t('acct.pattern.saved') });
+        }}
         onSelect={(cardStyle) => {
           dispatch({ type: 'account/setCardStyle', id: account.id, cardStyle });
           setSheet(null);
           show({ tone: 'success', title: t('acct.pattern.saved') });
         }}
       />
+      {cropping ? (
+        <CropModal
+          image={cropping}
+          shape="card"
+          onCancel={() => setCropping(null)}
+          onConfirm={(rect) => void uploadCardPhoto(cropping.uri, rect)}
+        />
+      ) : null}
       <BankPickerSheet
         account={sheet === 'bank' ? account : null}
         balance={account.balance}

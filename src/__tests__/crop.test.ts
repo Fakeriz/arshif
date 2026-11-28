@@ -19,4 +19,14 @@ describe('crop', () => {
     expect(cropRect(img, square, 1, -999, 0).originX).toBe(1000);
     expect(clampOffset(img, square, 1, 999, 999)).toEqual({ tx: 50, ty: 0 });
   });
+  it('bingkai kartu ISO 1.586:1 memotong gambar 1536x969 dengan rapi', () => {
+    const cardImg = { w: 1536, h: 969 };
+    const cardFrame = { w: 358, h: Math.round(358 / 1.586) };
+    const rect = cropRect(cardImg, cardFrame, 1, 0, 0);
+    expect(rect.originX).toBeGreaterThanOrEqual(0);
+    expect(rect.originY).toBeGreaterThanOrEqual(0);
+    expect(rect.originX + rect.width).toBeLessThanOrEqual(cardImg.w);
+    expect(rect.originY + rect.height).toBeLessThanOrEqual(cardImg.h);
+    expect(Math.abs(rect.width / rect.height - 1.586)).toBeLessThan(0.02);
+  });
 });

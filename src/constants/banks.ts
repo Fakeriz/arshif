@@ -21,6 +21,10 @@ export const BANKS: BankDef[] = [
   { key: 'ovo', name: 'OVO', color: '#4C3494', onColor: '#FFFFFF', country: 'ID' },
   { key: 'dana', name: 'DANA', color: '#118EEA', onColor: '#031B2E', country: 'ID' },
   { key: 'shopeepay', name: 'ShopeePay', color: '#EE4D2D', onColor: '#2B0A03', country: 'ID' },
+  { key: 'flazz', name: 'Flazz', color: '#0058A3', onColor: '#FFFFFF', country: 'ID' },
+  { key: 'tapcash', name: 'TapCash', color: '#006885', onColor: '#FFFFFF', country: 'ID' },
+  { key: 'brizzi', name: 'BRIZZI', color: '#00529C', onColor: '#FFFFFF', country: 'ID' },
+  { key: 'jaklingko', name: 'JakLingko', color: '#006B54', onColor: '#FFFFFF', country: 'ID' },
   // Penyedia paylater (2026-11-08). Warna dibaca dari CSS situs resmi masing-masing (tidak ada brand kit publik);
   // Indodana paling tidak pasti (situsnya juga banyak memakai hijau). Verifikasi sebelum rilis seperti bank lain.
   { key: 'akulaku', name: 'Akulaku', color: '#EB3223', onColor: '#1A0402', country: 'ID' },
@@ -36,6 +40,11 @@ export const BANKS: BankDef[] = [
   { key: 'akbank', name: 'Akbank', color: '#DC0005', onColor: '#FFFFFF', country: 'TR' },
   { key: 'garanti', name: 'Garanti BBVA', color: '#00704A', onColor: '#FFFFFF', country: 'TR' },
   { key: 'yapikredi', name: 'Yapı Kredi', color: '#004B93', onColor: '#FFFFFF', country: 'TR' },
+  { key: 'papara', name: 'Papara', color: '#1C1C1E', onColor: '#FFFFFF', country: 'TR' },
+  { key: 'enpara', name: 'Enpara', color: '#5B2C82', onColor: '#FFFFFF', country: 'TR' },
+  { key: 'istanbulkart', name: 'Istanbulkart', color: '#C8102E', onColor: '#FFFFFF', country: 'TR' },
+  { key: 'wise', name: 'Wise', color: '#163300', onColor: '#E8F5E0', country: 'ANY' },
+  { key: 'revolut', name: 'Revolut', color: '#191C1F', onColor: '#F5F6F8', country: 'ANY' },
   { key: 'cash', name: 'Tunai', color: '#3A3631', onColor: '#FFFFFF', country: 'ANY' },
 ];
 

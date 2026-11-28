@@ -88,10 +88,29 @@ describe('penyimpanan wajah kartu', () => {
 });
 
 describe('wajah kartu gaya dompet', () => {
-  it('kartu bank: nama bank, jenis · mata uang, saldo, nomor tersamar; nama & masa berlaku hanya bila diisi', async () => {
+  it('kartu bank: nama bank, jenis (tanpa kode mata uang), saldo, nomor tersamar; nama & masa berlaku hanya bila diisi', async () => {
     await wrap(<BankCard bank="bca" accountType="Tabungan" type="tabungan" last4="4821" balance={1_250_000} currency="IDR" />);
-    expect(screen.getByText('Tabungan · IDR')).toBeTruthy();
+    expect(screen.getByText('Tabungan')).toBeTruthy();
+    expect(screen.queryByText(/Tabungan · IDR/)).toBeNull();
     expect(screen.getByText('•••• •••• •••• 4821')).toBeTruthy();
+    expect(screen.queryByText('09/29')).toBeNull();
+  });
+  it('kartu e-money & foto pribadi tampil bersih tanpa kode mata uang dan tanpa masa berlaku', async () => {
+    await wrap(
+      <BankCard
+        bank="flazz"
+        accountType="E-Money"
+        type="emoney"
+        last4="8842"
+        balance={485_000}
+        currency="IDR"
+        cardStyle="photo:u1/card.jpg"
+      />,
+    );
+    expect(screen.getByText('Flazz')).toBeTruthy();
+    expect(screen.getByText('E-Money')).toBeTruthy();
+    expect(screen.queryByText(/E-Money · IDR/)).toBeNull();
+    expect(screen.getByText('•••• 8842')).toBeTruthy();
     expect(screen.queryByText('09/29')).toBeNull();
   });
   it('detail lengkap tampil; tunai menulis "Uang di dompet" tanpa nomor', async () => {
@@ -124,6 +143,23 @@ describe('jalan masuk dari dalam aplikasi', () => {
     await layoutGrid();
     await press('Gelombang');
     expect(screen.getByText(/style:waves/)).toBeTruthy();
+  });
+
+  it('detail akun: pilih finish Obsidian + motif Guilloche tersimpan sebagai obsidian:guilloche', async () => {
+    mockParams = { id: 'acc-1' };
+    await wrap(
+      <>
+        <AccountDetail />
+        <StyleProbe id="acc-1" />
+      </>,
+      { accounts: [acc] },
+    );
+    await press('Motif kartu');
+    await layoutGrid();
+    await press('Obsidian');
+    await press('Guilloche');
+    expect(screen.getByText(/style:obsidian:guilloche/)).toBeTruthy();
+    expect(screen.getByText('Obsidian · Guilloche')).toBeTruthy();
   });
 
   it('detail akun: sakelar nama pemegang -> isi -> tampil; matikan sakelar nomor -> nomor hilang', async () => {

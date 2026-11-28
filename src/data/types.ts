@@ -1,6 +1,6 @@
 import type { MsgKey } from '@/i18n/translate';
 
-export type AccountType = 'tabungan' | 'cash' | 'ewallet' | 'kartu_kredit' | 'paylater';
+export type AccountType = 'tabungan' | 'cash' | 'ewallet' | 'emoney' | 'kartu_kredit' | 'paylater';
 
 export type Account = {
   id: string;

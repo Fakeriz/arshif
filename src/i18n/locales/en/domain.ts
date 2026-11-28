@@ -30,6 +30,7 @@ const domain: Messages['domain'] = {
     tabungan: 'Savings',
     cash: 'Cash',
     ewallet: 'E-Wallet',
+    emoney: 'E-Money',
     kartu_kredit: 'Credit Card',
     paylater: 'Paylater',
   },

@@ -2,9 +2,11 @@ import { ImageManipulator, SaveFormat } from 'expo-image-manipulator';
 import * as ImagePicker from 'expo-image-picker';
 
 import { discardPrivate, uploadPrivate } from '@/data/remote/upload';
-import { updateProfile } from '@/data/remote/api';
+import { updateAccountCardStyle, updateProfile } from '@/data/remote/api';
+import { CARD_RATIO, cardPhotoFile, photoCardStyle } from '@/lib/cardFace';
 import { coverFile, presetValue, type CoverPreset } from '@/lib/cover';
 import type { Rect, Size } from '@/lib/crop';
+import { primeSignedUrl } from '@/lib/signedAvatarUrl';
 
 export type ImageKind = 'avatar' | 'cover';
 
@@ -84,4 +86,46 @@ export async function setCoverPreset(userId: string, key: CoverPreset, old: stri
 export async function removeAvatar(userId: string, path: string): Promise<void> {
   await updateProfile(userId, { avatar_path: null });
   await discardPrivate('avatars', path);
+}
+
+const CARD_EXPORT_W = 1280;
+
+/** Potong gambar kartu ke rasio ISO 1.586:1 (maks lebar 1280 px, JPEG 82%). */
+export async function cropCardImage(uri: string, rect: Rect): Promise<string> {
+  const ctx = ImageManipulator.manipulate(uri);
+  ctx.crop(rect);
+  if (rect.width > CARD_EXPORT_W) ctx.resize({ width: CARD_EXPORT_W, height: Math.round(CARD_EXPORT_W / CARD_RATIO) });
+  const out = await (await ctx.renderAsync()).saveAsync({ compress: 0.82, format: SaveFormat.JPEG });
+  return out.uri;
+}
+
+/**
+ * Unggah gambar kartu ke bucket avatars lalu simpan `photo:<path>` ke akun.
+ * Berkas foto lama (bila ada) dihapus SETELAH baris akun menunjuk berkas baru.
+ */
+export async function saveAccountCardPhoto(
+  userId: string,
+  accountId: string,
+  uri: string,
+  oldCardStyle?: string | null,
+): Promise<string> {
+  const path = await uploadPrivate({ bucket: 'avatars', userId, uri, ext: 'jpg', contentType: 'image/jpeg', maxBytes: MAX_BYTES });
+  const nextStyle = photoCardStyle(path);
+  try {
+    await updateAccountCardStyle(accountId, nextStyle);
+  } catch (e) {
+    await discardPrivate('avatars', path);
+    throw e;
+  }
+  primeSignedUrl(path, uri);
+  const oldFile = cardPhotoFile(oldCardStyle);
+  if (oldFile && oldFile !== path) await discardPrivate('avatars', oldFile);
+  return nextStyle;
+}
+
+/** Unggah gambar kartu untuk draf akun baru sebelum insertAccount; pemanggil membuangnya bila insert gagal. */
+export async function uploadCardPhotoDraft(userId: string, uri: string): Promise<{ path: string; cardStyle: string }> {
+  const path = await uploadPrivate({ bucket: 'avatars', userId, uri, ext: 'jpg', contentType: 'image/jpeg', maxBytes: MAX_BYTES });
+  primeSignedUrl(path, uri);
+  return { path, cardStyle: photoCardStyle(path) };
 }

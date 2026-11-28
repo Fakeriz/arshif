@@ -1,25 +1,113 @@
 import type { AccountType } from '@/data/types';
 
 /**
- * Wajah kartu gaya "dompet bertumpuk": rasio kartu ISO/IEC 7810 (85.6 x 53.98 mm), gradasi dari warna bank,
- * satu motif garis tipis, chip untuk kartu bank, simbol nirsentuh untuk selain tunai.
+ * Wajah kartu gaya "dompet bertumpuk": rasio kartu ISO/IEC 7810 (85.6 x 53.98 mm), gradasi dari warna bank
+ * atau material finish, satu motif garis vektor, chip untuk kartu bank/Flazz, simbol nirsentuh untuk selain tunai,
+ * atau foto kartu kustom 1.586:1 dengan scrim kontras otomatis.
  */
 export const CARD_RATIO = 1.586;
 
-export const PATTERNS = ['rings', 'arcs', 'waves', 'grid', 'paper'] as const;
+export const PATTERNS = [
+  'rings',
+  'waves',
+  'arcs',
+  'grid',
+  'paper',
+  'circuit',
+  'guilloche',
+  'kawung',
+  'songket',
+  'iznik',
+  'metro',
+  'topography',
+  'halftone',
+] as const;
 export type Pattern = (typeof PATTERNS)[number];
 
-/** Motif bawaan per jenis akun (seperti contoh: debit = lingkar, kredit = gelombang, dompet digital = titik, tunai = kertas). */
-const DEFAULT_PATTERN: Record<AccountType, Pattern> = { tabungan: 'rings', kartu_kredit: 'waves', ewallet: 'grid', cash: 'paper', paylater: 'arcs' };
+/** Motif bawaan per jenis akun. */
+const DEFAULT_PATTERN: Record<AccountType, Pattern> = {
+  tabungan: 'rings',
+  kartu_kredit: 'waves',
+  ewallet: 'grid',
+  emoney: 'circuit',
+  cash: 'paper',
+  paylater: 'arcs',
+};
+
+export const FINISHES = ['bank', 'obsidian', 'titanium', 'monokrom'] as const;
+export type CardFinish = (typeof FINISHES)[number];
+
+export const FINISH_PALETTE: Record<Exclude<CardFinish, 'bank'>, { color: string; onColor: string }> = {
+  obsidian: { color: '#181A1F', onColor: '#F4F4F6' },
+  titanium: { color: '#CFCBC4', onColor: '#141413' },
+  monokrom: { color: '#141414', onColor: '#E8E8E6' },
+};
+
+export type ParsedCardStyle =
+  | { kind: 'art'; finish: CardFinish; pattern: Pattern }
+  | { kind: 'photo'; path: string };
+
+const PHOTO_PREFIX = 'photo:';
+
+export function parseCardStyle(type: AccountType, cardStyle?: string | null): ParsedCardStyle {
+  if (cardStyle?.startsWith(PHOTO_PREFIX)) {
+    const path = cardStyle.slice(PHOTO_PREFIX.length).trim();
+    if (path.length > 0) return { kind: 'photo', path };
+  }
+  if (cardStyle && cardStyle.includes(':')) {
+    const [f, p] = cardStyle.split(':', 2);
+    if ((FINISHES as readonly string[]).includes(f ?? '') && f !== 'bank' && (PATTERNS as readonly string[]).includes(p ?? '')) {
+      return { kind: 'art', finish: f as CardFinish, pattern: p as Pattern };
+    }
+  }
+  const pattern = (PATTERNS as readonly string[]).includes(cardStyle ?? '') ? (cardStyle as Pattern) : DEFAULT_PATTERN[type];
+  return { kind: 'art', finish: 'bank', pattern };
+}
+
+export function formatCardStyle(finish: CardFinish, pattern: Pattern): string {
+  return finish === 'bank' ? pattern : `${finish}:${pattern}`;
+}
+
+export function photoCardStyle(path: string): string {
+  return `${PHOTO_PREFIX}${path}`;
+}
+
+export function cardPhotoFile(cardStyle?: string | null): string | null {
+  return cardStyle?.startsWith(PHOTO_PREFIX) ? cardStyle.slice(PHOTO_PREFIX.length).trim() || null : null;
+}
 
 /** Nilai `card_style` -> motif. Kosong atau id katalog lama yang bukan motif = bawaan jenis akun. */
 export function patternFor(type: AccountType, cardStyle?: string | null): Pattern {
-  return (PATTERNS as readonly string[]).includes(cardStyle ?? '') ? (cardStyle as Pattern) : DEFAULT_PATTERN[type];
+  const parsed = parseCardStyle(type, cardStyle);
+  return parsed.kind === 'art' ? parsed.pattern : DEFAULT_PATTERN[type];
 }
 
-/** Chip emas hanya untuk kartu bank fisik; tunai tanpa simbol nirsentuh. */
+/** Kartu bank fisik (tabungan & kartu kredit): punya masa berlaku dan nomor 16 digit tersamar. */
 export const hasChip = (type: AccountType) => type === 'tabungan' || type === 'kartu_kredit';
+/** Chip tampil di wajah kartu: kartu bank fisik atau Flazz (smart chip), tidak tampil di atas foto pribadi. */
+export const showsChipOnFace = (type: AccountType, bank: string, parsed: ParsedCardStyle) =>
+  parsed.kind !== 'photo' && (hasChip(type) || bank === 'flazz');
 export const hasContactless = (type: AccountType) => type !== 'cash';
+
+/** Resolusi warna dasar, teks, dan warna chip berdasarkan finish material atau foto kartu. */
+export function resolveCardColors(
+  bankColor: string,
+  bankOnColor: string,
+  parsed: ParsedCardStyle,
+): { color: string; onColor: string; chipTone: 'gold' | 'silver' } {
+  if (parsed.kind === 'photo') {
+    return { color: '#181A1F', onColor: '#FFFFFF', chipTone: 'silver' };
+  }
+  if (parsed.finish === 'bank') {
+    return {
+      color: bankColor,
+      onColor: bankOnColor,
+      chipTone: parsed.pattern === 'circuit' ? 'silver' : 'gold',
+    };
+  }
+  const pal = FINISH_PALETTE[parsed.finish];
+  return { color: pal.color, onColor: pal.onColor, chipTone: 'silver' };
+}
 
 function rgb(hex: string): [number, number, number] {
   const h = hex.replace('#', '');

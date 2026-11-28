@@ -1,43 +1,15 @@
 import { Image } from 'expo-image';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import { AppText } from '@/components/ui';
-import { avatarUrl } from '@/data/remote/api';
 import { initialsOf, profileName } from '@/lib/profile';
+import { useSignedUrl } from '@/lib/signedAvatarUrl';
 import { useStore } from '@/state/AppStore';
 import { useTheme } from '@/theme/ThemeProvider';
 import { radius } from '@/theme/tokens';
 
-// Signed URL berlaku 1 jam; dipakai ulang 50 menit supaya Beranda, Pengaturan, dan Profil tidak meminta ulang tiap render.
-const cache = new Map<string, { url: string; until: number }>();
-const TTL_MS = 50 * 60 * 1000;
-
-function cachedUrl(path: string): string | null {
-  const hit = cache.get(path);
-  return hit && hit.until > Date.now() ? hit.url : null;
-}
-
-/** Signed URL berkas di bucket avatars (foto profil/sampul); null selama memuat, saat gagal, atau tanpa berkas. */
-export function useSignedUrl(path: string | null): string | null {
-  // Hasil ambil disimpan bersama path-nya: path berganti = hasil lama otomatis tidak dipakai.
-  const [fetched, setFetched] = useState<{ path: string; url: string } | null>(null);
-  const hit = path ? cachedUrl(path) : null;
-  useEffect(() => {
-    if (!path || cachedUrl(path)) return;
-    let alive = true;
-    avatarUrl(path)
-      .then((u) => {
-        cache.set(path, { url: u, until: Date.now() + TTL_MS });
-        if (alive) setFetched({ path, url: u });
-      })
-      .catch(() => undefined);
-    return () => {
-      alive = false;
-    };
-  }, [path]);
-  return hit ?? (fetched && fetched.path === path ? fetched.url : null);
-}
+export { useSignedUrl } from '@/lib/signedAvatarUrl';
 
 /** Foto profil bulat, atau inisial nama bila belum ada foto / foto gagal dimuat. `uri` = pratinjau lokal saat mengunggah. */
 export function ProfileAvatar({ size, uri }: { size: number; uri?: string | null }) {

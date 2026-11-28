@@ -33,6 +33,7 @@ const domain = {
     tabungan: 'Tabungan',
     cash: 'Tunai',
     ewallet: 'E-Wallet',
+    emoney: 'E-Money',
     kartu_kredit: 'Kartu Kredit',
     paylater: 'Paylater',
   },
